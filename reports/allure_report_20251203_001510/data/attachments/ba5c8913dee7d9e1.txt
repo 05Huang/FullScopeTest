@@ -1,0 +1,1 @@
+ERROR    requests_logger:request_util.py:28 Request error: HTTPSConnectionPool(host='backend.pinf.top', port=443): Max retries exceeded with url: /api/test-login (Caused by SSLError(SSLError(1, '[SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1028)')))

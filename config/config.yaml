@@ -1,0 +1,14 @@
+default: dev   # 默认环境，可选 dev / test / prod
+
+env:
+  dev:
+    base_url: "https://backend.pinf.top"
+    headers:
+      Content-Type: "application/json"
+      Authorization: ""
+    account:
+      username: "test_user_123"
+
+report:        # 报告相关配置
+  allure_dir: "./reports/allure_results"
+  log_dir: "./reports/logs"
