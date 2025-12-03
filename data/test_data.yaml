@@ -1,0 +1,61 @@
+login_data:
+  - scenario: "正常登录"
+    test_data:
+      username: "test_user_123"
+      password: "your_password_here"  # 确保有密码字段
+    expected:
+      success: true
+      message: "登录成功"
+      status_code: 200
+
+addchild_data:
+  - scenario: "正常添加1"
+    test_data:
+      name: "小明"
+      gender: "男"
+      birthDate: "2020-05-15"
+      avatar_url: "https://example.com/avatar.jpg"
+      gestationalAge: "2"
+    expected:
+      success: true
+      message: "添加成功"
+      status_code: 200
+      
+  - scenario: "正常添加2"
+    test_data:
+      name: "小美"
+      gender: "女"
+      birthDate: "2020-056-15"
+      avatar_url: "https://example.com/avatar.jpg"
+      gestationalAge: "2"
+    expected:
+      success: true
+      message: "添加成功"
+      status_code: 200
+
+add_growthRecord_data:
+  - scenario: "正常添加1"
+    test_data:
+      child_id: 1
+      height: 87.5
+      weight: 13.3
+      head_circumference: 42.2
+      record_date: "2024-01-14"
+      notes: "健康成长"
+    expected:
+      success: true
+      message: "添加成功"
+      status_code: 200
+      
+  - scenario: "正常添加1"
+    test_data:
+      child_id: 1
+      height: 85.5
+      weight: 12.3
+      head_circumference: 46.2
+      record_date: "2024-01-15"
+      notes: "健康成长"
+    expected:
+      success: true
+      message: "添加成功"
+      status_code: 200

@@ -1,0 +1,109 @@
+# ===== Python 相关 =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===== 虚拟环境 =====
+venv/
+ENV/
+env/
+.venv
+env.bak/
+venv.bak/
+
+# ===== IDE & 编辑器 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+*.code-workspace
+
+# ===== 测试 & 覆盖率 =====
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.cache
+nosetests.xml
+coverage/
+
+# ===== 数据库 =====
+*.db
+*.sqlite
+*.sqlite3
+test_cases.db
+
+# ===== 日志文件 =====
+*.log
+logs/
+temp/logs/
+
+# ===== 临时文件 =====
+*.tmp
+*.bak
+*.swp
+temp/
+tmp/
+.tmp/
+
+# ===== 环境文件 =====
+.env
+.env.local
+.env.*.local
+
+# ===== Web 应用特定 =====
+# Flask
+instance/
+.webassets-cache
+
+# Allure 报告
+allure-results/
+allure-report/
+
+# Node.js (如果使用前端工具链)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ===== 编译输出 =====
+*.pyc
+*.pyo
+*.pyd
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+.directory
