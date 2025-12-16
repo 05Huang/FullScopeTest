@@ -73,6 +73,7 @@ const Documents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
   const [templates, setTemplates] = useState<any[]>([])
+  const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
   
   // 假设使用项目 ID 1，实际应从项目选择器获取
@@ -203,6 +204,13 @@ const Documents = () => {
   const buildTreeData = (): DataNode[] => {
     const categoryMap: Record<string, DataNode> = {}
     
+    // 过滤文档
+    const filteredDocs = documents.filter(doc =>
+      !searchText || 
+      doc.title.toLowerCase().includes(searchText.toLowerCase()) ||
+      doc.category?.toLowerCase().includes(searchText.toLowerCase())
+    )
+    
     // 初始化分类节点
     categories.forEach(cat => {
       categoryMap[cat.value] = {
@@ -224,7 +232,7 @@ const Documents = () => {
     }
 
     // 将文档添加到对应分类
-    documents.forEach(doc => {
+    filteredDocs.forEach(doc => {
       const category = doc.category || 'other'
       if (!categoryMap[category]) {
         categoryMap[category] = {
@@ -287,6 +295,8 @@ const Documents = () => {
               placeholder="搜索文档..."
               prefix={<SearchOutlined />}
               allowClear
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
             />
             <Tooltip title="刷新">
               <Button

@@ -71,7 +71,9 @@ const PerfTestScenarios = () => {
   const [scenarios, setScenarios] = useState<PerfTestScenario[]>([])
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingScenario, setEditingScenario] = useState<PerfTestScenario | null>(null)
   const [runningIds, setRunningIds] = useState<number[]>([])
+  const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
 
   // 加载场景列表
@@ -110,6 +112,7 @@ const PerfTestScenarios = () => {
       if (result.code === 200 || result.code === 201) {
         message.success('创建成功')
         setIsModalOpen(false)
+        setEditingScenario(null)
         form.resetFields()
         loadScenarios()
       } else {
@@ -117,6 +120,47 @@ const PerfTestScenarios = () => {
       }
     } catch (error: any) {
       message.error('创建场景失败')
+    }
+  }
+
+  // 更新场景
+  const handleUpdate = async (id: number, values: any) => {
+    try {
+      const result = await perfTestService.updateScenario(id, {
+        name: values.name,
+        description: values.description,
+        target_url: values.targetUrl,
+        method: values.method,
+        user_count: values.users,
+        duration: values.duration,
+        spawn_rate: values.rampUp,
+      })
+      if (result.code === 200) {
+        message.success('更新成功')
+        setIsModalOpen(false)
+        setEditingScenario(null)
+        form.resetFields()
+        loadScenarios()
+      } else {
+        message.error(result.message || '更新失败')
+      }
+    } catch (error: any) {
+      message.error('更新场景失败')
+    }
+  }
+
+  // 批量删除
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) return
+    try {
+      for (const id of selectedRowKeys) {
+        await perfTestService.deleteScenario(id as number)
+      }
+      message.success('批量删除成功')
+      setSelectedRowKeys([])
+      loadScenarios()
+    } catch (error) {
+      message.error('删除失败')
     }
   }
 
@@ -305,7 +349,24 @@ const PerfTestScenarios = () => {
               />
             </Tooltip>
             <Tooltip title="编辑">
-              <Button type="text" size="small" icon={<EditOutlined />} />
+              <Button 
+                type="text" 
+                size="small" 
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingScenario(record)
+                  form.setFieldsValue({
+                    name: record.name,
+                    description: record.description,
+                    targetUrl: record.target_url,
+                    method: record.method,
+                    users: record.user_count,
+                    duration: record.duration,
+                    rampUp: record.ramp_up,
+                  })
+                  setIsModalOpen(true)
+                }}
+              />
             </Tooltip>
             <Popconfirm
               title="确定删除此场景吗？"
@@ -359,6 +420,8 @@ const PerfTestScenarios = () => {
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
             allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
           <Button
             icon={<ReloadOutlined />}
@@ -370,12 +433,27 @@ const PerfTestScenarios = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingScenario(null)
+              form.resetFields()
+              setIsModalOpen(true)
+            }}
           >
             新建场景
           </Button>
           <Dropdown
-            menu={{ items: moreMenuItems }}
+            menu={{ 
+              items: moreMenuItems,
+              onClick: ({ key }) => {
+                if (key === 'delete') {
+                  handleBatchDelete()
+                } else if (key === 'run') {
+                  message.info('批量执行功能开发中')
+                } else if (key === 'export') {
+                  message.info('导出功能开发中')
+                }
+              }
+            }}
             disabled={selectedRowKeys.length === 0}
           >
             <Button icon={<MoreOutlined />}>更多</Button>
@@ -428,7 +506,12 @@ const PerfTestScenarios = () => {
             onChange: setSelectedRowKeys,
           }}
           columns={columns}
-          dataSource={scenarios}
+          dataSource={scenarios.filter(s => 
+            !searchText || 
+            s.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            s.description?.toLowerCase().includes(searchText.toLowerCase()) ||
+            s.target_url?.toLowerCase().includes(searchText.toLowerCase())
+          )}
           rowKey="id"
           loading={loading}
           pagination={{
@@ -440,14 +523,22 @@ const PerfTestScenarios = () => {
         />
       </Card>
 
-      {/* 新建场景弹窗 */}
+      {/* 新建/编辑场景弹窗 */}
       <Modal
-        title="新建性能测试场景"
+        title={editingScenario ? "编辑性能测试场景" : "新建性能测试场景"}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false)
+          setEditingScenario(null)
+          form.resetFields()
+        }}
         onOk={() => {
           form.validateFields().then((values) => {
-            handleCreate(values)
+            if (editingScenario) {
+              handleUpdate(editingScenario.id, values)
+            } else {
+              handleCreate(values)
+            }
           })
         }}
         width={600}

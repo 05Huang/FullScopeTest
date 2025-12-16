@@ -69,7 +69,9 @@ const WebTestScripts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false)
   const [currentScript, setCurrentScript] = useState<WebTestScript | null>(null)
+  const [editingScript, setEditingScript] = useState<WebTestScript | null>(null)
   const [runningIds, setRunningIds] = useState<number[]>([])
+  const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
 
   // 加载脚本列表
@@ -104,6 +106,7 @@ const WebTestScripts = () => {
       if (result.code === 200 || result.code === 201) {
         message.success('创建成功')
         setIsModalOpen(false)
+        setEditingScript(null)
         form.resetFields()
         loadScripts()
       } else {
@@ -111,6 +114,28 @@ const WebTestScripts = () => {
       }
     } catch (error: any) {
       message.error('创建脚本失败')
+    }
+  }
+
+  // 更新脚本
+  const handleUpdate = async (id: number, values: any) => {
+    try {
+      const result = await webTestService.updateScript(id, {
+        name: values.name,
+        description: values.description,
+        browser: values.browser,
+      })
+      if (result.code === 200) {
+        message.success('更新成功')
+        setIsModalOpen(false)
+        setEditingScript(null)
+        form.resetFields()
+        loadScripts()
+      } else {
+        message.error(result.message || '更新失败')
+      }
+    } catch (error: any) {
+      message.error('更新脚本失败')
     }
   }
 
@@ -151,6 +176,31 @@ const WebTestScripts = () => {
   const handleViewCode = (script: WebTestScript) => {
     setCurrentScript(script)
     setIsCodeModalOpen(true)
+  }
+
+  // 批量删除
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) return
+    try {
+      for (const id of selectedRowKeys) {
+        await webTestService.deleteScript(id as number)
+      }
+      message.success('批量删除成功')
+      setSelectedRowKeys([])
+      loadScripts()
+    } catch (error) {
+      message.error('删除失败')
+    }
+  }
+
+  // 批量运行
+  const handleBatchRun = async () => {
+    if (selectedRowKeys.length === 0) return
+    message.info(`正在执行 ${selectedRowKeys.length} 个脚本...`)
+    for (const id of selectedRowKeys) {
+      await handleRun(id as number)
+    }
+    setSelectedRowKeys([])
   }
 
   // 表格列配置
@@ -250,7 +300,20 @@ const WebTestScripts = () => {
             />
           </Tooltip>
           <Tooltip title="编辑">
-            <Button type="text" size="small" icon={<EditOutlined />} />
+            <Button 
+              type="text" 
+              size="small" 
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingScript(record)
+                form.setFieldsValue({
+                  name: record.name,
+                  description: record.description,
+                  browser: record.browser,
+                })
+                setIsModalOpen(true)
+              }}
+            />
           </Tooltip>
           <Popconfirm
             title="确定删除此脚本吗？"
@@ -297,6 +360,8 @@ const WebTestScripts = () => {
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
             allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
           <Button
             icon={<ReloadOutlined />}
@@ -308,12 +373,27 @@ const WebTestScripts = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingScript(null)
+              form.resetFields()
+              setIsModalOpen(true)
+            }}
           >
             新建脚本
           </Button>
           <Dropdown
-            menu={{ items: moreMenuItems }}
+            menu={{ 
+              items: moreMenuItems,
+              onClick: ({ key }) => {
+                if (key === 'delete') {
+                  handleBatchDelete()
+                } else if (key === 'run') {
+                  handleBatchRun()
+                } else if (key === 'export') {
+                  message.info('导出功能开发中')
+                }
+              }
+            }}
             disabled={selectedRowKeys.length === 0}
           >
             <Button icon={<MoreOutlined />}>更多</Button>
@@ -328,7 +408,11 @@ const WebTestScripts = () => {
             onChange: setSelectedRowKeys,
           }}
           columns={columns}
-          dataSource={scripts}
+          dataSource={scripts.filter(s => 
+            !searchText || 
+            s.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            s.description?.toLowerCase().includes(searchText.toLowerCase())
+          )}
           rowKey="id"
           loading={loading}
           pagination={{
@@ -340,14 +424,22 @@ const WebTestScripts = () => {
         />
       </Card>
 
-      {/* 新建脚本弹窗 */}
+      {/* 新建/编辑脚本弹窗 */}
       <Modal
-        title="新建脚本"
+        title={editingScript ? "编辑脚本" : "新建脚本"}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false)
+          setEditingScript(null)
+          form.resetFields()
+        }}
         onOk={() => {
           form.validateFields().then((values) => {
-            handleCreate(values)
+            if (editingScript) {
+              handleUpdate(editingScript.id, values)
+            } else {
+              handleCreate(values)
+            }
           })
         }}
         width={600}

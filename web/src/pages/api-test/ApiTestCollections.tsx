@@ -104,15 +104,59 @@ const ApiTestCollections = () => {
         method: values.method,
         url: values.url || '',
         collection_id: values.collection_id,
+        description: values.description,
       })
       if (res.code === 200 || res.code === 201) {
         message.success('创建成功')
         setIsModalOpen(false)
+        setEditingCase(null)
         form.resetFields()
         loadData()
       }
     } catch (error) {
       message.error('创建失败')
+    }
+  }
+
+  const handleUpdate = async (id: number, values: any) => {
+    try {
+      const res = await apiTestService.updateCase(id, {
+        name: values.name,
+        method: values.method,
+        url: values.url || '',
+        collection_id: values.collection_id,
+        description: values.description,
+      })
+      if (res.code === 200) {
+        message.success('更新成功')
+        setIsModalOpen(false)
+        setEditingCase(null)
+        form.resetFields()
+        loadData()
+      }
+    } catch (error) {
+      message.error('更新失败')
+    }
+  }
+
+  const handleCopy = async (record: TestCase) => {
+    try {
+      const res = await apiTestService.createCase({
+        name: `${record.name} (副本)`,
+        method: record.method,
+        url: record.url || '',
+        collection_id: record.collection_id,
+        description: record.description,
+        headers: record.headers,
+        params: record.params,
+        body: record.body,
+      })
+      if (res.code === 200 || res.code === 201) {
+        message.success('复制成功')
+        loadData()
+      }
+    } catch (error) {
+      message.error('复制失败')
     }
   }
 
@@ -123,6 +167,21 @@ const ApiTestCollections = () => {
         message.success('删除成功')
         loadData()
       }
+    } catch (error) {
+      message.error('删除失败')
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) return
+    
+    try {
+      for (const id of selectedRowKeys) {
+        await apiTestService.deleteCase(id as number)
+      }
+      message.success('批量删除成功')
+      setSelectedRowKeys([])
+      loadData()
     } catch (error) {
       message.error('删除失败')
     }
@@ -210,10 +269,30 @@ const ApiTestCollections = () => {
             />
           </Tooltip>
           <Tooltip title="编辑">
-            <Button type="text" size="small" icon={<EditOutlined />} />
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingCase(record)
+                form.setFieldsValue({
+                  name: record.name,
+                  method: record.method,
+                  url: record.url,
+                  collection_id: record.collection_id,
+                  description: record.description,
+                })
+                setIsModalOpen(true)
+              }}
+            />
           </Tooltip>
           <Tooltip title="复制">
-            <Button type="text" size="small" icon={<CopyOutlined />} />
+            <Button
+              type="text"
+              size="small"
+              icon={<CopyOutlined />}
+              onClick={() => handleCopy(record)}
+            />
           </Tooltip>
           <Popconfirm
             title="确定删除此用例吗？"
@@ -260,11 +339,28 @@ const ApiTestCollections = () => {
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
             allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+            setEditingCase(null)
+            form.resetFields()
+            setIsModalOpen(true)
+          }}>
             新建用例
           </Button>
-          <Dropdown menu={{ items: moreMenuItems }} disabled={selectedRowKeys.length === 0}>
+          <Dropdown menu={{ 
+            items: moreMenuItems,
+            onClick: ({ key }) => {
+              if (key === 'delete') {
+                handleBatchDelete()
+              } else if (key === 'run') {
+                message.info('批量执行功能开发中')
+              } else if (key === 'export') {
+                message.info('导出功能开发中')
+              }
+            }
+          }} disabled={selectedRowKeys.length === 0}>
             <Button icon={<MoreOutlined />}>更多</Button>
           </Dropdown>
         </Space>
@@ -277,7 +373,11 @@ const ApiTestCollections = () => {
             onChange: setSelectedRowKeys,
           }}
           columns={columns}
-          dataSource={cases}
+          dataSource={cases.filter(c => 
+            !searchText || 
+            c.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            c.url?.toLowerCase().includes(searchText.toLowerCase())
+          )}
           rowKey="id"
           loading={loading}
           pagination={{
@@ -289,14 +389,22 @@ const ApiTestCollections = () => {
         />
       </Card>
 
-      {/* 新建用例弹窗 */}
+      {/* 新建/编辑用例弹窗 */}
       <Modal
-        title="新建用例"
+        title={editingCase ? "编辑用例" : "新建用例"}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false)
+          setEditingCase(null)
+          form.resetFields()
+        }}
         onOk={() => {
           form.validateFields().then((values) => {
-            handleCreate(values)
+            if (editingCase) {
+              handleUpdate(editingCase.id, values)
+            } else {
+              handleCreate(values)
+            }
           })
         }}
       >
