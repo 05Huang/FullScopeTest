@@ -1,0 +1,524 @@
+"""
+测试报告模块 - API
+
+实现测试报告相关功能：报告列表、详情、统计、导出
+"""
+
+from flask import request, send_file
+from flask_jwt_extended import jwt_required
+from datetime import datetime, timedelta
+from sqlalchemy import func
+import json
+import os
+import tempfile
+
+from . import api_bp
+from ..extensions import db
+from ..models.test_run import TestRun
+from ..models.project import Project
+from ..utils.response import success_response, error_response, paginate_response
+from ..utils import get_current_user_id
+
+
+@api_bp.route('/reports/health', methods=['GET'])
+def reports_health():
+    """报告模块健康检查"""
+    return success_response(message='报告模块正常')
+
+
+# ==================== 测试执行记录 ====================
+
+@api_bp.route('/test-runs', methods=['GET'])
+@jwt_required()
+def get_test_runs():
+    """
+    获取测试执行记录列表
+    
+    查询参数:
+        project_id: 项目 ID
+        test_type: 测试类型 (api/web/performance)
+        status: 状态 (pending/running/success/failed/cancelled)
+        page: 页码
+        per_page: 每页数量
+        start_date: 开始日期
+        end_date: 结束日期
+    """
+    user_id = get_current_user_id()
+    
+    # 获取查询参数
+    project_id = request.args.get('project_id', type=int)
+    test_type = request.args.get('test_type')
+    status = request.args.get('status')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # 构建查询 - 只查询用户拥有的项目的测试记录
+    query = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(Project.owner_id == user_id)
+    
+    if project_id:
+        query = query.filter(TestRun.project_id == project_id)
+    if test_type:
+        query = query.filter(TestRun.test_type == test_type)
+    if status:
+        query = query.filter(TestRun.status == status)
+    if start_date:
+        query = query.filter(TestRun.created_at >= start_date)
+    if end_date:
+        query = query.filter(TestRun.created_at <= end_date)
+    
+    # 分页
+    pagination = query.order_by(TestRun.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    return paginate_response(
+        items=[r.to_dict() for r in pagination.items],
+        total=pagination.total,
+        page=page,
+        per_page=per_page
+    )
+
+
+@api_bp.route('/test-runs', methods=['POST'])
+@jwt_required()
+def create_test_run():
+    """
+    创建测试执行记录
+    """
+    user_id = get_current_user_id()
+    data = request.get_json()
+    
+    project_id = data.get('project_id')
+    if not project_id:
+        return error_response(400, '项目 ID 不能为空')
+    
+    # 验证项目权限
+    project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(404, '项目不存在')
+    
+    test_run = TestRun(
+        project_id=project_id,
+        test_type=data.get('test_type', 'api'),
+        test_object_id=data.get('test_object_id'),
+        test_object_name=data.get('test_object_name'),
+        status='pending',
+        total_cases=data.get('total_cases', 0),
+        environment_id=data.get('environment_id'),
+        environment_name=data.get('environment_name'),
+        triggered_by=data.get('triggered_by', 'manual'),
+        triggered_user_id=user_id
+    )
+    
+    db.session.add(test_run)
+    db.session.commit()
+    
+    return success_response(data=test_run.to_dict(), message='创建成功', code=201)
+
+
+@api_bp.route('/test-runs/<int:run_id>', methods=['GET'])
+@jwt_required()
+def get_test_run(run_id):
+    """获取测试执行记录详情"""
+    user_id = get_current_user_id()
+    
+    test_run = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        TestRun.id == run_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not test_run:
+        return error_response(404, '测试记录不存在')
+    
+    return success_response(data=test_run.to_dict())
+
+
+@api_bp.route('/test-runs/<int:run_id>', methods=['PUT'])
+@jwt_required()
+def update_test_run(run_id):
+    """更新测试执行记录"""
+    user_id = get_current_user_id()
+    
+    test_run = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        TestRun.id == run_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not test_run:
+        return error_response(404, '测试记录不存在')
+    
+    data = request.get_json()
+    
+    # 更新字段
+    for field in ['status', 'total_cases', 'passed', 'failed', 'skipped', 'error',
+                  'duration', 'started_at', 'finished_at', 'results', 'report_path',
+                  'allure_report_path', 'error_message']:
+        if field in data:
+            value = data[field]
+            # 处理日期时间字段
+            if field in ['started_at', 'finished_at'] and value:
+                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            setattr(test_run, field, value)
+    
+    db.session.commit()
+    
+    return success_response(data=test_run.to_dict(), message='更新成功')
+
+
+@api_bp.route('/test-runs/<int:run_id>', methods=['DELETE'])
+@jwt_required()
+def delete_test_run(run_id):
+    """删除测试执行记录"""
+    user_id = get_current_user_id()
+    
+    test_run = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        TestRun.id == run_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not test_run:
+        return error_response(404, '测试记录不存在')
+    
+    db.session.delete(test_run)
+    db.session.commit()
+    
+    return success_response(message='删除成功')
+
+
+# ==================== 报告统计 ====================
+
+@api_bp.route('/reports/statistics', methods=['GET'])
+@jwt_required()
+def get_report_statistics():
+    """
+    获取测试报告统计数据
+    
+    查询参数:
+        project_id: 项目 ID (可选)
+        days: 统计天数 (默认 7)
+    """
+    user_id = get_current_user_id()
+    project_id = request.args.get('project_id', type=int)
+    days = request.args.get('days', 7, type=int)
+    
+    # 计算时间范围
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+    
+    # 构建基础查询
+    base_query = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        Project.owner_id == user_id,
+        TestRun.created_at >= start_date
+    )
+    
+    if project_id:
+        base_query = base_query.filter(TestRun.project_id == project_id)
+    
+    # 总体统计
+    total_runs = base_query.count()
+    success_runs = base_query.filter(TestRun.status == 'success').count()
+    failed_runs = base_query.filter(TestRun.status == 'failed').count()
+    running_runs = base_query.filter(TestRun.status == 'running').count()
+    
+    # 按测试类型统计
+    type_stats = db.session.query(
+        TestRun.test_type,
+        func.count(TestRun.id).label('count'),
+        func.sum(TestRun.passed).label('passed'),
+        func.sum(TestRun.failed).label('failed')
+    ).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        Project.owner_id == user_id,
+        TestRun.created_at >= start_date
+    )
+    
+    if project_id:
+        type_stats = type_stats.filter(TestRun.project_id == project_id)
+    
+    type_stats = type_stats.group_by(TestRun.test_type).all()
+    
+    # 每日趋势统计
+    daily_stats = db.session.query(
+        func.date(TestRun.created_at).label('date'),
+        func.sum(TestRun.passed).label('passed'),
+        func.sum(TestRun.failed).label('failed'),
+        func.count(TestRun.id).label('total')
+    ).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        Project.owner_id == user_id,
+        TestRun.created_at >= start_date
+    )
+    
+    if project_id:
+        daily_stats = daily_stats.filter(TestRun.project_id == project_id)
+    
+    daily_stats = daily_stats.group_by(
+        func.date(TestRun.created_at)
+    ).order_by(func.date(TestRun.created_at)).all()
+    
+    return success_response(data={
+        'summary': {
+            'total_runs': total_runs,
+            'success_runs': success_runs,
+            'failed_runs': failed_runs,
+            'running_runs': running_runs,
+            'success_rate': round(success_runs / total_runs * 100, 2) if total_runs > 0 else 0
+        },
+        'by_type': [
+            {
+                'type': stat.test_type,
+                'count': stat.count,
+                'passed': stat.passed or 0,
+                'failed': stat.failed or 0
+            }
+            for stat in type_stats
+        ],
+        'daily_trend': [
+            {
+                'date': str(stat.date),
+                'passed': stat.passed or 0,
+                'failed': stat.failed or 0,
+                'total': stat.total
+            }
+            for stat in daily_stats
+        ]
+    })
+
+
+@api_bp.route('/reports/dashboard', methods=['GET'])
+@jwt_required()
+def get_dashboard_stats():
+    """
+    获取仪表盘统计数据
+    """
+    user_id = get_current_user_id()
+    
+    # 获取用户的所有项目 ID
+    project_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    
+    if not project_ids:
+        return success_response(data={
+            'api_tests': {'total': 0, 'passed': 0, 'failed': 0},
+            'web_tests': {'total': 0, 'passed': 0, 'failed': 0},
+            'perf_tests': {'total': 0, 'running': 0},
+            'recent_runs': []
+        })
+    
+    # API 测试统计
+    api_stats = db.session.query(
+        func.sum(TestRun.total_cases).label('total'),
+        func.sum(TestRun.passed).label('passed'),
+        func.sum(TestRun.failed).label('failed')
+    ).filter(
+        TestRun.project_id.in_(project_ids),
+        TestRun.test_type == 'api'
+    ).first()
+    
+    # Web 测试统计
+    web_stats = db.session.query(
+        func.sum(TestRun.total_cases).label('total'),
+        func.sum(TestRun.passed).label('passed'),
+        func.sum(TestRun.failed).label('failed')
+    ).filter(
+        TestRun.project_id.in_(project_ids),
+        TestRun.test_type == 'web'
+    ).first()
+    
+    # 性能测试统计
+    perf_total = TestRun.query.filter(
+        TestRun.project_id.in_(project_ids),
+        TestRun.test_type == 'performance'
+    ).count()
+    
+    perf_running = TestRun.query.filter(
+        TestRun.project_id.in_(project_ids),
+        TestRun.test_type == 'performance',
+        TestRun.status == 'running'
+    ).count()
+    
+    # 最近执行记录
+    recent_runs = TestRun.query.filter(
+        TestRun.project_id.in_(project_ids)
+    ).order_by(TestRun.created_at.desc()).limit(10).all()
+    
+    return success_response(data={
+        'api_tests': {
+            'total': api_stats.total or 0,
+            'passed': api_stats.passed or 0,
+            'failed': api_stats.failed or 0
+        },
+        'web_tests': {
+            'total': web_stats.total or 0,
+            'passed': web_stats.passed or 0,
+            'failed': web_stats.failed or 0
+        },
+        'perf_tests': {
+            'total': perf_total,
+            'running': perf_running
+        },
+        'recent_runs': [r.to_dict() for r in recent_runs]
+    })
+
+
+# ==================== 报告导出 ====================
+
+@api_bp.route('/reports/<int:run_id>/export', methods=['GET'])
+@jwt_required()
+def export_report(run_id):
+    """
+    导出测试报告
+    
+    查询参数:
+        format: 导出格式 (json/html)
+    """
+    user_id = get_current_user_id()
+    export_format = request.args.get('format', 'json')
+    
+    test_run = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        TestRun.id == run_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not test_run:
+        return error_response(404, '测试记录不存在')
+    
+    if export_format == 'json':
+        # 导出 JSON 格式
+        report_data = {
+            'report': test_run.to_dict(),
+            'generated_at': datetime.utcnow().isoformat(),
+            'generated_by': 'EasyTest'
+        }
+        return success_response(data=report_data)
+    
+    elif export_format == 'html':
+        # 生成 HTML 报告
+        html_content = generate_html_report(test_run)
+        
+        # 保存到临时文件
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+            f.write(html_content)
+            temp_path = f.name
+        
+        return send_file(
+            temp_path,
+            mimetype='text/html',
+            as_attachment=True,
+            download_name=f'report_{run_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+        )
+    
+    else:
+        return error_response(400, '不支持的导出格式')
+
+
+def generate_html_report(test_run):
+    """生成 HTML 格式的测试报告"""
+    pass_rate = round(test_run.passed / test_run.total_cases * 100, 2) if test_run.total_cases > 0 else 0
+    
+    html = f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试报告 - {test_run.test_object_name or test_run.id}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; padding: 20px; }}
+        .container {{ max-width: 1200px; margin: 0 auto; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; }}
+        .header h1 {{ font-size: 24px; margin-bottom: 10px; }}
+        .header p {{ opacity: 0.8; }}
+        .card {{ background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+        .card h2 {{ font-size: 18px; color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }}
+        .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }}
+        .stat-item {{ text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; }}
+        .stat-value {{ font-size: 28px; font-weight: bold; color: #333; }}
+        .stat-label {{ font-size: 14px; color: #666; margin-top: 5px; }}
+        .passed {{ color: #52c41a; }}
+        .failed {{ color: #ff4d4f; }}
+        .progress-bar {{ height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin: 15px 0; }}
+        .progress-fill {{ height: 100%; background: linear-gradient(90deg, #52c41a, #73d13d); border-radius: 10px; transition: width 0.5s; }}
+        table {{ width: 100%; border-collapse: collapse; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #eee; }}
+        th {{ background: #f8f9fa; font-weight: 600; }}
+        .status-success {{ color: #52c41a; }}
+        .status-failed {{ color: #ff4d4f; }}
+        .footer {{ text-align: center; padding: 20px; color: #999; font-size: 14px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 测试报告</h1>
+            <p>{test_run.test_object_name or f'测试执行 #{test_run.id}'}</p>
+        </div>
+        
+        <div class="card">
+            <h2>📈 测试概览</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value">{test_run.total_cases}</div>
+                    <div class="stat-label">总用例数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value passed">{test_run.passed}</div>
+                    <div class="stat-label">通过</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value failed">{test_run.failed}</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{test_run.skipped}</div>
+                    <div class="stat-label">跳过</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{pass_rate}%</div>
+                    <div class="stat-label">通过率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{test_run.duration or 0:.2f}s</div>
+                    <div class="stat-label">执行时间</div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {pass_rate}%"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📋 执行信息</h2>
+            <table>
+                <tr><td><strong>测试类型</strong></td><td>{test_run.test_type}</td></tr>
+                <tr><td><strong>执行状态</strong></td><td class="status-{'success' if test_run.status == 'success' else 'failed'}">{test_run.status}</td></tr>
+                <tr><td><strong>测试环境</strong></td><td>{test_run.environment_name or '-'}</td></tr>
+                <tr><td><strong>触发方式</strong></td><td>{test_run.triggered_by}</td></tr>
+                <tr><td><strong>开始时间</strong></td><td>{test_run.started_at or '-'}</td></tr>
+                <tr><td><strong>结束时间</strong></td><td>{test_run.finished_at or '-'}</td></tr>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>由 EasyTest 自动化测试平台生成 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        </div>
+    </div>
+</body>
+</html>'''
+    
+    return html
