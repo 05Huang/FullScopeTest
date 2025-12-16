@@ -1,0 +1,92 @@
+# EasyTest 开发环境 Docker Compose
+# 启动命令: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: easytest_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: easytest
+      POSTGRES_PASSWORD: easytest123
+      POSTGRES_DB: easytest_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easytest -d easytest_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存/消息队列
+  redis:
+    image: redis:7-alpine
+    container_name: easytest_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flask 后端 (开发环境)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend.dev
+    container_name: easytest_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://easytest:easytest123@postgres:5432/easytest_dev
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key
+      - JWT_SECRET_KEY=dev-jwt-secret-key
+    volumes:
+      - ./backend:/app
+      - backend_uploads:/app/uploads
+      - backend_reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: flask run --host=0.0.0.0 --port=5000 --reload
+
+  # Celery Worker (异步任务)
+  celery:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend.dev
+    container_name: easytest_celery
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://easytest:easytest123@postgres:5432/easytest_dev
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+      - backend_reports:/app/reports
+    depends_on:
+      - redis
+      - postgres
+    command: celery -A app.tasks worker --loglevel=info
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+  backend_reports:

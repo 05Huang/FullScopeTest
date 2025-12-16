@@ -1,8 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"健康检查接口","320","test_health_check","tests","2025-12-03","broken","2025-12-03","","test_","",""
-"","0","test_add_growthRecord[case0]","tests","2025-12-03","broken","2025-12-03","","test_","",""
-"","0","test_add_child[case1]","tests","2025-12-03","broken","2025-12-03","","test_","",""
-"登录测试","0","test_login","tests","2025-12-03","broken","2025-12-03","","test_","",""
-"获取子账号接口，使用 token 自动注入","0","test_get_child","tests","2025-12-03","broken","2025-12-03","","test_","",""
-"","0","test_add_growthRecord[case1]","tests","2025-12-03","broken","2025-12-03","","test_","",""
-"","0","test_add_child[case0]","tests","2025-12-03","broken","2025-12-03","","test_","",""

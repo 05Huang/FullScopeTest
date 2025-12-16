@@ -1,0 +1,9 @@
+# 此目录存放 SSL 证书
+# 使用 Let's Encrypt 免费证书
+
+# 证书文件:
+# - fullchain.pem  (完整证书链)
+# - privkey.pem    (私钥)
+
+# 获取证书命令 (需要先停止 Nginx):
+# certbot certonly --standalone -d your-domain.com
