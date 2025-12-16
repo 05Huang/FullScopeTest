@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Layout,
   Card,
@@ -16,6 +16,7 @@ import {
   Empty,
   Tooltip,
   message,
+  Modal,
 } from 'antd'
 import {
   PlusOutlined,
@@ -27,6 +28,7 @@ import {
   CopyOutlined,
   MoreOutlined,
   SearchOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
@@ -45,29 +47,6 @@ const methodColors: Record<string, string> = {
   PATCH: '#722ed1',
 }
 
-// 模拟用例树数据
-const mockTreeData: DataNode[] = [
-  {
-    title: '用户模块',
-    key: 'user',
-    icon: <FolderOutlined />,
-    children: [
-      { title: 'POST 用户登录', key: 'user-login', icon: <FileOutlined /> },
-      { title: 'POST 用户注册', key: 'user-register', icon: <FileOutlined /> },
-      { title: 'GET 获取用户信息', key: 'user-info', icon: <FileOutlined /> },
-    ],
-  },
-  {
-    title: '订单模块',
-    key: 'order',
-    icon: <FolderOutlined />,
-    children: [
-      { title: 'GET 订单列表', key: 'order-list', icon: <FileOutlined /> },
-      { title: 'POST 创建订单', key: 'order-create', icon: <FileOutlined /> },
-    ],
-  },
-]
-
 const ApiTestWorkspace = () => {
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
@@ -77,6 +56,194 @@ const ApiTestWorkspace = () => {
   const [response, setResponse] = useState<any>(null)
   const [requestBody, setRequestBody] = useState('{}')
   const [bodyType, setBodyType] = useState('json')
+  const [headers, setHeaders] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }])
+  const [params, setParams] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }])
+  const [collections, setCollections] = useState<any[]>([])
+  const [cases, setCases] = useState<any[]>([])
+  const [treeData, setTreeData] = useState<DataNode[]>([])
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [saveCaseName, setSaveCaseName] = useState('')
+  const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>()
+  const [searchText, setSearchText] = useState('')
+
+  // 加载用例数据
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    try {
+      const [collectionsRes, casesRes] = await Promise.all([
+        apiTestService.getCollections(),
+        apiTestService.getCases({})
+      ])
+      
+      if (collectionsRes.code === 200) {
+        setCollections(collectionsRes.data || [])
+      }
+      if (casesRes.code === 200) {
+        setCases(casesRes.data || [])
+      }
+      
+      // 构建树形数据
+      buildTreeData(collectionsRes.data || [], casesRes.data || [])
+    } catch (error) {
+      console.error('加载数据失败', error)
+    }
+  }
+
+  const buildTreeData = (collectionsData: any[], casesData: any[]) => {
+    const tree: DataNode[] = []
+    
+    // 添加集合节点
+    collectionsData.forEach(collection => {
+      const collectionCases = casesData.filter(c => c.collection_id === collection.id)
+      tree.push({
+        title: collection.name,
+        key: `collection-${collection.id}`,
+        icon: <FolderOutlined />,
+        children: collectionCases.map(c => ({
+          title: `${c.method} ${c.name}`,
+          key: `case-${c.id}`,
+          icon: <FileOutlined />,
+          isLeaf: true,
+        }))
+      })
+    })
+    
+    // 添加未分组的用例
+    const ungroupedCases = casesData.filter(c => !c.collection_id)
+    if (ungroupedCases.length > 0) {
+      tree.push({
+        title: '未分组',
+        key: 'ungrouped',
+        icon: <FolderOutlined />,
+        children: ungroupedCases.map(c => ({
+          title: `${c.method} ${c.name}`,
+          key: `case-${c.id}`,
+          icon: <FileOutlined />,
+          isLeaf: true,
+        }))
+      })
+    }
+    
+    setTreeData(tree)
+  }
+
+  // 选择用例
+  const handleSelectCase = async (keys: React.Key[]) => {
+    if (keys.length === 0) return
+    const key = String(keys[0])
+    
+    if (key.startsWith('case-')) {
+      const caseId = parseInt(key.replace('case-', ''))
+      const caseData = cases.find(c => c.id === caseId)
+      if (caseData) {
+        setMethod(caseData.method)
+        setUrl(caseData.url || '')
+        setRequestBody(JSON.stringify(caseData.body || {}, null, 2))
+        if (caseData.headers) {
+          setHeaders(Object.entries(caseData.headers).map(([k, v]) => ({ key: k, value: String(v) })))
+        }
+        message.success(`已加载用例: ${caseData.name}`)
+      }
+    }
+  }
+
+  // 生成 cURL 命令
+  const generateCurl = () => {
+    let curl = `curl -X ${method} '${url}'`
+    
+    // 添加 headers
+    const headerEntries = headers.filter(h => h.key && h.value)
+    headerEntries.forEach(h => {
+      curl += ` \\\n  -H '${h.key}: ${h.value}'`
+    })
+    
+    // 添加 body
+    if (['POST', 'PUT', 'PATCH'].includes(method) && requestBody && requestBody !== '{}') {
+      curl += ` \\\n  -d '${requestBody}'`
+    }
+    
+    return curl
+  }
+
+  // 复制为 cURL
+  const handleCopyCurl = () => {
+    if (!url) {
+      message.warning('请先输入请求 URL')
+      return
+    }
+    const curlCommand = generateCurl()
+    navigator.clipboard.writeText(curlCommand)
+    message.success('已复制 cURL 命令到剪贴板')
+  }
+
+  // 保存为用例
+  const handleSaveCase = async () => {
+    if (!url) {
+      message.warning('请先输入请求 URL')
+      return
+    }
+    if (!saveCaseName) {
+      message.warning('请输入用例名称')
+      return
+    }
+    
+    try {
+      const headerObj: Record<string, string> = {}
+      headers.filter(h => h.key && h.value).forEach(h => {
+        headerObj[h.key] = h.value
+      })
+      
+      let body = undefined
+      if (['POST', 'PUT', 'PATCH'].includes(method) && requestBody) {
+        try {
+          body = JSON.parse(requestBody)
+        } catch {
+          body = requestBody
+        }
+      }
+      
+      const res = await apiTestService.createCase({
+        name: saveCaseName,
+        method,
+        url,
+        headers: headerObj,
+        body,
+        body_type: bodyType,
+        collection_id: selectedCollectionId,
+      })
+      
+      if (res.code === 200 || res.code === 201) {
+        message.success('用例保存成功')
+        setSaveModalOpen(false)
+        setSaveCaseName('')
+        setSelectedCollectionId(undefined)
+        loadData()
+      } else {
+        message.error(res.message || '保存失败')
+      }
+    } catch (error) {
+      message.error('保存失败')
+    }
+  }
+
+  // 更多操作菜单
+  const moreMenuItems: MenuProps['items'] = [
+    { key: 'copy', icon: <CopyOutlined />, label: '复制为 cURL', onClick: handleCopyCurl },
+    { key: 'save', icon: <SaveOutlined />, label: '保存到用例', onClick: () => setSaveModalOpen(true) },
+    { type: 'divider' },
+    { key: 'clear', icon: <DeleteOutlined />, label: '清空', danger: true, onClick: () => {
+      setUrl('')
+      setMethod('GET')
+      setRequestBody('{}')
+      setHeaders([{ key: '', value: '' }])
+      setParams([{ key: '', value: '' }])
+      setResponse(null)
+      message.success('已清空')
+    }},
+  ]
 
   // 参数表格列
   const paramsColumns = [
@@ -84,32 +251,109 @@ const ApiTestWorkspace = () => {
       title: '参数名',
       dataIndex: 'key',
       key: 'key',
-      render: () => <Input placeholder="参数名" size="small" />,
+      render: (_: any, record: any, index: number) => (
+        <Input
+          placeholder="参数名"
+          size="small"
+          value={record.key}
+          onChange={(e) => {
+            const newParams = [...params]
+            newParams[index].key = e.target.value
+            setParams(newParams)
+          }}
+        />
+      ),
     },
     {
       title: '参数值',
       dataIndex: 'value',
       key: 'value',
-      render: () => <Input placeholder="参数值" size="small" />,
-    },
-    {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-      render: () => <Input placeholder="描述" size="small" />,
+      render: (_: any, record: any, index: number) => (
+        <Input
+          placeholder="参数值"
+          size="small"
+          value={record.value}
+          onChange={(e) => {
+            const newParams = [...params]
+            newParams[index].value = e.target.value
+            setParams(newParams)
+          }}
+        />
+      ),
     },
     {
       title: '操作',
       key: 'action',
       width: 80,
-      render: () => (
-        <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+      render: (_: any, __: any, index: number) => (
+        <Button
+          type="text"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => {
+            const newParams = params.filter((_, i) => i !== index)
+            setParams(newParams.length > 0 ? newParams : [{ key: '', value: '' }])
+          }}
+        />
       ),
     },
   ]
 
   // 请求头表格列
-  const headersColumns = [...paramsColumns]
+  const headersColumns = [
+    {
+      title: 'Header 名',
+      dataIndex: 'key',
+      key: 'key',
+      render: (_: any, record: any, index: number) => (
+        <Input
+          placeholder="Header 名"
+          size="small"
+          value={record.key}
+          onChange={(e) => {
+            const newHeaders = [...headers]
+            newHeaders[index].key = e.target.value
+            setHeaders(newHeaders)
+          }}
+        />
+      ),
+    },
+    {
+      title: 'Header 值',
+      dataIndex: 'value',
+      key: 'value',
+      render: (_: any, record: any, index: number) => (
+        <Input
+          placeholder="Header 值"
+          size="small"
+          value={record.value}
+          onChange={(e) => {
+            const newHeaders = [...headers]
+            newHeaders[index].value = e.target.value
+            setHeaders(newHeaders)
+          }}
+        />
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 80,
+      render: (_: any, __: any, index: number) => (
+        <Button
+          type="text"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => {
+            const newHeaders = headers.filter((_, i) => i !== index)
+            setHeaders(newHeaders.length > 0 ? newHeaders : [{ key: '', value: '' }])
+          }}
+        />
+      ),
+    },
+  ]
 
   // 发送请求
   const handleSend = async () => {
@@ -123,11 +367,14 @@ const ApiTestWorkspace = () => {
     
     try {
       // 准备请求头
-      const headers: Record<string, string> = {}
-      if (bodyType === 'json') {
-        headers['Content-Type'] = 'application/json'
-      } else if (bodyType === 'form') {
-        headers['Content-Type'] = 'application/x-www-form-urlencoded'
+      const reqHeaders: Record<string, string> = {}
+      headers.filter(h => h.key && h.value).forEach(h => {
+        reqHeaders[h.key] = h.value
+      })
+      if (bodyType === 'json' && !reqHeaders['Content-Type']) {
+        reqHeaders['Content-Type'] = 'application/json'
+      } else if (bodyType === 'form' && !reqHeaders['Content-Type']) {
+        reqHeaders['Content-Type'] = 'application/x-www-form-urlencoded'
       }
       
       // 准备请求体
@@ -150,7 +397,7 @@ const ApiTestWorkspace = () => {
       const result = await apiTestService.executeRequest({
         method,
         url,
-        headers,
+        headers: reqHeaders,
         body,
         body_type: bodyType,
         timeout: 30,
@@ -209,14 +456,6 @@ const ApiTestWorkspace = () => {
     }
   }
 
-  // 更多操作菜单
-  const moreMenuItems: MenuProps['items'] = [
-    { key: 'copy', icon: <CopyOutlined />, label: '复制为 cURL' },
-    { key: 'save', icon: <SaveOutlined />, label: '保存到用例' },
-    { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: '删除', danger: true },
-  ]
-
   return (
     <Layout style={{ height: 'calc(100vh - 160px)', background: 'transparent' }}>
       {/* 左侧用例树 */}
@@ -235,18 +474,25 @@ const ApiTestWorkspace = () => {
               placeholder="搜索用例..."
               prefix={<SearchOutlined />}
               allowClear
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
             />
-            <Tooltip title="新建集合">
-              <Button icon={<PlusOutlined />} />
+            <Tooltip title="刷新">
+              <Button icon={<ReloadOutlined />} onClick={loadData} />
             </Tooltip>
           </Space.Compact>
 
-          <Tree
-            showIcon
-            defaultExpandAll
-            treeData={mockTreeData}
-            style={{ background: 'transparent' }}
-          />
+          {treeData.length > 0 ? (
+            <Tree
+              showIcon
+              defaultExpandAll
+              treeData={treeData}
+              onSelect={handleSelectCase}
+              style={{ background: 'transparent' }}
+            />
+          ) : (
+            <Empty description="暂无用例" style={{ marginTop: 40 }} />
+          )}
         </div>
       </Sider>
 
@@ -305,7 +551,7 @@ const ApiTestWorkspace = () => {
                   <Table
                     size="small"
                     columns={paramsColumns}
-                    dataSource={[{ key: '1' }]}
+                    dataSource={params.map((p, i) => ({ ...p, key: String(i) }))}
                     pagination={false}
                     footer={() => (
                       <Button
@@ -313,6 +559,7 @@ const ApiTestWorkspace = () => {
                         size="small"
                         icon={<PlusOutlined />}
                         block
+                        onClick={() => setParams([...params, { key: '', value: '' }])}
                       >
                         添加参数
                       </Button>
@@ -327,7 +574,7 @@ const ApiTestWorkspace = () => {
                   <Table
                     size="small"
                     columns={headersColumns}
-                    dataSource={[{ key: '1' }]}
+                    dataSource={headers.map((h, i) => ({ ...h, key: String(i) }))}
                     pagination={false}
                     footer={() => (
                       <Button
@@ -335,6 +582,7 @@ const ApiTestWorkspace = () => {
                         size="small"
                         icon={<PlusOutlined />}
                         block
+                        onClick={() => setHeaders([...headers, { key: '', value: '' }])}
                       >
                         添加请求头
                       </Button>
@@ -518,6 +766,52 @@ const ApiTestWorkspace = () => {
           )}
         </Card>
       </Content>
+
+      {/* 保存用例弹窗 */}
+      <Modal
+        title="保存到用例"
+        open={saveModalOpen}
+        onCancel={() => {
+          setSaveModalOpen(false)
+          setSaveCaseName('')
+          setSelectedCollectionId(undefined)
+        }}
+        onOk={handleSaveCase}
+      >
+        <Form layout="vertical">
+          <Form.Item label="用例名称" required>
+            <Input
+              placeholder="请输入用例名称"
+              value={saveCaseName}
+              onChange={(e) => setSaveCaseName(e.target.value)}
+            />
+          </Form.Item>
+          <Form.Item label="所属集合">
+            <Select
+              placeholder="选择集合（可选）"
+              allowClear
+              value={selectedCollectionId}
+              onChange={setSelectedCollectionId}
+              options={collections.map(c => ({
+                value: c.id,
+                label: c.name
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label="请求信息">
+            <Card size="small">
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div>
+                  <Text type="secondary">方法:</Text> <Tag color={methodColors[method]}>{method}</Tag>
+                </div>
+                <div>
+                  <Text type="secondary">URL:</Text> <Text code>{url || '未设置'}</Text>
+                </div>
+              </Space>
+            </Card>
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   )
 }

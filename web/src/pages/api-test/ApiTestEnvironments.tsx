@@ -43,6 +43,7 @@ const ApiTestEnvironments = () => {
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingEnv, setEditingEnv] = useState<Environment | null>(null)
+  const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -243,6 +244,8 @@ const ApiTestEnvironments = () => {
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
             allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
           <Button
             type="primary"
@@ -261,7 +264,12 @@ const ApiTestEnvironments = () => {
       <Card>
         <Table
           columns={columns}
-          dataSource={environments}
+          dataSource={environments.filter(env => 
+            !searchText || 
+            env.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            env.base_url?.toLowerCase().includes(searchText.toLowerCase()) ||
+            env.description?.toLowerCase().includes(searchText.toLowerCase())
+          )}
           rowKey="id"
           loading={loading}
           pagination={{

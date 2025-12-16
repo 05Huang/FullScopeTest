@@ -131,6 +131,30 @@ const Reports = () => {
     }
   }
 
+  // 批量删除
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) return
+    try {
+      for (const id of selectedRowKeys) {
+        await reportService.deleteTestRun(id as number)
+      }
+      message.success('批量删除成功')
+      setSelectedRowKeys([])
+      fetchData()
+    } catch (error) {
+      message.error('删除失败')
+    }
+  }
+
+  // 批量下载
+  const handleBatchDownload = () => {
+    if (selectedRowKeys.length === 0) return
+    for (const id of selectedRowKeys) {
+      handleExport(id as number, 'json')
+    }
+    message.success('已开始下载')
+  }
+
   // 导出报告
   const handleExport = (id: number, format: 'json' | 'html') => {
     const url = reportService.getReportExportUrl(id, format)
@@ -395,7 +419,16 @@ const Reports = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
             />
             <Dropdown
-              menu={{ items: moreMenuItems }}
+              menu={{ 
+                items: moreMenuItems,
+                onClick: ({ key }) => {
+                  if (key === 'delete') {
+                    handleBatchDelete()
+                  } else if (key === 'download') {
+                    handleBatchDownload()
+                  }
+                }
+              }}
               disabled={selectedRowKeys.length === 0}
             >
               <Button size="small" icon={<MoreOutlined />}>
@@ -411,7 +444,11 @@ const Reports = () => {
             onChange: setSelectedRowKeys,
           }}
           columns={columns}
-          dataSource={testRuns}
+          dataSource={testRuns.filter(run =>
+            !filters.keyword || 
+            run.test_object_name?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
+            run.environment_name?.toLowerCase().includes(filters.keyword.toLowerCase())
+          )}
           rowKey="id"
           loading={loading}
           pagination={{
