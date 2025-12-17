@@ -27,7 +27,11 @@
 ### v1.1.0 (2025-12-24)
 
 #### 🆕 新增功能
-- **Web 测试录制器** - 支持录制浏览器操作，自动生成 Playwright 脚本
+- **Web 测试录制器（增强）** - 支持从 Web 界面直接启动 Playwright Inspector
+  - 点击按钮即可启动录制，无需手动命令行
+  - 自动管理录制进程
+  - 实时状态检查
+  - 支持多浏览器选择（Chromium、Firefox、WebKit）
 - **元素库管理** - 统一管理页面元素，支持 CSS/XPath/ID 等定位方式
 - **性能测试实时监控** - 实时查看运行中测试的响应时间、吞吐量、错误率
 - **性能测试结果分析** - 详细的响应时间分布、请求统计、历史对比
@@ -67,135 +71,312 @@
 
 - Python 3.10+
 - Node.js 18+
-- PostgreSQL (可选，默认使用 SQLite)
+- PostgreSQL 15+ (生产环境推荐，开发可用 SQLite)
 
-### 安装
+### 安装与启动
 
-1. **克隆项目**
+#### 1. 克隆项目
 
 ```bash
 git clone https://github.com/Asukadaisiki/easytest.git
-cd easytest
+cd EasyTest-Web
 ```
 
-2. **安装后端依赖**
+#### 2. 后端设置
 
 ```bash
 cd backend
+
+# 创建虚拟环境 (可选)
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 安装依赖
 pip install -r requirements.txt
+
+# 初始化数据库
+python init_db.py
+
+# 启动开发服务器
+python app.py
 ```
 
-3. **安装前端依赖**
+后端运行地址：http://127.0.0.1:5211
+
+#### 3. 前端设置
 
 ```bash
-cd ../web
-npm install
-```
-
-4. **初始化数据库**
-
-```bash
-cd ../backend
-flask db upgrade
-```
-
-5. **启动服务**
-
-```bash
-# 终端 1: 启动后端
-cd backend
-python wsgi.py
-
-# 终端 2: 启动前端
 cd web
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
 npm run dev
 ```
 
-6. **访问应用**
+前端运行地址：http://localhost:5173
 
-打开浏览器访问 http://localhost:3000
+#### 4. 访问应用
+
+打开浏览器访问 http://localhost:5173
+
+**默认测试账号：**
+- 用户名：`admin`
+- 密码：`admin123`
+
+### Docker 快速启动
+
+```bash
+# 启动所有服务 (需要安装 Docker 和 Docker Compose)
+docker-compose up -d
+
+# 访问应用
+# 前端: http://localhost:80
+# 后端 API: http://localhost:5211/api/v1
+```
+
+详见 [STARTUP_GUIDE.md](STARTUP_GUIDE.md) 了解更多启动选项。
 
 ## 🏗️ 项目结构
 
 ```
-easytest/
-├── backend/                 # 后端 Flask 应用
+EasyTest-Web/
+├── backend/                              # 后端 Flask 应用
 │   ├── app/
-│   │   ├── api/            # API 路由
-│   │   ├── models/         # 数据模型
-│   │   └── utils/          # 工具函数
-│   ├── requirements.txt
-│   └── wsgi.py
-├── web/                     # 前端 React 应用
+│   │   ├── api/                         # API 路由模块
+│   │   │   ├── auth.py                  # 认证接口 (登录、注册、JWT)
+│   │   │   ├── api_test.py              # 接口测试相关接口
+│   │   │   ├── web_test.py              # Web 自动化测试接口
+│   │   │   ├── perf_test.py             # 性能测试接口
+│   │   │   ├── projects.py              # 项目管理接口
+│   │   │   ├── environments.py          # 测试环境管理接口
+│   │   │   ├── reports.py               # 测试报告接口
+│   │   │   └── docs.py                  # 文档管理接口
+│   │   ├── models/                      # 数据库模型
+│   │   │   ├── user.py                  # 用户模型
+│   │   │   ├── project.py               # 项目模型
+│   │   │   ├── api_test_case.py         # API 测试用例和集合模型
+│   │   │   ├── web_test_script.py       # Web 测试脚本模型
+│   │   │   ├── perf_test_scenario.py    # 性能测试场景模型
+│   │   │   ├── environment.py           # 测试环境模型
+│   │   │   ├── test_run.py              # 测试运行记录模型
+│   │   │   └── test_document.py         # 测试文档模型
+│   │   ├── utils/                       # 工具函数
+│   │   │   ├── response.py              # 响应格式化工具
+│   │   │   └── validators.py            # 数据验证工具
+│   │   ├── config.py                    # Flask 应用配置
+│   │   ├── extensions.py                # Flask 扩展初始化 (db, jwt等)
+│   │   └── __init__.py                  # 应用工厂
+│   ├── migrations/                      # 数据库迁移记录 (Alembic)
+│   ├── app.py                           # Flask 应用主入口
+│   ├── wsgi.py                          # WSGI 应用入口 (生产部署)
+│   ├── manage.py                        # Flask CLI 管理命令
+│   ├── init_db.py                       # 数据库初始化脚本
+│   ├── run_server.bat                   # Windows 启动脚本
+│   ├── requirements.txt                 # Python 依赖清单
+│   ├── .env.example                     # 环境变量示例
+│   └── README.md                        # 后端开发文档
+├── web/                                 # 前端 React + TypeScript 应用
 │   ├── src/
-│   │   ├── components/     # 组件
-│   │   ├── pages/          # 页面
-│   │   ├── services/       # API 服务
-│   │   └── stores/         # 状态管理
-│   └── package.json
-├── document/                # 项目文档
-└── docker/                  # Docker 配置
+│   │   ├── pages/                       # 页面级组件
+│   │   │   ├── Login.tsx                # 登录页面
+│   │   │   ├── Register.tsx             # 注册页面
+│   │   │   ├── Dashboard.tsx            # 仪表板首页
+│   │   │   ├── Documents.tsx            # 文档管理页面
+│   │   │   ├── Reports.tsx              # 报告页面
+│   │   │   ├── api-test/                # API 测试模块
+│   │   │   │   ├── ApiTestWorkspace.tsx # API 测试工作台
+│   │   │   │   ├── ApiTestCollections.tsx # 用例集合管理
+│   │   │   │   └── ApiTestEnvironments.tsx # 环境变量管理
+│   │   │   ├── web-test/                # Web 自动化测试模块
+│   │   │   │   ├── WebTestElements.tsx  # 元素库管理
+│   │   │   │   └── ...                  # 其他测试相关页面
+│   │   │   └── perf-test/               # 性能测试模块
+│   │   │       ├── PerfTestScenarios.tsx # 场景管理
+│   │   │       ├── PerfTestMonitor.tsx  # 实时监控
+│   │   │       └── PerfTestResults.tsx  # 结果分析
+│   │   ├── services/                    # API 服务层
+│   │   │   ├── api.ts                   # 基础 HTTP 请求配置
+│   │   │   ├── authService.ts           # 认证服务
+│   │   │   ├── apiTestService.ts        # API 测试服务
+│   │   │   ├── webTestService.ts        # Web 测试服务
+│   │   │   ├── perfTestService.ts       # 性能测试服务
+│   │   │   ├── projectService.ts        # 项目服务
+│   │   │   ├── reportService.ts         # 报告服务
+│   │   │   ├── environmentService.ts    # 环境服务
+│   │   │   └── documentService.ts       # 文档服务
+│   │   ├── stores/                      # 状态管理 (Zustand)
+│   │   │   └── authStore.ts             # 认证状态管理
+│   │   ├── layouts/                     # 布局组件
+│   │   │   └── MainLayout.tsx           # 主布局
+│   │   ├── styles/                      # 全局样式
+│   │   │   └── index.css                # 全局 CSS
+│   │   ├── App.tsx                      # 根组件
+│   │   └── main.tsx                     # React 应用入口
+│   ├── public/                          # 静态资源
+│   ├── index.html                       # HTML 入口文件
+│   ├── package.json                     # 项目依赖和脚本
+│   ├── tsconfig.json                    # TypeScript 配置
+│   ├── tsconfig.node.json               # TypeScript Node 配置
+│   ├── vite.config.ts                   # Vite 构建工具配置
+│   └── README.md                        # 前端开发文档
+├── document/                            # 项目文档目录
+│   └── DEVELOPMENT.md                   # 开发指南
+├── docker/                              # Docker 配置
+│   ├── Dockerfile.backend               # 后端 Docker 镜像
+│   ├── Dockerfile.backend.dev           # 后端开发 Docker 镜像
+│   ├── init.sql                         # 数据库初始化 SQL
+│   └── nginx/                           # Nginx 反向代理配置
+│       ├── nginx.conf                   # Nginx 主配置
+│       └── ssl/                         # SSL 证书目录
+├── docker-compose.yml                   # Docker Compose 开发配置
+├── docker-compose.prod.yml              # Docker Compose 生产配置
+├── IMPORTANT_FILES.md                   # 📌 重要文件清单 (推荐首先阅读)
+├── README.md                            # 项目介绍与快速开始
+├── STARTUP_GUIDE.md                     # 项目启动详细指南
+├── POSTGRESQL_SETUP.md                  # PostgreSQL 安装与配置教程
+├── MIGRATION_SUCCESS.md                 # 数据库迁移完成记录
+├── USER_MANUAL.md                       # 用户使用手册
+├── REFACTORING_PLAN.md                  # 项目架构与开发计划
+├── RECORDING_QUICKSTART.md              # Playwright 录制快速指南
+├── PLAYWRIGHT_RECORDING_GUIDE.md        # 录制功能详细指南
+├── .gitignore                           # Git 忽略规则
+└── .git/                                # Git 版本控制
 ```
 
 ## 📚 功能模块
 
-### 接口测试
+### 接口测试 (API Test)
 
-- 支持 GET、POST、PUT、DELETE、PATCH 等 HTTP 方法
-- 请求参数、Headers、Body 配置
-- 环境变量管理
-- 前置/后置脚本
-- 断言验证
-- 用例集合管理
+- ✅ 支持 GET、POST、PUT、DELETE、PATCH 等 HTTP 方法
+- ✅ 请求参数、Headers、Body 配置
+- ✅ 环境变量管理和动态参数替换
+- ✅ 前置/后置脚本执行
+- ✅ 断言验证
+- ✅ 用例和集合管理
+- ✅ cURL 导出功能
+- ✅ 测试结果历史记录
 
-### Web 自动化测试
+### Web 自动化测试 (Web Test)
 
-- 基于 Playwright 的浏览器自动化
-- 支持 Chromium、Firefox、WebKit
-- 脚本录制功能
-- 元素库管理
-- 截图和视频录制
+- ✅ 基于 Playwright 的浏览器自动化
+- ✅ 支持 Chromium、Firefox、WebKit 三种浏览器
+- ✅ 脚本录制功能 (直观的 Inspector)
+- ✅ 元素库管理
+- ✅ 截图和视频录制
+- ✅ 脚本编辑执行
+- ✅ 批量执行
 
-### 性能测试
+### 性能测试 (Performance Test)
 
-- 基于 Locust 的性能测试
-- 并发用户模拟
-- 实时监控面板
-- 性能报告生成
+- ✅ 基于 Locust 的分布式性能测试
+- ✅ 并发用户模拟
+- ✅ 实时性能监控面板
+- ✅ 响应时间统计分析
+- ✅ 吞吐量和错误率分析
+- ✅ 性能报告生成
+- ✅ 历史对比分析
+
+### 项目管理
+
+- ✅ 创建和管理多个测试项目
+- ✅ 项目级别的测试环境配置
+- ✅ 用户权限管理
+
+### 测试文档
+
+- ✅ Markdown 编辑器
+- ✅ 文档搜索和分类
+- ✅ 版本管理
+
+### 测试报告
+
+- ✅ 可视化测试报告
+- ✅ 报告导出功能
+- ✅ 历史报告查看
 
 ## 🔧 配置
 
 ### 环境变量
 
 ```bash
-# backend/.env
+# backend/.env 示例
 FLASK_ENV=development
-SECRET_KEY=your-secret-key
+SECRET_KEY=your-secret-key-here
+
+# 数据库配置 (选择一个)
+# 选项 1: SQLite (开发用)
 DATABASE_URL=sqlite:///easytest.db
-# DATABASE_URL=postgresql://user:pass@localhost/easytest
+
+# 选项 2: PostgreSQL (生产推荐)
+DATABASE_URL=postgresql://user:password@localhost:5432/easytest_db
 
 # JWT 配置
-JWT_SECRET_KEY=your-jwt-secret
+JWT_SECRET_KEY=your-jwt-secret-key
 JWT_ACCESS_TOKEN_EXPIRES=3600
 ```
 
+详见 [.env.example](backend/.env.example) 和 [POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md)
+
+### 数据库配置
+
+**SQLite (默认，用于开发)**
+- 无需额外配置
+- 数据存储在 `easytest_dev.db`
+
+**PostgreSQL (生产推荐)**
+- 详见 [POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md)
+- 连接字符串示例：`postgresql://easytest:password@localhost:5432/easytest_db`
+
 ## 🐳 Docker 部署
 
+### 开发环境
+
 ```bash
-# 开发环境
+# 启动所有开发服务 (PostgreSQL + 后端 + 前端)
 docker-compose up -d
 
-# 生产环境
-docker-compose -f docker-compose.prod.yml up -d
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
 ```
 
-## 📖 API 文档
+### 生产环境
+
+```bash
+# 启动生产配置
+docker-compose -f docker-compose.prod.yml up -d
+
+# 查看日志
+docker-compose -f docker-compose.prod.yml logs -f
+
+# 停止服务
+docker-compose -f docker-compose.prod.yml down
+```
+
+详见 [docker-compose.yml](docker-compose.yml) 和 [docker-compose.prod.yml](docker-compose.prod.yml)
+
+## 📖 文档
+
+### 重要文件
+
+推荐按以下顺序阅读：
+
+1. **[IMPORTANT_FILES.md](IMPORTANT_FILES.md)** - 📌 项目重要文件清单 (概览)
+2. **[STARTUP_GUIDE.md](STARTUP_GUIDE.md)** - 启动指南 (详细步骤)
+3. **[USER_MANUAL.md](USER_MANUAL.md)** - 用户使用手册
+4. **[POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md)** - PostgreSQL 安装配置 (可选)
+5. **[REFACTORING_PLAN.md](REFACTORING_PLAN.md)** - 项目架构设计文档
+
+### API 文档
 
 启动后端服务后，访问以下地址查看 API 文档：
 
-- Swagger UI: http://localhost:5000/api/docs
+- **RESTful API Docs**: http://localhost:5211/api/v1/docs (自定义)
+- **项目文档**: [backend/README.md](backend/README.md)
 
 ## 🤝 贡献
 
