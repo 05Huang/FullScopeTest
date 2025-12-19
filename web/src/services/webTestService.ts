@@ -9,6 +9,7 @@ export const getScripts = (projectId?: number): Promise<ApiResponse> => {
 export const createScript = (data: {
   name: string
   description?: string
+  target_url?: string
   browser?: string
   script_content?: string
   config?: Record<string, any>
@@ -24,6 +25,7 @@ export const getScript = (id: number): Promise<ApiResponse> => {
 export const updateScript = (id: number, data: {
   name?: string
   description?: string
+  target_url?: string
   browser?: string
   script_content?: string
   config?: Record<string, any>
@@ -48,6 +50,23 @@ export const executeWebCode = (data: {
   return api.post('/web-test/execute', data) as Promise<ApiResponse>
 }
 
+// ==================== 录制功能 ====================
+
+export const startRecording = (data: {
+  url: string
+  browser?: string
+}): Promise<ApiResponse> => {
+  return api.post('/web-test/record/start', data) as Promise<ApiResponse>
+}
+
+export const stopRecording = (): Promise<ApiResponse> => {
+  return api.post('/web-test/record/stop') as Promise<ApiResponse>
+}
+
+export const getRecordingStatus = (): Promise<ApiResponse> => {
+  return api.get('/web-test/record/status') as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const webTestService = {
   getScripts,
@@ -57,4 +76,7 @@ export const webTestService = {
   deleteScript,
   runScript,
   executeWebCode,
+  startRecording,
+  stopRecording,
+  getRecordingStatus,
 }

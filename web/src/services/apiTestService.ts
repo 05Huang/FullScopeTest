@@ -38,6 +38,7 @@ export const createCase = (data: {
   name: string
   method: string
   url: string
+  description?: string
   headers?: Record<string, any>
   params?: Record<string, any>
   body?: any

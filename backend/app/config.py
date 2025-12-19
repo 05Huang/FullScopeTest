@@ -35,10 +35,10 @@ class DevelopmentConfig(BaseConfig):
     """开发环境配置"""
     
     DEBUG = True
-    # 支持 SQLite (本地开发) 或 PostgreSQL (Docker/生产)
+    # 使用 PostgreSQL 数据库
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
-        'sqlite:///easytest_dev.db'  # 默认使用 SQLite
+        'postgresql://easytest:easytest123@localhost:5432/easytest_dev'
     )
     SQLALCHEMY_ECHO = True  # 开发时打印 SQL
 

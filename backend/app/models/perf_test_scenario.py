@@ -39,6 +39,7 @@ class PerfTestScenario(db.Model):
     # 状态信息
     status = db.Column(db.String(20), default='pending', comment='当前状态: pending/running/completed/failed/stopped')
     last_run_at = db.Column(db.DateTime, comment='最后运行时间')
+    last_result = db.Column(db.JSON, comment='最后执行结果')
     
     # 结果统计
     avg_response_time = db.Column(db.Float, comment='平均响应时间 (ms)')
@@ -75,6 +76,7 @@ class PerfTestScenario(db.Model):
             'step_duration': self.step_duration,
             'status': self.status,
             'last_run_at': self.last_run_at.isoformat() if self.last_run_at else None,
+            'last_result': self.last_result,
             'avg_response_time': self.avg_response_time,
             'max_response_time': self.max_response_time,
             'min_response_time': self.min_response_time,

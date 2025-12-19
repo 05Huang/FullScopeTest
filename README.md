@@ -111,15 +111,22 @@ cd web
 # 安装依赖
 npm install
 
-# 启动开发服务器
-npm run dev
+# 构建前端
+npm run build
 ```
 
-前端运行地址：http://localhost:5173
+#### 4. 启动 Nginx
 
-#### 4. 访问应用
+```bash
+cd nginx
 
-打开浏览器访问 http://localhost:5173
+# 启动 Nginx
+.\start-nginx.bat
+```
+
+#### 5. 访问应用
+
+打开浏览器访问 http://localhost:8080
 
 **默认测试账号：**
 - 用户名：`admin`
@@ -219,7 +226,6 @@ EasyTest-Web/
 │   ├── package.json                     # 项目依赖和脚本
 │   ├── tsconfig.json                    # TypeScript 配置
 │   ├── tsconfig.node.json               # TypeScript Node 配置
-│   ├── vite.config.ts                   # Vite 构建工具配置
 │   └── README.md                        # 前端开发文档
 ├── document/                            # 项目文档目录
 │   └── DEVELOPMENT.md                   # 开发指南
