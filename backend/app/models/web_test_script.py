@@ -22,6 +22,7 @@ class WebTestScript(db.Model):
     # 脚本内容
     script_content = db.Column(db.Text, nullable=False, comment='Python 脚本代码')
     script_type = db.Column(db.String(20), default='playwright', comment='脚本类型: playwright/selenium')
+    target_url = db.Column(db.String(500), comment='目标URL')
     
     # 执行配置
     browser = db.Column(db.String(20), default='chromium', comment='浏览器: chromium/firefox/webkit')
@@ -36,6 +37,7 @@ class WebTestScript(db.Model):
     last_status = db.Column(db.String(20), comment='最后执行状态')
     last_run_at = db.Column(db.DateTime, comment='最后运行时间')
     last_run_duration = db.Column(db.Float, comment='最后运行耗时(秒)')
+    last_result = db.Column(db.JSON, comment='最后执行结果')
     step_count = db.Column(db.Integer, default=0, comment='测试步骤数')
     
     # 其他配置
@@ -56,6 +58,7 @@ class WebTestScript(db.Model):
             'description': self.description,
             'script_content': self.script_content,
             'script_type': self.script_type,
+            'target_url': self.target_url,
             'browser': self.browser,
             'headless': self.headless,
             'timeout': self.timeout,
@@ -66,6 +69,7 @@ class WebTestScript(db.Model):
             'last_status': self.last_status or 'pending',
             'last_run_at': self.last_run_at.isoformat() if self.last_run_at else None,
             'last_run_duration': self.last_run_duration,
+            'last_result': self.last_result,
             'step_count': self.step_count,
             'tags': self.tags,
             'is_enabled': self.is_enabled,

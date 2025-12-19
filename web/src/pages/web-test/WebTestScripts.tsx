@@ -27,6 +27,7 @@ import {
   CopyOutlined,
   ExportOutlined,
   ReloadOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -40,6 +41,7 @@ interface WebTestScript {
   id: number
   name: string
   description: string
+  target_url?: string
   browser: string
   status: 'passed' | 'failed' | 'pending' | 'running'
   step_count: number
@@ -47,6 +49,14 @@ interface WebTestScript {
   last_duration: number
   updated_at: string
   script_content: string
+  last_result?: {
+    success: boolean
+    stdout?: string
+    stderr?: string
+    return_code?: number
+    duration?: number
+    error?: string
+  }
 }
 
 const browserConfig: Record<string, { color: string; name: string }> = {
@@ -68,6 +78,7 @@ const WebTestScripts = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false)
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false)
   const [currentScript, setCurrentScript] = useState<WebTestScript | null>(null)
   const [editingScript, setEditingScript] = useState<WebTestScript | null>(null)
   const [runningIds, setRunningIds] = useState<number[]>([])
@@ -101,6 +112,7 @@ const WebTestScripts = () => {
       const result = await webTestService.createScript({
         name: values.name,
         description: values.description,
+        target_url: values.target_url,
         browser: values.browser,
       })
       if (result.code === 200 || result.code === 201) {
@@ -123,6 +135,7 @@ const WebTestScripts = () => {
       const result = await webTestService.updateScript(id, {
         name: values.name,
         description: values.description,
+        target_url: values.target_url,
         browser: values.browser,
       })
       if (result.code === 200) {
@@ -178,6 +191,12 @@ const WebTestScripts = () => {
     setIsCodeModalOpen(true)
   }
 
+  // 查看执行日志
+  const handleViewLog = (script: WebTestScript) => {
+    setCurrentScript(script)
+    setIsLogModalOpen(true)
+  }
+
   // 批量删除
   const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) return
@@ -216,6 +235,14 @@ const WebTestScripts = () => {
           <Text type="secondary" style={{ fontSize: 12 }}>
             {record.description}
           </Text>
+          {record.target_url && (
+            <>
+              <br />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                🔗 {record.target_url}
+              </Text>
+            </>
+          )}
         </div>
       ),
     },
@@ -299,6 +326,15 @@ const WebTestScripts = () => {
               onClick={() => handleViewCode(record)}
             />
           </Tooltip>
+          <Tooltip title="执行日志">
+            <Button
+              type="text"
+              size="small"
+              icon={<FileTextOutlined />}
+              onClick={() => handleViewLog(record)}
+              disabled={!record.last_result}
+            />
+          </Tooltip>
           <Tooltip title="编辑">
             <Button 
               type="text" 
@@ -309,6 +345,7 @@ const WebTestScripts = () => {
                 form.setFieldsValue({
                   name: record.name,
                   description: record.description,
+                  target_url: record.target_url,
                   browser: record.browser,
                 })
                 setIsModalOpen(true)
@@ -468,7 +505,7 @@ const WebTestScripts = () => {
               ]}
             />
           </Form.Item>
-          <Form.Item name="baseUrl" label="测试基础 URL">
+          <Form.Item name="target_url" label="目标 URL">
             <Input placeholder="https://example.com" />
           </Form.Item>
         </Form>
@@ -514,6 +551,104 @@ const WebTestScripts = () => {
             automaticLayout: true,
           }}
         />
+      </Modal>
+
+      {/* 执行日志模态框 */}
+      <Modal
+        title={`执行日志 - ${currentScript?.name}`}
+        open={isLogModalOpen}
+        onCancel={() => {
+          setIsLogModalOpen(false)
+          setCurrentScript(null)
+        }}
+        footer={null}
+        width={800}
+      >
+        {currentScript?.last_result ? (
+          <div style={{ fontFamily: 'monospace' }}>
+            <div style={{ marginBottom: 16 }}>
+              <Tag color={currentScript.last_result.success ? 'success' : 'error'}>
+                {currentScript.last_result.success ? '执行成功' : '执行失败'}
+              </Tag>
+              {currentScript.last_result.duration && (
+                <Text type="secondary">
+                  耗时: {currentScript.last_result.duration.toFixed(2)}ms
+                </Text>
+              )}
+              {currentScript.last_result.return_code !== undefined && (
+                <Text type="secondary" style={{ marginLeft: 16 }}>
+                  返回码: {currentScript.last_result.return_code}
+                </Text>
+              )}
+            </div>
+
+            {currentScript.last_result.stdout && (
+              <div style={{ marginBottom: 16 }}>
+                <Text strong>标准输出 (stdout):</Text>
+                <pre
+                  style={{
+                    background: '#f5f5f5',
+                    padding: 12,
+                    borderRadius: 4,
+                    maxHeight: 300,
+                    overflow: 'auto',
+                    marginTop: 8,
+                  }}
+                >
+                  {currentScript.last_result.stdout}
+                </pre>
+              </div>
+            )}
+
+            {currentScript.last_result.stderr && (
+              <div>
+                <Text strong style={{ color: '#f5222d' }}>
+                  标准错误 (stderr):
+                </Text>
+                <pre
+                  style={{
+                    background: '#fff2f0',
+                    padding: 12,
+                    borderRadius: 4,
+                    maxHeight: 300,
+                    overflow: 'auto',
+                    marginTop: 8,
+                    color: '#f5222d',
+                  }}
+                >
+                  {currentScript.last_result.stderr}
+                </pre>
+              </div>
+            )}
+
+            {currentScript.last_result.error && (
+              <div>
+                <Text strong style={{ color: '#f5222d' }}>
+                  错误信息:
+                </Text>
+                <pre
+                  style={{
+                    background: '#fff2f0',
+                    padding: 12,
+                    borderRadius: 4,
+                    maxHeight: 300,
+                    overflow: 'auto',
+                    marginTop: 8,
+                    color: '#f5222d',
+                  }}
+                >
+                  {currentScript.last_result.error}
+                </pre>
+              </div>
+            )}
+
+            {!currentScript.last_result.stdout && !currentScript.last_result.stderr && !currentScript.last_result.error && (
+              <Text type="secondary">无输出信息</Text>
+            )}
+          </div>
+        ) : (
+          <Text type="secondary">该脚本尚未执行</Text>
+        )}
       </Modal>
     </div>
   )

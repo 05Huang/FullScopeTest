@@ -26,7 +26,6 @@ import {
   FileOutlined,
   CopyOutlined,
   ExportOutlined,
-  ReloadOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -70,6 +69,7 @@ const ApiTestCollections = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCase, setEditingCase] = useState<TestCase | null>(null)
+  const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
 
   useEffect(() => {

@@ -59,7 +59,6 @@
 ### 启动与配置
 - **[web/package.json](web/package.json)** - 项目配置和依赖
 - **[web/tsconfig.json](web/tsconfig.json)** - TypeScript 配置
-- **[web/vite.config.ts](web/vite.config.ts)** - Vite 构建配置
 - **[web/index.html](web/index.html)** - HTML 入口文件
 
 ### 源代码结构
