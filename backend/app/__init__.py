@@ -7,8 +7,9 @@ EasyTest 后端应用工厂
 from flask import Flask
 from flask_cors import CORS
 
-from .extensions import db, migrate, jwt
+from .extensions import db, migrate, jwt, celery
 from .config import config
+from .celery_app import init_celery
 
 
 def create_app(config_name='development'):
@@ -28,6 +29,9 @@ def create_app(config_name='development'):
     
     # 初始化扩展
     init_extensions(app)
+    
+    # 初始化 Celery
+    init_celery(celery, app)
     
     # 注册蓝图
     register_blueprints(app)
