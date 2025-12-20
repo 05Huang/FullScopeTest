@@ -34,6 +34,7 @@ import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { apiTestService } from '@/services/apiTestService'
+import { environmentService } from '@/services/environmentService'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
@@ -66,6 +67,9 @@ const ApiTestWorkspace = () => {
   const [saveCaseName, setSaveCaseName] = useState('')
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>()
   const [searchText, setSearchText] = useState('')
+  const [environments, setEnvironments] = useState<any[]>([])
+  const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>()
+  const [currentEnv, setCurrentEnv] = useState<any>(null)
 
   // 加载用例数据
   useEffect(() => {
@@ -74,9 +78,10 @@ const ApiTestWorkspace = () => {
 
   const loadData = async () => {
     try {
-      const [collectionsRes, casesRes] = await Promise.all([
+      const [collectionsRes, casesRes, environmentsRes] = await Promise.all([
         apiTestService.getCollections(),
-        apiTestService.getCases({})
+        apiTestService.getCases({}),
+        environmentService.getEnvironments()
       ])
       
       if (collectionsRes.code === 200) {
@@ -84,6 +89,9 @@ const ApiTestWorkspace = () => {
       }
       if (casesRes.code === 200) {
         setCases(casesRes.data || [])
+      }
+      if (environmentsRes.code === 200) {
+        setEnvironments(environmentsRes.data || [])
       }
       
       // 构建树形数据
@@ -150,6 +158,112 @@ const ApiTestWorkspace = () => {
         message.success(`已加载用例: ${caseData.name}`)
       }
     }
+  }
+
+  // 选择环境
+  const handleSelectEnv = (envId: number | undefined) => {
+    setSelectedEnvId(envId)
+    if (envId) {
+      const env = environments.find(e => e.id === envId)
+      setCurrentEnv(env)
+      if (env) {
+        message.success(`已选择环境: ${env.name}`)
+      }
+    } else {
+      setCurrentEnv(null)
+      message.info('已取消环境选择')
+    }
+  }
+
+  // 应用环境配置到当前请求
+  const applyEnvironment = () => {
+    if (!currentEnv) {
+      message.warning('请先选择环境')
+      return
+    }
+
+    // 应用 base_url 到 URL - 自动拼接而不是覆盖
+    if (currentEnv.base_url) {
+      let newUrl = currentEnv.base_url
+      
+      // 如果用户已输入URL，则与base_url拼接
+      if (url && url.trim()) {
+        // 如果用户输入的URL已经是完整URL（以http开头），则保持不变
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          // 拼接相对路径URL
+          newUrl = currentEnv.base_url.replace(/\/$/, '') + (url.startsWith('/') ? url : '/' + url)
+        } else {
+          // 用户输入的是完整URL，保持不变
+          newUrl = url
+        }
+      }
+      
+      setUrl(newUrl)
+      message.success(`已拼接URL: ${newUrl}`)
+    }
+
+    // 应用环境变量到 headers
+    if (currentEnv.headers && Object.keys(currentEnv.headers).length > 0) {
+      const envHeaders = Object.entries(currentEnv.headers).map(([k, v]) => ({
+        key: k,
+        value: String(v)
+      }))
+      
+      // 合并已有的 headers
+      const existingHeaderKeys = new Set(headers.filter(h => h.key).map(h => h.key))
+      const newHeaders = [...headers.filter((_, i) => i === headers.length - 1 && !headers[i].key)]
+      
+      envHeaders.forEach(h => {
+        if (!existingHeaderKeys.has(h.key)) {
+          newHeaders.push(h)
+        }
+      })
+      
+      setHeaders(newHeaders.length > 0 ? newHeaders : [{ key: '', value: '' }])
+      message.success('已应用环境Headers')
+    }
+  }
+
+  // 获取当前请求的所有参数（包含环境变量和Headers）
+  const getRequestWithEnv = async () => {
+    let finalUrl = url
+    let finalHeaders: Record<string, string> = {}
+    let finalParams: Record<string, string> = {}
+
+    // 应用环境配置
+    if (currentEnv) {
+      // 应用基础URL
+      if (currentEnv.base_url && url && !url.startsWith('http')) {
+        finalUrl = currentEnv.base_url.replace(/\/$/, '') + (url.startsWith('/') ? url : '/' + url)
+      }
+
+      // 应用环境headers
+      if (currentEnv.headers) {
+        Object.assign(finalHeaders, currentEnv.headers)
+      }
+
+      // 应用环境变量到URL和请求头（简单的 {{var}} 替换）
+      if (currentEnv.variables) {
+        const vars = currentEnv.variables
+        finalUrl = finalUrl.replace(/\{\{(\w+)\}\}/g, (match, key) => vars[key] || match)
+        
+        Object.keys(finalHeaders).forEach(key => {
+          finalHeaders[key] = String(finalHeaders[key]).replace(/\{\{(\w+)\}\}/g, (match, varKey) => vars[varKey] || match)
+        })
+      }
+    }
+
+    // 应用当前请求的headers
+    headers.filter(h => h.key && h.value).forEach(h => {
+      finalHeaders[h.key] = h.value
+    })
+
+    // 应用请求参数
+    params.filter(p => p.key && p.value).forEach(p => {
+      finalParams[p.key] = p.value
+    })
+
+    return { finalUrl, finalHeaders, finalParams }
   }
 
   // 生成 cURL 命令
@@ -391,11 +505,11 @@ const ApiTestWorkspace = () => {
     const startTime = Date.now()
     
     try {
+      // 获取包含环境配置的请求参数
+      const { finalUrl, finalHeaders, finalParams } = await getRequestWithEnv()
+
       // 准备请求头
-      const reqHeaders: Record<string, string> = {}
-      headers.filter(h => h.key && h.value).forEach(h => {
-        reqHeaders[h.key] = h.value
-      })
+      const reqHeaders: Record<string, string> = { ...finalHeaders }
       if (bodyType === 'json' && !reqHeaders['Content-Type']) {
         reqHeaders['Content-Type'] = 'application/json'
       } else if (bodyType === 'form' && !reqHeaders['Content-Type']) {
@@ -421,11 +535,13 @@ const ApiTestWorkspace = () => {
       // 调用后端 API 执行请求
       const result = await apiTestService.executeRequest({
         method,
-        url,
+        url: finalUrl,
         headers: reqHeaders,
+        params: finalParams,
         body,
         body_type: bodyType,
         timeout: 30,
+        env_id: selectedEnvId
       })
 
       const elapsed = Date.now() - startTime
@@ -571,6 +687,34 @@ const ApiTestWorkspace = () => {
             <Dropdown menu={{ items: moreMenuItems }}>
               <Button icon={<MoreOutlined />} />
             </Dropdown>
+          </div>
+
+          {/* 环境选择栏 */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+            <Text type="secondary" style={{ fontSize: 12, minWidth: 50 }}>环境:</Text>
+            <Select
+              placeholder="选择测试环境"
+              allowClear
+              style={{ flex: 1, maxWidth: 300 }}
+              value={selectedEnvId}
+              onChange={handleSelectEnv}
+              options={environments.map(env => ({
+                value: env.id,
+                label: env.name
+              }))}
+            />
+            {currentEnv && (
+              <>
+                <Tag color="blue">{currentEnv.name}</Tag>
+                <Button
+                  type="dashed"
+                  size="small"
+                  onClick={applyEnvironment}
+                >
+                  应用配置
+                </Button>
+              </>
+            )}
           </div>
 
           {/* 请求配置 Tabs */}

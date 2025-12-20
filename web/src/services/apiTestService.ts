@@ -73,6 +73,7 @@ export const executeRequest = (data: {
   body?: any
   body_type?: string
   timeout?: number
+  env_id?: number
 }): Promise<ApiResponse> => {
   return api.post('/api-test/execute', data) as Promise<ApiResponse>
 }
@@ -83,8 +84,10 @@ export const runCase = (caseId: number, envId?: number): Promise<ApiResponse> =>
   }) as Promise<ApiResponse>
 }
 
-export const runCollection = (collectionId: number): Promise<ApiResponse> => {
-  return api.post(`/api-test/collections/${collectionId}/run`) as Promise<ApiResponse>
+export const runCollection = (collectionId: number, envId?: number): Promise<ApiResponse> => {
+  return api.post(`/api-test/collections/${collectionId}/run`, null, {
+    params: { env_id: envId }
+  }) as Promise<ApiResponse>
 }
 
 // 导出服务对象
