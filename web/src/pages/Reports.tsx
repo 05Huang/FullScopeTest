@@ -16,6 +16,7 @@ import {
   Select,
   message,
   Popconfirm,
+  Tabs,
 } from 'antd'
 import {
   SearchOutlined,
@@ -32,6 +33,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { reportService } from '@/services'
+import TestReports from './TestReports'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -342,124 +344,142 @@ const Reports = () => {
         测试报告
       </Title>
 
-      {/* 统计卡片 */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="执行总数"
-              value={statistics.total_runs}
-              prefix={<FileTextOutlined style={{ color: '#1890ff' }} />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="成功执行"
-              value={statistics.success_runs}
-              valueStyle={{ color: '#52c41a' }}
-              prefix={<CheckCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="失败执行"
-              value={statistics.failed_runs}
-              valueStyle={{ color: '#ff4d4f' }}
-              prefix={<CloseCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="成功率"
-              value={statistics.success_rate}
-              suffix="%"
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <Tabs
+        defaultActiveKey="runs"
+        items={[
+          {
+            key: 'runs',
+            label: '执行记录',
+            children: (
+              <>
+                {/* 统计卡片 */}
+                <Row gutter={16} style={{ marginBottom: 24 }}>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card>
+                      <Statistic
+                        title="执行总数"
+                        value={statistics.total_runs}
+                        prefix={<FileTextOutlined style={{ color: '#1890ff' }} />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card>
+                      <Statistic
+                        title="成功执行"
+                        value={statistics.success_runs}
+                        valueStyle={{ color: '#52c41a' }}
+                        prefix={<CheckCircleOutlined />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card>
+                      <Statistic
+                        title="失败执行"
+                        value={statistics.failed_runs}
+                        valueStyle={{ color: '#ff4d4f' }}
+                        prefix={<CloseCircleOutlined />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card>
+                      <Statistic
+                        title="成功率"
+                        value={statistics.success_rate}
+                        suffix="%"
+                        valueStyle={{ color: '#52c41a' }}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
 
-      {/* 趋势图 */}
-      <Card title="测试趋势（近7天）" style={{ marginBottom: 24 }}>
-        <ReactECharts option={trendOption} style={{ height: 250 }} />
-      </Card>
+                {/* 趋势图 */}
+                <Card title="测试趋势（近7天）" style={{ marginBottom: 24 }}>
+                  <ReactECharts option={trendOption} style={{ height: 250 }} />
+                </Card>
 
-      {/* 报告列表 */}
-      <Card
-        title="执行记录"
-        extra={
-          <Space>
-            <RangePicker size="small" />
-            <Select
-              placeholder="类型"
-              size="small"
-              style={{ width: 100 }}
-              allowClear
-              value={filters.test_type || undefined}
-              onChange={(val) => setFilters(prev => ({ ...prev, test_type: val || '' }))}
-              options={[
-                { value: 'api', label: 'API测试' },
-                { value: 'web', label: 'Web测试' },
-                { value: 'performance', label: '性能测试' },
-              ]}
-            />
-            <Input
-              placeholder="搜索..."
-              prefix={<SearchOutlined />}
-              size="small"
-              style={{ width: 200 }}
-              allowClear
-              value={filters.keyword}
-              onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
-            />
-            <Dropdown
-              menu={{ 
-                items: moreMenuItems,
-                onClick: ({ key }) => {
-                  if (key === 'delete') {
-                    handleBatchDelete()
-                  } else if (key === 'download') {
-                    handleBatchDownload()
+                {/* 报告列表 */}
+                <Card
+                  title="执行记录"
+                  extra={
+                    <Space>
+                      <RangePicker size="small" />
+                      <Select
+                        placeholder="类型"
+                        size="small"
+                        style={{ width: 100 }}
+                        allowClear
+                        value={filters.test_type || undefined}
+                        onChange={(val) => setFilters(prev => ({ ...prev, test_type: val || '' }))}
+                        options={[
+                          { value: 'api', label: 'API测试' },
+                          { value: 'web', label: 'Web测试' },
+                          { value: 'performance', label: '性能测试' },
+                        ]}
+                      />
+                      <Input
+                        placeholder="搜索..."
+                        prefix={<SearchOutlined />}
+                        size="small"
+                        style={{ width: 200 }}
+                        allowClear
+                        value={filters.keyword}
+                        onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
+                      />
+                      <Dropdown
+                        menu={{ 
+                          items: moreMenuItems,
+                          onClick: ({ key }) => {
+                            if (key === 'delete') {
+                              handleBatchDelete()
+                            } else if (key === 'download') {
+                              handleBatchDownload()
+                            }
+                          }
+                        }}
+                        disabled={selectedRowKeys.length === 0}
+                      >
+                        <Button size="small" icon={<MoreOutlined />}>
+                          更多
+                        </Button>
+                      </Dropdown>
+                    </Space>
                   }
-                }
-              }}
-              disabled={selectedRowKeys.length === 0}
-            >
-              <Button size="small" icon={<MoreOutlined />}>
-                更多
-              </Button>
-            </Dropdown>
-          </Space>
-        }
-      >
-        <Table
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
-          columns={columns}
-          dataSource={testRuns.filter(run =>
-            !filters.keyword || 
-            run.test_object_name?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
-            run.environment_name?.toLowerCase().includes(filters.keyword.toLowerCase())
-          )}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            ...pagination,
-            showTotal: (total) => `共 ${total} 条`,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
-          }}
-        />
-      </Card>
+                >
+                  <Table
+                    rowSelection={{
+                      selectedRowKeys,
+                      onChange: setSelectedRowKeys,
+                    }}
+                    columns={columns}
+                    dataSource={testRuns.filter(run =>
+                      !filters.keyword || 
+                      run.test_object_name?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
+                      run.environment_name?.toLowerCase().includes(filters.keyword.toLowerCase())
+                    )}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{
+                      ...pagination,
+                      showTotal: (total) => `共 ${total} 条`,
+                      showSizeChanger: true,
+                      showQuickJumper: true,
+                      onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
+                    }}
+                  />
+                </Card>
+              </>
+            ),
+          },
+          {
+            key: 'reports',
+            label: '测试报告',
+            children: <TestReports />,
+          },
+        ]}
+      />
     </div>
   )
 }

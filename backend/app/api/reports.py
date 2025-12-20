@@ -15,6 +15,7 @@ import tempfile
 from . import api_bp
 from ..extensions import db
 from ..models.test_run import TestRun
+from ..models.test_report import TestReport
 from ..models.project import Project
 from ..utils.response import success_response, error_response, paginate_response
 from ..utils import get_current_user_id
@@ -522,3 +523,188 @@ def generate_html_report(test_run):
 </html>'''
     
     return html
+
+
+# ==================== 测试报告 API ====================
+
+@api_bp.route('/test-reports', methods=['GET'])
+@jwt_required()
+def get_test_reports():
+    """
+    获取测试报告列表
+    
+    查询参数:
+        project_id: 项目 ID
+        test_type: 测试类型 (api/web/performance)
+        page: 页码
+        per_page: 每页数量
+    """
+    user_id = get_current_user_id()
+    
+    # 获取查询参数
+    project_id = request.args.get('project_id', type=int)
+    test_type = request.args.get('test_type')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # 构建查询
+    query = TestReport.query.join(TestRun).join(Project)
+    
+    if project_id:
+        query = query.filter(TestReport.project_id == project_id)
+    
+    if test_type:
+        query = query.filter(TestReport.test_type == test_type)
+    
+    # 只查询用户有权限的项目
+    query = query.filter(Project.owner_id == user_id)
+    
+    # 排序
+    query = query.order_by(TestReport.created_at.desc())
+    
+    # 分页
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return paginate_response(
+        items=[report.to_dict() for report in pagination.items],
+        total=pagination.total,
+        page=page,
+        per_page=per_page
+    )
+
+
+@api_bp.route('/test-reports/<int:report_id>', methods=['GET'])
+@jwt_required()
+def get_test_report(report_id):
+    """获取测试报告详情"""
+    user_id = get_current_user_id()
+    
+    report = TestReport.query.join(TestRun).join(Project).filter(
+        TestReport.id == report_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not report:
+        return error_response(message='报告不存在', code=404)
+    
+    return success_response(data=report.to_detail_dict())
+
+
+@api_bp.route('/test-reports/<int:report_id>/html', methods=['GET'])
+@jwt_required()
+def get_test_report_html(report_id):
+    """获取测试报告 HTML"""
+    user_id = get_current_user_id()
+    
+    report = TestReport.query.join(TestRun).join(Project).filter(
+        TestReport.id == report_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not report:
+        return error_response(message='报告不存在', code=404)
+    
+    # 如果没有 HTML 报告，生成一个
+    if not report.report_html:
+        # 简单的 HTML 报告模板
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{report.title}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }}
+        h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
+        .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }}
+        .summary-card {{ background: #f9f9f9; padding: 20px; border-radius: 5px; border-left: 4px solid #4CAF50; }}
+        .summary-card h3 {{ margin: 0 0 10px 0; color: #666; font-size: 14px; }}
+        .summary-card p {{ margin: 0; font-size: 28px; font-weight: bold; color: #333; }}
+        .passed {{ color: #4CAF50; }}
+        .failed {{ color: #f44336; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #f5f5f5; font-weight: bold; }}
+        tr:hover {{ background: #f9f9f9; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{report.title}</h1>
+        <div class="summary">
+            <div class="summary-card">
+                <h3>总用例数</h3>
+                <p>{report.summary.get('total', 0)}</p>
+            </div>
+            <div class="summary-card">
+                <h3>通过数</h3>
+                <p class="passed">{report.summary.get('passed', 0)}</p>
+            </div>
+            <div class="summary-card">
+                <h3>失败数</h3>
+                <p class="failed">{report.summary.get('failed', 0)}</p>
+            </div>
+            <div class="summary-card">
+                <h3>成功率</h3>
+                <p>{report.summary.get('success_rate', 0)}%</p>
+            </div>
+            <div class="summary-card">
+                <h3>执行耗时</h3>
+                <p>{report.summary.get('duration', 0)}s</p>
+            </div>
+        </div>
+        <h2>测试结果详情</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>用例名称</th>
+                    <th>状态</th>
+                    <th>耗时(ms)</th>
+                    <th>错误信息</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join([f'''
+                <tr>
+                    <td>{result.get('name', '')}</td>
+                    <td class="{'passed' if result.get('passed') else 'failed'}">
+                        {'✓ 通过' if result.get('passed') else '✗ 失败'}
+                    </td>
+                    <td>{result.get('response_time', 0)}</td>
+                    <td>{result.get('error', '-')}</td>
+                </tr>
+                ''' for result in report.report_data.get('results', [])])}
+            </tbody>
+        </table>
+        <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 5px;">
+            <p style="margin: 0; color: #666;">生成时间: {report.created_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
+        </div>
+    </div>
+</body>
+</html>
+        """
+        return html, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    
+    return report.report_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+
+@api_bp.route('/test-reports/<int:report_id>', methods=['DELETE'])
+@jwt_required()
+def delete_test_report(report_id):
+    """删除测试报告"""
+    user_id = get_current_user_id()
+    
+    report = TestReport.query.join(TestRun).join(Project).filter(
+        TestReport.id == report_id,
+        Project.owner_id == user_id
+    ).first()
+    
+    if not report:
+        return error_response(message='报告不存在', code=404)
+    
+    db.session.delete(report)
+    db.session.commit()
+    
+    return success_response(message='删除成功')
+

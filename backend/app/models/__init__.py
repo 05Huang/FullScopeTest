@@ -10,6 +10,7 @@ from .web_test_script import WebTestScript
 from .perf_test_scenario import PerfTestScenario
 from .test_run import TestRun
 from .test_document import TestDocument
+from .test_report import TestReport
 
 __all__ = [
     'User',
@@ -20,5 +21,6 @@ __all__ = [
     'WebTestScript',
     'PerfTestScenario',
     'TestRun',
-    'TestDocument'
+    'TestDocument',
+    'TestReport'
 ]
