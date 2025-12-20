@@ -70,14 +70,14 @@ python manage.py create_admin
 ### 5. 启动开发服务器
 
 ```bash
-flask run --port=5000
+flask run --port=5211
 # 或
-python wsgi.py
+python app.py
 ```
 
 ## API 文档
 
-启动服务后访问: http://localhost:5000/api/v1/
+启动服务后访问: http://localhost:5211/api/v1/
 
 ### 认证接口
 

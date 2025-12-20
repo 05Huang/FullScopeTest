@@ -50,6 +50,7 @@ const methodColors: Record<string, string> = {
 const ApiTestWorkspace = () => {
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
+  const [requestName, setRequestName] = useState('')  // 自定义请求名称
   const [activeTab, setActiveTab] = useState('params')
   const [responseTab, setResponseTab] = useState('body')
   const [sending, setSending] = useState(false)
@@ -139,6 +140,7 @@ const ApiTestWorkspace = () => {
       const caseId = parseInt(key.replace('case-', ''))
       const caseData = cases.find(c => c.id === caseId)
       if (caseData) {
+        setRequestName(caseData.name || '')  // 加载用例名称
         setMethod(caseData.method)
         setUrl(caseData.url || '')
         setRequestBody(JSON.stringify(caseData.body || {}, null, 2))
@@ -232,10 +234,15 @@ const ApiTestWorkspace = () => {
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
     { key: 'copy', icon: <CopyOutlined />, label: '复制为 cURL', onClick: handleCopyCurl },
-    { key: 'save', icon: <SaveOutlined />, label: '保存到用例', onClick: () => setSaveModalOpen(true) },
+    { key: 'save', icon: <SaveOutlined />, label: '保存到用例', onClick: () => {
+      // 保存时默认使用当前请求名称
+      setSaveCaseName(requestName)
+      setSaveModalOpen(true)
+    }},
     { type: 'divider' },
     { key: 'clear', icon: <DeleteOutlined />, label: '清空', danger: true, onClick: () => {
       setUrl('')
+      setRequestName('')  // 清空请求名称
       setMethod('GET')
       setRequestBody('{}')
       setHeaders([{ key: '', value: '' }])
@@ -247,6 +254,15 @@ const ApiTestWorkspace = () => {
 
   // 参数表格列
   const paramsColumns = [
+    {
+      title: '序号',
+      key: 'index',
+      width: 60,
+      align: 'center' as const,
+      render: (_: any, __: any, index: number) => (
+        <Text type="secondary">{index + 1}</Text>
+      ),
+    },
     {
       title: '参数名',
       dataIndex: 'key',
@@ -302,6 +318,15 @@ const ApiTestWorkspace = () => {
 
   // 请求头表格列
   const headersColumns = [
+    {
+      title: '序号',
+      key: 'index',
+      width: 60,
+      align: 'center' as const,
+      render: (_: any, __: any, index: number) => (
+        <Text type="secondary">{index + 1}</Text>
+      ),
+    },
     {
       title: 'Header 名',
       dataIndex: 'key',
@@ -504,6 +529,16 @@ const ApiTestWorkspace = () => {
           style={{ borderRadius: 8 }}
           bodyStyle={{ padding: 12 }}
         >
+          {/* 请求名称输入栏 */}
+          <div style={{ marginBottom: 12 }}>
+            <Input
+              placeholder="请输入请求名称（可选）"
+              value={requestName}
+              onChange={(e) => setRequestName(e.target.value)}
+              prefix={<Text type="secondary" style={{ fontSize: 12 }}>名称:</Text>}
+              allowClear
+            />
+          </div>
           {/* URL 输入栏 */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <Select
