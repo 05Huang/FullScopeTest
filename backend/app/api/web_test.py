@@ -6,23 +6,22 @@ Web 自动化测试模块 - API
 from flask import request
 from flask_jwt_extended import jwt_required
 from . import api_bp
-from ..extensions import db
+from ..extensions import db, celery
 from ..models.web_test_script import WebTestScript
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils import get_current_user_id
+from ..tasks import run_web_test_task
 import subprocess
 import tempfile
 import os
 import sys
 import json
-import threading
-import time
 from datetime import datetime
 
 
-# 存储运行中的脚本进程
-running_scripts = {}
+# 存储录制进程（录制功能仍使用进程方式）
+recording_processes = {}
 
 
 @api_bp.route('/web-test/health', methods=['GET'])
@@ -165,7 +164,7 @@ def delete_script(script_id):
 @api_bp.route('/web-test/scripts/<int:script_id>/run', methods=['POST'])
 @jwt_required()
 def run_script(script_id):
-    """运行 Web 测试脚本"""
+    """运行 Web 测试脚本（异步）"""
     user_id = get_current_user_id()
     script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
@@ -173,80 +172,41 @@ def run_script(script_id):
         return error_response(message='脚本不存在', code=404)
     
     # 检查是否已在运行
-    run_key = f'{user_id}_{script_id}'
-    if run_key in running_scripts:
+    if script.status == 'running':
         return error_response(message='脚本正在运行中')
     
     try:
-        # 创建临时文件运行脚本
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
-            f.write(script.script_content)
-            temp_file = f.name
-        
-        # 更新状态
-        script.status = 'running'
-        script.last_run_at = datetime.utcnow()
-        db.session.commit()
-        
-        # 运行脚本
-        start_time = time.time()
-        
-        result = subprocess.run(
-            [sys.executable, temp_file],
-            capture_output=True,
-            text=True,
-            timeout=script.timeout / 1000,  # 转换为秒
-            cwd=tempfile.gettempdir()
+        # 异步执行测试任务
+        task = run_web_test_task.apply_async(
+            args=[script_id, user_id],
+            task_id=f'web_test_{script_id}_{user_id}'
         )
         
-        elapsed_time = (time.time() - start_time) * 1000
-        
-        # 清理临时文件
-        try:
-            os.unlink(temp_file)
-        except:
-            pass
-        
-        # 更新状态
-        success = result.returncode == 0
-        script.status = 'passed' if success else 'failed'
-        script.last_result = {
-            'success': success,
-            'stdout': result.stdout,
-            'stderr': result.stderr,
-            'return_code': result.returncode,
-            'duration': round(elapsed_time, 2)
-        }
-        db.session.commit()
-        
         return success_response(data={
-            'success': success,
-            'stdout': result.stdout,
-            'stderr': result.stderr,
-            'return_code': result.returncode,
-            'duration': round(elapsed_time, 2)
-        })
-        
-    except subprocess.TimeoutExpired:
-        script.status = 'timeout'
-        script.last_result = {'error': '执行超时'}
-        db.session.commit()
-        
-        return success_response(data={
-            'success': False,
-            'error': '脚本执行超时'
+            'message': '测试已提交，正在后台执行',
+            'task_id': task.id,
+            'script_id': script_id
         })
         
     except Exception as e:
-        script.status = 'failed'
-        script.last_result = {'error': str(e)}
-        db.session.commit()
-        
-        return error_response(message=f'执行失败: {str(e)}')
+        return error_response(message=f'提交失败: {str(e)}')
+
+
+@api_bp.route('/web-test/scripts/<int:script_id>/status', methods=['GET'])
+@jwt_required()
+def get_script_status(script_id):
+    """获取脚本执行状态"""
+    user_id = get_current_user_id()
+    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
-    finally:
-        if run_key in running_scripts:
-            del running_scripts[run_key]
+    if not script:
+        return error_response(message='脚本不存在', code=404)
+    
+    return success_response(data={
+        'status': script.status,
+        'last_run_at': script.last_run_at.isoformat() if script.last_run_at else None,
+        'last_result': script.last_result
+    })
 
 
 @api_bp.route('/web-test/execute', methods=['POST'])
@@ -313,51 +273,31 @@ def execute_web_code():
 def stop_script(script_id):
     """停止运行中的脚本"""
     user_id = get_current_user_id()
-    run_key = f'{user_id}_{script_id}'
+    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
-    if run_key not in running_scripts:
+    if not script:
+        return error_response(message='脚本不存在', code=404)
+    
+    if script.status != 'running':
         return error_response(message='脚本未在运行')
     
     try:
-        process = running_scripts[run_key]
-        process.terminate()
-        del running_scripts[run_key]
+        # 尝试撤销 Celery 任务
+        task_id = f'web_test_{script_id}_{user_id}'
+        celery.control.revoke(task_id, terminate=True)
         
-        script = WebTestScript.query.get(script_id)
-        if script:
-            script.status = 'stopped'
-            db.session.commit()
+        # 更新状态
+        script.status = 'stopped'
+        db.session.commit()
         
         return success_response(message='已停止')
     except Exception as e:
         return error_response(message=f'停止失败: {str(e)}')
 
 
-@api_bp.route('/web-test/scripts/<int:script_id>/status', methods=['GET'])
-@jwt_required()
-def get_script_status(script_id):
-    """获取脚本运行状态"""
-    user_id = get_current_user_id()
-    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
-    
-    if not script:
-        return error_response(message='脚本不存在', code=404)
-    
-    run_key = f'{user_id}_{script_id}'
-    is_running = run_key in running_scripts
-    
-    return success_response(data={
-        'status': script.status,
-        'is_running': is_running,
-        'last_run_at': script.last_run_at.isoformat() if script.last_run_at else None,
-        'last_result': script.last_result
-    })
-
-
 # ==================== 录制功能 ====================
 
 # 存储录制进程
-recording_processes = {}
 
 @api_bp.route('/web-test/record/start', methods=['POST'])
 @jwt_required()

@@ -24,6 +24,23 @@
 
 ## 📅 更新日志
 
+### v1.2.0 (2025-12-28)
+
+#### 🚀 重大更新
+- **异步任务系统** - 集成 Celery + Redis 分布式任务队列
+  - Web 测试和性能测试异步执行，不阻塞主线程
+  - 任务状态实时追踪和管理
+  - 支持任务撤销和超时控制
+  - Redis 消息队列，支持分布式 Worker
+  - 任务持久化，进程重启不丢失
+
+#### 📦 新增依赖
+- `celery==5.3.4` - 分布式任务队列
+- `redis==5.0.1` - 消息代理和结果存储
+
+#### 📝 新增文档
+- [CELERY_INTEGRATION.md](CELERY_INTEGRATION.md) - Celery 集成详细指南
+
 ### v1.1.0 (2025-12-24)
 
 #### 🆕 新增功能
@@ -72,6 +89,7 @@
 - Python 3.10+
 - Node.js 18+
 - PostgreSQL 15+ (生产环境推荐，开发可用 SQLite)
+- Redis 5.0+ (异步任务队列)
 
 ### 安装与启动
 
@@ -96,6 +114,14 @@ pip install -r requirements.txt
 
 # 初始化数据库
 python init_db.py
+
+# 启动 Redis 服务器 (新窗口)
+# Windows: 下载并启动 Redis for Windows
+# Linux/Mac: redis-server
+
+# 启动 Celery Worker (新窗口)
+celery -A app.extensions:celery worker --loglevel=info --pool=solo  # Windows
+# 或使用快捷脚本: .\run_celery.bat
 
 # 启动开发服务器
 python app.py
@@ -180,7 +206,9 @@ EasyTest-Web/
 │   ├── wsgi.py                          # WSGI 应用入口 (生产部署)
 │   ├── manage.py                        # Flask CLI 管理命令
 │   ├── init_db.py                       # 数据库初始化脚本
-│   ├── run_server.bat                   # Windows 启动脚本
+│   ├── run_server.bat                   # Windows 后端启动脚本
+│   ├── run_celery.bat                   # Windows Celery Worker 启动脚本
+│   ├── celery_worker.py                 # Celery Worker 启动文件
 │   ├── requirements.txt                 # Python 依赖清单
 │   ├── .env.example                     # 环境变量示例
 │   └── README.md                        # 后端开发文档
@@ -247,6 +275,7 @@ EasyTest-Web/
 ├── REFACTORING_PLAN.md                  # 项目架构与开发计划
 ├── RECORDING_QUICKSTART.md              # Playwright 录制快速指南
 ├── PLAYWRIGHT_RECORDING_GUIDE.md        # 录制功能详细指南
+├── CELERY_INTEGRATION.md                # Celery 异步任务集成指南
 ├── .gitignore                           # Git 忽略规则
 └── .git/                                # Git 版本控制
 ```

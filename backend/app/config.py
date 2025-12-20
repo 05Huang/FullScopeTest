@@ -29,6 +29,15 @@ class BaseConfig:
     
     # 报告存储路径
     REPORT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'reports')
+    
+    # Celery 配置
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 分钟超时
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
 
 
 class DevelopmentConfig(BaseConfig):
