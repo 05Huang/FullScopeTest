@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db
 from ..models.api_test_case import ApiTestCollection, ApiTestCase
+from ..models.environment import Environment
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils import get_current_user_id
@@ -218,7 +219,9 @@ def execute_request():
     执行 HTTP 请求（快速测试）
     
     不保存用例，直接执行并返回结果
+    支持环境配置的应用
     """
+    user_id = get_current_user_id()
     data = request.get_json()
     
     error = validate_required(data, ['method', 'url'])
@@ -232,6 +235,36 @@ def execute_request():
     body = data.get('body')
     body_type = data.get('body_type', 'json')
     timeout = data.get('timeout', 30)
+    env_id = data.get('env_id')
+    
+    # 应用环境配置
+    if env_id:
+        env = Environment.query.filter_by(id=env_id).first()
+        if env:
+            # 合并环境的 headers
+            env_headers = env.headers or {}
+            headers = {**env_headers, **headers}
+            
+            # 处理环境变量替换 ({{var}} 格式)
+            env_vars = env.variables or {}
+            
+            # 替换 URL 中的变量
+            for var_name, var_value in env_vars.items():
+                url = url.replace(f'{{{{{var_name}}}}}', str(var_value))
+            
+            # 替换 headers 中的变量
+            for key, value in headers.items():
+                if isinstance(value, str):
+                    for var_name, var_value in env_vars.items():
+                        value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
+                    headers[key] = value
+            
+            # 替换 params 中的变量
+            for key, value in params.items():
+                if isinstance(value, str):
+                    for var_name, var_value in env_vars.items():
+                        value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
+                    params[key] = value
     
     # 执行请求
     start_time = time.time()
@@ -322,15 +355,52 @@ def run_case(case_id):
     if not case:
         return error_response(message='用例不存在', code=404)
     
+    # 获取环境ID（从请求参数中）
+    env_id = request.args.get('env_id', type=int)
+    
     # 执行请求
     start_time = time.time()
     
     try:
+        # 准备初始请求参数
+        url = case.url
+        headers = case.headers or {}
+        params = case.params or {}
+        
+        # 应用环境配置
+        if env_id:
+            env = Environment.query.filter_by(id=env_id).first()
+            if env:
+                # 合并环境的 headers
+                env_headers = env.headers or {}
+                headers = {**env_headers, **headers}
+                
+                # 处理环境变量替换
+                env_vars = env.variables or {}
+                
+                # 替换 URL 中的变量
+                for var_name, var_value in env_vars.items():
+                    url = url.replace(f'{{{{{var_name}}}}}', str(var_value))
+                
+                # 替换 headers 中的变量
+                for key, value in headers.items():
+                    if isinstance(value, str):
+                        for var_name, var_value in env_vars.items():
+                            value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
+                        headers[key] = value
+                
+                # 替换 params 中的变量
+                for key, value in params.items():
+                    if isinstance(value, str):
+                        for var_name, var_value in env_vars.items():
+                            value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
+                        params[key] = value
+        
         request_kwargs = {
             'method': case.method,
-            'url': case.url,
-            'headers': case.headers or {},
-            'params': case.params or {},
+            'url': url,
+            'headers': headers,
+            'params': params,
             'timeout': case.timeout or 30,
             'verify': False,
             'allow_redirects': True
@@ -388,17 +458,54 @@ def run_collection(collection_id):
     if not cases:
         return error_response(message='集合中没有可执行的用例')
     
+    # 获取环境ID（从请求参数中）
+    env_id = request.args.get('env_id', type=int)
+    
     results = []
     total_passed = 0
     total_failed = 0
     
     for case in cases:
         try:
+            # 准备初始请求参数
+            url = case.url
+            headers = case.headers or {}
+            params = case.params or {}
+            
+            # 应用环境配置
+            if env_id:
+                env = Environment.query.filter_by(id=env_id).first()
+                if env:
+                    # 合并环境的 headers
+                    env_headers = env.headers or {}
+                    headers = {**env_headers, **headers}
+                    
+                    # 处理环境变量替换
+                    env_vars = env.variables or {}
+                    
+                    # 替换 URL 中的变量
+                    for var_name, var_value in env_vars.items():
+                        url = url.replace(f'{{{{{var_name}}}}}', str(var_value))
+                    
+                    # 替换 headers 中的变量
+                    for key, value in headers.items():
+                        if isinstance(value, str):
+                            for var_name, var_value in env_vars.items():
+                                value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
+                            headers[key] = value
+                    
+                    # 替换 params 中的变量
+                    for key, value in params.items():
+                        if isinstance(value, str):
+                            for var_name, var_value in env_vars.items():
+                                value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
+                            params[key] = value
+            
             request_kwargs = {
                 'method': case.method,
-                'url': case.url,
-                'headers': case.headers or {},
-                'params': case.params or {},
+                'url': url,
+                'headers': headers,
+                'params': params,
                 'timeout': case.timeout or 30,
                 'verify': False
             }
