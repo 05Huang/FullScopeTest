@@ -66,6 +66,10 @@ coverage/
 *.sqlite3
 test_cases.db
 
+# Redis
+dump.rdb
+*.rdb
+
 # ===== 日志文件 =====
 *.log
 logs/
