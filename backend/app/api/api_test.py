@@ -9,9 +9,12 @@ from . import api_bp
 from ..extensions import db
 from ..models.api_test_case import ApiTestCollection, ApiTestCase
 from ..models.environment import Environment
+from ..models.test_run import TestRun
+from ..models.test_report import TestReport
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils import get_current_user_id
+from ..utils.env_variables import replace_variables, replace_variables_in_dict, get_environment_variables, merge_headers_with_env
 import requests
 import json
 import time
@@ -446,7 +449,7 @@ def run_case(case_id):
 @api_bp.route('/api-test/collections/<int:collection_id>/run', methods=['POST'])
 @jwt_required()
 def run_collection(collection_id):
-    """批量执行集合中的所有用例"""
+    """批量执行集合中的所有用例，并生成测试报告"""
     user_id = get_current_user_id()
     collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
     
@@ -458,48 +461,61 @@ def run_collection(collection_id):
     if not cases:
         return error_response(message='集合中没有可执行的用例')
     
-    # 获取环境ID（从请求参数中）
-    env_id = request.args.get('env_id', type=int)
+    # 获取环境ID（从请求体或参数中）
+    data = request.get_json() or {}
+    env_id = data.get('env_id') or request.args.get('env_id', type=int)
+    
+    # 获取环境信息
+    env_name = None
+    env_variables = {}
+    if env_id:
+        env = Environment.query.get(env_id)
+        if env:
+            env_name = env.name
+            env_variables = env.variables or {}
+    
+    # 创建测试执行记录
+    test_run = TestRun(
+        project_id=collection.project_id,
+        test_type='api',
+        test_object_id=collection_id,
+        test_object_name=collection.name,
+        status='running',
+        total_cases=len(cases),
+        environment_id=env_id,
+        environment_name=env_name,
+        started_at=datetime.utcnow()
+    )
+    db.session.add(test_run)
+    db.session.commit()
     
     results = []
     total_passed = 0
     total_failed = 0
+    start_time = time.time()
     
     for case in cases:
+        case_start_time = time.time()
         try:
-            # 准备初始请求参数
+            # 准备请求参数
             url = case.url
             headers = case.headers or {}
             params = case.params or {}
+            body = case.body
             
-            # 应用环境配置
+            # 应用环境变量替换
+            if env_variables:
+                url = replace_variables(url, env_variables)
+                headers = replace_variables_in_dict(headers, env_variables)
+                params = replace_variables_in_dict(params, env_variables)
+                if isinstance(body, dict):
+                    body = replace_variables_in_dict(body, env_variables)
+                elif isinstance(body, str):
+                    body = replace_variables(body, env_variables)
+            
+            # 合并环境的公共请求头
             if env_id:
-                env = Environment.query.filter_by(id=env_id).first()
-                if env:
-                    # 合并环境的 headers
-                    env_headers = env.headers or {}
-                    headers = {**env_headers, **headers}
-                    
-                    # 处理环境变量替换
-                    env_vars = env.variables or {}
-                    
-                    # 替换 URL 中的变量
-                    for var_name, var_value in env_vars.items():
-                        url = url.replace(f'{{{{{var_name}}}}}', str(var_value))
-                    
-                    # 替换 headers 中的变量
-                    for key, value in headers.items():
-                        if isinstance(value, str):
-                            for var_name, var_value in env_vars.items():
-                                value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
-                            headers[key] = value
-                    
-                    # 替换 params 中的变量
-                    for key, value in params.items():
-                        if isinstance(value, str):
-                            for var_name, var_value in env_vars.items():
-                                value = value.replace(f'{{{{{var_name}}}}}', str(var_value))
-                            params[key] = value
+                headers = merge_headers_with_env(headers, env_id, db)
             
             request_kwargs = {
                 'method': case.method,
@@ -510,18 +526,25 @@ def run_collection(collection_id):
                 'verify': False
             }
             
-            if case.body and case.method in ['POST', 'PUT', 'PATCH']:
+            if body and case.method in ['POST', 'PUT', 'PATCH']:
                 if case.body_type == 'json':
-                    request_kwargs['json'] = case.body
+                    request_kwargs['json'] = body
                 else:
-                    request_kwargs['data'] = case.body
+                    request_kwargs['data'] = body
             
-            start_time = time.time()
             response = requests.request(**request_kwargs)
-            elapsed_time = (time.time() - start_time) * 1000
+            elapsed_time = (time.time() - case_start_time) * 1000
             
+            # 判断是否通过
             passed = response.status_code < 400
             
+            # 尝试解析响应体
+            try:
+                response_body = response.json()
+            except:
+                response_body = response.text[:500]  # 限制长度
+            
+            # 更新用例状态
             case.last_run_at = datetime.utcnow()
             case.last_status = 'passed' if passed else 'failed'
             
@@ -533,28 +556,83 @@ def run_collection(collection_id):
             results.append({
                 'case_id': case.id,
                 'name': case.name,
+                'method': case.method,
+                'url': url,
                 'passed': passed,
                 'status_code': response.status_code,
-                'response_time': round(elapsed_time, 2)
+                'response_time': round(elapsed_time, 2),
+                'response_body': response_body,
+                'error': None
             })
             
         except Exception as e:
+            elapsed_time = (time.time() - case_start_time) * 1000
             total_failed += 1
+            
             case.last_run_at = datetime.utcnow()
             case.last_status = 'failed'
             
             results.append({
                 'case_id': case.id,
                 'name': case.name,
+                'method': case.method,
+                'url': case.url,
                 'passed': False,
+                'status_code': None,
+                'response_time': round(elapsed_time, 2),
                 'error': str(e)
             })
     
+    # 计算总耗时
+    total_duration = time.time() - start_time
+    
+    # 更新测试执行记录
+    test_run.status = 'success' if total_failed == 0 else 'failed'
+    test_run.passed = total_passed
+    test_run.failed = total_failed
+    test_run.duration = total_duration
+    test_run.finished_at = datetime.utcnow()
+    test_run.results = results
+    
+    # 生成测试报告
+    report = TestReport(
+        test_run_id=test_run.id,
+        project_id=collection.project_id,
+        test_type='api',
+        title=f'{collection.name} - 接口测试报告',
+        summary={
+            'total': len(cases),
+            'passed': total_passed,
+            'failed': total_failed,
+            'success_rate': round(total_passed / len(cases) * 100, 2) if cases else 0,
+            'duration': round(total_duration, 2),
+            'environment': env_name
+        },
+        report_data={
+            'collection': {
+                'id': collection.id,
+                'name': collection.name,
+                'description': collection.description
+            },
+            'environment': {
+                'id': env_id,
+                'name': env_name
+            } if env_id else None,
+            'results': results
+        },
+        status='generated'
+    )
+    
+    db.session.add(report)
+    test_run.report_id = report.id
     db.session.commit()
     
     return success_response(data={
+        'test_run_id': test_run.id,
+        'report_id': report.id,
         'total': len(cases),
         'passed': total_passed,
         'failed': total_failed,
+        'duration': round(total_duration, 2),
         'results': results
-    })
+    }, message='测试执行完成')

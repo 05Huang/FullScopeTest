@@ -29,12 +29,15 @@ import {
   MoreOutlined,
   SearchOutlined,
   ReloadOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { apiTestService } from '@/services/apiTestService'
 import { environmentService } from '@/services/environmentService'
+import CollectionManager from './CollectionManager'
+import EnvironmentVariableHint from './EnvironmentVariableHint'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
@@ -70,11 +73,78 @@ const ApiTestWorkspace = () => {
   const [environments, setEnvironments] = useState<any[]>([])
   const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>()
   const [currentEnv, setCurrentEnv] = useState<any>(null)
+  const [sidebarTab, setSidebarTab] = useState<string>('cases') // 侧边栏标签页
 
   // 加载用例数据
   useEffect(() => {
     loadData()
+    // 恢复表单草稿
+    restoreFormDraft()
   }, [])
+
+  // 表单状态自动保存到localStorage
+  useEffect(() => {
+    const draft = {
+      method,
+      url,
+      requestName,
+      requestBody,
+      bodyType,
+      headers: headers.filter(h => h.key || h.value),
+      params: params.filter(p => p.key || p.value),
+    }
+    // 只有当表单有实际内容时才保存
+    if (url || requestName || draft.headers.length > 0 || draft.params.length > 0) {
+      localStorage.setItem('api-test-form-draft', JSON.stringify(draft))
+    }
+  }, [method, url, requestName, requestBody, bodyType, headers, params])
+
+  // 从localStorage恢复表单草稿
+  const restoreFormDraft = () => {
+    try {
+      const draftStr = localStorage.getItem('api-test-form-draft')
+      if (draftStr) {
+        const draft = JSON.parse(draftStr)
+        if (draft.method) setMethod(draft.method)
+        if (draft.url) setUrl(draft.url)
+        if (draft.requestName) setRequestName(draft.requestName)
+        if (draft.requestBody) setRequestBody(draft.requestBody)
+        if (draft.bodyType) setBodyType(draft.bodyType)
+        if (draft.headers && draft.headers.length > 0) {
+          setHeaders([...draft.headers, { key: '', value: '' }])
+        }
+        if (draft.params && draft.params.length > 0) {
+          setParams([...draft.params, { key: '', value: '' }])
+        }
+        message.info('已恢复上次未保存的草稿')
+      }
+    } catch (error) {
+      console.error('恢复草稿失败', error)
+    }
+  }
+
+  // 清除表单草稿
+  const clearFormDraft = () => {
+    Modal.confirm({
+      title: '确认清除',
+      content: '确定要清空当前表单内容吗？此操作不可恢复。',
+      okText: '确认清除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        setUrl('')
+        setRequestName('')
+        setMethod('GET')
+        setRequestBody('{}')
+        setHeaders([{ key: '', value: '' }])
+        setParams([{ key: '', value: '' }])
+        setResponse(null)
+        // 清除localStorage中的草稿
+        localStorage.removeItem('api-test-form-draft')
+        message.success('已清空表单')
+      },
+    })
+  }
 
   const loadData = async () => {
     try {
@@ -354,16 +424,7 @@ const ApiTestWorkspace = () => {
       setSaveModalOpen(true)
     }},
     { type: 'divider' },
-    { key: 'clear', icon: <DeleteOutlined />, label: '清空', danger: true, onClick: () => {
-      setUrl('')
-      setRequestName('')  // 清空请求名称
-      setMethod('GET')
-      setRequestBody('{}')
-      setHeaders([{ key: '', value: '' }])
-      setParams([{ key: '', value: '' }])
-      setResponse(null)
-      message.success('已清空')
-    }},
+    { key: 'clear', icon: <DeleteOutlined />, label: '清空表单', danger: true, onClick: clearFormDraft },
   ]
 
   // 参数表格列
@@ -599,9 +660,9 @@ const ApiTestWorkspace = () => {
 
   return (
     <Layout style={{ height: 'calc(100vh - 160px)', background: 'transparent' }}>
-      {/* 左侧用例树 */}
+      {/* 左侧用例树和集合管理 */}
       <Sider
-        width={280}
+        width={320}
         style={{
           background: '#fff',
           borderRadius: 8,
@@ -609,32 +670,54 @@ const ApiTestWorkspace = () => {
           overflow: 'hidden',
         }}
       >
-        <div style={{ padding: 12 }}>
-          <Space.Compact style={{ width: '100%', marginBottom: 12 }}>
-            <Input
-              placeholder="搜索用例..."
-              prefix={<SearchOutlined />}
-              allowClear
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-            <Tooltip title="刷新">
-              <Button icon={<ReloadOutlined />} onClick={loadData} />
-            </Tooltip>
-          </Space.Compact>
+        <Tabs
+          activeKey={sidebarTab}
+          onChange={setSidebarTab}
+          style={{ height: '100%' }}
+          items={[
+            {
+              key: 'cases',
+              label: '测试用例',
+              children: (
+                <div style={{ padding: 12, height: 'calc(100vh - 240px)', overflow: 'auto' }}>
+                  <Space.Compact style={{ width: '100%', marginBottom: 12 }}>
+                    <Input
+                      placeholder="搜索用例..."
+                      prefix={<SearchOutlined />}
+                      allowClear
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                    />
+                    <Tooltip title="刷新">
+                      <Button icon={<ReloadOutlined />} onClick={loadData} />
+                    </Tooltip>
+                  </Space.Compact>
 
-          {treeData.length > 0 ? (
-            <Tree
-              showIcon
-              defaultExpandAll
-              treeData={treeData}
-              onSelect={handleSelectCase}
-              style={{ background: 'transparent' }}
-            />
-          ) : (
-            <Empty description="暂无用例" style={{ marginTop: 40 }} />
-          )}
-        </div>
+                  {treeData.length > 0 ? (
+                    <Tree
+                      showIcon
+                      defaultExpandAll
+                      treeData={treeData}
+                      onSelect={handleSelectCase}
+                      style={{ background: 'transparent' }}
+                    />
+                  ) : (
+                    <Empty description="暂无用例" style={{ marginTop: 40 }} />
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: 'collections',
+              label: '集合管理',
+              children: (
+                <div style={{ padding: 12, height: 'calc(100vh - 240px)', overflow: 'auto' }}>
+                  <CollectionManager onCollectionChange={loadData} />
+                </div>
+              ),
+            },
+          ]}
+        />
       </Sider>
 
       {/* 右侧工作区 */}
@@ -646,14 +729,20 @@ const ApiTestWorkspace = () => {
           bodyStyle={{ padding: 12 }}
         >
           {/* 请求名称输入栏 */}
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Input
               placeholder="请输入请求名称（可选）"
               value={requestName}
               onChange={(e) => setRequestName(e.target.value)}
               prefix={<Text type="secondary" style={{ fontSize: 12 }}>名称:</Text>}
               allowClear
+              style={{ flex: 1 }}
             />
+            <Tooltip title="表单内容会自动保存为草稿，切换页面不会丢失">
+              <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                <InfoCircleOutlined /> 自动保存草稿
+              </Text>
+            </Tooltip>
           </div>
           {/* URL 输入栏 */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -684,6 +773,15 @@ const ApiTestWorkspace = () => {
             >
               发送
             </Button>
+            <Tooltip title="清空表单内容">
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={clearFormDraft}
+              >
+                清空
+              </Button>
+            </Tooltip>
             <Dropdown menu={{ items: moreMenuItems }}>
               <Button icon={<MoreOutlined />} />
             </Dropdown>
@@ -716,6 +814,13 @@ const ApiTestWorkspace = () => {
               </>
             )}
           </div>
+
+          {/* 环境变量提示 */}
+          {selectedEnvId && (
+            <div style={{ marginBottom: 12 }}>
+              <EnvironmentVariableHint envId={selectedEnvId} showUsage={true} />
+            </div>
+          )}
 
           {/* 请求配置 Tabs */}
           <Tabs

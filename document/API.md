@@ -366,7 +366,8 @@ Authorization: Bearer <access_token>
     "project_id": 1,
     "variables": {
         "api_key": "xxx",
-        "timeout": "30"
+        "timeout": "30",
+        "bearer": "your_token_here"
     },
     "headers": {
         "Content-Type": "application/json"
@@ -382,9 +383,33 @@ Authorization: Bearer <access_token>
 | name | string | ✓ | 环境名称 |
 | base_url | string | ✓ | 基础 URL |
 | project_id | int | ✓ | 关联项目 ID |
-| variables | object | ✗ | 环境变量 |
+| variables | object | ✗ | 环境变量，可在用例中使用 {变量名} 引用 |
 | headers | object | ✗ | 公共请求头 |
 | is_active | boolean | ✗ | 是否为默认环境 |
+
+**环境变量使用示例：**
+
+如果配置了变量 `bearer: "abc123"` 和 `userId: "123"`，在创建用例时可以这样使用：
+
+```json
+{
+    "url": "http://api.com/users/{userId}",
+    "headers": {
+        "Authorization": "Bearer {bearer}"
+    }
+}
+```
+
+运行时会自动替换为：
+
+```json
+{
+    "url": "http://api.com/users/123",
+    "headers": {
+        "Authorization": "Bearer abc123"
+    }
+}
+```
 
 ---
 
@@ -658,28 +683,50 @@ Authorization: Bearer <access_token>
 
 **请求头：** 需要 Bearer Token
 
+**请求体（可选）：**
+
+```json
+{
+    "env_id": 1
+}
+```
+
 **成功响应：**
 
 ```json
 {
     "success": true,
     "code": 200,
+    "message": "测试执行完成",
     "data": {
+        "test_run_id": 1,
+        "report_id": 1,
         "total": 10,
         "passed": 8,
         "failed": 2,
+        "duration": 5.23,
         "results": [
             {
                 "case_id": 1,
                 "name": "登录接口测试",
+                "method": "POST",
+                "url": "http://localhost:5211/api/v1/auth/login",
                 "passed": true,
                 "status_code": 200,
-                "response_time": 125.5
+                "response_time": 125.5,
+                "error": null
             }
         ]
     }
 }
 ```
+
+**说明：**
+
+- 此接口会批量执行集合中所有启用的测试用例
+- 自动生成测试报告，返回 report_id 可用于查看详细报告
+- 支持环境变量替换和环境配置应用
+- 返回完整的测试结果，包括每个用例的执行情况
 
 ---
 
@@ -995,6 +1042,148 @@ Authorization: Bearer <access_token>
 ### 健康检查
 
 **GET** `/reports/health`
+
+---
+
+### 测试报告管理
+
+#### 1. 获取测试报告列表
+
+**GET** `/test-reports`
+
+**请求头：** 需要 Bearer Token
+
+**查询参数：**
+
+| 参数 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| project_id | int | - | 项目 ID |
+| test_type | string | - | 测试类型 (api/web/performance) |
+| page | int | 1 | 页码 |
+| per_page | int | 20 | 每页数量 |
+
+**成功响应：**
+
+```json
+{
+    "success": true,
+    "code": 200,
+    "data": {
+        "items": [
+            {
+                "id": 1,
+                "test_run_id": 1,
+                "project_id": 1,
+                "test_type": "api",
+                "title": "用户模块接口 - 接口测试报告",
+                "summary": {
+                    "total": 10,
+                    "passed": 8,
+                    "failed": 2,
+                    "success_rate": 80.0,
+                    "duration": 5.23,
+                    "environment": "开发环境"
+                },
+                "status": "generated",
+                "created_at": "2025-12-28T10:00:00",
+                "updated_at": "2025-12-28T10:00:05"
+            }
+        ],
+        "total": 1,
+        "page": 1,
+        "per_page": 20,
+        "pages": 1
+    }
+}
+```
+
+---
+
+#### 2. 获取测试报告详情
+
+**GET** `/test-reports/{report_id}`
+
+**请求头：** 需要 Bearer Token
+
+**成功响应：**
+
+```json
+{
+    "success": true,
+    "code": 200,
+    "data": {
+        "id": 1,
+        "test_run_id": 1,
+        "project_id": 1,
+        "test_type": "api",
+        "title": "用户模块接口 - 接口测试报告",
+        "summary": {
+            "total": 10,
+            "passed": 8,
+            "failed": 2,
+            "success_rate": 80.0,
+            "duration": 5.23,
+            "environment": "开发环境"
+        },
+        "report_data": {
+            "collection": {
+                "id": 1,
+                "name": "用户模块接口",
+                "description": "用户相关接口测试"
+            },
+            "environment": {
+                "id": 1,
+                "name": "开发环境"
+            },
+            "results": [
+                {
+                    "case_id": 1,
+                    "name": "登录接口测试",
+                    "method": "POST",
+                    "url": "http://localhost:5211/api/v1/auth/login",
+                    "passed": true,
+                    "status_code": 200,
+                    "response_time": 125.5,
+                    "response_body": {...},
+                    "error": null
+                }
+            ]
+        },
+        "status": "generated",
+        "created_at": "2025-12-28T10:00:00"
+    }
+}
+```
+
+---
+
+#### 3. 获取测试报告 HTML
+
+**GET** `/test-reports/{report_id}/html`
+
+**请求头：** 需要 Bearer Token
+
+**成功响应：** 
+
+返回 HTML 格式的测试报告，可直接在浏览器中查看或下载。
+
+---
+
+#### 4. 删除测试报告
+
+**DELETE** `/test-reports/{report_id}`
+
+**请求头：** 需要 Bearer Token
+
+**成功响应：**
+
+```json
+{
+    "success": true,
+    "code": 200,
+    "message": "删除成功"
+}
+```
 
 ---
 

@@ -84,10 +84,8 @@ export const runCase = (caseId: number, envId?: number): Promise<ApiResponse> =>
   }) as Promise<ApiResponse>
 }
 
-export const runCollection = (collectionId: number, envId?: number): Promise<ApiResponse> => {
-  return api.post(`/api-test/collections/${collectionId}/run`, null, {
-    params: { env_id: envId }
-  }) as Promise<ApiResponse>
+export const runCollection = (collectionId: number, data?: { env_id?: number }): Promise<ApiResponse> => {
+  return api.post(`/api-test/collections/${collectionId}/run`, data || {}) as Promise<ApiResponse>
 }
 
 // 导出服务对象

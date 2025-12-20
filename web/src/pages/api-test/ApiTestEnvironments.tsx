@@ -320,6 +320,49 @@ const ApiTestEnvironments = () => {
           <Form.Item name="description" label="描述">
             <TextArea rows={3} placeholder="请输入环境描述" />
           </Form.Item>
+          <Form.Item 
+            name="variables" 
+            label="环境变量"
+            tooltip='使用 JSON 格式定义变量，例如: {"bearer": "token123", "userId": "456"}'
+            getValueFromEvent={(e) => {
+              const value = e.target.value;
+              if (!value || value.trim() === '') return {};
+              try {
+                const parsed = JSON.parse(value);
+                // 确保返回的是对象而不是其他类型
+                if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                  return parsed;
+                }
+                return {};
+              } catch {
+                // JSON解析失败，返回空对象
+                return {};
+              }
+            }}
+            getValueProps={(value) => {
+              // 如果是对象类型，格式化为JSON字符串
+              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                return { value: JSON.stringify(value, null, 2) };
+              }
+              // 如果是字符串，尝试解析后再格式化
+              if (typeof value === 'string' && value.trim()) {
+                try {
+                  const parsed = JSON.parse(value);
+                  if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                    return { value: JSON.stringify(parsed, null, 2) };
+                  }
+                } catch {
+                  // 解析失败，返回空
+                }
+              }
+              return { value: '' };
+            }}
+          >
+            <TextArea 
+              rows={6} 
+              placeholder={'{\n  "bearer": "your_token_here",\n  "userId": "123",\n  "apiKey": "abc456"\n}'}
+            />
+          </Form.Item>
           <Form.Item name="is_active" label="设为默认" valuePropName="checked">
             <Switch />
           </Form.Item>
