@@ -76,12 +76,22 @@ def create_global_environment():
     existing = Environment.query.filter_by(project_id=project_id, name=name).first()
     if existing:
         return error_response(400, '环境名称已存在')
-    
+
+    # 验证 variables 字段
+    variables = data.get('variables', {})
+    if isinstance(variables, dict):
+        if len(variables) > 100:
+            return error_response(400, f'环境变量不能超过100个，当前有{len(variables)}个')
+    elif isinstance(variables, list):
+        return error_response(400, 'variables 必须是对象类型（如 {"key": "value"}），不能是数组')
+    else:
+        variables = {}
+
     env = Environment(
         project_id=project_id,
         name=name,
         base_url=base_url,
-        variables=data.get('variables', {}),
+        variables=variables,
         headers=data.get('headers', {}),
         is_default=data.get('is_active', False)
     )
@@ -138,11 +148,21 @@ def create_environment(project_id):
     if existing:
         return error_response(400, '环境名称已存在')
     
+    # 验证 variables 字段
+    variables = data.get('variables', {})
+    if isinstance(variables, dict):
+        if len(variables) > 100:
+            return error_response(400, f'环境变量不能超过100个，当前有{len(variables)}个')
+    elif isinstance(variables, list):
+        return error_response(400, 'variables 必须是对象类型（如 {"key": "value"}），不能是数组')
+    else:
+        variables = {}
+
     env = Environment(
         project_id=project_id,
         name=name,
         base_url=base_url,
-        variables=data.get('variables', {}),
+        variables=variables,
         headers=data.get('headers', {}),
         is_default=data.get('is_default', False)
     )
@@ -209,9 +229,19 @@ def update_environment(env_id):
     
     if 'base_url' in data:
         env.base_url = data['base_url'].strip()
-    
+
     if 'variables' in data:
-        env.variables = data['variables']
+        variables = data['variables']
+        # 验证 variables 类型
+        if isinstance(variables, dict):
+            # 限制变量数量
+            if len(variables) > 100:
+                return error_response(400, f'环境变量不能超过100个，当前有{len(variables)}个')
+            env.variables = variables
+        elif isinstance(variables, list):
+            return error_response(400, 'variables 必须是对象类型（如 {"key": "value"}），不能是数组')
+        else:
+            return error_response(400, 'variables 格式不正确，必须是有效的 JSON 对象')
     
     if 'headers' in data:
         env.headers = data['headers']
