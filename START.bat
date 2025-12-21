@@ -3,6 +3,7 @@ REM EasyTest 一键启动脚本（Windows）
 REM 此脚本会在不同的终端中启动所有必需的服务
 
 setlocal enabledelayedexpansion
+chcp 65001 >nul
 cd /d "%~dp0"
 
 echo.
@@ -37,24 +38,68 @@ if not exist "nginx" (
     exit /b 1
 )
 
-echo 按任意键继续启动...
+echo 按任意键继续启动... (Press any key to continue...)
 pause
 
-REM 启动 Redis
 echo.
-echo [1/4] 启动 Redis 服务器...
-echo 请使用 redis-cli ping 命令验证 Redis 是否运行
-timeout /t 2 /nobreak
+echo [1/4] 检查或启动 Redis 服务器...
+set /a MAX_WAIT=20
+set /a WAITED=0
 
-REM 在新窗口中启动 Celery Worker
-echo [2/4] 启动 Celery Worker...
+REM 尝试检测 Redis 是否可用，使用更简单的控制流以避免嵌套导致的解析问题
+:check_redis
+redis-cli ping >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✓ Redis 已就绪 (端口 6379)
+    goto redis_ready
+)
+
+REM 如果安装为 Windows 服务，先尝试通过服务启动
+sc query Redis >nul 2>&1
+if %errorlevel% equ 0 (
+    echo 发现 Redis Windows 服务，尝试启动...
+    sc start Redis >nul 2>&1
+    timeout /t 2 /nobreak
+    set /a WAITED+=1
+    goto check_redis
+)
+
+REM 否则尝试直接运行可执行文件（在其目录下启动并把输出写入日志）
+if exist "D:\redis-windows\redis-server.exe" (
+    echo 尝试启动本地 Redis 服务 (D:\redis-windows)...
+    REM 使用更稳定的 start 直接运行可执行文件
+    start "EasyTest - Redis" "D:\redis-windows\redis-server.exe"
+    echo 已发起 Redis 启动命令（新的窗口）。等待几秒后尝试连接...
+    timeout /t 3 /nobreak
+    set /a WAITED+=1
+    goto check_redis
+)
+
+if %WAITED% lss %MAX_WAIT% (
+    echo 等待 Redis 就绪 (%WAITED%/%MAX_WAIT%)...
+    timeout /t 3 /nobreak
+    set /a WAITED+=1
+    goto check_redis
+)
+
+echo ✗ Redis 在 %MAX_WAIT% 次等待后仍不可用，继续启动其他服务（注意：Celery 可能无法连接）
+if exist "D:\redis-windows\redis_start.log" (
+    echo --- Redis 启动日志（尾部 20 行）---
+    powershell -Command "Get-Content -Path 'D:\\redis-windows\\redis_start.log' -Tail 20 -ErrorAction SilentlyContinue"
+)
+
+:redis_ready
+
+REM 在新窗口中启动后端服务（先启动后端，以便 Celery 连接成功）
+echo [2/4] 启动后端服务...
 cd /d "%~dp0backend"
-start "EasyTest - Celery Worker" cmd /k ".\run_celery.bat"
+start "EasyTest - Flask Backend" cmd /k "run_server.bat"
 timeout /t 3 /nobreak
 
-REM 在新窗口中启动后端服务
-echo [3/4] 启动后端服务...
-start "EasyTest - Flask Backend" cmd /k ".\run_server.bat"
+REM 在新窗口中启动 Celery Worker（如果 Redis 已就绪更有可能连接成功）
+echo [3/4] 启动 Celery Worker...
+cd /d "%~dp0backend"
+start "EasyTest - Celery Worker" cmd /k "set CELERY_ENABLE=true&& set PYTHONPATH=%cd% && python celery_worker.py"
 timeout /t 3 /nobreak
 
 REM 在新窗口中启动 Nginx
@@ -117,11 +162,52 @@ if %errorlevel% equ 0 (
     echo ✓ Redis 已启动 (端口 6379)
 ) else (
     echo ✗ Redis 未启动 (端口 6379) - 请手动启动
-    echo   Windows: D:\redis\redis-server.exe 或 redis-server
+    echo   Windows: D:\redis-windows\redis-server.exe 或 redis-server
 )
 
 echo.
-echo 按任意键关闭此窗口...
-pause
+echo ========================================
+echo 启动检查已完成 — 父窗口保持打开以便查看日志 (Startup check complete - parent window will remain open for logs)
+echo ========================================
 
+echo 子窗口（Redis / 后端 / Celery / Nginx）应在各自窗口运行。 (Child windows for services should be running separately)
+echo 输入 'quit' 并回车以关闭此脚本并退出父窗口；输入其它内容会显示服务状态。 (Type 'quit' then Enter to exit; press Enter or any other key to show status)
+
+:WAIT_CMD
+set /p USER_CMD=命令 (quit 退出, 回车或任意键显示状态): 
+if /i "%USER_CMD%"=="quit" goto FINISH
+
+echo.
+echo 正在检查服务状态...
+
+REM 检查后端
+for /f %%A in ('netstat -ano ^| findstr "127.0.0.1:5211" ^| findstr LISTENING ^| find /c /v ""') do (
+    if %%A gtr 0 (
+        echo ✓ 后端服务已启动 (端口 5211)
+    ) else (
+        echo ✗ 后端服务未启动 (端口 5211)
+    )
+)
+
+REM 检查 Nginx
+for /f %%A in ('netstat -ano ^| findstr "8080" ^| findstr LISTENING ^| find /c /v ""') do (
+    if %%A gtr 0 (
+        echo ✓ Nginx 已启动 (端口 8080)
+    ) else (
+        echo ✗ Nginx 未启动 (端口 8080)
+    )
+)
+
+REM 检查 Redis
+redis-cli ping >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✓ Redis 已启动 (端口 6379)
+) else (
+    echo ✗ Redis 未启动 (端口 6379)
+)
+
+echo.
+goto WAIT_CMD
+
+:FINISH
 endlocal

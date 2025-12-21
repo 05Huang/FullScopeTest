@@ -1,6 +1,8 @@
 @echo off
+
+REM 设置工作目录
+set "PYTHONPATH=%~dp0"
 cd /d "%~dp0"
-set PYTHONPATH=%CD%
 
 echo ========================================
 echo  EasyTest 后端服务器

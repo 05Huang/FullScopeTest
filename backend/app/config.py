@@ -10,27 +10,27 @@ from datetime import timedelta
 
 class BaseConfig:
     """基础配置"""
-    
+
     # 密钥配置
     SECRET_KEY = os.environ.get('SECRET_KEY', 'easytest-secret-key-change-in-production')
-    
+
     # 数据库配置
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
-    
+
     # JWT 配置
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    
+
     # 文件上传配置
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
-    
+
     # 报告存储路径
     REPORT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'reports')
-    
-    # Celery 配置
+
+    # Celery 配置（可选，如果Redis不可用则不使用异步任务）
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
     CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
     CELERY_TASK_TRACK_STARTED = True
@@ -38,6 +38,7 @@ class BaseConfig:
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_ENABLE = os.environ.get('CELERY_ENABLE', 'false').strip().lower() == 'true'  # strip() 去除空格
 
 
 class DevelopmentConfig(BaseConfig):

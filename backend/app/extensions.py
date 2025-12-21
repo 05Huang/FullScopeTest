@@ -18,10 +18,8 @@ migrate = Migrate()
 # JWT 认证
 jwt = JWTManager()
 
-# Celery 实例 - 使用 Redis 作为 broker 和 backend
+# Celery 实例 - 配置稍后从 Flask 配置加载
 celery = Celery(
     __name__,
-    broker='redis://localhost:6379/0',
-    backend='redis://localhost:6379/0',
     include=['app.tasks']  # 自动导入任务模块
 )
