@@ -30,8 +30,15 @@ def create_app(config_name='development'):
     # 初始化扩展
     init_extensions(app)
     
-    # 初始化 Celery
-    init_celery(celery, app)
+    # 初始化 Celery（可选）
+    if app.config.get('CELERY_ENABLE', False):
+        try:
+            init_celery(celery, app)
+            app.logger.info('Celery initialized successfully')
+        except Exception as e:
+            app.logger.warning(f'Celery initialization failed: {e}. Running without async tasks.')
+    else:
+        app.logger.info('Celery is disabled. Running without async tasks.')
     
     # 注册蓝图
     register_blueprints(app)
