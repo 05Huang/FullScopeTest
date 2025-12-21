@@ -34,7 +34,7 @@ interface Environment {
   base_url: string
   description: string
   is_active: boolean
-  variables?: { key: string; value: string }[]
+  variables?: Record<string, any>
   updated_at: string
 }
 
@@ -66,7 +66,21 @@ const ApiTestEnvironments = () => {
 
   const handleCreate = async (values: any) => {
     try {
-      const res = await environmentService.createEnvironment(values)
+      // 处理 variables 字段：将字符串转换为对象
+      const processedValues = { ...values }
+      if (typeof processedValues.variables === 'string') {
+        if (processedValues.variables.trim()) {
+          try {
+            processedValues.variables = JSON.parse(processedValues.variables)
+          } catch {
+            return message.error('环境变量 JSON 格式错误')
+          }
+        } else {
+          processedValues.variables = {}
+        }
+      }
+
+      const res = await environmentService.createEnvironment(processedValues)
       if (res.code === 200 || res.code === 201) {
         message.success('创建成功')
         setIsModalOpen(false)
@@ -82,7 +96,21 @@ const ApiTestEnvironments = () => {
 
   const handleUpdate = async (id: number, values: any) => {
     try {
-      const res = await environmentService.updateEnvironment(id, values)
+      // 处理 variables 字段：将字符串转换为对象
+      const processedValues = { ...values }
+      if (typeof processedValues.variables === 'string') {
+        if (processedValues.variables.trim()) {
+          try {
+            processedValues.variables = JSON.parse(processedValues.variables)
+          } catch {
+            return message.error('环境变量 JSON 格式错误')
+          }
+        } else {
+          processedValues.variables = {}
+        }
+      }
+
+      const res = await environmentService.updateEnvironment(id, processedValues)
       if (res.code === 200) {
         message.success('更新成功')
         setIsModalOpen(false)
@@ -153,7 +181,12 @@ const ApiTestEnvironments = () => {
       title: '变量数',
       key: 'variables',
       width: 100,
-      render: (_, record) => <Tag>{record.variables?.length || 0} 个</Tag>,
+      render: (_, record) => {
+        const count = typeof record.variables === 'object' && record.variables !== null && !Array.isArray(record.variables)
+          ? Object.keys(record.variables).length
+          : 0
+        return <Tag>{count} 个</Tag>
+      },
     },
     {
       title: '更新时间',
@@ -320,46 +353,47 @@ const ApiTestEnvironments = () => {
           <Form.Item name="description" label="描述">
             <TextArea rows={3} placeholder="请输入环境描述" />
           </Form.Item>
-          <Form.Item 
-            name="variables" 
+          <Form.Item
+            name="variables"
             label="环境变量"
             tooltip='使用 JSON 格式定义变量，例如: {"bearer": "token123", "userId": "456"}'
-            getValueFromEvent={(e) => {
-              const value = e.target.value;
-              if (!value || value.trim() === '') return {};
-              try {
-                const parsed = JSON.parse(value);
-                // 确保返回的是对象而不是其他类型
-                if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-                  return parsed;
+            validateTrigger={['onChange', 'onBlur']}
+            rules={[
+              {
+                validator: async (_, value) => {
+                  // 只在提交时验证，不在输入时验证
+                  if (value && typeof value === 'string' && value.trim()) {
+                    try {
+                      const parsed = JSON.parse(value);
+                      if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed !== null) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(new Error('variables 必须是对象类型'));
+                    } catch {
+                      return Promise.reject(new Error('必须是有效的 JSON 格式'));
+                    }
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+            normalize={(value) => {
+              // 从后端获取的数据（对象）转换为字符串
+              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                if (Object.keys(value).length === 0) {
+                  return ''; // 空对象显示为空字符串
                 }
-                return {};
-              } catch {
-                // JSON解析失败，返回空对象
-                return {};
+                return JSON.stringify(value, null, 2);
               }
+              return value || '';
             }}
             getValueProps={(value) => {
-              // 如果是对象类型，格式化为JSON字符串
-              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                return { value: JSON.stringify(value, null, 2) };
-              }
-              // 如果是字符串，尝试解析后再格式化
-              if (typeof value === 'string' && value.trim()) {
-                try {
-                  const parsed = JSON.parse(value);
-                  if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-                    return { value: JSON.stringify(parsed, null, 2) };
-                  }
-                } catch {
-                  // 解析失败，返回空
-                }
-              }
-              return { value: '' };
+              // 直接返回字符串值，不做额外处理
+              return { value: value || '' };
             }}
           >
-            <TextArea 
-              rows={6} 
+            <TextArea
+              rows={6}
               placeholder={'{\n  "bearer": "your_token_here",\n  "userId": "123",\n  "apiKey": "abc456"\n}'}
             />
           </Form.Item>

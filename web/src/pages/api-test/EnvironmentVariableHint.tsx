@@ -55,10 +55,15 @@ const EnvironmentVariableHint: React.FC<Props> = ({ envId, showUsage = true }) =
   }
 
   // 确保variables是对象类型，避免字符串被当作对象处理
-  const variables = (typeof env.variables === 'object' && env.variables !== null && !Array.isArray(env.variables)) 
-    ? env.variables 
+  const variables = (typeof env.variables === 'object' && env.variables !== null && !Array.isArray(env.variables))
+    ? env.variables
     : {}
   const variableKeys = Object.keys(variables).filter(key => key !== '')
+
+  // 限制显示数量，防止大量变量导致UI卡顿
+  const MAX_DISPLAY_VARS = 50
+  const displayKeys = variableKeys.slice(0, MAX_DISPLAY_VARS)
+  const hasMore = variableKeys.length > MAX_DISPLAY_VARS
 
   if (variableKeys.length === 0) {
     return (
@@ -90,7 +95,7 @@ const EnvironmentVariableHint: React.FC<Props> = ({ envId, showUsage = true }) =
       <Divider style={{ margin: '8px 0' }} />
       
       <Space wrap size="small">
-        {variableKeys.map(key => (
+        {displayKeys.map(key => (
           <Tooltip
             key={key}
             title={
@@ -113,6 +118,11 @@ const EnvironmentVariableHint: React.FC<Props> = ({ envId, showUsage = true }) =
             </Tag>
           </Tooltip>
         ))}
+        {hasMore && (
+          <Tag color="default">
+            +{variableKeys.length - MAX_DISPLAY_VARS} 更多
+          </Tag>
+        )}
       </Space>
       
       <Divider style={{ margin: '8px 0' }} />
