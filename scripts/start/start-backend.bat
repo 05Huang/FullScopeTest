@@ -1,8 +1,8 @@
 @echo off
+REM 启动后端服务器
 
-REM 设置工作目录
-set "PYTHONPATH=%~dp0"
-cd /d "%~dp0"
+setlocal enabledelayedexpansion
+cd /d "%~dp0..\.."
 
 echo ========================================
 echo  EasyTest 后端服务器
@@ -20,4 +20,5 @@ echo 按 Ctrl+C 停止服务器
 echo ========================================
 echo.
 
-..\.venv\Scripts\python.exe app.py
+cd backend
+backend\.venv\Scripts\python.exe app.py
