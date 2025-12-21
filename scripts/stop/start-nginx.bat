@@ -18,7 +18,7 @@ if not exist "%NGINX_PATH%\nginx.exe" (
 
 REM 复制配置文件
 echo [1/3] 复制配置文件...
-copy /Y "%~dp0nginx.conf" "%NGINX_PATH%\conf\nginx.conf" >nul
+copy /Y "%~dp0..\..\nginx\nginx.conf" "%NGINX_PATH%\conf\nginx.conf" >nul
 if %errorlevel% neq 0 (
     echo [错误] 配置文件复制失败
     pause

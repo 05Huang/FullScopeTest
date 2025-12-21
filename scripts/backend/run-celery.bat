@@ -4,7 +4,8 @@ REM Celery Worker 启动脚本 (Windows)
 echo Starting Celery Worker...
 
 REM 切换到 backend 目录
-cd /d %~dp0
+set "PROJECT_ROOT=%~dp0..\.."
+cd /d "%PROJECT_ROOT%\backend"
 
 REM 设置 Python 路径
 set PYTHONPATH=%cd%
