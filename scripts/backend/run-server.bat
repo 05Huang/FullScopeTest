@@ -1,7 +1,8 @@
 @echo off
 REM 后端生产模式启动脚本
 
-set "PROJECT_ROOT=%~dp0..\.."
+REM 设置项目根目录绝对路径
+set "PROJECT_ROOT=d:\AutoTestingLearingProject\EasyTest-Web"
 cd /d "%PROJECT_ROOT%\backend"
 
 REM 设置工作目录
@@ -23,4 +24,4 @@ echo 按 Ctrl+C 停止服务器
 echo ========================================
 echo.
 
-.\.venv\Scripts\python.exe app.py
+"%PROJECT_ROOT%\backend\venv\Scripts\python.exe" app.py

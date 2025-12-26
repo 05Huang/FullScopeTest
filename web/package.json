@@ -4,6 +4,7 @@
   "description": "EasyTest 自动化测试平台前端",
   "type": "module",
   "scripts": {
+    "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },

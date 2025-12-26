@@ -10,13 +10,15 @@ import {
   List,
   Card,
   Select,
-  Tag
+  Tag,
+  Tooltip
 } from 'antd'
 import {
   FolderAddOutlined,
   PlayCircleOutlined,
   DeleteOutlined,
-  EditOutlined
+  EditOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons'
 import { apiTestService, environmentService } from '@/services'
 
@@ -53,6 +55,9 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }
   const [selectedCollectionForRun, setSelectedCollectionForRun] = useState<Collection | null>(null)
   const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>()
   const [form] = Form.useForm()
+
+  // 默认环境选项：使用用例自身的环境配置
+  const USE_CASE_OWN_ENV = -1
 
   useEffect(() => {
     loadData()
@@ -119,9 +124,12 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }
     
     try {
       setLoading(true)
+      // 如果选择了“使用用例自身环境”，不传递 env_id（或传递 undefined）
+      const envIdToSend = selectedEnvId === USE_CASE_OWN_ENV ? undefined : selectedEnvId
+      
       const result = await apiTestService.runCollection(
         selectedCollectionForRun.id,
-        { env_id: selectedEnvId }
+        envIdToSend !== undefined ? { env_id: envIdToSend } : {}
       )
       
       if (result.code === 200) {
@@ -153,6 +161,7 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }
   // 显示运行模态框
   const showRunModal = (collection: Collection) => {
     setSelectedCollectionForRun(collection)
+    setSelectedEnvId(USE_CASE_OWN_ENV) // 默认使用用例自身环境
     setRunModalVisible(true)
   }
 
@@ -271,23 +280,42 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }
         cancelText="取消"
       >
         <Form layout="vertical">
-          <Form.Item label="选择环境">
+          <Form.Item label={(
+            <Space>
+              <span>选择环境</span>
+              <Tooltip title="可以选择“使用用例自身环境”，或选择具体环境覆盖所有用例">
+                <InfoCircleOutlined style={{ color: '#1890ff' }} />
+              </Tooltip>
+            </Space>
+          )}>
             <Select
               placeholder="请选择运行环境"
               value={selectedEnvId}
               onChange={setSelectedEnvId}
-              allowClear
             >
-              {environments.map(env => (
-                <Select.Option key={env.id} value={env.id}>
-                  {env.name} {env.is_active && <Tag color="green">默认</Tag>}
-                </Select.Option>
-              ))}
+              <Select.Option key="default" value={USE_CASE_OWN_ENV}>
+                <Tag color="blue">使用用例自身环境</Tag>
+              </Select.Option>
+              <Select.OptGroup label="统一环境（覆盖所有用例）">
+                {environments.map(env => (
+                  <Select.Option key={env.id} value={env.id}>
+                    {env.name} {env.is_active && <Tag color="green">默认</Tag>}
+                  </Select.Option>
+                ))}
+              </Select.OptGroup>
             </Select>
           </Form.Item>
           
-          <p style={{ color: '#666', fontSize: '12px' }}>
-            将执行该集合下的所有启用用例，并生成测试报告
+          <p style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>
+            {selectedEnvId === USE_CASE_OWN_ENV ? (
+              <>
+                🔹 <strong>每个用例</strong>将使用自身保存的环境配置（如果未设置则不应用环境）
+              </>
+            ) : (
+              <>
+                🔸 将使用 <strong>{environments.find(e => e.id === selectedEnvId)?.name || '选定环境'}</strong> 覆盖所有用例的环境配置
+              </>
+            )}
           </p>
         </Form>
       </Modal>

@@ -63,6 +63,7 @@ class ApiTestCase(db.Model):
     collection_id = db.Column(db.Integer, db.ForeignKey('api_test_collections.id'), nullable=True, comment='集合 ID')
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, comment='项目 ID')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='用户 ID')
+    environment_id = db.Column(db.Integer, db.ForeignKey('environments.id'), nullable=True, comment='关联环境 ID')
     name = db.Column(db.String(255), nullable=False, comment='用例名称')
     description = db.Column(db.Text, comment='用例描述')
     
@@ -107,6 +108,7 @@ class ApiTestCase(db.Model):
             'collection_id': self.collection_id,
             'project_id': self.project_id,
             'user_id': self.user_id,
+            'environment_id': self.environment_id,
             'name': self.name,
             'description': self.description,
             'method': self.method,

@@ -44,9 +44,10 @@ export const createCase = (data: {
   body?: any
   body_type?: string
   pre_script?: string
-  test_script?: string
+  post_script?: string
   collection_id?: number
   project_id?: number
+  environment_id?: number
 }): Promise<ApiResponse> => {
   return api.post('/api-test/cases', data) as Promise<ApiResponse>
 }
@@ -74,6 +75,8 @@ export const executeRequest = (data: {
   body_type?: string
   timeout?: number
   env_id?: number
+  pre_script?: string
+  post_script?: string
 }): Promise<ApiResponse> => {
   return api.post('/api-test/execute', data) as Promise<ApiResponse>
 }

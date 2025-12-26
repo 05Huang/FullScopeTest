@@ -111,3 +111,11 @@ yarn-error.log
 .DS_Store
 Thumbs.db
 .directory
+
+# Windows 保留设备名（防止 Git 索引错误）
+nul
+con
+prn
+aux
+com1-9
+lpt1-9
