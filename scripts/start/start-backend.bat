@@ -2,7 +2,10 @@
 REM 启动后端服务器
 
 setlocal enabledelayedexpansion
-cd /d "%~dp0..\.."
+
+REM 设置项目根目录绝对路径
+set "PROJECT_ROOT=d:\AutoTestingLearingProject\EasyTest-Web"
+cd /d "%PROJECT_ROOT%"
 
 echo ========================================
 echo  EasyTest 后端服务器
@@ -20,5 +23,5 @@ echo 按 Ctrl+C 停止服务器
 echo ========================================
 echo.
 
-cd backend
-backend\.venv\Scripts\python.exe app.py
+cd "%PROJECT_ROOT%\backend"
+"%PROJECT_ROOT%\backend\venv\Scripts\python.exe" app.py

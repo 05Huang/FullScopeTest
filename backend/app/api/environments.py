@@ -62,7 +62,7 @@ def create_global_environment():
         project = Project.query.filter_by(owner_id=user_id).first()
         if not project:
             # 自动创建默认项目
-            project = Project(name='默认项目', owner_id=user_id)
+            project = Project(name='默认项目', owner_id=user_id, settings={})
             db.session.add(project)
             db.session.commit()
         project_id = project.id

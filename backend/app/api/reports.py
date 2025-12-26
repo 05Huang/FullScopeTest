@@ -606,6 +606,45 @@ def get_test_report_html(report_id):
     
     # 如果没有 HTML 报告，生成一个
     if not report.report_html:
+        results = report.report_data.get('results', []) if report.report_data else []
+
+        def _render_body(body, limit=2000):
+            try:
+                if isinstance(body, (dict, list)):
+                    text = json.dumps(body, ensure_ascii=False, indent=2)
+                else:
+                    text = str(body) if body is not None else '-'
+            except Exception:
+                text = str(body) if body is not None else '-'
+            return text if len(text) <= limit else text[:limit] + '...'
+
+        def _render_attachments(attachments):
+            if not attachments:
+                return '-'
+            lines = []
+            for att in attachments:
+                if not isinstance(att, dict):
+                    lines.append(str(att))
+                    continue
+                name = att.get('name') or 'attachment'
+                att_type = att.get('type') or 'text'
+                lines.append(f"{name} ({att_type})")
+            return '<br>'.join(lines)
+
+        results_rows = "".join([f'''
+                <tr>
+                    <td>{result.get('name', '')}</td>
+                    <td class="{'passed' if result.get('passed') else 'failed'}">
+                        {'✓ 通过' if result.get('passed') else '✗ 失败'}
+                    </td>
+                    <td>{result.get('status_code', '-')}</td>
+                    <td>{result.get('response_time', 0)}</td>
+                    <td><pre style="white-space: pre-wrap;">{_render_body(result.get('response_body'))}</pre></td>
+                    <td>{result.get('error') or '-'}</td>
+                    <td>{_render_attachments(result.get('attachments'))}</td>
+                </tr>
+                ''' for result in results])
+
         # 简单的 HTML 报告模板
         html = f"""
 <!DOCTYPE html>
@@ -660,21 +699,15 @@ def get_test_report_html(report_id):
                 <tr>
                     <th>用例名称</th>
                     <th>状态</th>
+                    <th>状态码</th>
                     <th>耗时(ms)</th>
-                    <th>错误信息</th>
+                    <th>响应数据</th>
+                    <th>错误/异常</th>
+                    <th>附件</th>
                 </tr>
             </thead>
             <tbody>
-                {"".join([f'''
-                <tr>
-                    <td>{result.get('name', '')}</td>
-                    <td class="{'passed' if result.get('passed') else 'failed'}">
-                        {'✓ 通过' if result.get('passed') else '✗ 失败'}
-                    </td>
-                    <td>{result.get('response_time', 0)}</td>
-                    <td>{result.get('error', '-')}</td>
-                </tr>
-                ''' for result in report.report_data.get('results', [])])}
+                {results_rows}
             </tbody>
         </table>
         <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 5px;">

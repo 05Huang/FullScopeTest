@@ -22,6 +22,7 @@ import {
   PlusOutlined,
   FolderOutlined,
   FileOutlined,
+  FileAddOutlined,
   SendOutlined,
   SaveOutlined,
   DeleteOutlined,
@@ -30,6 +31,8 @@ import {
   SearchOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
@@ -41,6 +44,143 @@ import EnvironmentVariableHint from './EnvironmentVariableHint'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
+
+// 脚本测试结果展示组件
+interface ScriptTestResultsProps {
+  scriptExecution?: {
+    pre_script?: {
+      executed: boolean
+      passed?: boolean
+      error?: string
+      duration?: number
+    }
+    post_script?: {
+      executed: boolean
+      passed?: boolean
+      error?: string
+      duration?: number
+      assertions?: {
+        total: number
+        passed: number
+        failed: number
+        details?: Array<{
+          name: string
+          passed: boolean
+          error?: string
+        }>
+      }
+    }
+  }
+}
+
+const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }) => {
+  if (!scriptExecution) {
+    return <Empty description="暂无脚本执行结果" />
+  }
+
+  const { pre_script, post_script } = scriptExecution
+
+  // 检查是否有任何脚本被执行
+  const hasExecutedScript = (pre_script?.executed || post_script?.executed)
+
+  if (!hasExecutedScript) {
+    return <Empty description="未配置前置/后置脚本" />
+  }
+
+  return (
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      {/* 前置脚本结果 */}
+      {pre_script?.executed && (
+        <Card size="small" title={<Space><Text strong>前置脚本</Text></Space>}>
+          <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space>
+              {pre_script.passed ? (
+                <Tag icon={<CheckCircleOutlined />} color="success">执行成功</Tag>
+              ) : (
+                <Tag icon={<CloseCircleOutlined />} color="error">执行失败</Tag>
+              )}
+              {pre_script.duration !== undefined && (
+                <Text type="secondary">耗时: {pre_script.duration}ms</Text>
+              )}
+            </Space>
+            {pre_script.error && (
+              <Text type="danger">{pre_script.error}</Text>
+            )}
+          </Space>
+        </Card>
+      )}
+
+      {/* 后置脚本结果 */}
+      {post_script?.executed && (
+        <Card size="small" title={<Space><Text strong>后置断言</Text></Space>}>
+          <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space>
+              {post_script.passed ? (
+                <Tag icon={<CheckCircleOutlined />} color="success">全部通过</Tag>
+              ) : (
+                <Tag icon={<CloseCircleOutlined />} color="error">存在失败</Tag>
+              )}
+              {post_script.duration !== undefined && (
+                <Text type="secondary">耗时: {post_script.duration}ms</Text>
+              )}
+            </Space>
+
+            {/* 断言统计 */}
+            {post_script.assertions && (
+              <Space>
+                <Text>总计: <Text strong>{post_script.assertions.total}</Text></Text>
+                <Text type="success">通过: <Text strong>{post_script.assertions.passed}</Text></Text>
+                {post_script.assertions.failed > 0 && (
+                  <Text type="danger">失败: <Text strong>{post_script.assertions.failed}</Text></Text>
+                )}
+              </Space>
+            )}
+
+            {/* 断言详情 */}
+            {post_script.assertions?.details && post_script.assertions.details.length > 0 && (
+              <Table
+                size="small"
+                dataSource={post_script.assertions.details.map((d, i) => ({ ...d, key: i }))}
+                columns={[
+                  {
+                    title: '状态',
+                    dataIndex: 'passed',
+                    width: 60,
+                    render: (passed) => passed ? (
+                      <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                    ) : (
+                      <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                    ),
+                  },
+                  {
+                    title: '断言描述',
+                    dataIndex: 'name',
+                    ellipsis: true,
+                  },
+                  {
+                    title: '错误信息',
+                    dataIndex: 'error',
+                    render: (error) => error ? (
+                      <Text type="danger" style={{ fontSize: 12 }}>{error}</Text>
+                    ) : (
+                      <Text type="secondary">-</Text>
+                    ),
+                  },
+                ]}
+                pagination={false}
+                showHeader={false}
+              />
+            )}
+
+            {post_script.error && (
+              <Text type="danger">{post_script.error}</Text>
+            )}
+          </Space>
+        </Card>
+      )}
+    </Space>
+  )
+}
 
 // HTTP 方法颜色
 const methodColors: Record<string, string> = {
@@ -63,6 +203,9 @@ const ApiTestWorkspace = () => {
   const [bodyType, setBodyType] = useState('json')
   const [headers, setHeaders] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }])
   const [params, setParams] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }])
+  // 新增：脚本状态
+  const [preScript, setPreScript] = useState('')
+  const [postScript, setPostScript] = useState('')
   const [collections, setCollections] = useState<any[]>([])
   const [cases, setCases] = useState<any[]>([])
   const [treeData, setTreeData] = useState<DataNode[]>([])
@@ -74,6 +217,30 @@ const ApiTestWorkspace = () => {
   const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>()
   const [currentEnv, setCurrentEnv] = useState<any>(null)
   const [sidebarTab, setSidebarTab] = useState<string>('cases') // 侧边栏标签页
+  const [hasLoadedData, setHasLoadedData] = useState(false) // 标记数据是否已加载
+
+  // 获取当前项目选择的环境存储键（按项目分别持久化）
+  // TODO: 从路由参数或上下文获取当前项目 ID
+  const getEnvStorageKey = (projectId?: number) => {
+    return projectId ? `api-test-project-${projectId}-selected-env-id` : 'api-test-selected-env-id'
+  }
+  const currentProjectId = undefined // 待实现：从 URL 或上下文获取
+  const [contextMenuState, setContextMenuState] = useState<{
+    visible: boolean
+    x: number
+    y: number
+    caseId: number | null
+    caseName: string
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    caseId: null,
+    caseName: ''
+  })
+  const [currentCaseId, setCurrentCaseId] = useState<number | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [originalFormData, setOriginalFormData] = useState<any>(null)
 
   // 加载用例数据
   useEffect(() => {
@@ -98,6 +265,59 @@ const ApiTestWorkspace = () => {
       localStorage.setItem('api-test-form-draft', JSON.stringify(draft))
     }
   }, [method, url, requestName, requestBody, bodyType, headers, params])
+
+  // 点击其他地方关闭右键菜单
+  useEffect(() => {
+    const handleClick = () => {
+      if (contextMenuState.visible) {
+        setContextMenuState({ ...contextMenuState, visible: false })
+      }
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [contextMenuState])
+
+  // 环境选择自动保存到 localStorage（按项目分别持久化）
+  // 只在数据加载后执行，避免初始挂载时清除 localStorage
+  useEffect(() => {
+    if (!hasLoadedData) return // 跳过初始挂载
+
+    const storageKey = getEnvStorageKey(currentProjectId)
+    if (selectedEnvId) {
+      localStorage.setItem(storageKey, String(selectedEnvId))
+    } else {
+      localStorage.removeItem(storageKey)
+    }
+  }, [selectedEnvId, currentProjectId, hasLoadedData])
+
+  // 检测表单修改
+  useEffect(() => {
+    if (!originalFormData || !currentCaseId) return
+
+    const currentFormData = {
+      name: requestName,
+      method,
+      url,
+      requestBody,
+      headers: headers.filter(h => h.key || h.value),
+      params: params.filter(p => p.key || p.value),
+      preScript,
+      postScript,
+    }
+
+    // 简单比较是否有变化
+    const hasChanged =
+      currentFormData.name !== originalFormData.name ||
+      currentFormData.method !== originalFormData.method ||
+      currentFormData.url !== originalFormData.url ||
+      currentFormData.requestBody !== originalFormData.requestBody ||
+      JSON.stringify(currentFormData.headers) !== JSON.stringify(originalFormData.headers) ||
+      JSON.stringify(currentFormData.params) !== JSON.stringify(originalFormData.params) ||
+      currentFormData.preScript !== originalFormData.preScript ||
+      currentFormData.postScript !== originalFormData.postScript
+
+    setHasUnsavedChanges(hasChanged)
+  }, [method, url, requestName, requestBody, headers, params, preScript, postScript, originalFormData, currentCaseId])
 
   // 从localStorage恢复表单草稿
   const restoreFormDraft = () => {
@@ -146,6 +366,37 @@ const ApiTestWorkspace = () => {
     })
   }
 
+  // 新建用例
+  const handleNewCase = async () => {
+    // 如果当前正在编辑用例且有未保存修改，先自动保存
+    if (currentCaseId && hasUnsavedChanges) {
+      try {
+        await saveCurrentCase()
+      } catch (error) {
+        // 保存失败，提示用户但仍继续清空表单
+        message.warning('当前用例保存失败，但将继续创建新用例')
+      }
+    }
+
+    // 清空表单状态
+    setUrl('')
+    setRequestName('')
+    setMethod('GET')
+    setRequestBody('{}')
+    setHeaders([{ key: '', value: '' }])
+    setParams([{ key: '', value: '' }])
+    setPreScript('')
+    setPostScript('')
+    setResponse(null)
+
+    // 重置用例相关状态
+    setCurrentCaseId(null)
+    setOriginalFormData(null)
+    setHasUnsavedChanges(false)
+
+    message.success('已创建新用例')
+  }
+
   const loadData = async () => {
     try {
       const [collectionsRes, casesRes, environmentsRes] = await Promise.all([
@@ -161,11 +412,27 @@ const ApiTestWorkspace = () => {
         setCases(casesRes.data || [])
       }
       if (environmentsRes.code === 200) {
-        setEnvironments(environmentsRes.data || [])
+        const envs = environmentsRes.data || []
+        setEnvironments(envs)
+
+        // 恢复之前选择的环境（按项目）
+        const storageKey = getEnvStorageKey(currentProjectId)
+        const savedEnvId = localStorage.getItem(storageKey)
+        if (savedEnvId) {
+          const envId = parseInt(savedEnvId)
+          const env = envs.find((e: any) => e.id === envId)
+          if (env) {
+            setSelectedEnvId(envId)
+            setCurrentEnv(env)
+          }
+        }
       }
-      
+
       // 构建树形数据
       buildTreeData(collectionsRes.data || [], casesRes.data || [])
+
+      // 标记数据已加载，启用 localStorage 自动保存
+      setHasLoadedData(true)
     } catch (error) {
       console.error('加载数据失败', error)
     }
@@ -186,6 +453,7 @@ const ApiTestWorkspace = () => {
           key: `case-${c.id}`,
           icon: <FileOutlined />,
           isLeaf: true,
+          caseData: c,
         }))
       })
     })
@@ -202,6 +470,7 @@ const ApiTestWorkspace = () => {
           key: `case-${c.id}`,
           icon: <FileOutlined />,
           isLeaf: true,
+          caseData: c,
         }))
       })
     }
@@ -213,20 +482,127 @@ const ApiTestWorkspace = () => {
   const handleSelectCase = async (keys: React.Key[]) => {
     if (keys.length === 0) return
     const key = String(keys[0])
-    
+
     if (key.startsWith('case-')) {
-      const caseId = parseInt(key.replace('case-', ''))
-      const caseData = cases.find(c => c.id === caseId)
-      if (caseData) {
-        setRequestName(caseData.name || '')  // 加载用例名称
-        setMethod(caseData.method)
-        setUrl(caseData.url || '')
-        setRequestBody(JSON.stringify(caseData.body || {}, null, 2))
-        if (caseData.headers) {
-          setHeaders(Object.entries(caseData.headers).map(([k, v]) => ({ key: k, value: String(v) })))
-        }
-        message.success(`已加载用例: ${caseData.name}`)
+      const newCaseId = parseInt(key.replace('case-', ''))
+
+      // 如果正在编辑同一个用例，不做处理
+      if (newCaseId === currentCaseId) return
+
+      // 检查是否有未保存的修改
+      if (hasUnsavedChanges && currentCaseId) {
+        Modal.confirm({
+          title: '未保存的修改',
+          content: '当前用例有未保存的修改，是否保存后切换？',
+          okText: '保存并切换',
+          cancelText: '放弃修改',
+          onOk: async () => {
+            await saveCurrentCase()
+            loadCase(newCaseId)
+          },
+          onCancel: () => {
+            loadCase(newCaseId)
+          }
+        })
+        return
       }
+
+      loadCase(newCaseId)
+    }
+  }
+
+  // 加载用例数据
+  const loadCase = async (caseId: number) => {
+    const caseData = cases.find(c => c.id === caseId)
+    if (caseData) {
+      const formData = {
+        name: caseData.name || '',
+        method: caseData.method,
+        url: caseData.url || '',
+        requestBody: JSON.stringify(caseData.body || {}, null, 2),
+        headers: caseData.headers
+          ? Object.entries(caseData.headers).map(([k, v]) => ({ key: k, value: String(v) }))
+          : [{ key: '', value: '' }],
+        params: caseData.params
+          ? Object.entries(caseData.params).map(([k, v]) => ({ key: k, value: String(v) }))
+          : [{ key: '', value: '' }],
+        preScript: caseData.pre_script || '',
+        postScript: caseData.post_script || '',
+      }
+
+      setRequestName(formData.name)
+      setMethod(formData.method)
+      setUrl(formData.url)
+      setRequestBody(formData.requestBody)
+      setHeaders(formData.headers)
+      setParams(formData.params)
+      setPreScript(formData.preScript)
+      setPostScript(formData.postScript)
+
+      // 保存原始表单数据用于比较
+      setOriginalFormData(formData)
+      setCurrentCaseId(caseId)
+      setHasUnsavedChanges(false)
+
+      message.success(`已加载用例: ${caseData.name}`)
+    }
+  }
+
+  // 保存当前用例
+  const saveCurrentCase = async () => {
+    if (!currentCaseId) return
+
+    try {
+      const headerObj: Record<string, string> = {}
+      headers.filter(h => h.key && h.value).forEach(h => {
+        headerObj[h.key] = h.value
+      })
+
+      const paramObj: Record<string, string> = {}
+      params.filter(p => p.key && p.value).forEach(p => {
+        paramObj[p.key] = p.value
+      })
+
+      let body = undefined
+      if (['POST', 'PUT', 'PATCH'].includes(method) && requestBody) {
+        try {
+          body = JSON.parse(requestBody)
+        } catch {
+          body = requestBody
+        }
+      }
+
+      const res = await apiTestService.updateCase(currentCaseId, {
+        name: requestName,
+        method,
+        url,
+        headers: headerObj,
+        params: paramObj,
+        body,
+        body_type: bodyType,
+        pre_script: preScript,
+        post_script: postScript,
+        environment_id: selectedEnvId,
+      })
+
+      if (res.code === 200) {
+        message.success('用例保存成功')
+        setHasUnsavedChanges(false)
+        // 更新原始表单数据
+        setOriginalFormData({
+          name: requestName,
+          method,
+          url,
+          requestBody,
+          headers: headers.filter(h => h.key || h.value),
+          params: params.filter(p => p.key || p.value),
+          preScript,
+          postScript,
+        })
+        loadData()
+      }
+    } catch (error) {
+      message.error('保存失败')
     }
   }
 
@@ -235,12 +611,18 @@ const ApiTestWorkspace = () => {
     setSelectedEnvId(envId)
     if (envId) {
       const env = environments.find(e => e.id === envId)
-      setCurrentEnv(env)
       if (env) {
+        setCurrentEnv(env)
         message.success(`已选择环境: ${env.name}`)
+      } else {
+        // 环境不存在，清除保存
+        const storageKey = getEnvStorageKey(currentProjectId)
+        localStorage.removeItem(storageKey)
+        message.warning('选择的环境不存在')
       }
     } else {
       setCurrentEnv(null)
+      // 取消选择时清除保存的状态会由 useEffect 自动处理
       message.info('已取消环境选择')
     }
   }
@@ -375,13 +757,18 @@ const ApiTestWorkspace = () => {
       message.warning('请输入用例名称')
       return
     }
-    
+
     try {
       const headerObj: Record<string, string> = {}
       headers.filter(h => h.key && h.value).forEach(h => {
         headerObj[h.key] = h.value
       })
-      
+
+      const paramObj: Record<string, string> = {}
+      params.filter(p => p.key && p.value).forEach(p => {
+        paramObj[p.key] = p.value
+      })
+
       let body = undefined
       if (['POST', 'PUT', 'PATCH'].includes(method) && requestBody) {
         try {
@@ -390,22 +777,57 @@ const ApiTestWorkspace = () => {
           body = requestBody
         }
       }
-      
-      const res = await apiTestService.createCase({
-        name: saveCaseName,
-        method,
-        url,
-        headers: headerObj,
-        body,
-        body_type: bodyType,
-        collection_id: selectedCollectionId,
-      })
-      
+
+      let res
+      // 如果是编辑现有用例，调用更新接口
+      if (currentCaseId && requestName === saveCaseName) {
+        res = await apiTestService.updateCase(currentCaseId, {
+          name: saveCaseName,
+          method,
+          url,
+          headers: headerObj,
+          params: paramObj,
+          body,
+          body_type: bodyType,
+          pre_script: preScript,
+          post_script: postScript,
+          collection_id: selectedCollectionId,
+          environment_id: selectedEnvId,
+        })
+      } else {
+        // 新建用例
+        res = await apiTestService.createCase({
+          name: saveCaseName,
+          method,
+          url,
+          headers: headerObj,
+          params: paramObj,
+          body,
+          body_type: bodyType,
+          pre_script: preScript,
+          post_script: postScript,
+          collection_id: selectedCollectionId,
+          environment_id: selectedEnvId,
+        })
+      }
+
       if (res.code === 200 || res.code === 201) {
         message.success('用例保存成功')
         setSaveModalOpen(false)
         setSaveCaseName('')
         setSelectedCollectionId(undefined)
+        setHasUnsavedChanges(false)
+        // 如果是更新当前用例，更新原始表单数据
+        if (currentCaseId && requestName === saveCaseName) {
+          setOriginalFormData({
+            name: requestName,
+            method,
+            url,
+            requestBody,
+            headers: headers.filter(h => h.key || h.value),
+            params: params.filter(p => p.key || p.value),
+          })
+        }
         loadData()
       } else {
         message.error(res.message || '保存失败')
@@ -413,6 +835,31 @@ const ApiTestWorkspace = () => {
     } catch (error) {
       message.error('保存失败')
     }
+  }
+
+  // 删除用例
+  const handleDeleteCase = async (caseId: number, caseName: string) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除用例 "${caseName}" 吗？此操作不可恢复。`,
+      okText: '确认删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          const res = await apiTestService.deleteCase(caseId)
+          if (res.code === 200) {
+            message.success('用例删除成功')
+            setContextMenuState({ ...contextMenuState, visible: false })
+            loadData()
+          } else {
+            message.error(res.message || '删除失败')
+          }
+        } catch (error) {
+          message.error('删除失败')
+        }
+      }
+    })
   }
 
   // 更多操作菜单
@@ -602,7 +1049,9 @@ const ApiTestWorkspace = () => {
         body,
         body_type: bodyType,
         timeout: 30,
-        env_id: selectedEnvId
+        env_id: selectedEnvId,
+        pre_script: preScript,
+        post_script: postScript,
       })
 
       const elapsed = Date.now() - startTime
@@ -618,6 +1067,7 @@ const ApiTestWorkspace = () => {
             size: respData.response_size || '-',
             headers: respData.headers || {},
             data: respData.body,
+            script_execution: respData.script_execution,
           })
           message.success('请求发送成功')
         } else {
@@ -699,6 +1149,20 @@ const ApiTestWorkspace = () => {
                       defaultExpandAll
                       treeData={treeData}
                       onSelect={handleSelectCase}
+                      onRightClick={({ event, node }) => {
+                        event.preventDefault()
+                        // 只有测试用例节点才显示右键菜单
+                        if ('caseData' in node) {
+                          const caseData = (node as any).caseData
+                          setContextMenuState({
+                            visible: true,
+                            x: event.clientX,
+                            y: event.clientY,
+                            caseId: caseData.id,
+                            caseName: caseData.name
+                          })
+                        }
+                      }}
                       style={{ background: 'transparent' }}
                     />
                   ) : (
@@ -773,6 +1237,14 @@ const ApiTestWorkspace = () => {
             >
               发送
             </Button>
+            <Tooltip title="新建用例（自动保存当前用例）">
+              <Button
+                icon={<FileAddOutlined />}
+                onClick={handleNewCase}
+              >
+                新建用例
+              </Button>
+            </Tooltip>
             <Tooltip title="清空表单内容">
               <Button
                 danger
@@ -782,6 +1254,17 @@ const ApiTestWorkspace = () => {
                 清空
               </Button>
             </Tooltip>
+            {currentCaseId && (
+              <Tooltip title={hasUnsavedChanges ? "保存修改" : "保存"}>
+                <Button
+                  type={hasUnsavedChanges ? "primary" : "default"}
+                  icon={<SaveOutlined />}
+                  onClick={saveCurrentCase}
+                >
+                  保存
+                </Button>
+              </Tooltip>
+            )}
             <Dropdown menu={{ items: moreMenuItems }}>
               <Button icon={<MoreOutlined />} />
             </Dropdown>
@@ -834,8 +1317,9 @@ const ApiTestWorkspace = () => {
                 children: (
                   <Table
                     size="small"
+                    rowKey="rowKey"
                     columns={paramsColumns}
-                    dataSource={params.map((p, i) => ({ ...p, key: String(i) }))}
+                    dataSource={params.map((p, i) => ({ ...p, rowKey: String(i) }))}
                     pagination={false}
                     footer={() => (
                       <Button
@@ -857,8 +1341,9 @@ const ApiTestWorkspace = () => {
                 children: (
                   <Table
                     size="small"
+                    rowKey="rowKey"
                     columns={headersColumns}
-                    dataSource={headers.map((h, i) => ({ ...h, key: String(i) }))}
+                    dataSource={headers.map((h, i) => ({ ...h, rowKey: String(i) }))}
                     pagination={false}
                     footer={() => (
                       <Button
@@ -911,25 +1396,6 @@ const ApiTestWorkspace = () => {
                 ),
               },
               {
-                key: 'auth',
-                label: 'Auth',
-                children: (
-                  <Form layout="vertical" size="small">
-                    <Form.Item label="认证类型">
-                      <Select
-                        defaultValue="none"
-                        options={[
-                          { value: 'none', label: '无' },
-                          { value: 'bearer', label: 'Bearer Token' },
-                          { value: 'basic', label: 'Basic Auth' },
-                          { value: 'apikey', label: 'API Key' },
-                        ]}
-                      />
-                    </Form.Item>
-                  </Form>
-                ),
-              },
-              {
                 key: 'pre-script',
                 label: '前置脚本',
                 children: (
@@ -937,7 +1403,8 @@ const ApiTestWorkspace = () => {
                     height={150}
                     language="javascript"
                     theme="vs-light"
-                    value="// 在请求发送前执行"
+                    value={preScript}
+                    onChange={(value) => setPreScript(value || '')}
                     options={{
                       minimap: { enabled: false },
                       fontSize: 13,
@@ -955,7 +1422,8 @@ const ApiTestWorkspace = () => {
                     height={150}
                     language="javascript"
                     theme="vs-light"
-                    value="// 在请求完成后执行断言"
+                    value={postScript}
+                    onChange={(value) => setPostScript(value || '')}
                     options={{
                       minimap: { enabled: false },
                       fontSize: 13,
@@ -1038,7 +1506,11 @@ const ApiTestWorkspace = () => {
                 {
                   key: 'test-results',
                   label: '测试结果',
-                  children: <Empty description="暂无测试结果" />,
+                  children: (
+                    <ScriptTestResults
+                      scriptExecution={response?.script_execution}
+                    />
+                  ),
                 },
               ]}
             />
@@ -1096,6 +1568,33 @@ const ApiTestWorkspace = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 右键菜单 */}
+      {contextMenuState.visible && (
+        <div
+          style={{
+            position: 'fixed',
+            left: contextMenuState.x,
+            top: contextMenuState.y,
+            zIndex: 1000,
+          }}
+          onClick={() => setContextMenuState({ ...contextMenuState, visible: false })}
+        >
+          <Card size="small" style={{ minWidth: 120 }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button
+                type="text"
+                danger
+                block
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteCase(contextMenuState.caseId!, contextMenuState.caseName)}
+              >
+                删除用例
+              </Button>
+            </Space>
+          </Card>
+        </div>
+      )}
     </Layout>
   )
 }

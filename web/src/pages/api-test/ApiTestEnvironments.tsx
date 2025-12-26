@@ -80,6 +80,12 @@ const ApiTestEnvironments = () => {
         }
       }
 
+      // 转换字段名：is_active -> is_default
+      if (processedValues.is_active !== undefined) {
+        processedValues.is_default = processedValues.is_active
+        delete processedValues.is_active
+      }
+
       const res = await environmentService.createEnvironment(processedValues)
       if (res.code === 200 || res.code === 201) {
         message.success('创建成功')
@@ -108,6 +114,12 @@ const ApiTestEnvironments = () => {
         } else {
           processedValues.variables = {}
         }
+      }
+
+      // 转换字段名：is_active -> is_default
+      if (processedValues.is_active !== undefined) {
+        processedValues.is_default = processedValues.is_active
+        delete processedValues.is_active
       }
 
       const res = await environmentService.updateEnvironment(id, processedValues)
@@ -142,7 +154,7 @@ const ApiTestEnvironments = () => {
   // 设为默认环境
   const handleSetDefault = async (id: number) => {
     try {
-      const res = await environmentService.updateEnvironment(id, { is_active: true })
+      const res = await environmentService.updateEnvironment(id, { is_default: true })
       if (res.code === 200) {
         message.success('已设为默认环境')
         loadData()
