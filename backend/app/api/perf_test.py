@@ -54,32 +54,39 @@ def create_scenario():
     
     error = validate_required(data, ['name'])
     if error:
-        return error_response(message=error)
+        return error_response(400, error)
     
     # 默认的 Locust 脚本模板
     default_script = '''"""
 Locust 性能测试脚本
+
+适用于 httpbin.org 等 HTTP 测试服务
 """
 from locust import HttpUser, task, between
 
-class WebsiteUser(HttpUser):
-    # 等待时间：每个任务之间等待 1-3 秒
-    wait_time = between(1, 3)
-    
+class TestUser(HttpUser):
+    # 等待时间：每个任务之间等待 1-2 秒
+    wait_time = between(1, 2)
+
+    @task(3)
+    def get_endpoint(self):
+        """获取请求数据"""
+        self.client.get("/get")
+
     @task(1)
-    def index_page(self):
-        """访问首页"""
-        self.client.get("/")
-    
-    @task(2)
-    def about_page(self):
-        """访问关于页面"""
-        self.client.get("/about")
-    
+    def delay_endpoint(self):
+        """延迟测试（模拟慢请求）"""
+        self.client.get("/delay/1")
+
+    @task(1)
+    def headers_endpoint(self):
+        """获取请求头"""
+        self.client.get("/headers")
+
     def on_start(self):
         """用户启动时执行"""
         pass
-    
+
     def on_stop(self):
         """用户停止时执行"""
         pass
@@ -89,11 +96,13 @@ class WebsiteUser(HttpUser):
         name=data['name'],
         description=data.get('description', ''),
         target_url=data.get('target_url', 'http://localhost:8080'),
+        method=data.get('method', 'GET'),
         user_count=data.get('user_count', 10),
         spawn_rate=data.get('spawn_rate', 1),
         duration=data.get('duration', 60),
         project_id=data.get('project_id'),
-        user_id=user_id
+        user_id=user_id,
+        script_content=data.get('script_content', default_script)
     )
     
     db.session.add(scenario)
@@ -110,7 +119,7 @@ def get_scenario(scenario_id):
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
     
     if not scenario:
-        return error_response(message='场景不存在', code=404)
+        return error_response(404, '场景不存在')
     
     return success_response(data=scenario.to_dict())
 
@@ -123,12 +132,12 @@ def update_scenario(scenario_id):
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
     
     if not scenario:
-        return error_response(message='场景不存在', code=404)
+        return error_response(404, '场景不存在')
     
     data = request.get_json()
-    
-    for field in ['name', 'description', 'target_url', 
-                  'user_count', 'spawn_rate', 'duration']:
+
+    for field in ['name', 'description', 'target_url', 'method',
+                  'user_count', 'spawn_rate', 'duration', 'script_content']:
         if field in data:
             setattr(scenario, field, data[field])
     
@@ -145,7 +154,7 @@ def delete_scenario(scenario_id):
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
     
     if not scenario:
-        return error_response(message='场景不存在', code=404)
+        return error_response(404, '场景不存在')
     
     # 如果正在运行，先停止
     if scenario.status == 'running':
@@ -171,15 +180,18 @@ def run_scenario(scenario_id):
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
     
     if not scenario:
-        return error_response(message='场景不存在', code=404)
-    
+        return error_response(404, '场景不存在')
+
     # 检查是否已在运行
     if scenario.status == 'running':
-        return error_response(message='测试正在运行中')
-    
+        return error_response(400, '测试正在运行中')
+
     try:
-        # 获取请求参数
-        data = request.get_json() or {}
+        # 获取请求参数（前端可能不传 body）
+        try:
+            data = request.get_json(force=True, silent=True) or {}
+        except Exception:
+            data = {}
         user_count = data.get('user_count', scenario.user_count)
         spawn_rate = data.get('spawn_rate', scenario.spawn_rate)
         run_time = data.get('duration', scenario.duration)
@@ -202,7 +214,7 @@ def run_scenario(scenario_id):
         })
         
     except Exception as e:
-        return error_response(message=f'提交失败: {str(e)}')
+        return error_response(500, f'提交失败: {str(e)}')
 
 
 
@@ -216,10 +228,10 @@ def stop_scenario(scenario_id):
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
     
     if not scenario:
-        return error_response(message='场景不存在', code=404)
+        return error_response(404, '场景不存在')
     
     if scenario.status != 'running':
-        return error_response(message='测试未在运行')
+        return error_response(400, '测试未在运行')
     
     try:
         # 尝试撤销 Celery 任务
@@ -232,7 +244,7 @@ def stop_scenario(scenario_id):
         
         return success_response(message='已停止')
     except Exception as e:
-        return error_response(message=f'停止失败: {str(e)}')
+        return error_response(500, f'停止失败: {str(e)}')
 
 
 
@@ -242,14 +254,21 @@ def get_scenario_status(scenario_id):
     """获取场景执行状态"""
     user_id = get_current_user_id()
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
-    
+
     if not scenario:
-        return error_response(message='场景不存在', code=404)
-    
+        return error_response(404, '场景不存在')
+
+    # 从 last_result 中获取实时数据，如果没有则使用数据库中的值
+    result_data = scenario.last_result or {}
     return success_response(data={
         'status': scenario.status,
-        'last_run_at': scenario.last_run_at.isoformat() if scenario.last_run_at else None,
-        'last_result': scenario.last_result
+        'last_run_at': scenario.last_run_at.isoformat() + 'Z' if scenario.last_run_at else None,
+        'last_result': scenario.last_result,
+        'avg_response_time': scenario.avg_response_time,
+        'max_response_time': scenario.max_response_time,
+        'min_response_time': scenario.min_response_time,
+        'throughput': scenario.throughput,
+        'error_rate': scenario.error_rate,
     })
 
 
@@ -267,7 +286,7 @@ def quick_test():
     
     error = validate_required(data, ['target_host'])
     if error:
-        return error_response(message=error)
+        return error_response(400, error)
     
     target_host = data['target_host']
     endpoint = data.get('endpoint', '/')
@@ -337,7 +356,7 @@ class QuickTestUser(HttpUser):
         })
         
     except Exception as e:
-        return error_response(message=f'测试失败: {str(e)}')
+        return error_response(500, f'测试失败: {str(e)}')
 
 
 # ==================== 模板 ====================
@@ -347,13 +366,42 @@ def get_perf_templates():
     """获取性能测试脚本模板"""
     templates = [
         {
+            'name': 'HTTPBin 测试',
+            'description': '适用于 httpbin.org 的标准测试脚本',
+            'code': '''"""
+HTTPBin 测试脚本
+
+适用于 https://httpbin.org
+"""
+from locust import HttpUser, task, between
+
+class TestUser(HttpUser):
+    wait_time = between(1, 2)
+
+    @task(3)
+    def get_endpoint(self):
+        """获取请求数据"""
+        self.client.get("/get")
+
+    @task(1)
+    def delay_endpoint(self):
+        """延迟测试"""
+        self.client.get("/delay/1")
+
+    @task(1)
+    def headers_endpoint(self):
+        """获取请求头"""
+        self.client.get("/headers")
+'''
+        },
+        {
             'name': '基础负载测试',
             'description': '简单的 GET 请求负载测试',
             'code': '''from locust import HttpUser, task, between
 
 class BasicUser(HttpUser):
     wait_time = between(1, 3)
-    
+
     @task
     def index(self):
         self.client.get("/")
@@ -367,7 +415,7 @@ class BasicUser(HttpUser):
 class ApiUser(HttpUser):
     wait_time = between(1, 2)
     token = None
-    
+
     def on_start(self):
         # 登录获取 token
         response = self.client.post("/api/login", json={
@@ -376,7 +424,7 @@ class ApiUser(HttpUser):
         })
         if response.status_code == 200:
             self.token = response.json().get("token")
-    
+
     @task
     def get_data(self):
         headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
@@ -390,17 +438,17 @@ class ApiUser(HttpUser):
 
 class MixedUser(HttpUser):
     wait_time = between(1, 5)
-    
+
     @task(3)
     @tag('browse')
     def browse_products(self):
         self.client.get("/products")
-    
+
     @task(2)
     @tag('search')
     def search(self):
         self.client.get("/search?q=test")
-    
+
     @task(1)
     @tag('purchase')
     def add_to_cart(self):
@@ -408,7 +456,7 @@ class MixedUser(HttpUser):
 '''
         }
     ]
-    
+
     return success_response(data=templates)
 
 
@@ -418,17 +466,25 @@ class MixedUser(HttpUser):
 def get_running_tests():
     """获取当前用户运行中的测试列表"""
     user_id = get_current_user_id()
-    
+
     # 查询数据库中状态为 running 的场景
     running_scenarios = PerfTestScenario.query.filter_by(
         user_id=user_id,
         status='running'
     ).all()
-    
+
     user_tests = [{
+        'id': s.id,  # 前端需要 id 字段
         'scenario_id': s.id,
         'name': s.name,
-        'started_at': s.last_run_at.isoformat() if s.last_run_at else None
+        'user_count': s.user_count,
+        'duration': s.duration,
+        'elapsed': 0,  # 计算已运行时间
+        'status': s.status,
+        'avg_response_time': s.avg_response_time or 0,
+        'throughput': s.throughput or 0,
+        'error_rate': s.error_rate or 0,
+        'started_at': s.last_run_at.isoformat() + 'Z' if s.last_run_at else None
     } for s in running_scenarios]
-    
+
     return success_response(data=user_tests)

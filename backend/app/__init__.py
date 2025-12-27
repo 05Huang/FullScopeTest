@@ -4,6 +4,8 @@ EasyTest 后端应用工厂
 创建和配置 Flask 应用实例
 """
 
+import os
+from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 
@@ -15,21 +17,24 @@ from .celery_app import init_celery
 def create_app(config_name='development'):
     """
     应用工厂函数
-    
+
     Args:
         config_name: 配置环境名称 (development/testing/production)
-    
+
     Returns:
         Flask: 配置好的 Flask 应用实例
     """
+    # 加载 .env 文件（如果在 Celery Worker 中运行，确保环境变量被加载）
+    load_dotenv()
+
     app = Flask(__name__)
-    
+
     # 加载配置
     app.config.from_object(config[config_name])
-    
+
     # 初始化扩展
     init_extensions(app)
-    
+
     # 初始化 Celery（可选）
     if app.config.get('CELERY_ENABLE', False):
         try:
@@ -39,13 +44,13 @@ def create_app(config_name='development'):
             app.logger.warning(f'Celery initialization failed: {e}. Running without async tasks.')
     else:
         app.logger.info('Celery is disabled. Running without async tasks.')
-    
+
     # 注册蓝图
     register_blueprints(app)
-    
+
     # 注册错误处理
     register_error_handlers(app)
-    
+
     return app
 
 

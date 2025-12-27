@@ -42,13 +42,13 @@ const PerfTestMonitor = () => {
   const [loading, setLoading] = useState(false)
   const [runningTests, setRunningTests] = useState<RunningTest[]>([])
   const [selectedTest, setSelectedTest] = useState<RunningTest | null>(null)
-  const [realtimeData] = useState<any[]>([])
+  const [realtimeData, setRealtimeData] = useState<any[]>([])
 
   useEffect(() => {
     fetchRunningTests()
-    
-    // 定时刷新
-    const interval = setInterval(fetchRunningTests, 5000)
+
+    // 定时刷新（每2秒刷新一次，更实时）
+    const interval = setInterval(fetchRunningTests, 2000)
     return () => clearInterval(interval)
   }, [])
 
@@ -57,16 +57,75 @@ const PerfTestMonitor = () => {
     try {
       const result = await perfTestService.getRunningTests()
       if (result.code === 200) {
-        setRunningTests(result.data || [])
+        const now = Date.now()
+        const tests = (result.data || []).map((t: any) => {
+          const started = t.started_at ? new Date(t.started_at).getTime() : null
+          const elapsedSec = started ? Math.max(0, Math.min(t.duration || 0, (now - started) / 1000)) : 0
+          return { ...t, elapsed: elapsedSec }
+        })
+        setRunningTests(tests)
         // 如果有运行中的测试且未选择，默认选择第一个
-        if (result.data?.length > 0 && !selectedTest) {
-          setSelectedTest(result.data[0])
+        if (tests.length > 0 && !selectedTest) {
+          setSelectedTest(tests[0])
+        }
+        // 获取每个运行中测试的实时数据
+        for (const test of tests) {
+          await fetchRealtimeData(test.id)
         }
       }
     } catch (error) {
       console.error('获取运行中测试失败', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchRealtimeData = async (scenarioId: number) => {
+    try {
+      const result = await perfTestService.getScenarioStatus(scenarioId)
+      if (result.code === 200 && result.data) {
+        const statusData = result.data
+        const lastResult = statusData.last_result
+        const realtimeStats = lastResult?.realtime?.stats
+
+        // 更新选中测试的数据
+        if (selectedTest && selectedTest.id === scenarioId) {
+          setSelectedTest({
+            ...selectedTest,
+            avg_response_time: statusData.avg_response_time || lastResult?.avg_response_time || 0,
+            throughput: statusData.throughput || lastResult?.throughput || 0,
+            error_rate: statusData.error_rate || lastResult?.error_rate || 0,
+          })
+        }
+
+        // 添加实时数据点（保留最近60个数据点，约2分钟）
+        setRealtimeData((prev) => {
+          const ts = lastResult?.realtime?.timestamp || new Date().toISOString()
+          const newDataPoint = {
+            timestampLabel: new Date(ts).toLocaleTimeString(),
+            avg_response_time: realtimeStats?.avg_response_time_ms
+              ?? statusData.avg_response_time
+              ?? lastResult?.avg_response_time
+              ?? 0,
+            p95_response_time: realtimeStats?.p95_response_time_ms
+              ?? lastResult?.p95_response_time
+              ?? statusData.max_response_time
+              ?? 0,
+            throughput: realtimeStats?.throughput
+              ?? statusData.throughput
+              ?? lastResult?.throughput
+              ?? 0,
+            error_rate: realtimeStats?.error_rate
+              ?? statusData.error_rate
+              ?? lastResult?.error_rate
+              ?? 0,
+          }
+          const updated = [...prev, newDataPoint]
+          return updated.slice(-60)
+        })
+      }
+    } catch (error) {
+      console.error('获取实时数据失败', error)
     }
   }
 
@@ -89,7 +148,7 @@ const PerfTestMonitor = () => {
     xAxis: {
       type: 'category',
       data: realtimeData.length > 0
-        ? realtimeData.map((_, i) => `${i * 5}s`)
+        ? realtimeData.map(d => d.timestampLabel)
         : ['0s', '5s', '10s', '15s', '20s', '25s', '30s'],
     },
     yAxis: {
@@ -139,7 +198,7 @@ const PerfTestMonitor = () => {
     xAxis: {
       type: 'category',
       data: realtimeData.length > 0
-        ? realtimeData.map((_, i) => `${i * 5}s`)
+        ? realtimeData.map(d => d.timestampLabel)
         : ['0s', '5s', '10s', '15s', '20s', '25s', '30s'],
     },
     yAxis: [
@@ -193,11 +252,21 @@ const PerfTestMonitor = () => {
       title: '进度',
       key: 'progress',
       render: (_: any, record: RunningTest) => (
-        <Progress
-          percent={Math.round((record.elapsed / record.duration) * 100)}
-          size="small"
-          status="active"
-        />
+        (() => {
+          const duration = record.duration || 0
+          const started = record as any
+          const startedAt = started.started_at ? new Date(started.started_at).getTime() : null
+          const now = Date.now()
+          const elapsed = startedAt && duration > 0 ? Math.min(duration, Math.max(0, (now - startedAt) / 1000)) : record.elapsed || 0
+          const percent = duration > 0 ? Math.round((elapsed / duration) * 100) : 0
+          return (
+            <Progress
+              percent={percent}
+              size="small"
+              status="active"
+            />
+          )
+        })()
       ),
     },
     {
