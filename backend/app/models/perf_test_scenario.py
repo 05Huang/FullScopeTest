@@ -24,6 +24,7 @@ class PerfTestScenario(db.Model):
     method = db.Column(db.String(10), default='GET', comment='HTTP 方法')
     headers = db.Column(db.JSON, default=dict, comment='请求头')
     body = db.Column(db.JSON, comment='请求体')
+    script_content = db.Column(db.Text, comment='Locust 脚本内容')
     
     # 负载配置
     user_count = db.Column(db.Integer, default=10, comment='并发用户数')
@@ -67,6 +68,7 @@ class PerfTestScenario(db.Model):
             'method': self.method,
             'headers': self.headers,
             'body': self.body,
+            'script_content': self.script_content,
             'user_count': self.user_count,
             'spawn_rate': self.spawn_rate,
             'duration': self.duration,

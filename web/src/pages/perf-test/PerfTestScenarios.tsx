@@ -18,7 +18,6 @@ import {
   Progress,
   Row,
   Col,
-  Statistic,
 } from 'antd'
 import {
   PlusOutlined,
@@ -32,7 +31,6 @@ import {
   LineChartOutlined,
   UserOutlined,
   ClockCircleOutlined,
-  ThunderboltOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -49,6 +47,7 @@ interface PerfTestScenario {
   target_url: string
   method: string
   user_count: number
+  spawn_rate: number
   duration: number
   ramp_up: number
   status: 'passed' | 'failed' | 'pending' | 'running'
@@ -82,7 +81,11 @@ const PerfTestScenarios = () => {
     try {
       const result = await perfTestService.getScenarios()
       if (result.code === 200) {
-        setScenarios(result.data || [])
+        const data = result.data || []
+        setScenarios(data)
+        // 从数据库状态同步运行中的场景 ID
+        const running = data.filter((s: PerfTestScenario) => s.status === 'running').map((s: PerfTestScenario) => s.id)
+        setRunningIds(running)
       } else {
         message.error(result.message || '加载失败')
       }
@@ -95,6 +98,9 @@ const PerfTestScenarios = () => {
 
   useEffect(() => {
     loadScenarios()
+    // 定时刷新状态（每5秒）
+    const interval = setInterval(loadScenarios, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   // 创建场景
@@ -107,7 +113,7 @@ const PerfTestScenarios = () => {
         method: values.method,
         user_count: values.users,
         duration: values.duration,
-        spawn_rate: values.rampUp,
+        spawn_rate: values.spawnRate,
       })
       if (result.code === 200 || result.code === 201) {
         message.success('创建成功')
@@ -133,7 +139,7 @@ const PerfTestScenarios = () => {
         method: values.method,
         user_count: values.users,
         duration: values.duration,
-        spawn_rate: values.rampUp,
+        spawn_rate: values.spawnRate,
       })
       if (result.code === 200) {
         message.success('更新成功')
@@ -175,7 +181,9 @@ const PerfTestScenarios = () => {
         message.error(result.message || '删除失败')
       }
     } catch (error: any) {
-      message.error('删除场景失败')
+      console.error('删除场景失败:', error)
+      const errorMsg = error?.response?.data?.message || error?.message || '删除场景失败'
+      message.error(errorMsg)
     }
   }
 
@@ -189,9 +197,13 @@ const PerfTestScenarios = () => {
         loadScenarios()
       } else {
         message.error(result.message || '启动失败')
+        setRunningIds((prev) => prev.filter((i) => i !== id))
       }
     } catch (error: any) {
-      message.error('启动测试失败')
+      console.error('启动测试失败:', error)
+      const errorMsg = error?.response?.data?.message || error?.message || '启动测试失败'
+      message.error(errorMsg)
+      setRunningIds((prev) => prev.filter((i) => i !== id))
     }
   }
 
@@ -349,9 +361,9 @@ const PerfTestScenarios = () => {
               />
             </Tooltip>
             <Tooltip title="编辑">
-              <Button 
-                type="text" 
-                size="small" 
+              <Button
+                type="text"
+                size="small"
                 icon={<EditOutlined />}
                 onClick={() => {
                   setEditingScenario(record)
@@ -362,7 +374,7 @@ const PerfTestScenarios = () => {
                     method: record.method,
                     users: record.user_count,
                     duration: record.duration,
-                    rampUp: record.ramp_up,
+                    spawnRate: record.spawn_rate,
                   })
                   setIsModalOpen(true)
                 }}
@@ -394,12 +406,6 @@ const PerfTestScenarios = () => {
     { type: 'divider' },
     { key: 'delete', icon: <DeleteOutlined />, label: '批量删除', danger: true },
   ]
-
-  // 统计数据
-  const runningCount = scenarios.filter((d) => d.status === 'running' || runningIds.includes(d.id)).length
-  const totalUsers = scenarios
-    .filter((d) => d.status === 'running' || runningIds.includes(d.id))
-    .reduce((sum, d) => sum + d.user_count, 0)
 
   return (
     <div>
@@ -460,44 +466,6 @@ const PerfTestScenarios = () => {
           </Dropdown>
         </Space>
       </div>
-
-      {/* 实时统计 */}
-      {runningCount > 0 && (
-        <Card style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col span={6}>
-              <Statistic
-                title="执行中场景"
-                value={runningCount}
-                prefix={<ThunderboltOutlined style={{ color: '#1890ff' }} />}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="当前并发数"
-                value={totalUsers}
-                prefix={<UserOutlined style={{ color: '#52c41a' }} />}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="平均响应时间"
-                value="-"
-                suffix="ms"
-                prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="当前吞吐量"
-                value="-"
-                suffix="req/s"
-                prefix={<LineChartOutlined style={{ color: '#722ed1' }} />}
-              />
-            </Col>
-          </Row>
-        </Card>
-      )}
 
       <Card>
         <Table
@@ -584,12 +552,13 @@ const PerfTestScenarios = () => {
             </Col>
             <Col span={8}>
               <Form.Item
-                name="rampUp"
-                label="爬坡时间（秒）"
-                initialValue={10}
+                name="spawnRate"
+                label="用户生成速率（用户/秒）"
+                initialValue={1}
                 rules={[{ required: true }]}
+                tooltip="每秒启动多少个用户"
               >
-                <InputNumber min={0} max={3600} style={{ width: '100%' }} />
+                <InputNumber min={1} max={1000} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
