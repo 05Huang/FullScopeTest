@@ -5,6 +5,7 @@
 
 from flask import request
 from flask_jwt_extended import jwt_required
+from urllib.parse import urlparse
 from . import api_bp
 from ..extensions import db, celery
 from ..models.perf_test_scenario import PerfTestScenario
@@ -19,6 +20,258 @@ import json
 import time
 import signal
 from datetime import datetime
+
+
+# ==================== URL 解析工具 ====================
+
+def _parse_target_url(url: str) -> tuple:
+    """
+    解析目标 URL，提取 base_host 和 endpoint_path
+
+    Args:
+        url: 用户输入的完整 URL，如 https://api.example.com/v1/users?name=test
+
+    Returns:
+        (base_host, endpoint_path):
+            - base_host: https://api.example.com（用于 Locust --host）
+            - endpoint_path: /v1/users（用于脚本中的路径）
+    """
+    try:
+        parsed = urlparse(url)
+        # base_host = scheme://netloc（包含端口）
+        base_host = f"{parsed.scheme}://{parsed.netloc}"
+        # endpoint_path = path（去掉 query 和 fragment）
+        endpoint_path = parsed.path or "/"
+        return base_host, endpoint_path
+    except Exception:
+        # 解析失败时的兜底处理
+        return url, "/"
+
+
+def _generate_locust_script(method: str, endpoint_path: str,
+                            headers: dict = None, body: dict = None) -> str:
+    """
+    根据请求方法生成 Locust 脚本
+
+    Args:
+        method: HTTP 方法（GET/POST/PUT/DELETE）
+        endpoint_path: 接口路径
+        headers: 请求头
+        body: 请求体
+
+    Returns:
+        str: 生成的 Locust 脚本内容
+    """
+    method = method.upper()
+    endpoint_path = endpoint_path or "/"
+
+    # 生成 headers 代码
+    headers_code = ""
+    if headers:
+        headers_items = [f'            "{k}": "{v}"' for k, v in headers.items()]
+        headers_code = f"""
+
+        # 请求头
+        headers = {{
+{",\n".join(headers_items)}
+        }}
+"""
+
+    # 生成请求代码
+    if method == "GET":
+        request_code = f'self.client.get("{endpoint_path}"'
+        if headers:
+            request_code += ', headers=headers'
+        request_code += ")"
+    elif method == "POST":
+        body_str = json.dumps(body, ensure_ascii=False) if body else "{}"
+        request_code = f'self.client.post("{endpoint_path}", json={body_str}'
+        if headers:
+            request_code += ', headers=headers'
+        request_code += ")"
+    elif method == "PUT":
+        body_str = json.dumps(body, ensure_ascii=False) if body else "{}"
+        request_code = f'self.client.put("{endpoint_path}", json={body_str}'
+        if headers:
+            request_code += ', headers=headers'
+        request_code += ")"
+    elif method == "DELETE":
+        request_code = f'self.client.delete("{endpoint_path}"'
+        if headers:
+            request_code += ', headers=headers'
+        request_code += ")"
+    else:
+        request_code = f'self.client.get("{endpoint_path}")'
+
+    # 组装完整脚本
+    script = f'''"""
+Locust 性能测试脚本（自动生成）
+"""
+from locust import HttpUser, task, between
+
+class TestUser(HttpUser):
+    wait_time = between(1, 2)
+{headers_code}
+    @task
+    def test_endpoint(self):
+        """测试接口"""
+        {request_code}
+'''
+    return script
+
+
+# ==================== Locust 脚本模板 ====================
+
+DEFAULT_LOCUST_SCRIPT = '''"""
+Locust 性能测试脚本（自动生成）
+"""
+from locust import HttpUser, task, between
+
+class TestUser(HttpUser):
+    wait_time = between(1, 2)
+
+    @task
+    def test_endpoint(self):
+        """测试接口"""
+        self.client.get("{{endpoint_path}}")
+'''
+
+LOCUST_TEMPLATES = [
+    {
+        'name': '基础 GET 请求',
+        'description': '最简单的 GET 请求测试',
+        'code': '''"""
+基础 GET 请求测试
+"""
+from locust import HttpUser, task, between
+
+class TestUser(HttpUser):
+    wait_time = between(1, 3)
+
+    @task
+    def get_request(self):
+        """GET 请求"""
+        self.client.get("{{endpoint_path}}")
+'''
+    },
+    {
+        'name': 'POST 请求测试',
+        'description': '带 JSON 请求体的 POST 测试',
+        'code': '''"""
+POST 请求测试
+"""
+from locust import HttpUser, task, between
+
+class TestUser(HttpUser):
+    wait_time = between(1, 2)
+
+    @task
+    def post_request(self):
+        """POST 请求"""
+        self.client.post("{{endpoint_path}}", json={
+            "username": "test_user",
+            "email": "test@example.com"
+        })
+'''
+    },
+    {
+        'name': '带认证的 API 测试',
+        'description': '模拟登录后进行 API 调用',
+        'code': '''"""
+带认证的 API 测试
+"""
+from locust import HttpUser, task, between
+
+class ApiUser(HttpUser):
+    wait_time = between(1, 2)
+    token = None
+
+    def on_start(self):
+        """用户启动时登录获取 token"""
+        response = self.client.post("/api/login", json={
+            "username": "test",
+            "password": "test123"
+        })
+        if response.status_code == 200:
+            self.token = response.json().get("token")
+
+    @task(3)
+    def get_data(self):
+        """获取数据"""
+        headers = {}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        self.client.get("{{endpoint_path}}", headers=headers)
+
+    @task(1)
+    def create_data(self):
+        """创建数据"""
+        headers = {}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        self.client.post("{{endpoint_path}}", json={"name": "test"}, headers=headers)
+'''
+    },
+    {
+        'name': '混合场景测试',
+        'description': '模拟真实用户行为的混合场景',
+        'code': '''"""
+混合场景测试
+"""
+from locust import HttpUser, task, between, tag
+
+class MixedUser(HttpUser):
+    wait_time = between(1, 5)
+
+    @task(3)
+    @tag('browse')
+    def browse(self):
+        """浏览"""
+        self.client.get("{{endpoint_path}}")
+
+    @task(2)
+    @tag('search')
+    def search(self):
+        """搜索"""
+        self.client.get("{{endpoint_path}}/search?q=test")
+
+    @task(1)
+    @tag('action')
+    def action(self):
+        """操作"""
+        self.client.post("{{endpoint_path}}/action", json={"action": "test"})
+'''
+    },
+    {
+        'name': 'HTTPBin 示例',
+        'description': '适用于 httpbin.org 的测试（仅用于学习和测试）',
+        'code': '''"""
+HTTPBin 测试脚本
+
+适用于 https://httpbin.org
+"""
+from locust import HttpUser, task, between
+
+class TestUser(HttpUser):
+    wait_time = between(1, 2)
+
+    @task(3)
+    def get_endpoint(self):
+        """获取请求数据"""
+        self.client.get("/get")
+
+    @task(1)
+    def delay_endpoint(self):
+        """延迟测试"""
+        self.client.get("/delay/1")
+
+    @task(1)
+    def headers_endpoint(self):
+        """获取请求头"""
+        self.client.get("/headers")
+'''
+    }
+]
 
 
 @api_bp.route('/perf-test/health', methods=['GET'])
@@ -51,63 +304,40 @@ def create_scenario():
     """创建性能测试场景"""
     user_id = get_current_user_id()
     data = request.get_json()
-    
+
     error = validate_required(data, ['name'])
     if error:
         return error_response(400, error)
-    
-    # 默认的 Locust 脚本模板
-    default_script = '''"""
-Locust 性能测试脚本
 
-适用于 httpbin.org 等 HTTP 测试服务
-"""
-from locust import HttpUser, task, between
+    target_url = data.get('target_url', 'http://localhost:8080')
+    method = data.get('method', 'GET')
+    headers = data.get('headers')
+    body = data.get('body')
 
-class TestUser(HttpUser):
-    # 等待时间：每个任务之间等待 1-2 秒
-    wait_time = between(1, 2)
+    # 解析 URL 并生成脚本（如果用户未提供自定义脚本）
+    script_content = data.get('script_content')
+    if not script_content:
+        _, endpoint_path = _parse_target_url(target_url)
+        script_content = _generate_locust_script(method, endpoint_path, headers, body)
 
-    @task(3)
-    def get_endpoint(self):
-        """获取请求数据"""
-        self.client.get("/get")
-
-    @task(1)
-    def delay_endpoint(self):
-        """延迟测试（模拟慢请求）"""
-        self.client.get("/delay/1")
-
-    @task(1)
-    def headers_endpoint(self):
-        """获取请求头"""
-        self.client.get("/headers")
-
-    def on_start(self):
-        """用户启动时执行"""
-        pass
-
-    def on_stop(self):
-        """用户停止时执行"""
-        pass
-'''
-    
     scenario = PerfTestScenario(
         name=data['name'],
         description=data.get('description', ''),
-        target_url=data.get('target_url', 'http://localhost:8080'),
-        method=data.get('method', 'GET'),
+        target_url=target_url,
+        method=method,
+        headers=headers,
+        body=body,
         user_count=data.get('user_count', 10),
         spawn_rate=data.get('spawn_rate', 1),
         duration=data.get('duration', 60),
         project_id=data.get('project_id'),
         user_id=user_id,
-        script_content=data.get('script_content', default_script)
+        script_content=script_content
     )
-    
+
     db.session.add(scenario)
     db.session.commit()
-    
+
     return success_response(data=scenario.to_dict(), message='创建成功')
 
 
@@ -130,19 +360,20 @@ def update_scenario(scenario_id):
     """更新性能测试场景"""
     user_id = get_current_user_id()
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
-    
+
     if not scenario:
         return error_response(404, '场景不存在')
-    
+
     data = request.get_json()
 
     for field in ['name', 'description', 'target_url', 'method',
-                  'user_count', 'spawn_rate', 'duration', 'script_content']:
+                  'user_count', 'spawn_rate', 'duration', 'script_content',
+                  'headers', 'body']:
         if field in data:
             setattr(scenario, field, data[field])
-    
+
     db.session.commit()
-    
+
     return success_response(data=scenario.to_dict(), message='更新成功')
 
 
@@ -364,100 +595,7 @@ class QuickTestUser(HttpUser):
 @api_bp.route('/perf-test/templates', methods=['GET'])
 def get_perf_templates():
     """获取性能测试脚本模板"""
-    templates = [
-        {
-            'name': 'HTTPBin 测试',
-            'description': '适用于 httpbin.org 的标准测试脚本',
-            'code': '''"""
-HTTPBin 测试脚本
-
-适用于 https://httpbin.org
-"""
-from locust import HttpUser, task, between
-
-class TestUser(HttpUser):
-    wait_time = between(1, 2)
-
-    @task(3)
-    def get_endpoint(self):
-        """获取请求数据"""
-        self.client.get("/get")
-
-    @task(1)
-    def delay_endpoint(self):
-        """延迟测试"""
-        self.client.get("/delay/1")
-
-    @task(1)
-    def headers_endpoint(self):
-        """获取请求头"""
-        self.client.get("/headers")
-'''
-        },
-        {
-            'name': '基础负载测试',
-            'description': '简单的 GET 请求负载测试',
-            'code': '''from locust import HttpUser, task, between
-
-class BasicUser(HttpUser):
-    wait_time = between(1, 3)
-
-    @task
-    def index(self):
-        self.client.get("/")
-'''
-        },
-        {
-            'name': 'API 测试',
-            'description': '带认证的 API 接口测试',
-            'code': '''from locust import HttpUser, task, between
-
-class ApiUser(HttpUser):
-    wait_time = between(1, 2)
-    token = None
-
-    def on_start(self):
-        # 登录获取 token
-        response = self.client.post("/api/login", json={
-            "username": "test",
-            "password": "test"
-        })
-        if response.status_code == 200:
-            self.token = response.json().get("token")
-
-    @task
-    def get_data(self):
-        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
-        self.client.get("/api/data", headers=headers)
-'''
-        },
-        {
-            'name': '混合场景测试',
-            'description': '模拟真实用户行为的混合场景',
-            'code': '''from locust import HttpUser, task, between, tag
-
-class MixedUser(HttpUser):
-    wait_time = between(1, 5)
-
-    @task(3)
-    @tag('browse')
-    def browse_products(self):
-        self.client.get("/products")
-
-    @task(2)
-    @tag('search')
-    def search(self):
-        self.client.get("/search?q=test")
-
-    @task(1)
-    @tag('purchase')
-    def add_to_cart(self):
-        self.client.post("/cart", json={"product_id": 1})
-'''
-        }
-    ]
-
-    return success_response(data=templates)
+    return success_response(data=LOCUST_TEMPLATES)
 
 
 
