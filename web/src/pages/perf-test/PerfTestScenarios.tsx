@@ -106,11 +106,35 @@ const PerfTestScenarios = () => {
   // 创建场景
   const handleCreate = async (values: any) => {
     try {
+      // 解析 headers 和 body JSON
+      let headers: Record<string, any> | undefined = undefined
+      let body: any = undefined
+
+      if (values.headers) {
+        try {
+          headers = JSON.parse(values.headers)
+        } catch (e) {
+          message.error('Headers 格式错误，请输入有效的 JSON')
+          return
+        }
+      }
+
+      if (values.body) {
+        try {
+          body = JSON.parse(values.body)
+        } catch (e) {
+          message.error('Body 格式错误，请输入有效的 JSON')
+          return
+        }
+      }
+
       const result = await perfTestService.createScenario({
         name: values.name,
         description: values.description,
         target_url: values.targetUrl,
         method: values.method,
+        headers: headers,
+        body: body,
         user_count: values.users,
         duration: values.duration,
         spawn_rate: values.spawnRate,
@@ -132,11 +156,35 @@ const PerfTestScenarios = () => {
   // 更新场景
   const handleUpdate = async (id: number, values: any) => {
     try {
+      // 解析 headers 和 body JSON
+      let headers: Record<string, any> | undefined = undefined
+      let body: any = undefined
+
+      if (values.headers) {
+        try {
+          headers = JSON.parse(values.headers)
+        } catch (e) {
+          message.error('Headers 格式错误，请输入有效的 JSON')
+          return
+        }
+      }
+
+      if (values.body) {
+        try {
+          body = JSON.parse(values.body)
+        } catch (e) {
+          message.error('Body 格式错误，请输入有效的 JSON')
+          return
+        }
+      }
+
       const result = await perfTestService.updateScenario(id, {
         name: values.name,
         description: values.description,
         target_url: values.targetUrl,
         method: values.method,
+        headers: headers,
+        body: body,
         user_count: values.users,
         duration: values.duration,
         spawn_rate: values.spawnRate,
@@ -375,6 +423,8 @@ const PerfTestScenarios = () => {
                     users: record.user_count,
                     duration: record.duration,
                     spawnRate: record.spawn_rate,
+                    headers: record.headers ? JSON.stringify(record.headers, null, 2) : undefined,
+                    body: record.body ? JSON.stringify(record.body, null, 2) : undefined,
                   })
                   setIsModalOpen(true)
                 }}
@@ -569,6 +619,28 @@ const PerfTestScenarios = () => {
                 label: m,
               }))}
             />
+          </Form.Item>
+          <Form.Item name="headers" label="请求 Headers (可选)">
+            <TextArea
+              rows={3}
+              placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
+            />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.method !== curr.method}>
+            {({ getFieldValue }) => {
+              const method = getFieldValue('method')
+              if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                return (
+                  <Form.Item name="body" label="请求 Body (可选)">
+                    <TextArea
+                      rows={4}
+                      placeholder='{"username": "test", "password": "123456"}'
+                    />
+                  </Form.Item>
+                )
+              }
+              return null
+            }}
           </Form.Item>
         </Form>
       </Modal>

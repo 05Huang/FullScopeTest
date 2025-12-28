@@ -760,13 +760,21 @@ Authorization: Bearer <access_token>
 
 **请求头：** 需要 Bearer Token
 
-**请求体：**
+**请求体示例：**
 
 ```json
 {
-    "name": "首页压力测试",
-    "description": "测试首页在高并发下的表现",
-    "target_url": "http://localhost:5211",
+    "name": "登录接口压力测试",
+    "description": "测试登录接口在高并发下的表现",
+    "target_url": "http://localhost:5211/api/v1/auth/login",
+    "method": "POST",
+    "headers": {
+        "Content-Type": "application/json"
+    },
+    "body": {
+        "username": "testuser",
+        "password": "password123"
+    },
     "user_count": 100,
     "spawn_rate": 10,
     "duration": 60,
@@ -780,11 +788,27 @@ Authorization: Bearer <access_token>
 |------|------|------|--------|------|
 | name | string | ✓ | - | 场景名称 |
 | description | string | ✗ | "" | 场景描述 |
-| target_url | string | ✓ | http://localhost:8080 | 目标 URL |
+| target_url | string | ✓ | http://localhost:8080 | 目标 URL（完整 URL，包含路径） |
+| method | string | ✗ | GET | HTTP 方法（GET/POST/PUT/DELETE） |
+| headers | object | ✗ | null | 请求头（JSON 格式） |
+| body | object | ✗ | null | 请求体（JSON 格式，仅 POST/PUT 有效） |
 | user_count | int | ✗ | 10 | 并发用户数 |
 | spawn_rate | int | ✗ | 1 | 每秒启动用户数 |
 | duration | int | ✗ | 60 | 测试持续时间（秒） |
-| project_id | int | ✓ | - | 所属项目 ID |
+| project_id | int | ✗ | null | 所属项目 ID |
+| script_content | string | ✗ | 自动生成 | 自定义 Locust 脚本（如不提供则自动生成） |
+
+**功能说明：**
+
+1. **自动 URL 解析**：系统会自动将 `target_url` 解析为 `base_host` 和 `endpoint_path`
+   - 例如：`http://localhost:5211/api/v1/auth/login`
+   - 解析为：`base_host = http://localhost:5211`, `endpoint_path = /api/v1/auth/login`
+
+2. **自动脚本生成**：如未提供 `script_content`，系统会根据 `method`、`headers`、`body` 自动生成 Locust 脚本
+
+3. **Headers 支持**：可以传入自定义请求头，如 `Authorization`、`Content-Type` 等
+
+4. **Body 支持**：POST/PUT 请求可以传入 JSON 格式的请求体
 
 ---
 

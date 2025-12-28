@@ -192,6 +192,8 @@ def run_web_test_task(self, script_id, user_id):
 def run_perf_test_task(self, scenario_id, user_count, spawn_rate, run_time):
     """异步执行性能测试：改为子进程运行 Locust，避免 Celery/greenlet 冲突"""
     with _get_flask_app().app_context():
+        from app.api.perf_test import _parse_target_url
+
         scenario = None
         temp_dir = None
         monitor_thread = None
@@ -251,12 +253,18 @@ def run_perf_test_task(self, scenario_id, user_count, spawn_rate, run_time):
             scenario.last_run_at = datetime.utcnow()
             db.session.commit()
 
+            # 解析 URL 获取 base_host 和 endpoint_path
+            base_host, endpoint_path = _parse_target_url(scenario.target_url)
+
             temp_dir = tempfile.mkdtemp()
             locustfile = os.path.join(temp_dir, 'locustfile.py')
             csv_prefix = os.path.join(temp_dir, 'rt')
 
+            # 替换脚本中的占位符
+            script_content = scenario.script_content.replace('{{endpoint_path}}', endpoint_path)
+
             with open(locustfile, 'w', encoding='utf-8') as f:
-                f.write(scenario.script_content)
+                f.write(script_content)
 
             # 监控线程：每2秒读取 CSV 并写库
             def monitor_realtime():
@@ -292,7 +300,7 @@ def run_perf_test_task(self, scenario_id, user_count, spawn_rate, run_time):
             cmd = [
                 sys.executable, '-m', 'locust',
                 '-f', locustfile,
-                '--host', scenario.target_url,
+                '--host', base_host,
                 '--users', str(user_count),
                 '--spawn-rate', str(spawn_rate),
                 '--run-time', f'{run_time}s',
