@@ -727,17 +727,31 @@ def get_test_report_html(report_id):
 def delete_test_report(report_id):
     """删除测试报告"""
     user_id = get_current_user_id()
-    
-    report = TestReport.query.join(TestRun).join(Project).filter(
+
+    # 使用更健壮的查询方式，直接通过 project_id JOIN
+    from ..models.project import Project
+    from sqlalchemy import delete as sql_delete
+
+    # 先检查权限
+    report = db.session.query(TestReport).join(
+        Project, TestReport.project_id == Project.id
+    ).filter(
         TestReport.id == report_id,
         Project.owner_id == user_id
     ).first()
-    
+
     if not report:
-        return error_response(message='报告不存在', code=404)
-    
-    db.session.delete(report)
-    db.session.commit()
-    
-    return success_response(message='删除成功')
+        return error_response(message='报告不存在或无权访问', code=404)
+
+    try:
+        # 使用原始 SQL DELETE，绕过 ORM 的关系处理
+        # 避免 SQLAlchemy 尝试更新关联的 TestRun
+        stmt = sql_delete(TestReport).where(TestReport.id == report_id)
+        db.session.execute(stmt)
+        db.session.commit()
+
+        return success_response(message='删除成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=f'删除失败: {str(e)}', code=500)
 

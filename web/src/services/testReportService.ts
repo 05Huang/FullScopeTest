@@ -21,7 +21,10 @@ export const getTestReportHtml = (reportId: number): Promise<string> => {
     headers: {
       'Accept': 'text/html'
     }
-  }).then((res: any) => res.data || res) as Promise<string>
+  }).then((res: any) => {
+    // 响应拦截器现在返回完整的 response 对象
+    return res.data || res
+  }) as Promise<string>
 }
 
 export const deleteTestReport = (reportId: number): Promise<ApiResponse> => {
