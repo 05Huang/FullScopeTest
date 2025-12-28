@@ -128,6 +128,59 @@ export const getReportExportUrl = (runId: number, format: 'json' | 'html' = 'htm
   return `/api/v1/reports/${runId}/export?format=${format}`
 }
 
+// ==================== 测试报告 ====================
+
+export interface TestReport {
+  id: number
+  test_run_id: number
+  project_id: number
+  test_type: string
+  title: string
+  summary: {
+    total: number
+    passed: number
+    failed: number
+    success_rate: number
+    duration: number
+    environment?: string
+  }
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TestReportListParams {
+  project_id?: number
+  test_type?: string
+  page?: number
+  per_page?: number
+}
+
+// 获取测试报告列表
+export const getTestReports = (params?: TestReportListParams): Promise<ApiResponse> => {
+  return api.get('/test-reports', { params }) as Promise<ApiResponse>
+}
+
+// 获取测试报告详情
+export const getTestReport = (reportId: number): Promise<ApiResponse> => {
+  return api.get(`/test-reports/${reportId}`) as Promise<ApiResponse>
+}
+
+// 获取测试报告 HTML 内容
+export const getTestReportHtml = (reportId: number): Promise<string> => {
+  return api.get(`/test-reports/${reportId}/html`, {
+    responseType: 'text',
+    headers: { 'Accept': 'text/html' }
+  }).then((res: any) => {
+    return res.data || res
+  }) as Promise<string>
+}
+
+// 删除测试报告
+export const deleteTestReport = (reportId: number): Promise<ApiResponse> => {
+  return api.delete(`/test-reports/${reportId}`) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const reportService = {
   getTestRuns,
@@ -139,6 +192,10 @@ export const reportService = {
   getDashboardStats,
   exportReportJson,
   getReportExportUrl,
+  getTestReports,
+  getTestReport,
+  getTestReportHtml,
+  deleteTestReport,
 }
 
 export default reportService

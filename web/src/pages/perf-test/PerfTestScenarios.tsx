@@ -46,6 +46,8 @@ interface PerfTestScenario {
   description: string
   target_url: string
   method: string
+  headers?: Record<string, any>
+  body?: any
   user_count: number
   spawn_rate: number
   duration: number

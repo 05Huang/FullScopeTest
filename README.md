@@ -288,7 +288,23 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## 更新日志
 
-### 最新版本
+### 2025-01-05
+
+**测试报告模块重构**
+
+- ✅ 整合测试报告功能到"执行记录"页面，删除独立的"测试报告"标签页
+- ✅ 修复报告下载功能，支持 HTML 和 JSON 格式导出
+- ✅ 优化删除逻辑：删除执行记录时自动级联删除关联报告
+- ✅ 改进数据结构：列表请求使用 page/per_page 分页参数
+- ✅ 增强错误处理：兼容多种后端返回格式
+- ✅ 修复 TypeScript 类型错误
+
+**技术改进：**
+- 后端 API 路由规范化 (`/api/v1/test-reports`)
+- axios 响应拦截器优化，支持 text/blob 响应类型
+- 文件下载使用授权的 blob 下载方式，文件名格式为"运行名称-报告ID"
+
+### 历史版本
 
 - 集成 Celery + Redis 异步任务系统
 - Web 测试可视化录制器
@@ -296,7 +312,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - 环境变量自动补全
 - 元素库管理功能
 
-详见 Git 提交历史。
+详见 [Git 提交历史](https://github.com/Asukadaisiki/easytest/commits/main/)。
 
 ---
 

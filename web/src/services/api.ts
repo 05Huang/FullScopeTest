@@ -36,28 +36,34 @@ api.interceptors.request.use(
 // 响应拦截器 - 返回类型为 ApiResponse
 api.interceptors.response.use(
   (response) => {
+    // 如果响应类型是 text 或 blob，直接返回整个 response 对象
+    // 让调用方自行处理
+    if (response.config.responseType === 'text' || response.config.responseType === 'blob') {
+      return response
+    }
+    // JSON 响应，返回 data 部分
     return response.data
   },
   async (error: AxiosError) => {
     const originalRequest = error.config
-    
+
     // 401 错误，尝试刷新 token
     if (error.response?.status === 401 && originalRequest) {
       const refreshToken = useAuthStore.getState().refreshToken
-      
+
       if (refreshToken) {
         try {
           const response = await axios.post('/api/v1/auth/refresh', null, {
             headers: { Authorization: `Bearer ${refreshToken}` },
           })
-          
+
           const { access_token } = response.data.data
           useAuthStore.getState().setAuth(
             access_token,
             refreshToken,
             useAuthStore.getState().user!
           )
-          
+
           // 重试原请求
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${access_token}`
@@ -73,7 +79,7 @@ api.interceptors.response.use(
         window.location.href = '/login'
       }
     }
-    
+
     return Promise.reject(error)
   }
 )
