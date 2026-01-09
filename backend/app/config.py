@@ -30,6 +30,16 @@ class BaseConfig:
     # 报告存储路径
     REPORT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'reports')
 
+    # Performance test limits
+    PERF_TEST_LIMITS = {
+        'min_users': int(os.environ.get('PERF_TEST_MIN_USERS', '1')),
+        'max_users': int(os.environ.get('PERF_TEST_MAX_USERS', '200')),
+        'min_spawn_rate': int(os.environ.get('PERF_TEST_MIN_SPAWN_RATE', '1')),
+        'max_spawn_rate': int(os.environ.get('PERF_TEST_MAX_SPAWN_RATE', '50')),
+        'min_duration': int(os.environ.get('PERF_TEST_MIN_DURATION', '10')),
+        'max_duration': int(os.environ.get('PERF_TEST_MAX_DURATION', '3600')),
+    }
+
     # Celery 配置（可选，如果Redis不可用则不使用异步任务）
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
     CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')

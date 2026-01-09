@@ -577,7 +577,10 @@ const PerfTestScenarios = () => {
           <Form.Item
             name="targetUrl"
             label="目标 URL"
-            rules={[{ required: true, message: '请输入目标 URL' }]}
+            rules={[
+              { required: true, message: '请输入目标 URL' },
+              { type: 'url', message: '请输入有效的 URL（需包含 http/https）' },
+            ]}
           >
             <Input placeholder="https://api.example.com/endpoint" />
           </Form.Item>
@@ -589,7 +592,7 @@ const PerfTestScenarios = () => {
                 initialValue={10}
                 rules={[{ required: true }]}
               >
-                <InputNumber min={1} max={10000} style={{ width: '100%' }} />
+                <InputNumber min={1} max={200} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -599,7 +602,7 @@ const PerfTestScenarios = () => {
                 initialValue={60}
                 rules={[{ required: true }]}
               >
-                <InputNumber min={10} max={86400} style={{ width: '100%' }} />
+                <InputNumber min={10} max={3600} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -610,7 +613,7 @@ const PerfTestScenarios = () => {
                 rules={[{ required: true }]}
                 tooltip="每秒启动多少个用户"
               >
-                <InputNumber min={1} max={1000} style={{ width: '100%' }} />
+                <InputNumber min={1} max={50} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>

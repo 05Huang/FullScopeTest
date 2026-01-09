@@ -172,8 +172,7 @@ EasyTest-Web/
 │   ├── STARTUP.md       # 启动指南
 │   ├── API.md           # API 文档
 │   ├── DEVELOPMENT.md   # 开发指南
-│   ├── QUICK_START.md   # 快速上手
-│   └── ENVIRONMENT_GUIDE.md # 环境变量指南
+│   └── SCRIPT_GUIDE.md  # 脚本指南
 ├── scripts/              # 开发脚本
 │   ├── start/           # 启动脚本
 │   ├── backend/         # 后端脚本
@@ -194,8 +193,6 @@ EasyTest-Web/
 | 文档 | 说明 |
 |------|------|
 | [document/STARTUP.md](document/STARTUP.md) | 详细安装和启动指南 |
-| [document/QUICK_START.md](document/QUICK_START.md) | 功能快速上手教程 |
-| [document/ENVIRONMENT_GUIDE.md](document/ENVIRONMENT_GUIDE.md) | 环境变量使用指南 |
 
 ### 开发文档
 
@@ -210,8 +207,6 @@ EasyTest-Web/
 | 文档 | 说明 |
 |------|------|
 | [document/SCRIPT_GUIDE.md](document/SCRIPT_GUIDE.md) | 脚本编写指南 |
-| [document/NEW_FEATURES_GUIDE.md](document/NEW_FEATURES_GUIDE.md) | 新功能介绍 |
-| [document/UPDATE_GUIDE.md](document/UPDATE_GUIDE.md) | 更新说明 |
 
 ---
 
