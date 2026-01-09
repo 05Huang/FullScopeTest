@@ -3,14 +3,14 @@
 实现基于 Locust 的性能测试功能
 """
 
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import jwt_required
 from urllib.parse import urlparse
 from . import api_bp
 from ..extensions import db, celery
 from ..models.perf_test_scenario import PerfTestScenario
 from ..utils.response import success_response, error_response
-from ..utils.validators import validate_required
+from ..utils.validators import validate_required, is_valid_url, is_valid_http_method
 from ..utils import get_current_user_id
 from ..tasks import run_perf_test_task
 import subprocess
@@ -46,6 +46,58 @@ def _parse_target_url(url: str) -> tuple:
     except Exception:
         # 解析失败时的兜底处理
         return url, "/"
+
+
+def _get_perf_limits() -> dict:
+    limits = current_app.config.get('PERF_TEST_LIMITS', {})
+    return {
+        'min_users': limits.get('min_users', 1),
+        'max_users': limits.get('max_users', 200),
+        'min_spawn_rate': limits.get('min_spawn_rate', 1),
+        'max_spawn_rate': limits.get('max_spawn_rate', 50),
+        'min_duration': limits.get('min_duration', 10),
+        'max_duration': limits.get('max_duration', 3600),
+    }
+
+
+def _parse_int(value, field_name: str):
+    try:
+        return int(value), None
+    except (TypeError, ValueError):
+        return None, f'{field_name} must be an integer'
+
+
+def _validate_perf_numbers(user_count, spawn_rate, duration):
+    limits = _get_perf_limits()
+
+    user_count, error = _parse_int(user_count, 'user_count')
+    if error:
+        return None, error
+    spawn_rate, error = _parse_int(spawn_rate, 'spawn_rate')
+    if error:
+        return None, error
+    duration, error = _parse_int(duration, 'duration')
+    if error:
+        return None, error
+
+    if not limits['min_users'] <= user_count <= limits['max_users']:
+        return None, f'user_count must be between {limits["min_users"]} and {limits["max_users"]}'
+    if not limits['min_spawn_rate'] <= spawn_rate <= limits['max_spawn_rate']:
+        return None, f'spawn_rate must be between {limits["min_spawn_rate"]} and {limits["max_spawn_rate"]}'
+    if not limits['min_duration'] <= duration <= limits['max_duration']:
+        return None, f'duration must be between {limits["min_duration"]} and {limits["max_duration"]} seconds'
+
+    return (user_count, spawn_rate, duration), None
+
+
+def _normalize_endpoint_path(endpoint: str):
+    endpoint = (endpoint or '/').strip()
+    parsed = urlparse(endpoint)
+    if parsed.scheme or parsed.netloc:
+        return None, 'endpoint must be a relative path'
+    if not endpoint.startswith('/'):
+        endpoint = '/' + endpoint
+    return endpoint, None
 
 
 def _generate_locust_script(method: str, endpoint_path: str,
@@ -301,7 +353,7 @@ def get_scenarios():
 @api_bp.route('/perf-test/scenarios', methods=['POST'])
 @jwt_required()
 def create_scenario():
-    """创建性能测试场景"""
+    """Create a performance test scenario."""
     user_id = get_current_user_id()
     data = request.get_json()
 
@@ -310,11 +362,28 @@ def create_scenario():
         return error_response(400, error)
 
     target_url = data.get('target_url', 'http://localhost:8080')
-    method = data.get('method', 'GET')
-    headers = data.get('headers')
-    body = data.get('body')
+    if not is_valid_url(target_url):
+        return error_response(400, 'target_url must be a valid http/https URL')
 
-    # 解析 URL 并生成脚本（如果用户未提供自定义脚本）
+    method = data.get('method', 'GET').upper()
+    if not is_valid_http_method(method):
+        return error_response(400, 'method must be a valid HTTP method')
+
+    headers = data.get('headers')
+    if headers is not None and not isinstance(headers, dict):
+        return error_response(400, 'headers must be an object')
+
+    body = data.get('body')
+    user_count = data.get('user_count', 10)
+    spawn_rate = data.get('spawn_rate', 1)
+    duration = data.get('duration', 60)
+
+    numbers, error = _validate_perf_numbers(user_count, spawn_rate, duration)
+    if error:
+        return error_response(400, error)
+    user_count, spawn_rate, duration = numbers
+
+    # Generate script when no custom script is provided.
     script_content = data.get('script_content')
     if not script_content:
         _, endpoint_path = _parse_target_url(target_url)
@@ -327,9 +396,9 @@ def create_scenario():
         method=method,
         headers=headers,
         body=body,
-        user_count=data.get('user_count', 10),
-        spawn_rate=data.get('spawn_rate', 1),
-        duration=data.get('duration', 60),
+        user_count=user_count,
+        spawn_rate=spawn_rate,
+        duration=duration,
         project_id=data.get('project_id'),
         user_id=user_id,
         script_content=script_content
@@ -338,7 +407,7 @@ def create_scenario():
     db.session.add(scenario)
     db.session.commit()
 
-    return success_response(data=scenario.to_dict(), message='创建成功')
+    return success_response(data=scenario.to_dict(), message='Created')
 
 
 @api_bp.route('/perf-test/scenarios/<int:scenario_id>', methods=['GET'])
@@ -357,24 +426,70 @@ def get_scenario(scenario_id):
 @api_bp.route('/perf-test/scenarios/<int:scenario_id>', methods=['PUT'])
 @jwt_required()
 def update_scenario(scenario_id):
-    """更新性能测试场景"""
+    """Update a performance test scenario."""
     user_id = get_current_user_id()
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
 
     if not scenario:
-        return error_response(404, '场景不存在')
+        return error_response(404, 'Scenario not found')
 
     data = request.get_json()
 
-    for field in ['name', 'description', 'target_url', 'method',
-                  'user_count', 'spawn_rate', 'duration', 'script_content',
-                  'headers', 'body']:
-        if field in data:
-            setattr(scenario, field, data[field])
+    if 'target_url' in data:
+        if not is_valid_url(data['target_url']):
+            return error_response(400, 'target_url must be a valid http/https URL')
+        scenario.target_url = data['target_url']
+
+    if 'method' in data:
+        method = str(data['method']).upper()
+        if not is_valid_http_method(method):
+            return error_response(400, 'method must be a valid HTTP method')
+        scenario.method = method
+
+    if 'headers' in data:
+        headers = data['headers']
+        if headers is not None and not isinstance(headers, dict):
+            return error_response(400, 'headers must be an object')
+        scenario.headers = headers
+
+    if 'body' in data:
+        scenario.body = data['body']
+
+    if 'name' in data:
+        scenario.name = data['name']
+    if 'description' in data:
+        scenario.description = data['description']
+    if 'script_content' in data:
+        scenario.script_content = data['script_content']
+
+    limits = _get_perf_limits()
+    if 'user_count' in data:
+        user_count, error = _parse_int(data['user_count'], 'user_count')
+        if error:
+            return error_response(400, error)
+        if not limits['min_users'] <= user_count <= limits['max_users']:
+            return error_response(400, f'user_count must be between {limits["min_users"]} and {limits["max_users"]}')
+        scenario.user_count = user_count
+
+    if 'spawn_rate' in data:
+        spawn_rate, error = _parse_int(data['spawn_rate'], 'spawn_rate')
+        if error:
+            return error_response(400, error)
+        if not limits['min_spawn_rate'] <= spawn_rate <= limits['max_spawn_rate']:
+            return error_response(400, f'spawn_rate must be between {limits["min_spawn_rate"]} and {limits["max_spawn_rate"]}')
+        scenario.spawn_rate = spawn_rate
+
+    if 'duration' in data:
+        duration, error = _parse_int(data['duration'], 'duration')
+        if error:
+            return error_response(400, error)
+        if not limits['min_duration'] <= duration <= limits['max_duration']:
+            return error_response(400, f'duration must be between {limits["min_duration"]} and {limits["max_duration"]} seconds')
+        scenario.duration = duration
 
     db.session.commit()
 
-    return success_response(data=scenario.to_dict(), message='更新成功')
+    return success_response(data=scenario.to_dict(), message='Updated')
 
 
 @api_bp.route('/perf-test/scenarios/<int:scenario_id>', methods=['DELETE'])
@@ -406,35 +521,38 @@ def delete_scenario(scenario_id):
 @api_bp.route('/perf-test/scenarios/<int:scenario_id>/run', methods=['POST'])
 @jwt_required()
 def run_scenario(scenario_id):
-    """运行性能测试场景（异步）"""
+    """Run a performance test scenario (async)."""
     user_id = get_current_user_id()
     scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
-    
-    if not scenario:
-        return error_response(404, '场景不存在')
 
-    # 检查是否已在运行
+    if not scenario:
+        return error_response(404, 'Scenario not found')
+
     if scenario.status == 'running':
-        return error_response(400, '测试正在运行中')
+        return error_response(400, 'Scenario is already running')
 
     try:
-        # 获取请求参数（前端可能不传 body）
         try:
             data = request.get_json(force=True, silent=True) or {}
         except Exception:
             data = {}
+
         user_count = data.get('user_count', scenario.user_count)
         spawn_rate = data.get('spawn_rate', scenario.spawn_rate)
         run_time = data.get('duration', scenario.duration)
-        
-        # 异步执行测试任务
+
+        numbers, error = _validate_perf_numbers(user_count, spawn_rate, run_time)
+        if error:
+            return error_response(400, error)
+        user_count, spawn_rate, run_time = numbers
+
         task = run_perf_test_task.apply_async(
             args=[scenario_id, user_count, spawn_rate, run_time],
             task_id=f'perf_test_{scenario_id}_{user_id}'
         )
-        
+
         return success_response(data={
-            'message': '测试已提交，正在后台执行',
+            'message': 'Scenario submitted',
             'task_id': task.id,
             'scenario_id': scenario_id,
             'config': {
@@ -443,12 +561,9 @@ def run_scenario(scenario_id):
                 'run_time': run_time
             }
         })
-        
+
     except Exception as e:
-        return error_response(500, f'提交失败: {str(e)}')
-
-
-
+        return error_response(500, f'Failed to submit: {str(e)}')
 
 
 @api_bp.route('/perf-test/scenarios/<int:scenario_id>/stop', methods=['POST'])
@@ -508,46 +623,53 @@ def get_scenario_status(scenario_id):
 @api_bp.route('/perf-test/quick-test', methods=['POST'])
 @jwt_required()
 def quick_test():
-    """
-    快速性能测试（不保存场景）
-    
-    用于快速验证接口性能
-    """
+    """Quick performance test (no scenario saved)."""
     data = request.get_json()
-    
+
     error = validate_required(data, ['target_host'])
     if error:
         return error_response(400, error)
-    
+
     target_host = data['target_host']
-    endpoint = data.get('endpoint', '/')
+    if not is_valid_url(target_host):
+        return error_response(400, 'target_host must be a valid http/https URL')
+
+    endpoint, error = _normalize_endpoint_path(data.get('endpoint', '/'))
+    if error:
+        return error_response(400, error)
+
     method = data.get('method', 'GET').upper()
+    if not is_valid_http_method(method):
+        return error_response(400, 'method must be a valid HTTP method')
+
     user_count = data.get('user_count', 5)
     spawn_rate = data.get('spawn_rate', 1)
     run_time = data.get('run_time', 10)
-    
-    # 生成临时脚本
-    script = f'''
+
+    numbers, error = _validate_perf_numbers(user_count, spawn_rate, run_time)
+    if error:
+        return error_response(400, error)
+    user_count, spawn_rate, run_time = numbers
+
+    script = f"""
 from locust import HttpUser, task, between
 
 class QuickTestUser(HttpUser):
     wait_time = between(0.5, 1)
-    
+
     @task
     def test_endpoint(self):
         self.client.{method.lower()}("{endpoint}")
-'''
-    
+"""
+
     try:
-        # 创建临时文件
         temp_dir = tempfile.mkdtemp()
         script_file = os.path.join(temp_dir, 'locustfile.py')
         csv_prefix = os.path.join(temp_dir, 'results')
-        
+
         with open(script_file, 'w', encoding='utf-8') as f:
             f.write(script)
-        
-        # 运行 Locust
+
         result = subprocess.run(
             [
                 'locust',
@@ -565,32 +687,28 @@ class QuickTestUser(HttpUser):
             timeout=run_time + 30,
             cwd=temp_dir
         )
-        
-        # 解析结果
+
         results = _parse_locust_results(csv_prefix)
-        
-        # 清理
+
         import shutil
         shutil.rmtree(temp_dir)
-        
+
         return success_response(data={
             'success': result.returncode == 0,
             'results': results,
             'stdout': result.stdout,
             'stderr': result.stderr
         })
-        
+
     except subprocess.TimeoutExpired:
         return success_response(data={
             'success': False,
-            'error': '测试超时'
+            'error': 'Test timed out'
         })
-        
+
     except Exception as e:
-        return error_response(500, f'测试失败: {str(e)}')
+        return error_response(500, f'Test failed: {str(e)}')
 
-
-# ==================== 模板 ====================
 
 @api_bp.route('/perf-test/templates', methods=['GET'])
 def get_perf_templates():

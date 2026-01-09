@@ -19,6 +19,29 @@ const api = axios.create({
   },
 })
 
+let refreshPromise: Promise<string> | null = null
+
+const refreshAccessToken = (refreshToken: string) => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post('/api/v1/auth/refresh', null, {
+        headers: { Authorization: `Bearer ${refreshToken}` },
+      })
+      .then((response) => {
+        const token = response.data?.data?.access_token
+        if (!token) {
+          throw new Error('Missing access token')
+        }
+        return token
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+
+  return refreshPromise
+}
+
 // 请求拦截器
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -45,28 +68,31 @@ api.interceptors.response.use(
     return response.data
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
 
     // 401 错误，尝试刷新 token
-    if (error.response?.status === 401 && originalRequest) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       const refreshToken = useAuthStore.getState().refreshToken
 
       if (refreshToken) {
-        try {
-          const response = await axios.post('/api/v1/auth/refresh', null, {
-            headers: { Authorization: `Bearer ${refreshToken}` },
-          })
+        if (originalRequest.url?.includes('/auth/refresh')) {
+          useAuthStore.getState().logout()
+          window.location.href = '/login'
+          return Promise.reject(error)
+        }
 
-          const { access_token } = response.data.data
+        originalRequest._retry = true
+        try {
+          const accessToken = await refreshAccessToken(refreshToken)
           useAuthStore.getState().setAuth(
-            access_token,
+            accessToken,
             refreshToken,
             useAuthStore.getState().user!
           )
 
           // 重试原请求
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${access_token}`
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`
           }
           return api(originalRequest)
         } catch {
