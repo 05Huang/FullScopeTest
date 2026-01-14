@@ -6,7 +6,6 @@
 - **数据库**: PostgreSQL 15
 - **ORM**: SQLAlchemy 2.0
 - **认证**: JWT (Flask-JWT-Extended)
-- **测试框架**: Pytest + Allure
 - **Web 自动化**: Playwright
 - **性能测试**: Locust
 - **任务队列**: Celery + Redis
@@ -25,7 +24,6 @@ backend/
 │   ├── config.py           # 配置管理
 │   └── extensions.py       # Flask 扩展
 ├── migrations/             # 数据库迁移
-├── tests/                  # 单元测试
 ├── manage.py               # CLI 管理命令
 ├── wsgi.py                 # WSGI 入口
 └── requirements.txt        # Python 依赖
