@@ -29,6 +29,20 @@ EasyTest 是一款专为个人开发者和小型团队设计的自动化测试�
 
 ---
 
+## 文档总览
+
+统一入口文档：`document/overview.md`（推荐先看这一份）。
+其他历史说明保留在 `document/` 目录，作为补充参考。
+
+
+
+
+
+
+
+
+
+
 ## 核心功能
 
 ### 🔌 接口测试
@@ -48,7 +62,6 @@ EasyTest 是一款专为个人开发者和小型团队设计的自动化测试�
 |------|------|
 | 多浏览器支持 | Chromium、Firefox、WebKit |
 | 脚本录制 | 可视化录制器，一键启动 |
-| 元素库 | 统一管理页面元素定位 |
 | 截图视频 | 自动保存执行过程 |
 | 批量执行 | 支持脚本批量运行 |
 
@@ -188,6 +201,11 @@ EasyTest-Web/
 
 ## 文档导航
 
+统一入口文档：`document/overview.md`
+
+
+
+
 ### 快速上手
 
 | 文档 | 说明 |
@@ -305,7 +323,6 @@ docker-compose -f docker-compose.prod.yml up -d
 - Web 测试可视化录制器
 - 性能测试实时监控
 - 环境变量自动补全
-- 元素库管理功能
 
 详见 [Git 提交历史](https://github.com/Asukadaisiki/easytest/commits/main/)。
 

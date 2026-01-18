@@ -84,15 +84,13 @@ export const getCategories = (): Promise<ApiResponse<DocumentCategory[]>> => {
   return api.get('/docs/categories') as Promise<ApiResponse<DocumentCategory[]>>
 }
 
-// 获取文档模板列表
+// ????????
 export const getTemplates = (): Promise<ApiResponse<DocumentTemplate[]>> => {
   return api.get('/docs/templates') as Promise<ApiResponse<DocumentTemplate[]>>
 }
 
-// 获取指定模板
-export const getTemplate = (templateId: string): Promise<ApiResponse<DocumentTemplate>> => {
-  return api.get(`/docs/templates/${templateId}`) as Promise<ApiResponse<DocumentTemplate>>
-}
+
+
 
 // ==================== 导出 ====================
 
@@ -110,7 +108,6 @@ export const documentService = {
   deleteDocument,
   getCategories,
   getTemplates,
-  getTemplate,
   getDocExportUrl,
 }
 
