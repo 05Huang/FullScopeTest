@@ -43,13 +43,6 @@ export const runScript = (scriptId: number, headless?: boolean): Promise<ApiResp
   return api.post(`/web-test/scripts/${scriptId}/run`, { headless }) as Promise<ApiResponse>
 }
 
-export const executeWebCode = (data: {
-  code: string
-  headless?: boolean
-}): Promise<ApiResponse> => {
-  return api.post('/web-test/execute', data) as Promise<ApiResponse>
-}
-
 // ==================== 录制功能 ====================
 
 export const startRecording = (data: {
@@ -75,7 +68,6 @@ export const webTestService = {
   updateScript,
   deleteScript,
   runScript,
-  executeWebCode,
   startRecording,
   stopRecording,
   getRecordingStatus,

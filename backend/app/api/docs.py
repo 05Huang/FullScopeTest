@@ -500,27 +500,3 @@ def get_document_templates():
     return success_response(data=templates)
 
 
-@api_bp.route('/docs/templates/<template_id>', methods=['GET'])
-@jwt_required()
-def get_document_template(template_id):
-    """获取指定模板内容"""
-    templates = {
-        'test_plan': {
-            'name': '测试计划模板',
-            'content': '# 测试计划\n\n## 1. 项目概述\n...'
-        },
-        'test_case': {
-            'name': '测试用例模板',
-            'content': '# 测试用例设计\n\n## 模块名称\n...'
-        },
-        'api_doc': {
-            'name': '接口文档模板',
-            'content': '# 接口文档\n\n## 基本信息\n...'
-        }
-    }
-    
-    template = templates.get(template_id)
-    if not template:
-        return error_response(404, '模板不存在')
-    
-    return success_response(data=template)

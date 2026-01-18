@@ -36,9 +36,6 @@ export const deleteEnvironment = (id: number): Promise<ApiResponse> => {
   return api.delete(`/environments/${id}`) as Promise<ApiResponse>
 }
 
-export const setDefaultEnvironment = (id: number): Promise<ApiResponse> => {
-  return api.put(`/environments/${id}/default`) as Promise<ApiResponse>
-}
 
 // 导出服务对象
 export const environmentService = {
@@ -47,5 +44,4 @@ export const environmentService = {
   getEnvironment,
   updateEnvironment,
   deleteEnvironment,
-  setDefaultEnvironment,
 }
