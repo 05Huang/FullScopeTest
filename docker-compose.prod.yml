@@ -1,36 +1,46 @@
-# EasyTest 生产环境 Docker Compose
-# 启动命令: docker-compose -f docker-compose.prod.yml up -d
+# EasyTest production Docker Compose (OpenResty on host, services in Docker)
 
 version: '3.8'
 
 services:
-  # Nginx 反向代理
-  nginx:
-    image: nginx:alpine
-    container_name: easytest_nginx
+  postgres:
+    image: postgres:15-alpine
     restart: always
-    ports:
-      - "80:80"
-      - "443:443"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-easytest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-easytest123}
+      POSTGRES_DB: ${POSTGRES_DB:-easytest_prod}
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
-      - ./web/dist:/usr/share/nginx/html:ro
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      - backend
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-easytest} -d ${POSTGRES_DB:-easytest_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - easytest_network
 
-  # Flask 后端
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - easytest_network
+
   backend:
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
-    container_name: easytest_backend
     restart: always
-    expose:
-      - "5000"
+    ports:
+      - "127.0.0.1:5211:5000"
     environment:
       - FLASK_ENV=production
       - DATABASE_URL=${DATABASE_URL}
@@ -48,12 +58,10 @@ services:
     networks:
       - easytest_network
 
-  # Celery Worker
   celery:
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
-    container_name: easytest_celery
     restart: always
     environment:
       - FLASK_ENV=production
@@ -62,44 +70,9 @@ services:
     volumes:
       - backend_reports:/app/reports
     depends_on:
-      - redis
       - postgres
+      - redis
     command: celery -A app.tasks worker --loglevel=warning
-    networks:
-      - easytest_network
-
-  # PostgreSQL 数据库
-  postgres:
-    image: postgres:15-alpine
-    container_name: easytest_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - easytest_network
-
-  # Redis
-  redis:
-    image: redis:7-alpine
-    container_name: easytest_redis
-    restart: always
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - easytest_network
 
@@ -109,7 +82,26 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/apps/easytest/data/postgres
   redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/apps/easytest/data/redis
   backend_uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/apps/easytest/data/uploads
   backend_reports:
-  nginx_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/apps/easytest/data/reports
