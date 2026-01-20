@@ -104,6 +104,12 @@ Create a database for this project:
 docker exec -it postgres-shared psql -U easytest -c "CREATE DATABASE easytest_prod;"
 ```
 
+Create a separate database for tests (used by pytest in deploy.sh):
+
+```bash
+docker exec -it postgres-shared psql -U easytest -c "CREATE DATABASE easytest_test;"
+```
+
 ---
 
 ## 6) Deploy Once on the Server (Manual)
