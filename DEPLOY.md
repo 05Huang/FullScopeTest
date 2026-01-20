@@ -48,7 +48,7 @@ curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | bash
 
 After install, open:
 ```
-http://<server-ip>:8888
+http://<server-ip>:21887
 ```
 Use the default account printed by the installer, then change the password.
 
@@ -81,6 +81,7 @@ Notes:
 - Redis in `docker-compose.prod.yml` has no password, so `REDIS_URL` must NOT include a password.
 - Nginx is managed by 1Panel on the host; there is no nginx container in production.
 - This deployment uses a shared PostgreSQL instance on the host (see step 5.1 below).
+- Do NOT install Redis/PostgreSQL from 1Panel App Store to avoid duplicate services; use Docker as defined in this guide.
 
 ---
 
@@ -108,7 +109,7 @@ docker exec -it postgres-shared psql -U easytest -c "CREATE DATABASE easytest_pr
 ## 6) Deploy Once on the Server (Manual)
 
 ```bash
-cd /opt/apps/easytest/repo
+cd /opt/apps/easytest/repo/AutoTestingPlatform
 chmod +x deploy.sh
 ./deploy.sh
 ```
