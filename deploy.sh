@@ -2,7 +2,7 @@
 set -e
 
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_ROOT="$(cd "${APP_DIR}/.." && pwd)"
+APP_ROOT="$(cd "${APP_DIR}/../.." && pwd)"
 DATA_DIR="${DATA_DIR:-${APP_ROOT}/data}"
 BRANCH="${BRANCH:-main}"
 PROJECT_NAME="${PROJECT_NAME:-easytest}"
