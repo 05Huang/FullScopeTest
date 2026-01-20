@@ -28,7 +28,7 @@ docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-sl
   sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=postgresql://easytest:easytest123@127.0.0.1:5432/easytest_test pytest -q tests"
 
 # Deploy services.
-docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d --build
+docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build
 
 # Health checks (backend only; OpenResty proxies externally).
 curl -fsS "http://127.0.0.1:5211/api/v1/api-test/health"
