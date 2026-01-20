@@ -31,4 +31,15 @@ docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-sl
 docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build
 
 # Health checks (backend only; OpenResty proxies externally).
-curl -fsS "http://127.0.0.1:5211/api/v1/api-test/health"
+for i in {1..10}; do
+  if curl -fsS "http://127.0.0.1:5211/api/v1/api-test/health" > /dev/null; then
+    echo "Health check OK"
+    break
+  fi
+  echo "Health check retry ($i/10) ..."
+  sleep 3
+  if [ "$i" -eq 10 ]; then
+    echo "Health check failed"
+    exit 1
+  fi
+done
