@@ -23,8 +23,9 @@ docker run --rm -v "$APP_DIR/web:/app" -w /app node:18-alpine \
   sh -c "npm ci && npm run build"
 
 # Run pytest using a Python container (no host Python required).
-docker run --rm -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
-  sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=sqlite:////tmp/easytest_test.db pytest -q tests"
+# Use host network so tests can reach the shared Postgres on localhost.
+docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
+  sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=postgresql://easytest:easytest123@127.0.0.1:5432/easytest_test pytest -q tests"
 
 # Deploy services.
 docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d --build
