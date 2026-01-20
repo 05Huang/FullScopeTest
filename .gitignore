@@ -119,3 +119,6 @@ prn
 aux
 com1-9
 lpt1-9
+
+# Windows batch scripts (Linux server not used)
+*.bat
