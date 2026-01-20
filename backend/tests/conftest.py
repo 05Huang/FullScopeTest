@@ -20,10 +20,10 @@ def app():
     db_fd, db_path = tempfile.mkstemp(prefix="easytest_test_", suffix=".db")
     os.close(db_fd)
 
+    os.environ["TEST_DATABASE_URL"] = f"sqlite:///{db_path}"
     app = create_app("testing")
     app.config.update(
         TESTING=True,
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
         SQLALCHEMY_ENGINE_OPTIONS={"connect_args": {"check_same_thread": False}},
         JWT_SECRET_KEY="test-jwt-secret",
     )
