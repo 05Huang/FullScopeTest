@@ -67,7 +67,7 @@ git clone https://github.com/Asukadaisiki/AutoTestingPlatform.git .
 ## 5) Create .env
 
 ```bash
-cat > /opt/apps/easytest/repo/.env << 'EOF'
+cat > /opt/apps/easytest/repo/AutoTestingPlatform/.env << 'EOF'
 DATABASE_URL=postgresql://easytest:easytest123@host.docker.internal:5432/easytest_prod
 REDIS_URL=redis://redis:6379/0
 
@@ -132,10 +132,15 @@ docker compose -p easytest -f docker-compose.prod.yml ps
 In 1Panel:
 1. Create a **Static Website**
 2. Domains: `asuka.codes` and `www.asuka.codes`
-3. Root path: `/opt/apps/easytest/repo/web/dist`
+3. Root path: `/opt/apps/easytest/repo/AutoTestingPlatform/web/dist`
 4. Add reverse proxy rule:
    - Path: `/api/`
-   - Target: `http://127.0.0.1:5211`
+   - Target: `127.0.0.1:5211`
+
+Notes:
+- 1Panel OpenResty runs in a container and does not see host paths. The deploy script syncs `web/dist` into
+  `/opt/1panel/apps/openresty/openresty/www/sites/easy/index/` after each build.
+- Ensure "Force HTTPS" is disabled in 1Panel if you haven't enabled SSL yet.
 
 ---
 

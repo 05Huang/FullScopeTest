@@ -22,6 +22,11 @@ mkdir -p \
 docker run --rm -v "$APP_DIR/web:/app" -w /app node:18-alpine \
   sh -c "npm ci && npm run build"
 
+# Sync built frontend to 1Panel OpenResty site directory (if present).
+if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/easy/index" ]; then
+  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/easy/index/
+fi
+
 # Run pytest using a Python container (no host Python required).
 # Use host network so tests can reach the shared Postgres on localhost.
 docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
