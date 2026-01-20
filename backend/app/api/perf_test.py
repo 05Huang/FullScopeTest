@@ -106,11 +106,12 @@ def _generate_locust_script(method: str, endpoint_path: str,
     headers_code = ""
     if headers:
         headers_items = [f'            "{k}": "{v}"' for k, v in headers.items()]
+        headers_joined = ",\n".join(headers_items)
         headers_code = f"""
 
         # 请求头
         headers = {{
-{",\n".join(headers_items)}
+{headers_joined}
         }}
 """
 
