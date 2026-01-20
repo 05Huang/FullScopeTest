@@ -14,7 +14,6 @@ git reset --hard "origin/${BRANCH}"
 
 # Ensure bind-mount directories exist for multi-project layout.
 mkdir -p \
-  "${DATA_DIR}/postgres" \
   "${DATA_DIR}/redis" \
   "${DATA_DIR}/uploads" \
   "${DATA_DIR}/reports"

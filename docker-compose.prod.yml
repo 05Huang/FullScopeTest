@@ -3,23 +3,6 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-easytest}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-easytest123}
-      POSTGRES_DB: ${POSTGRES_DB:-easytest_prod}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-easytest} -d ${POSTGRES_DB:-easytest_prod}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - easytest_network
-
   redis:
     image: redis:7-alpine
     restart: always
@@ -51,10 +34,10 @@ services:
       - backend_uploads:/app/uploads
       - backend_reports:/app/reports
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - easytest_network
 
@@ -70,9 +53,10 @@ services:
     volumes:
       - backend_reports:/app/reports
     depends_on:
-      - postgres
       - redis
     command: celery -A app.tasks worker --loglevel=warning
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - easytest_network
 
@@ -81,12 +65,6 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/apps/easytest/data/postgres
   redis_data:
     driver: local
     driver_opts:
