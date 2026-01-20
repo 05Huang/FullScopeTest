@@ -1,6 +1,6 @@
 # EasyTest 后端生产环境 Dockerfile
 
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 # 设置工作目录
 WORKDIR /app
@@ -26,8 +26,7 @@ RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # 安装 Playwright 浏览器 (生产环境仅安装 chromium)
-RUN playwright install chromium && \
-    playwright install-deps chromium
+RUN playwright install --with-deps chromium
 
 # 复制应用代码
 COPY backend/ .
