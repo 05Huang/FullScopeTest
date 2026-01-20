@@ -24,7 +24,7 @@ docker run --rm -v "$APP_DIR/web:/app" -w /app node:18-alpine \
 
 # Run pytest using a Python container (no host Python required).
 docker run --rm -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
-  sh -c "pip install -r requirements.txt -r requirements-test.txt && pytest -q"
+  sh -c "pip install -r requirements.txt -r requirements-test.txt && pytest -q tests"
 
 # Deploy services.
 docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d --build
