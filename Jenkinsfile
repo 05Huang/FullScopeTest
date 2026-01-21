@@ -47,17 +47,17 @@ pipeline {
               """
             } else {
               bat """
-                icacls "%SSH_KEY%" /inheritance:r /grant:r "%USERNAME%:R"
+                icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
                 ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
                 "mkdir -p %DEPLOY_PATH%/web/dist"
               """
               bat """
-                icacls "%SSH_KEY%" /inheritance:r /grant:r "%USERNAME%:R"
+                icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
                 scp -i "%SSH_KEY%" -o StrictHostKeyChecking=no -r web/dist/* ^
                 %SSH_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/web/dist/
               """
               bat """
-                icacls "%SSH_KEY%" /inheritance:r /grant:r "%USERNAME%:R"
+                icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
                 ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
                 "cd %DEPLOY_PATH% && SKIP_WEB_BUILD=1 BRANCH=%DEPLOY_BRANCH% ./deploy.sh"
               """
