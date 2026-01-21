@@ -11,13 +11,51 @@ pipeline {
   }
 
   stages {
+    stage('Build Frontend (Local)') {
+      steps {
+        dir('web') {
+          script {
+            if (isUnix()) {
+              sh 'npm ci && npm run build'
+            } else {
+              bat 'npm ci && npm run build'
+            }
+          }
+        }
+      }
+    }
     stage('Deploy') {
       steps {
         sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
-          sh """
-            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \\
-            "cd ${DEPLOY_PATH} && BRANCH=${DEPLOY_BRANCH} ./deploy.sh"
-          """
+          script {
+            if (isUnix()) {
+              sh """
+                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \\
+                "mkdir -p ${DEPLOY_PATH}/web/dist"
+              """
+              sh """
+                scp -o StrictHostKeyChecking=no -r web/dist/* \\
+                ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/web/dist/
+              """
+              sh """
+                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \\
+                "cd ${DEPLOY_PATH} && SKIP_WEB_BUILD=1 BRANCH=${DEPLOY_BRANCH} ./deploy.sh"
+              """
+            } else {
+              bat """
+                ssh -o StrictHostKeyChecking=no %DEPLOY_USER%@%DEPLOY_HOST% ^
+                "mkdir -p %DEPLOY_PATH%/web/dist"
+              """
+              bat """
+                scp -o StrictHostKeyChecking=no -r web/dist/* ^
+                %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/web/dist/
+              """
+              bat """
+                ssh -o StrictHostKeyChecking=no %DEPLOY_USER%@%DEPLOY_HOST% ^
+                "cd %DEPLOY_PATH% && SKIP_WEB_BUILD=1 BRANCH=%DEPLOY_BRANCH% ./deploy.sh"
+              """
+            }
+          }
         }
       }
     }
