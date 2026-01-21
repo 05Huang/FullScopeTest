@@ -20,11 +20,13 @@ mkdir -p \
 
 # Build frontend using a Node container (no host Node required).
 # Limit Node memory to reduce swapping on small servers.
-docker run --rm -v "$APP_DIR/web:/app" -w /app node:18-alpine \
-  sh -c "export NODE_OPTIONS=--max-old-space-size=1024 && npm ci && npm run build"
+if [ "${SKIP_WEB_BUILD:-0}" != "1" ]; then
+  docker run --rm -v "$APP_DIR/web:/app" -w /app node:18-alpine \
+    sh -c "export NODE_OPTIONS=--max-old-space-size=1024 && npm ci && npm run build"
+fi
 
 # Sync built frontend to 1Panel OpenResty site directory (if present).
-if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/easy/index" ]; then
+if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/easy/index" ] && [ -d "$APP_DIR/web/dist" ]; then
   rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/easy/index/
 fi
 
