@@ -26,32 +26,36 @@ pipeline {
     }
     stage('Deploy') {
       steps {
-        sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
+        withCredentials([sshUserPrivateKey(
+          credentialsId: "${SSH_CREDENTIALS_ID}",
+          keyFileVariable: 'SSH_KEY',
+          usernameVariable: 'SSH_USER'
+        )]) {
           script {
             if (isUnix()) {
               sh """
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \\
+                ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} \\
                 "mkdir -p ${DEPLOY_PATH}/web/dist"
               """
               sh """
-                scp -o StrictHostKeyChecking=no -r web/dist/* \\
-                ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/web/dist/
+                scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no -r web/dist/* \\
+                ${SSH_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/web/dist/
               """
               sh """
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \\
+                ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} \\
                 "cd ${DEPLOY_PATH} && SKIP_WEB_BUILD=1 BRANCH=${DEPLOY_BRANCH} ./deploy.sh"
               """
             } else {
               bat """
-                ssh -o StrictHostKeyChecking=no %DEPLOY_USER%@%DEPLOY_HOST% ^
+                ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
                 "mkdir -p %DEPLOY_PATH%/web/dist"
               """
               bat """
-                scp -o StrictHostKeyChecking=no -r web/dist/* ^
-                %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/web/dist/
+                scp -i "%SSH_KEY%" -o StrictHostKeyChecking=no -r web/dist/* ^
+                %SSH_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/web/dist/
               """
               bat """
-                ssh -o StrictHostKeyChecking=no %DEPLOY_USER%@%DEPLOY_HOST% ^
+                ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
                 "cd %DEPLOY_PATH% && SKIP_WEB_BUILD=1 BRANCH=%DEPLOY_BRANCH% ./deploy.sh"
               """
             }
