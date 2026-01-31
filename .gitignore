@@ -34,6 +34,7 @@ venv.bak/
 # ===== IDE & 编辑器 =====
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
@@ -101,6 +102,10 @@ allure-report/
 node_modules/
 npm-debug.log
 yarn-error.log
+
+# Frontend build artifacts (commit web/dist)
+!web/dist/
+!web/dist/**
 
 # ===== 编译输出 =====
 *.pyc
