@@ -52,9 +52,14 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# 安装 Playwright 浏览器
-RUN playwright install chromium && \
-    playwright install-deps chromium
+# 安装 Playwright 浏览器（可通过构建参数 SKIP_PLAYWRIGHT_BROWSERS=1 跳过，便于在资源受限环境快速构建）
+ARG SKIP_PLAYWRIGHT_BROWSERS=0
+RUN if [ "$SKIP_PLAYWRIGHT_BROWSERS" = "1" ]; then \
+      echo "Skipping Playwright browser installation"; \
+    else \
+      playwright install chromium && \
+      playwright install-deps chromium; \
+    fi
 
 # 复制应用代码
 COPY . .
