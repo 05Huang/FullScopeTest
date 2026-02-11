@@ -11,39 +11,52 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# 安装系统依赖（包含 Playwright 运行所需依赖）
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgdk-pixbuf2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxrandr2 \
-    libxss1 \
-    libxshmfence1 \
-    libxkbcommon0 \
-    libpangocairo-1.0-0 \
-    fonts-ipafont-gothic \
-    fonts-wqy-zenhei \
-    fonts-noto-color-emoji \
-    wget \
-    xz-utils \
-    && rm -rf /var/lib/apt/lists/*
+# 可选安装系统依赖：基础依赖总是安装，Playwright 运行依赖仅在 SKIP_PLAYWRIGHT_BROWSERS!=1 时安装
+ARG SKIP_PLAYWRIGHT_BROWSERS=0
+RUN apt-get update && \
+    if [ "$SKIP_PLAYWRIGHT_BROWSERS" = "1" ]; then \
+        apt-get install -y --no-install-recommends \
+            build-essential \
+            libpq-dev \
+            curl \
+            ca-certificates \
+            wget \
+            xz-utils && \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        apt-get install -y --no-install-recommends \
+            build-essential \
+            libpq-dev \
+            curl \
+            ca-certificates \
+            fonts-liberation \
+            libasound2 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdbus-1-3 \
+            libdrm2 \
+            libgbm1 \
+            libgdk-pixbuf2.0-0 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libx11-xcb1 \
+            libxcomposite1 \
+            libxcursor1 \
+            libxdamage1 \
+            libxrandr2 \
+            libxss1 \
+            libxshmfence1 \
+            libxkbcommon0 \
+            libpangocairo-1.0-0 \
+            fonts-ipafont-gothic \
+            fonts-wqy-zenhei \
+            fonts-noto-color-emoji \
+            wget \
+            xz-utils && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # 复制依赖文件
 COPY requirements.txt .
@@ -52,8 +65,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# 安装 Playwright 浏览器（可通过构建参数 SKIP_PLAYWRIGHT_BROWSERS=1 跳过，便于在资源受限环境快速构建）
-ARG SKIP_PLAYWRIGHT_BROWSERS=0
+# 安装 Playwright 浏览器（可通过构建参数 SKIP_PLAYWRIGHT_BROWSERS=1 跳过）
 RUN if [ "$SKIP_PLAYWRIGHT_BROWSERS" = "1" ]; then \
       echo "Skipping Playwright browser installation"; \
     else \
