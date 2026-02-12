@@ -4,25 +4,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL 数据库
-  postgres:
-    image: postgres:15-alpine
-    container_name: easytest_postgres
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: easytest
-      POSTGRES_PASSWORD: easytest123
-      POSTGRES_DB: easytest_dev
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U easytest -d easytest_dev"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
 
   # Redis 缓存/消息队列
   redis:
