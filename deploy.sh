@@ -26,8 +26,8 @@ if [ "${SKIP_WEB_BUILD:-0}" != "1" ]; then
 fi
 
 # Sync built frontend to 1Panel OpenResty site directory (if present).
-if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/easy/index" ] && [ -d "$APP_DIR/web/dist" ]; then
-  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/easy/index/
+if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/easytest/index" ] && [ -d "$APP_DIR/web/dist" ]; then
+  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/easytest/index/
 fi
 
 # Run pytest using a Python container (no host Python required).
