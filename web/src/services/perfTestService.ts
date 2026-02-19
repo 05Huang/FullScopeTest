@@ -16,6 +16,9 @@ export const createScenario = (data: {
   user_count?: number
   spawn_rate?: number
   duration?: number
+  step_load_enabled?: boolean
+  step_users?: number
+  step_duration?: number
   project_id?: number
 }): Promise<ApiResponse> => {
   return api.post('/perf-test/scenarios', data) as Promise<ApiResponse>
@@ -35,6 +38,9 @@ export const updateScenario = (id: number, data: {
   user_count?: number
   spawn_rate?: number
   duration?: number
+  step_load_enabled?: boolean
+  step_users?: number
+  step_duration?: number
 }): Promise<ApiResponse> => {
   return api.put(`/perf-test/scenarios/${id}`, data) as Promise<ApiResponse>
 }
@@ -45,8 +51,15 @@ export const deleteScenario = (id: number): Promise<ApiResponse> => {
 
 // ==================== 执行测试 ====================
 
-export const runScenario = (scenarioId: number): Promise<ApiResponse> => {
-  return api.post(`/perf-test/scenarios/${scenarioId}/run`) as Promise<ApiResponse>
+export const runScenario = (scenarioId: number, data?: {
+  user_count?: number
+  spawn_rate?: number
+  duration?: number
+  step_load_enabled?: boolean
+  step_users?: number
+  step_duration?: number
+}): Promise<ApiResponse> => {
+  return api.post(`/perf-test/scenarios/${scenarioId}/run`, data) as Promise<ApiResponse>
 }
 
 export const stopScenario = (scenarioId: number): Promise<ApiResponse> => {
