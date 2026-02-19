@@ -778,6 +778,9 @@ Authorization: Bearer <access_token>
     "user_count": 100,
     "spawn_rate": 10,
     "duration": 60,
+    "step_load_enabled": true,
+    "step_users": 10,
+    "step_duration": 30,
     "project_id": 1
 }
 ```
@@ -795,6 +798,9 @@ Authorization: Bearer <access_token>
 | user_count | int | ✗ | 10 | 并发用户数 |
 | spawn_rate | int | ✗ | 1 | 每秒启动用户数 |
 | duration | int | ✗ | 60 | 测试持续时间（秒） |
+| step_load_enabled | bool | ✗ | false | 是否启用阶梯加压 |
+| step_users | int | ✗ | 10 | 每步新增用户数（step_load_enabled=true 时必填） |
+| step_duration | int | ✗ | 30 | 每步持续时间（秒）（step_load_enabled=true 时必填） |
 | project_id | int | ✗ | null | 所属项目 ID |
 | script_content | string | ✗ | 自动生成 | 自定义 Locust 脚本（如不提供则自动生成） |
 
@@ -826,6 +832,8 @@ Authorization: Bearer <access_token>
 
 **请求头：** 需要 Bearer Token
 
+**说明：** PUT 支持更新 `step_load_enabled`、`step_users`、`step_duration`。当 `step_load_enabled=true` 时，必须同时提供 `step_users` 和 `step_duration`。
+
 ---
 
 #### 5. 删除场景
@@ -850,7 +858,10 @@ Authorization: Bearer <access_token>
 {
     "user_count": 50,
     "spawn_rate": 5,
-    "duration": 120
+    "duration": 120,
+    "step_load_enabled": true,
+    "step_users": 10,
+    "step_duration": 30
 }
 ```
 
@@ -866,7 +877,10 @@ Authorization: Bearer <access_token>
         "config": {
             "users": 50,
             "spawn_rate": 5,
-            "run_time": 120
+            "run_time": 120,
+            "step_load_enabled": true,
+            "step_users": 10,
+            "step_duration": 30
         }
     }
 }

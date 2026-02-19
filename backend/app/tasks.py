@@ -76,6 +76,74 @@ class RealtimeStatsCollector:
             }
 
 
+def _build_step_stages(user_count, step_users, step_duration, run_time):
+    """Build staged load plan where step_users means incremental users per step."""
+    if user_count <= 0 or step_users <= 0 or step_duration <= 0 or run_time <= 0:
+        return []
+
+    stages = []
+    step_spawn_rate = max(1, (step_users + step_duration - 1) // step_duration)
+    current_users = 0
+    stage_start = 0
+
+    while stage_start < run_time:
+        if current_users < user_count:
+            current_users = min(current_users + step_users, user_count)
+        stage_end = min(stage_start + step_duration, run_time)
+        stages.append({
+            'start': int(stage_start),
+            'end': int(stage_end),
+            'users': int(current_users),
+            'spawn_rate': int(step_spawn_rate),
+        })
+        stage_start += step_duration
+
+    return stages
+
+
+def _inject_step_load_shape(script_content, stages):
+    if not stages:
+        return script_content
+
+    shape_script = f'''
+
+from locust import LoadTestShape
+
+class StepLoadShape(LoadTestShape):
+    stages = {json.dumps(stages)}
+
+    def tick(self):
+        run_time = self.get_run_time()
+        for stage in self.stages:
+            if run_time < stage["end"]:
+                return (stage["users"], stage["spawn_rate"])
+        return None
+'''
+    return script_content.rstrip() + shape_script + '\n'
+
+
+def _build_locust_command(locustfile, base_host, csv_prefix, run_time, user_count, spawn_rate, step_load_enabled):
+    cmd = [
+        sys.executable, '-m', 'locust',
+        '-f', locustfile,
+        '--host', base_host,
+        '--run-time', f'{run_time}s',
+        '--headless',
+        '--csv', csv_prefix,
+        '--loglevel', 'WARNING',
+        '--only-summary',
+        '--csv-full-history'
+    ]
+
+    if not step_load_enabled:
+        cmd.extend([
+            '--users', str(user_count),
+            '--spawn-rate', str(spawn_rate),
+        ])
+
+    return cmd
+
+
 @celery.task(bind=True, name='tasks.run_web_test')
 def run_web_test_task(self, script_id, user_id):
     """
@@ -189,7 +257,16 @@ def run_web_test_task(self, script_id, user_id):
 
 
 @celery.task(bind=True, name='tasks.run_perf_test')
-def run_perf_test_task(self, scenario_id, user_count, spawn_rate, run_time):
+def run_perf_test_task(
+    self,
+    scenario_id,
+    user_count,
+    spawn_rate,
+    run_time,
+    step_load_enabled=False,
+    step_users=None,
+    step_duration=None
+):
     """异步执行性能测试：改为子进程运行 Locust，避免 Celery/greenlet 冲突"""
     with _get_flask_app().app_context():
         from app.api.perf_test import _parse_target_url
@@ -262,6 +339,16 @@ def run_perf_test_task(self, scenario_id, user_count, spawn_rate, run_time):
 
             # 替换脚本中的占位符
             script_content = scenario.script_content.replace('{{endpoint_path}}', endpoint_path)
+            if step_load_enabled:
+                stages = _build_step_stages(
+                    user_count=user_count,
+                    step_users=step_users,
+                    step_duration=step_duration,
+                    run_time=run_time
+                )
+                if not stages:
+                    return {'success': False, 'error': 'Invalid step load configuration'}
+                script_content = _inject_step_load_shape(script_content, stages)
 
             with open(locustfile, 'w', encoding='utf-8') as f:
                 f.write(script_content)
@@ -297,19 +384,15 @@ def run_perf_test_task(self, scenario_id, user_count, spawn_rate, run_time):
             monitor_thread.start()
 
             # 启动 Locust 子进程（隔离 gevent）
-            cmd = [
-                sys.executable, '-m', 'locust',
-                '-f', locustfile,
-                '--host', base_host,
-                '--users', str(user_count),
-                '--spawn-rate', str(spawn_rate),
-                '--run-time', f'{run_time}s',
-                '--headless',
-                '--csv', csv_prefix,
-                '--loglevel', 'WARNING',
-                '--only-summary',
-                '--csv-full-history'
-            ]
+            cmd = _build_locust_command(
+                locustfile=locustfile,
+                base_host=base_host,
+                csv_prefix=csv_prefix,
+                run_time=run_time,
+                user_count=user_count,
+                spawn_rate=spawn_rate,
+                step_load_enabled=step_load_enabled,
+            )
 
             proc = subprocess.Popen(
                 cmd,

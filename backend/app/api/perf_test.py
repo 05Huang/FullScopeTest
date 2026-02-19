@@ -62,6 +62,12 @@ def _parse_int(value, field_name: str):
         return None, f'{field_name} must be an integer'
 
 
+def _parse_bool(value, field_name: str):
+    if isinstance(value, bool):
+        return value, None
+    return None, f'{field_name} must be a boolean'
+
+
 def _validate_perf_numbers(user_count, spawn_rate, duration):
     limits = _get_perf_limits()
 
@@ -83,6 +89,41 @@ def _validate_perf_numbers(user_count, spawn_rate, duration):
         return None, f'duration must be between {limits["min_duration"]} and {limits["max_duration"]} seconds'
 
     return (user_count, spawn_rate, duration), None
+
+
+def _validate_step_load_config(step_load_enabled, step_users, step_duration):
+    limits = _get_perf_limits()
+
+    step_load_enabled, error = _parse_bool(step_load_enabled, 'step_load_enabled')
+    if error:
+        return None, error
+
+    parsed_step_users = None
+    if step_users is not None:
+        parsed_step_users, error = _parse_int(step_users, 'step_users')
+        if error:
+            return None, error
+        if not 1 <= parsed_step_users <= limits['max_users']:
+            return None, f'step_users must be between 1 and {limits["max_users"]}'
+
+    parsed_step_duration = None
+    if step_duration is not None:
+        parsed_step_duration, error = _parse_int(step_duration, 'step_duration')
+        if error:
+            return None, error
+        if not 1 <= parsed_step_duration <= limits['max_duration']:
+            return None, f'step_duration must be between 1 and {limits["max_duration"]} seconds'
+
+    if step_load_enabled and parsed_step_users is None:
+        return None, 'step_users is required when step_load_enabled is true'
+    if step_load_enabled and parsed_step_duration is None:
+        return None, 'step_duration is required when step_load_enabled is true'
+
+    if not step_load_enabled:
+        parsed_step_users = parsed_step_users if parsed_step_users is not None else 10
+        parsed_step_duration = parsed_step_duration if parsed_step_duration is not None else 30
+
+    return (step_load_enabled, parsed_step_users, parsed_step_duration), None
 
 
 def _generate_locust_script(method: str, endpoint_path: str,
@@ -210,11 +251,19 @@ def create_scenario():
     user_count = data.get('user_count', 10)
     spawn_rate = data.get('spawn_rate', 1)
     duration = data.get('duration', 60)
+    step_load_enabled = data.get('step_load_enabled', False)
+    step_users = data.get('step_users')
+    step_duration = data.get('step_duration')
 
     numbers, error = _validate_perf_numbers(user_count, spawn_rate, duration)
     if error:
         return error_response(400, error)
     user_count, spawn_rate, duration = numbers
+
+    step_config, error = _validate_step_load_config(step_load_enabled, step_users, step_duration)
+    if error:
+        return error_response(400, error)
+    step_load_enabled, step_users, step_duration = step_config
 
     # Generate script when no custom script is provided.
     script_content = data.get('script_content')
@@ -232,6 +281,9 @@ def create_scenario():
         user_count=user_count,
         spawn_rate=spawn_rate,
         duration=duration,
+        step_load_enabled=step_load_enabled,
+        step_users=step_users,
+        step_duration=step_duration,
         project_id=data.get('project_id'),
         user_id=user_id,
         script_content=script_content
@@ -267,6 +319,13 @@ def update_scenario(scenario_id):
         return error_response(404, 'Scenario not found')
 
     data = request.get_json()
+
+    if 'step_load_enabled' in data:
+        requested_step_enabled, error = _parse_bool(data['step_load_enabled'], 'step_load_enabled')
+        if error:
+            return error_response(400, error)
+        if requested_step_enabled and ('step_users' not in data or 'step_duration' not in data):
+            return error_response(400, 'step_users and step_duration are required when step_load_enabled is true')
 
     if 'target_url' in data:
         if not is_valid_url(data['target_url']):
@@ -320,6 +379,23 @@ def update_scenario(scenario_id):
             return error_response(400, f'duration must be between {limits["min_duration"]} and {limits["max_duration"]} seconds')
         scenario.duration = duration
 
+    next_step_load_enabled_raw = data['step_load_enabled'] if 'step_load_enabled' in data else scenario.step_load_enabled
+    next_step_users_raw = data['step_users'] if 'step_users' in data else scenario.step_users
+    next_step_duration_raw = data['step_duration'] if 'step_duration' in data else scenario.step_duration
+
+    step_config, error = _validate_step_load_config(
+        next_step_load_enabled_raw,
+        next_step_users_raw,
+        next_step_duration_raw
+    )
+    if error:
+        return error_response(400, error)
+    next_step_load_enabled, next_step_users, next_step_duration = step_config
+
+    scenario.step_load_enabled = next_step_load_enabled
+    scenario.step_users = next_step_users
+    scenario.step_duration = next_step_duration
+
     db.session.commit()
 
     return success_response(data=scenario.to_dict(), message='Updated')
@@ -370,17 +446,36 @@ def run_scenario(scenario_id):
         except Exception:
             data = {}
 
+        if 'step_load_enabled' in data:
+            requested_step_enabled, error = _parse_bool(data['step_load_enabled'], 'step_load_enabled')
+            if error:
+                return error_response(400, error)
+            if requested_step_enabled and ('step_users' not in data or 'step_duration' not in data):
+                return error_response(400, 'step_users and step_duration are required when step_load_enabled is true')
+
         user_count = data.get('user_count', scenario.user_count)
         spawn_rate = data.get('spawn_rate', scenario.spawn_rate)
         run_time = data.get('duration', scenario.duration)
+        step_load_enabled_raw = data.get('step_load_enabled', scenario.step_load_enabled)
+        step_users_raw = data.get('step_users', scenario.step_users)
+        step_duration_raw = data.get('step_duration', scenario.step_duration)
 
         numbers, error = _validate_perf_numbers(user_count, spawn_rate, run_time)
         if error:
             return error_response(400, error)
         user_count, spawn_rate, run_time = numbers
 
+        step_config, error = _validate_step_load_config(
+            step_load_enabled_raw,
+            step_users_raw,
+            step_duration_raw
+        )
+        if error:
+            return error_response(400, error)
+        step_load_enabled, step_users, step_duration = step_config
+
         task = run_perf_test_task.apply_async(
-            args=[scenario_id, user_count, spawn_rate, run_time],
+            args=[scenario_id, user_count, spawn_rate, run_time, step_load_enabled, step_users, step_duration],
             task_id=f'perf_test_{scenario_id}_{user_id}'
         )
 
@@ -391,7 +486,10 @@ def run_scenario(scenario_id):
             'config': {
                 'users': user_count,
                 'spawn_rate': spawn_rate,
-                'run_time': run_time
+                'run_time': run_time,
+                'step_load_enabled': step_load_enabled,
+                'step_users': step_users,
+                'step_duration': step_duration
             }
         })
 

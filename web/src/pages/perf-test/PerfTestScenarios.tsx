@@ -18,6 +18,7 @@ import {
   Progress,
   Row,
   Col,
+  Switch,
 } from 'antd'
 import {
   PlusOutlined,
@@ -52,6 +53,9 @@ interface PerfTestScenario {
   spawn_rate: number
   duration: number
   ramp_up: number
+  step_load_enabled: boolean
+  step_users: number
+  step_duration: number
   status: 'passed' | 'failed' | 'pending' | 'running'
   avg_response_time: number
   throughput: number
@@ -140,6 +144,9 @@ const PerfTestScenarios = () => {
         user_count: values.users,
         duration: values.duration,
         spawn_rate: values.spawnRate,
+        step_load_enabled: !!values.stepLoadEnabled,
+        step_users: values.stepUsers,
+        step_duration: values.stepDuration,
       })
       if (result.code === 200 || result.code === 201) {
         message.success('创建成功')
@@ -190,6 +197,9 @@ const PerfTestScenarios = () => {
         user_count: values.users,
         duration: values.duration,
         spawn_rate: values.spawnRate,
+        step_load_enabled: !!values.stepLoadEnabled,
+        step_users: values.stepUsers,
+        step_duration: values.stepDuration,
       })
       if (result.code === 200) {
         message.success('更新成功')
@@ -238,10 +248,18 @@ const PerfTestScenarios = () => {
   }
 
   // 运行场景
-  const handleRun = async (id: number) => {
+  const handleRun = async (record: PerfTestScenario) => {
+    const id = record.id
     setRunningIds((prev) => [...prev, id])
     try {
-      const result = await perfTestService.runScenario(id)
+      const result = await perfTestService.runScenario(id, {
+        user_count: record.user_count,
+        spawn_rate: record.spawn_rate,
+        duration: record.duration,
+        step_load_enabled: record.step_load_enabled,
+        step_users: record.step_users,
+        step_duration: record.step_duration,
+      })
       if (result.code === 200) {
         message.success('性能测试已启动')
         loadScenarios()
@@ -310,6 +328,11 @@ const PerfTestScenarios = () => {
             <ClockCircleOutlined style={{ marginRight: 4 }} />
             {formatDuration(record.duration)}
           </Text>
+          {record.step_load_enabled && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              阶梯: +{record.step_users} / {record.step_duration}s
+            </Text>
+          )}
         </Space>
       ),
     },
@@ -398,7 +421,7 @@ const PerfTestScenarios = () => {
                   type="text"
                   size="small"
                   icon={<PlayCircleOutlined style={{ color: '#52c41a' }} />}
-                  onClick={() => handleRun(record.id)}
+                  onClick={() => handleRun(record)}
                 />
               </Tooltip>
             )}
@@ -425,6 +448,9 @@ const PerfTestScenarios = () => {
                     users: record.user_count,
                     duration: record.duration,
                     spawnRate: record.spawn_rate,
+                    stepLoadEnabled: record.step_load_enabled,
+                    stepUsers: record.step_users,
+                    stepDuration: record.step_duration,
                     headers: record.headers ? JSON.stringify(record.headers, null, 2) : undefined,
                     body: record.body ? JSON.stringify(record.body, null, 2) : undefined,
                   })
@@ -617,6 +643,46 @@ const PerfTestScenarios = () => {
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item
+            name="stepLoadEnabled"
+            label="开启阶梯加压"
+            valuePropName="checked"
+            initialValue={false}
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.stepLoadEnabled !== curr.stepLoadEnabled}>
+            {({ getFieldValue }) => {
+              if (!getFieldValue('stepLoadEnabled')) {
+                return null
+              }
+
+              return (
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="stepUsers"
+                      label="每步新增用户数"
+                      initialValue={10}
+                      rules={[{ required: true, message: '请输入每步新增用户数' }]}
+                    >
+                      <InputNumber min={1} max={200} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="stepDuration"
+                      label="每步时长（秒）"
+                      initialValue={30}
+                      rules={[{ required: true, message: '请输入每步时长' }]}
+                    >
+                      <InputNumber min={1} max={3600} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              )
+            }}
+          </Form.Item>
           <Form.Item name="method" label="请求方法" initialValue="GET">
             <Select
               options={['GET', 'POST', 'PUT', 'DELETE'].map((m) => ({
