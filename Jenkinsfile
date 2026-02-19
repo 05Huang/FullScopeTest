@@ -5,7 +5,7 @@ pipeline {
   environment {
     DEPLOY_HOST = "REDACTED_SERVER_IP"
     DEPLOY_USER = "root"
-    DEPLOY_PATH = "/opt/apps/easytest/repo/AutoTestingPlatform"
+    DEPLOY_PATH = "/opt/easytest/repo/AutoTestingPlatform"
     SSH_CREDENTIALS_ID = "easytest-ssh"
     DEPLOY_BRANCH = "main"
   }
