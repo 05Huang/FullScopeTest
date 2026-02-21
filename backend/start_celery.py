@@ -5,19 +5,21 @@ Celery Worker 启动脚本
 """
 import os
 
-# ⚠️ 必须在任何其他导入之前进行 gevent monkey-patch
-# 否则会导致 greenlet 无法正常执行
-import gevent.monkey
-gevent.monkey.patch_all()
-
 # 确保加载 .env 文件
 from dotenv import load_dotenv
 load_dotenv()
+
+pool_name = os.environ.get('CELERY_WORKER_POOL', '').strip().lower()
+if pool_name == 'gevent':
+    # 仅在 gevent 池下打补丁，避免影响其他并发模型
+    import gevent.monkey
+    gevent.monkey.patch_all()
 
 # 确保 Celery 启用
 os.environ.setdefault('CELERY_ENABLE', 'true')
 
 from app.celery_app import make_celery
+from app.utils.celery_worker_options import build_worker_argv
 import app.tasks  # 导入任务模块
 
 
@@ -57,4 +59,4 @@ _reset_stale_running_status()
 
 # 启动 worker
 if __name__ == '__main__':
-    celery.start(['worker', '--loglevel=info', '--pool=solo'])
+    celery.start(build_worker_argv(loglevel='info'))
