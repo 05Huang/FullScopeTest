@@ -33,6 +33,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { webTestService } from '@/services/webTestService'
+import { runWithConcurrency } from '@/utils/runWithConcurrency'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -46,7 +47,7 @@ interface WebTestScript {
   status: 'passed' | 'failed' | 'pending' | 'running'
   step_count: number
   last_run_at: string
-  last_duration: number
+  last_run_duration?: number
   updated_at: string
   script_content: string
   last_result?: {
@@ -72,6 +73,15 @@ const statusConfig: Record<string, { color: string; text: string }> = {
   running: { color: 'processing', text: '执行中' },
 }
 
+const BATCH_ACTION_CONCURRENCY = 5
+
+const normalizeScriptStatus = (status?: string): WebTestScript['status'] => {
+  if (status === 'success') return 'passed'
+  if (status === 'timeout') return 'failed'
+  if (status === 'running' || status === 'passed' || status === 'failed') return status
+  return 'pending'
+}
+
 const WebTestScripts = () => {
   const [loading, setLoading] = useState(false)
   const [scripts, setScripts] = useState<WebTestScript[]>([])
@@ -91,7 +101,17 @@ const WebTestScripts = () => {
     try {
       const result = await webTestService.getScripts()
       if (result.code === 200) {
-        setScripts(result.data || [])
+        const rawScripts = result.data || []
+        const normalizedScripts = rawScripts.map((script: any) => ({
+          ...script,
+          status: normalizeScriptStatus(script.status),
+          last_run_duration: script.last_run_duration ?? script.last_duration,
+        }))
+        setScripts(normalizedScripts)
+        const running = normalizedScripts
+          .filter((script: WebTestScript) => script.status === 'running')
+          .map((script: WebTestScript) => script.id)
+        setRunningIds(running)
       } else {
         message.error(result.message || '加载失败')
       }
@@ -104,6 +124,8 @@ const WebTestScripts = () => {
 
   useEffect(() => {
     loadScripts()
+    const interval = setInterval(loadScripts, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   // 创建脚本
@@ -168,20 +190,33 @@ const WebTestScripts = () => {
   }
 
   // 运行脚本
-  const handleRun = async (id: number) => {
-    setRunningIds((prev) => [...prev, id])
+  const handleRun = async (
+    id: number,
+    options?: { silent?: boolean }
+  ): Promise<boolean> => {
+    const silent = !!options?.silent
+    setRunningIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
     try {
       const result = await webTestService.runScript(id, true)  // headless = true
-      if (result.code === 200 && result.data?.success) {
-        message.success('脚本执行完成')
+      if (result.code === 200 && result.data?.task_id) {
+        if (!silent) {
+          message.success('脚本已提交，正在后台执行')
+        }
         loadScripts()
+        return true
       } else {
-        message.error(result.data?.error || result.message || '执行失败')
+        if (!silent) {
+          message.error(result.data?.error || result.message || '执行失败')
+        }
+        setRunningIds((prev) => prev.filter((i) => i !== id))
+        return false
       }
     } catch (error: any) {
-      message.error('执行脚本失败')
-    } finally {
+      if (!silent) {
+        message.error('执行脚本失败')
+      }
       setRunningIds((prev) => prev.filter((i) => i !== id))
+      return false
     }
   }
 
@@ -200,11 +235,28 @@ const WebTestScripts = () => {
   // 批量删除
   const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) return
+    const ids = selectedRowKeys.map((id) => id as number)
     try {
-      for (const id of selectedRowKeys) {
-        await webTestService.deleteScript(id as number)
+      const results = await runWithConcurrency(
+        ids,
+        BATCH_ACTION_CONCURRENCY,
+        async (id) => {
+          try {
+            const result = await webTestService.deleteScript(id)
+            return result.code === 200
+          } catch {
+            return false
+          }
+        }
+      )
+      const successCount = results.filter(Boolean).length
+      const failedCount = ids.length - successCount
+
+      if (failedCount === 0) {
+        message.success('批量删除成功')
+      } else {
+        message.warning(`批量删除完成，成功 ${successCount}，失败 ${failedCount}`)
       }
-      message.success('批量删除成功')
       setSelectedRowKeys([])
       loadScripts()
     } catch (error) {
@@ -215,9 +267,20 @@ const WebTestScripts = () => {
   // 批量运行
   const handleBatchRun = async () => {
     if (selectedRowKeys.length === 0) return
-    message.info(`正在执行 ${selectedRowKeys.length} 个脚本...`)
-    for (const id of selectedRowKeys) {
-      await handleRun(id as number)
+    const ids = selectedRowKeys.map((id) => id as number)
+    message.info(`正在执行 ${ids.length} 个脚本，并发度 ${BATCH_ACTION_CONCURRENCY}`)
+    const results = await runWithConcurrency(
+      ids,
+      BATCH_ACTION_CONCURRENCY,
+      (id) => handleRun(id, { silent: true })
+    )
+    const successCount = results.filter(Boolean).length
+    const failedCount = ids.length - successCount
+
+    if (failedCount === 0) {
+      message.success(`批量运行已提交，成功 ${successCount} 个`)
+    } else {
+      message.warning(`批量运行完成，成功 ${successCount}，失败 ${failedCount}`)
     }
     setSelectedRowKeys([])
   }
@@ -297,8 +360,8 @@ const WebTestScripts = () => {
     },
     {
       title: '耗时',
-      dataIndex: 'last_duration',
-      key: 'last_duration',
+      dataIndex: 'last_run_duration',
+      key: 'last_run_duration',
       width: 80,
       render: (duration) => (duration ? `${duration.toFixed(1)}s` : '-'),
     },

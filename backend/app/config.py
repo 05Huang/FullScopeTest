@@ -33,7 +33,7 @@ class BaseConfig:
     # Performance test limits
     PERF_TEST_LIMITS = {
         'min_users': int(os.environ.get('PERF_TEST_MIN_USERS', '1')),
-        'max_users': int(os.environ.get('PERF_TEST_MAX_USERS', '200')),
+        'max_users': int(os.environ.get('PERF_TEST_MAX_USERS', '2000')),
         'min_spawn_rate': int(os.environ.get('PERF_TEST_MIN_SPAWN_RATE', '1')),
         'max_spawn_rate': int(os.environ.get('PERF_TEST_MAX_SPAWN_RATE', '50')),
         'min_duration': int(os.environ.get('PERF_TEST_MIN_DURATION', '10')),

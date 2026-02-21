@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app import create_app
 from app.extensions import celery
 from app.celery_app import init_celery
+from app.utils.celery_worker_options import build_worker_argv
 
 # 创建 Flask 应用
 app = create_app('development')
@@ -25,5 +26,4 @@ import app.tasks
 
 if __name__ == '__main__':
     # 启动 Celery worker
-    # Windows 需要使用 solo 池
-    celery.start(argv=['worker', '--loglevel=info', '--pool=solo'])
+    celery.start(argv=build_worker_argv(loglevel='info'))

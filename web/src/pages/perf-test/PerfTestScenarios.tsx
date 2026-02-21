@@ -37,6 +37,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { perfTestService } from '@/services/perfTestService'
+import { runWithConcurrency } from '@/utils/runWithConcurrency'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -70,6 +71,9 @@ const statusConfig: Record<string, { color: string; text: string }> = {
   pending: { color: 'default', text: '未执行' },
   running: { color: 'processing', text: '执行中' },
 }
+
+const BATCH_ACTION_CONCURRENCY = 5
+const PERF_MAX_USERS = 2000
 
 const PerfTestScenarios = () => {
   const [loading, setLoading] = useState(false)
@@ -218,11 +222,28 @@ const PerfTestScenarios = () => {
   // 批量删除
   const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) return
+    const ids = selectedRowKeys.map((id) => id as number)
     try {
-      for (const id of selectedRowKeys) {
-        await perfTestService.deleteScenario(id as number)
+      const results = await runWithConcurrency(
+        ids,
+        BATCH_ACTION_CONCURRENCY,
+        async (id) => {
+          try {
+            const result = await perfTestService.deleteScenario(id)
+            return result.code === 200
+          } catch {
+            return false
+          }
+        }
+      )
+      const successCount = results.filter(Boolean).length
+      const failedCount = ids.length - successCount
+
+      if (failedCount === 0) {
+        message.success('批量删除成功')
+      } else {
+        message.warning(`批量删除完成，成功 ${successCount}，失败 ${failedCount}`)
       }
-      message.success('批量删除成功')
       setSelectedRowKeys([])
       loadScenarios()
     } catch (error) {
@@ -248,9 +269,13 @@ const PerfTestScenarios = () => {
   }
 
   // 运行场景
-  const handleRun = async (record: PerfTestScenario) => {
+  const handleRun = async (
+    record: PerfTestScenario,
+    options?: { silent?: boolean }
+  ): Promise<boolean> => {
+    const silent = !!options?.silent
     const id = record.id
-    setRunningIds((prev) => [...prev, id])
+    setRunningIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
     try {
       const result = await perfTestService.runScenario(id, {
         user_count: record.user_count,
@@ -261,18 +286,55 @@ const PerfTestScenarios = () => {
         step_duration: record.step_duration,
       })
       if (result.code === 200) {
-        message.success('性能测试已启动')
+        if (!silent) {
+          message.success('性能测试已启动')
+        }
         loadScenarios()
+        return true
       } else {
-        message.error(result.message || '启动失败')
+        if (!silent) {
+          message.error(result.message || '启动失败')
+        }
         setRunningIds((prev) => prev.filter((i) => i !== id))
+        return false
       }
     } catch (error: any) {
       console.error('启动测试失败:', error)
       const errorMsg = error?.response?.data?.message || error?.message || '启动测试失败'
-      message.error(errorMsg)
+      if (!silent) {
+        message.error(errorMsg)
+      }
       setRunningIds((prev) => prev.filter((i) => i !== id))
+      return false
     }
+  }
+
+  const handleBatchRun = async () => {
+    if (selectedRowKeys.length === 0) return
+    const ids = selectedRowKeys.map((id) => id as number)
+    const scenarioMap = new Map(scenarios.map((scenario) => [scenario.id, scenario]))
+
+    message.info(`正在执行 ${ids.length} 个场景，并发度 ${BATCH_ACTION_CONCURRENCY}`)
+    const results = await runWithConcurrency(
+      ids,
+      BATCH_ACTION_CONCURRENCY,
+      async (id) => {
+        const scenario = scenarioMap.get(id)
+        if (!scenario) {
+          return false
+        }
+        return handleRun(scenario, { silent: true })
+      }
+    )
+    const successCount = results.filter(Boolean).length
+    const failedCount = ids.length - successCount
+
+    if (failedCount === 0) {
+      message.success(`批量运行已提交，成功 ${successCount} 个`)
+    } else {
+      message.warning(`批量运行完成，成功 ${successCount}，失败 ${failedCount}`)
+    }
+    setSelectedRowKeys([])
   }
 
   // 停止场景
@@ -532,7 +594,7 @@ const PerfTestScenarios = () => {
                 if (key === 'delete') {
                   handleBatchDelete()
                 } else if (key === 'run') {
-                  message.info('批量执行功能开发中')
+                  handleBatchRun()
                 } else if (key === 'export') {
                   message.info('导出功能开发中')
                 }
@@ -618,7 +680,7 @@ const PerfTestScenarios = () => {
                 initialValue={10}
                 rules={[{ required: true }]}
               >
-                <InputNumber min={1} max={200} style={{ width: '100%' }} />
+                <InputNumber min={1} max={PERF_MAX_USERS} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -666,7 +728,7 @@ const PerfTestScenarios = () => {
                       initialValue={10}
                       rules={[{ required: true, message: '请输入每步新增用户数' }]}
                     >
-                      <InputNumber min={1} max={200} style={{ width: '100%' }} />
+                      <InputNumber min={1} max={PERF_MAX_USERS} style={{ width: '100%' }} />
                     </Form.Item>
                   </Col>
                   <Col span={12}>

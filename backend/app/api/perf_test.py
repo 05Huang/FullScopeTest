@@ -47,7 +47,7 @@ def _get_perf_limits() -> dict:
     limits = current_app.config.get('PERF_TEST_LIMITS', {})
     return {
         'min_users': limits.get('min_users', 1),
-        'max_users': limits.get('max_users', 200),
+        'max_users': limits.get('max_users', 2000),
         'min_spawn_rate': limits.get('min_spawn_rate', 1),
         'max_spawn_rate': limits.get('max_spawn_rate', 50),
         'min_duration': limits.get('min_duration', 10),
