@@ -14,6 +14,7 @@ from ..utils import get_current_user_id
 from ..tasks import run_web_test_task
 import subprocess
 import sys
+import time
 from datetime import datetime
 
 
@@ -178,6 +179,12 @@ def run_script(script_id):
             args=[script_id, user_id],
             task_id=f'web_test_{script_id}_{user_id}'
         )
+
+        # 提交成功后立即更新为 running，前端可及时感知状态
+        script.status = 'running'
+        script.last_status = 'running'
+        script.last_run_at = datetime.utcnow()
+        db.session.commit()
         
         return success_response(data={
             'message': '测试已提交，正在后台执行',

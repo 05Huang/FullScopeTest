@@ -47,9 +47,21 @@ class WebTestScript(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
+
+    @staticmethod
+    def normalize_status(status):
+        """Normalize legacy status values for API responses."""
+        status_mapping = {
+            'success': 'passed',
+            'timeout': 'failed',
+        }
+        return status_mapping.get(status, status or 'pending')
     
     def to_dict(self):
         """转换为字典"""
+        normalized_status = self.normalize_status(self.status)
+        normalized_last_status = self.normalize_status(self.last_status)
+
         return {
             'id': self.id,
             'project_id': self.project_id,
@@ -65,8 +77,8 @@ class WebTestScript(db.Model):
             'viewport_width': self.viewport_width,
             'viewport_height': self.viewport_height,
             'config': self.config,
-            'status': self.status,
-            'last_status': self.last_status or 'pending',
+            'status': normalized_status,
+            'last_status': normalized_last_status,
             'last_run_at': self.last_run_at.isoformat() if self.last_run_at else None,
             'last_run_duration': self.last_run_duration,
             'last_result': self.last_result,
