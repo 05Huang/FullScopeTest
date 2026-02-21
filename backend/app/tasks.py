@@ -199,8 +199,10 @@ def run_web_test_task(self, script_id, user_id):
                 # 判断执行结果
                 success = result.returncode == 0
 
-                # 更新脚本状态
-                script.status = 'success' if success else 'failed'
+                # 统一状态枚举，避免前后端语义不一致
+                script.status = 'passed' if success else 'failed'
+                script.last_status = script.status
+                script.last_run_duration = duration
                 script.last_result = {
                     'success': success,
                     'duration': duration,
@@ -228,7 +230,8 @@ def run_web_test_task(self, script_id, user_id):
                     pass
 
         except subprocess.TimeoutExpired:
-            script.status = 'timeout'
+            script.status = 'failed'
+            script.last_status = 'failed'
             script.last_result = {
                 'success': False,
                 'error': '执行超时',
@@ -243,6 +246,7 @@ def run_web_test_task(self, script_id, user_id):
 
         except Exception as e:
             script.status = 'failed'
+            script.last_status = 'failed'
             script.last_result = {
                 'success': False,
                 'error': str(e),
