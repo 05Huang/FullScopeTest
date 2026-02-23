@@ -346,29 +346,6 @@ const ApiTestWorkspace = () => {
     }
   }
 
-  // 清除表单草稿
-  const clearFormDraft = () => {
-    Modal.confirm({
-      title: '确认清除',
-      content: '确定要清空当前表单内容吗？此操作不可恢复。',
-      okText: '确认清除',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: () => {
-        setUrl('')
-        setRequestName('')
-        setMethod('GET')
-        setRequestBody('{}')
-        setHeaders([{ key: '', value: '' }])
-        setParams([{ key: '', value: '' }])
-        setResponse(null)
-        // 清除localStorage中的草稿
-        localStorage.removeItem('api-test-form-draft')
-        message.success('已清空表单')
-      },
-    })
-  }
-
   // 新建用例
   const handleNewCase = async () => {
     await handleNewCaseV2()
@@ -1018,6 +995,13 @@ const ApiTestWorkspace = () => {
     }
   }
 
+  const openSaveCaseModal = () => {
+    // 保存时默认使用当前请求名称
+    setSaveCaseName(requestName)
+    setSelectedCollectionId(activeCollectionId)
+    setSaveModalOpen(true)
+  }
+
   // 删除用例
   const handleDeleteCase = async (caseId: number, caseName: string) => {
     Modal.confirm({
@@ -1062,14 +1046,6 @@ const ApiTestWorkspace = () => {
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
     { key: 'copy', icon: <CopyOutlined />, label: '复制为 cURL', onClick: handleCopyCurl },
-    { key: 'save', icon: <SaveOutlined />, label: '保存到用例', onClick: () => {
-      // 保存时默认使用当前请求名称
-      setSaveCaseName(requestName)
-      setSelectedCollectionId(activeCollectionId)
-      setSaveModalOpen(true)
-    }},
-    { type: 'divider' },
-    { key: 'clear', icon: <DeleteOutlined />, label: '清空表单', danger: true, onClick: clearFormDraft },
   ]
 
   // 参数表格列
@@ -1445,37 +1421,25 @@ const ApiTestWorkspace = () => {
                 新建用例
               </Button>
             </Tooltip>
-            <Tooltip title="清空表单内容">
+            <Tooltip title={currentCaseId ? (hasUnsavedChanges ? "保存修改" : "保存") : "保存到用例"}>
               <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={clearFormDraft}
+                type={currentCaseId && hasUnsavedChanges ? "primary" : "default"}
+                icon={<SaveOutlined />}
+                onClick={currentCaseId ? saveCurrentCase : openSaveCaseModal}
               >
-                清空
+                保存
               </Button>
             </Tooltip>
-            {currentCaseId && (
-              <Tooltip title={hasUnsavedChanges ? "保存修改" : "保存"}>
-                <Button
-                  type={hasUnsavedChanges ? "primary" : "default"}
-                  icon={<SaveOutlined />}
-                  onClick={saveCurrentCase}
-                >
-                  保存
-                </Button>
-              </Tooltip>
-            )}
-            {currentCaseId && (
-              <Tooltip title="删除当前用例">
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDeleteCase(currentCaseId, requestName || `ID:${currentCaseId}`)}
-                >
-                  删除用例
-                </Button>
-              </Tooltip>
-            )}
+            <Tooltip title={currentCaseId ? "删除当前用例" : "请先选择一个已保存用例"}>
+              <Button
+                danger
+                disabled={!currentCaseId}
+                icon={<DeleteOutlined />}
+                onClick={() => currentCaseId && handleDeleteCase(currentCaseId, requestName || `ID:${currentCaseId}`)}
+              >
+                删除用例
+              </Button>
+            </Tooltip>
             <Dropdown menu={{ items: moreMenuItems }}>
               <Button icon={<MoreOutlined />} />
             </Dropdown>
