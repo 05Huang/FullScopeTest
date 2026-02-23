@@ -52,7 +52,7 @@ pipeline {
               """
               sh """
                 ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} \\
-                "cd ${FRONTEND_SITE_PATH} && grep -o 'assets/index-[^\\\" ]*\\\\.js' index.html | head -n 1 | xargs -r test -f"
+                "cd ${FRONTEND_SITE_PATH} && grep -q 'assets/index-[^\\\" ]*\\\\.js' index.html && test -e assets/index-*.js"
               """
             } else {
               bat """
@@ -78,7 +78,7 @@ pipeline {
               bat """
                 icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
                 ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
-                "cd %FRONTEND_SITE_PATH% && grep -o 'assets/index-[^\\\" ]*\\\\.js' index.html | head -n 1 | xargs -r test -f"
+                "cd %FRONTEND_SITE_PATH% && grep -q 'assets/index-[^\\\" ]*\\\\.js' index.html && test -e assets/index-*.js"
               """
             }
           }
