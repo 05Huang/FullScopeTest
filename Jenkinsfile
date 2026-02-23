@@ -44,7 +44,7 @@ pipeline {
               """
               sh """
                 ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} \\
-                "rm -rf ${FRONTEND_SITE_PATH:?}/*"
+                "if [ -n '${FRONTEND_SITE_PATH}' ] && [ '${FRONTEND_SITE_PATH}' != '/' ]; then rm -rf '${FRONTEND_SITE_PATH}'/*; fi"
               """
               sh """
                 scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no -r web/dist/. \\
