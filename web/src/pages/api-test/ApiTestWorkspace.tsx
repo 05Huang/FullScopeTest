@@ -209,9 +209,12 @@ const ApiTestWorkspace = () => {
   const [collections, setCollections] = useState<any[]>([])
   const [cases, setCases] = useState<any[]>([])
   const [treeData, setTreeData] = useState<DataNode[]>([])
+  const [selectedTreeKeys, setSelectedTreeKeys] = useState<React.Key[]>([])
+  const [expandedTreeKeys, setExpandedTreeKeys] = useState<React.Key[]>([])
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [saveCaseName, setSaveCaseName] = useState('')
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>()
+  const [activeCollectionId, setActiveCollectionId] = useState<number | undefined>()
   const [searchText, setSearchText] = useState('')
   const [environments, setEnvironments] = useState<any[]>([])
   const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>()
@@ -368,6 +371,9 @@ const ApiTestWorkspace = () => {
 
   // 新建用例
   const handleNewCase = async () => {
+    await handleNewCaseV2()
+    return
+
     // 如果当前正在编辑用例且有未保存修改，先自动保存
     if (currentCaseId && hasUnsavedChanges) {
       try {
@@ -395,6 +401,44 @@ const ApiTestWorkspace = () => {
     setHasUnsavedChanges(false)
 
     message.success('已创建新用例')
+  }
+
+  const handleNewCaseV2 = async () => {
+    if (currentCaseId && hasUnsavedChanges) {
+      const saved = await saveCurrentCaseSafely()
+      if (!saved) {
+        message.error('当前用例自动保存失败，已取消新建')
+        return
+      }
+    }
+
+    setUrl('')
+    setRequestName('')
+    setMethod('GET')
+    setRequestBody('{}')
+    setHeaders([{ key: '', value: '' }])
+    setParams([{ key: '', value: '' }])
+    setPreScript('')
+    setPostScript('')
+    setResponse(null)
+    localStorage.removeItem('api-test-form-draft')
+
+    setCurrentCaseId(null)
+    setOriginalFormData(null)
+    setHasUnsavedChanges(false)
+
+    if (activeCollectionId) {
+      setSelectedCollectionId(activeCollectionId)
+      setSelectedTreeKeys([`collection-${activeCollectionId}`])
+      setExpandedTreeKeys(prev =>
+        prev.includes(`collection-${activeCollectionId}`) ? prev : [...prev, `collection-${activeCollectionId}`]
+      )
+    } else {
+      setSelectedCollectionId(undefined)
+      setSelectedTreeKeys(['ungrouped'])
+    }
+
+    message.success('已创建空白用例草稿')
   }
 
   const loadData = async () => {
@@ -480,6 +524,9 @@ const ApiTestWorkspace = () => {
 
   // 选择用例
   const handleSelectCase = async (keys: React.Key[]) => {
+    await handleTreeSelect(keys)
+    return
+
     if (keys.length === 0) return
     const key = String(keys[0])
 
@@ -512,6 +559,62 @@ const ApiTestWorkspace = () => {
   }
 
   // 加载用例数据
+  const handleTreeSelect = async (keys: React.Key[]) => {
+    if (keys.length === 0) return
+    const key = String(keys[0])
+    setSelectedTreeKeys([key])
+
+    if (key.startsWith('collection-')) {
+      const collectionId = parseInt(key.replace('collection-', ''))
+      setActiveCollectionId(collectionId)
+      setSelectedCollectionId(collectionId)
+      setExpandedTreeKeys(prev => (prev.includes(key) ? prev : [...prev, key]))
+      return
+    }
+
+    if (key === 'ungrouped') {
+      setActiveCollectionId(undefined)
+      setSelectedCollectionId(undefined)
+      return
+    }
+
+    if (key.startsWith('case-')) {
+      const newCaseId = parseInt(key.replace('case-', ''))
+      const selectedCase = cases.find(c => c.id === newCaseId)
+      const parentCollectionId = selectedCase?.collection_id
+
+      setActiveCollectionId(parentCollectionId || undefined)
+      setSelectedCollectionId(parentCollectionId || undefined)
+      if (parentCollectionId) {
+        const parentKey = `collection-${parentCollectionId}`
+        setExpandedTreeKeys(prev => (prev.includes(parentKey) ? prev : [...prev, parentKey]))
+      }
+
+      if (newCaseId === currentCaseId) return
+
+      if (hasUnsavedChanges && currentCaseId) {
+        Modal.confirm({
+          title: '未保存的修改',
+          content: '当前用例有未保存的修改，是否保存后切换？',
+          okText: '保存并切换',
+          cancelText: '放弃修改',
+          onOk: async () => {
+            const saved = await saveCurrentCaseSafely()
+            if (saved) {
+              loadCase(newCaseId)
+            }
+          },
+          onCancel: () => {
+            loadCase(newCaseId)
+          }
+        })
+        return
+      }
+
+      loadCase(newCaseId)
+    }
+  }
+
   const loadCase = async (caseId: number) => {
     const caseData = cases.find(c => c.id === caseId)
     if (caseData) {
@@ -543,6 +646,15 @@ const ApiTestWorkspace = () => {
       setOriginalFormData(formData)
       setCurrentCaseId(caseId)
       setHasUnsavedChanges(false)
+      setSelectedTreeKeys([`case-${caseId}`])
+
+      const parentCollectionId = caseData.collection_id || undefined
+      setActiveCollectionId(parentCollectionId)
+      setSelectedCollectionId(parentCollectionId)
+      if (parentCollectionId) {
+        const parentKey = `collection-${parentCollectionId}`
+        setExpandedTreeKeys(prev => (prev.includes(parentKey) ? prev : [...prev, parentKey]))
+      }
 
       message.success(`已加载用例: ${caseData.name}`)
     }
@@ -607,6 +719,66 @@ const ApiTestWorkspace = () => {
   }
 
   // 选择环境
+  const saveCurrentCaseSafely = async (): Promise<boolean> => {
+    if (!currentCaseId) return true
+
+    try {
+      const headerObj: Record<string, string> = {}
+      headers.filter(h => h.key && h.value).forEach(h => {
+        headerObj[h.key] = h.value
+      })
+
+      const paramObj: Record<string, string> = {}
+      params.filter(p => p.key && p.value).forEach(p => {
+        paramObj[p.key] = p.value
+      })
+
+      let body = undefined
+      if (['POST', 'PUT', 'PATCH'].includes(method) && requestBody) {
+        try {
+          body = JSON.parse(requestBody)
+        } catch {
+          body = requestBody
+        }
+      }
+
+      const res = await apiTestService.updateCase(currentCaseId, {
+        name: requestName,
+        method,
+        url,
+        headers: headerObj,
+        params: paramObj,
+        body,
+        body_type: bodyType,
+        pre_script: preScript,
+        post_script: postScript,
+        environment_id: selectedEnvId,
+      })
+
+      if (res.code === 200) {
+        setHasUnsavedChanges(false)
+        setOriginalFormData({
+          name: requestName,
+          method,
+          url,
+          requestBody,
+          headers: headers.filter(h => h.key || h.value),
+          params: params.filter(p => p.key || p.value),
+          preScript,
+          postScript,
+        })
+        loadData()
+        return true
+      }
+
+      message.error(res.message || '保存失败')
+      return false
+    } catch (error) {
+      message.error('保存失败')
+      return false
+    }
+  }
+
   const handleSelectEnv = (envId: number | undefined) => {
     setSelectedEnvId(envId)
     if (envId) {
@@ -778,6 +950,7 @@ const ApiTestWorkspace = () => {
         }
       }
 
+      const targetCollectionId = selectedCollectionId
       let res
       // 如果是编辑现有用例，调用更新接口
       if (currentCaseId && requestName === saveCaseName) {
@@ -815,7 +988,15 @@ const ApiTestWorkspace = () => {
         message.success('用例保存成功')
         setSaveModalOpen(false)
         setSaveCaseName('')
-        setSelectedCollectionId(undefined)
+        setActiveCollectionId(targetCollectionId)
+        setSelectedCollectionId(targetCollectionId)
+        if (targetCollectionId) {
+          const targetKey = `collection-${targetCollectionId}`
+          setSelectedTreeKeys([targetKey])
+          setExpandedTreeKeys(prev => (prev.includes(targetKey) ? prev : [...prev, targetKey]))
+        } else {
+          setSelectedTreeKeys(['ungrouped'])
+        }
         setHasUnsavedChanges(false)
         // 如果是更新当前用例，更新原始表单数据
         if (currentCaseId && requestName === saveCaseName) {
@@ -851,6 +1032,22 @@ const ApiTestWorkspace = () => {
           if (res.code === 200) {
             message.success('用例删除成功')
             setContextMenuState({ ...contextMenuState, visible: false })
+            if (caseId === currentCaseId) {
+              setCurrentCaseId(null)
+              setOriginalFormData(null)
+              setHasUnsavedChanges(false)
+              setSelectedTreeKeys(activeCollectionId ? [`collection-${activeCollectionId}`] : ['ungrouped'])
+              setUrl('')
+              setRequestName('')
+              setMethod('GET')
+              setRequestBody('{}')
+              setHeaders([{ key: '', value: '' }])
+              setParams([{ key: '', value: '' }])
+              setPreScript('')
+              setPostScript('')
+              setResponse(null)
+              localStorage.removeItem('api-test-form-draft')
+            }
             loadData()
           } else {
             message.error(res.message || '删除失败')
@@ -868,6 +1065,7 @@ const ApiTestWorkspace = () => {
     { key: 'save', icon: <SaveOutlined />, label: '保存到用例', onClick: () => {
       // 保存时默认使用当前请求名称
       setSaveCaseName(requestName)
+      setSelectedCollectionId(activeCollectionId)
       setSaveModalOpen(true)
     }},
     { type: 'divider' },
@@ -1146,7 +1344,9 @@ const ApiTestWorkspace = () => {
                   {treeData.length > 0 ? (
                     <Tree
                       showIcon
-                      defaultExpandAll
+                      expandedKeys={expandedTreeKeys}
+                      selectedKeys={selectedTreeKeys}
+                      onExpand={(keys) => setExpandedTreeKeys(keys)}
                       treeData={treeData}
                       onSelect={handleSelectCase}
                       onRightClick={({ event, node }) => {
@@ -1262,6 +1462,17 @@ const ApiTestWorkspace = () => {
                   onClick={saveCurrentCase}
                 >
                   保存
+                </Button>
+              </Tooltip>
+            )}
+            {currentCaseId && (
+              <Tooltip title="删除当前用例">
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDeleteCase(currentCaseId, requestName || `ID:${currentCaseId}`)}
+                >
+                  删除用例
                 </Button>
               </Tooltip>
             )}
@@ -1530,7 +1741,7 @@ const ApiTestWorkspace = () => {
         onCancel={() => {
           setSaveModalOpen(false)
           setSaveCaseName('')
-          setSelectedCollectionId(undefined)
+          setSelectedCollectionId(activeCollectionId)
         }}
         onOk={handleSaveCase}
       >

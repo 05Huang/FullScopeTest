@@ -201,7 +201,8 @@ def update_case(case_id):
     
     # 更新字段
     for field in ['name', 'description', 'method', 'url', 'headers', 'params',
-                  'body', 'body_type', 'pre_script', 'post_script', 'assertions', 'environment_id']:
+                  'body', 'body_type', 'pre_script', 'post_script', 'assertions',
+                  'collection_id', 'environment_id']:
         if field in data:
             setattr(case, field, data[field])
     
