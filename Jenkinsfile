@@ -43,8 +43,16 @@ pipeline {
                 "mkdir -p ${FRONTEND_SITE_PATH}"
               """
               sh """
-                scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no -r web/dist/* \\
+                ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} \\
+                "rm -rf ${FRONTEND_SITE_PATH:?}/*"
+              """
+              sh """
+                scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no -r web/dist/. \\
                 ${SSH_USER}@${DEPLOY_HOST}:${FRONTEND_SITE_PATH}/
+              """
+              sh """
+                ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_HOST} \\
+                "cd ${FRONTEND_SITE_PATH} && ASSET_JS=\\$(grep -o 'assets/index-[^\\\" ]*\\\\.js' index.html | head -n 1) && [ -n \\\"\\$ASSET_JS\\\" ] && [ -f \\\"\\$ASSET_JS\\\" ]"
               """
             } else {
               bat """
@@ -59,8 +67,18 @@ pipeline {
               """
               bat """
                 icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
-                scp -i "%SSH_KEY%" -o StrictHostKeyChecking=no -r web/dist/* ^
+                ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
+                "rm -rf %FRONTEND_SITE_PATH%/*"
+              """
+              bat """
+                icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
+                scp -i "%SSH_KEY%" -o StrictHostKeyChecking=no -r web/dist/. ^
                 %SSH_USER%@%DEPLOY_HOST%:%FRONTEND_SITE_PATH%/
+              """
+              bat """
+                icacls "%SSH_KEY%" /inheritance:r /grant:r "SYSTEM:R" /grant:r "Administrators:R"
+                ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %SSH_USER%@%DEPLOY_HOST% ^
+                "cd %FRONTEND_SITE_PATH% && ASSET_JS=\\$(grep -o 'assets/index-[^\\\" ]*\\\\.js' index.html | head -n 1) && [ -n \\\"\\$ASSET_JS\\\" ] && [ -f \\\"\\$ASSET_JS\\\" ]"
               """
             }
           }
