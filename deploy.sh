@@ -41,11 +41,33 @@ docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" 
 # Run DB migrations inside backend container (idempotent).
 if [ "${SKIP_DB_MIGRATE:-0}" != "1" ]; then
   for i in {1..10}; do
-    if docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" \
-      exec -T backend flask --app wsgi:app db upgrade; then
+    set +e
+    migrate_output=$(
+      docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" \
+        exec -T backend flask --app wsgi:app db upgrade heads 2>&1
+    )
+    migrate_status=$?
+    set -e
+    echo "$migrate_output"
+
+    if [ "$migrate_status" -eq 0 ]; then
       echo "Database migration OK"
       break
     fi
+
+    # Auto-heal for historical drift:
+    # migration 00ead... adds target_url, but some databases already have this column.
+    if echo "$migrate_output" | grep -q "DuplicateColumn" && echo "$migrate_output" | grep -q "target_url"; then
+      echo "Detected duplicate target_url column, stamping base revision and retrying..."
+      docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" \
+        exec -T backend flask --app wsgi:app db stamp 00ead8376231
+      if docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" \
+        exec -T backend flask --app wsgi:app db upgrade heads; then
+        echo "Database migration OK"
+        break
+      fi
+    fi
+
     echo "Database migration retry ($i/10) ..."
     sleep 3
     if [ "$i" -eq 10 ]; then
