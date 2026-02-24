@@ -237,6 +237,9 @@ const ApiTestWorkspace = () => {
   const [hasLoadedData, setHasLoadedData] = useState(false) // 标记数据是否已加载
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
+  const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1')
+  const [aiModel, setAiModel] = useState(() => localStorage.getItem('api-test-ai-model') || 'gpt-4o-mini')
+  const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '')
   const [aiAutoRun, setAiAutoRun] = useState(true)
   const [aiRunning, setAiRunning] = useState(false)
   const [aiSummary, setAiSummary] = useState('')
@@ -290,6 +293,12 @@ const ApiTestWorkspace = () => {
       localStorage.setItem('api-test-form-draft', JSON.stringify(draft))
     }
   }, [method, url, requestName, requestBody, bodyType, headers, params])
+
+  useEffect(() => {
+    localStorage.setItem('api-test-ai-base-url', aiBaseUrl)
+    localStorage.setItem('api-test-ai-model', aiModel)
+    localStorage.setItem('api-test-ai-api-key', aiApiKey)
+  }, [aiBaseUrl, aiModel, aiApiKey])
 
   // 点击其他地方关闭右键菜单
   useEffect(() => {
@@ -1083,6 +1092,14 @@ const ApiTestWorkspace = () => {
       message.warning('Please enter a prompt')
       return
     }
+    if (!aiBaseUrl.trim()) {
+      message.warning('Please enter Base URL')
+      return
+    }
+    if (!aiModel.trim()) {
+      message.warning('Please enter Model')
+      return
+    }
 
     setAiRunning(true)
     setAiSummary('')
@@ -1093,6 +1110,9 @@ const ApiTestWorkspace = () => {
     try {
       const planRes = await apiTestService.generateAiPlan({
         prompt: aiPrompt,
+        base_url: aiBaseUrl.trim(),
+        model: aiModel.trim(),
+        api_key: aiApiKey.trim(),
         project_id: currentProjectId,
         collection_id: activeCollectionId,
         case_id: currentCaseId || undefined,
@@ -1959,6 +1979,32 @@ const ApiTestWorkspace = () => {
             showIcon
             message="AI will call existing APIs to create/update environments, collections, cases, and run tests."
           />
+
+          <Card size="small" title="Model Config">
+            <Form layout="vertical">
+              <Form.Item label="Base URL" style={{ marginBottom: 12 }}>
+                <Input
+                  placeholder="https://open.bigmodel.cn/api/paas/v4"
+                  value={aiBaseUrl}
+                  onChange={(e) => setAiBaseUrl(e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Model" style={{ marginBottom: 12 }}>
+                <Input
+                  placeholder="glm-5"
+                  value={aiModel}
+                  onChange={(e) => setAiModel(e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="API Key" style={{ marginBottom: 0 }}>
+                <Input.Password
+                  placeholder="Enter model provider API key"
+                  value={aiApiKey}
+                  onChange={(e) => setAiApiKey(e.target.value)}
+                />
+              </Form.Item>
+            </Form>
+          </Card>
 
           <TextArea
             rows={8}
