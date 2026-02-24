@@ -157,8 +157,6 @@ const WebTestScripts = () => {
 
   useEffect(() => {
     loadScripts()
-    const interval = setInterval(loadScripts, 5000)
-    return () => clearInterval(interval)
   }, [selectedCollectionId])
 
   // 创建脚本
