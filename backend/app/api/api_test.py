@@ -3,17 +3,19 @@
 实现接口测试相关功能：用例管理、执行测试、结果存储
 """
 
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db
 from ..models.api_test_case import ApiTestCollection, ApiTestCase
 from ..models.environment import Environment
+from ..models.project import Project
 from ..models.test_run import TestRun
 from ..models.test_report import TestReport
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils import get_current_user_id
+from ..utils.ai_planner import generate_api_test_plan
 from ..utils.env_variables import replace_variables, replace_variables_in_dict, get_environment_variables, merge_headers_with_env
 from ..utils.js_executor import get_executor
 from ..utils.script_context import (
@@ -37,6 +39,82 @@ logger = logging.getLogger(__name__)
 def api_test_health():
     """接口测试模块健康检查"""
     return success_response(message='接口测试模块正常')
+
+
+@api_bp.route('/api-test/ai/plan', methods=['POST'])
+@jwt_required()
+def generate_ai_plan():
+    """Generate AI operations plan for API workspace."""
+    user_id = get_current_user_id()
+    data = request.get_json() or {}
+    prompt = (data.get('prompt') or '').strip()
+
+    if not prompt:
+        return error_response(400, 'prompt is required')
+
+    collections = ApiTestCollection.query.filter_by(user_id=user_id).all()
+    cases = (
+        ApiTestCase.query
+        .filter_by(user_id=user_id)
+        .order_by(ApiTestCase.updated_at.desc())
+        .limit(200)
+        .all()
+    )
+    projects = Project.query.filter_by(owner_id=user_id).all()
+    project_ids = [p.id for p in projects]
+    envs = []
+    if project_ids:
+        envs = Environment.query.filter(Environment.project_id.in_(project_ids)).all()
+
+    context = {
+        'selected_collection_id': data.get('collection_id'),
+        'selected_case_id': data.get('case_id'),
+        'selected_env_id': data.get('environment_id'),
+        'project_id': data.get('project_id'),
+        'collections': [
+            {'id': c.id, 'name': c.name, 'project_id': c.project_id}
+            for c in collections
+        ],
+        'cases': [
+            {
+                'id': c.id,
+                'name': c.name,
+                'method': c.method,
+                'url': c.url,
+                'collection_id': c.collection_id,
+                'environment_id': c.environment_id,
+            }
+            for c in cases
+        ],
+        'environments': [
+            {
+                'id': e.id,
+                'name': e.name,
+                'project_id': e.project_id,
+                'base_url': e.base_url,
+            }
+            for e in envs
+        ],
+    }
+
+    try:
+        plan = generate_api_test_plan(
+            prompt=prompt,
+            context=context,
+            config={
+                'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+                'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+                'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+                'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+                'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
+            },
+        )
+        return success_response(data=plan, message='AI plan generated')
+    except ValueError as exc:
+        return error_response(400, str(exc))
+    except Exception as exc:
+        logger.error('AI plan generation failed: %s', str(exc), exc_info=True)
+        return error_response(500, f'AI plan generation failed: {str(exc)}')
 
 
 # ==================== 用例集合 ====================

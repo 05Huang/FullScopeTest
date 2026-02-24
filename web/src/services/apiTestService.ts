@@ -1,5 +1,24 @@
 import api, { ApiResponse } from './api'
 
+export type AiOperationType =
+  | 'create_environment'
+  | 'update_environment'
+  | 'create_collection'
+  | 'create_case'
+  | 'run_collection'
+  | 'run_case'
+
+export interface AiPlanOperation {
+  type: AiOperationType
+  [key: string]: any
+}
+
+export interface AiPlanResult {
+  summary: string
+  source?: 'llm' | 'fallback'
+  operations: AiPlanOperation[]
+}
+
 // ==================== 用例集合 ====================
 
 export const getCollections = (projectId?: number): Promise<ApiResponse> => {
@@ -91,6 +110,18 @@ export const runCollection = (collectionId: number, data?: { env_id?: number }):
   return api.post(`/api-test/collections/${collectionId}/run`, data || {}) as Promise<ApiResponse>
 }
 
+// ==================== AI Assistant ====================
+
+export const generateAiPlan = (data: {
+  prompt: string
+  project_id?: number
+  collection_id?: number
+  case_id?: number
+  environment_id?: number
+}): Promise<ApiResponse<AiPlanResult>> => {
+  return api.post('/api-test/ai/plan', data) as Promise<ApiResponse<AiPlanResult>>
+}
+
 // 导出服务对象
 export const apiTestService = {
   getCollections,
@@ -105,4 +136,6 @@ export const apiTestService = {
   executeRequest,
   runCase,
   runCollection,
+  generateAiPlan,
 }
+

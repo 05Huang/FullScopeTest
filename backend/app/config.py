@@ -50,6 +50,13 @@ class BaseConfig:
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_ENABLE = os.environ.get('CELERY_ENABLE', 'false').strip().lower() == 'true'  # strip() 去除空格
 
+    # AI Assistant (API test workspace)
+    AI_ASSISTANT_ENABLED = os.environ.get('AI_ASSISTANT_ENABLED', 'true').strip().lower() == 'true'
+    AI_ASSISTANT_BASE_URL = os.environ.get('AI_ASSISTANT_BASE_URL', 'https://api.openai.com/v1')
+    AI_ASSISTANT_API_KEY = os.environ.get('AI_ASSISTANT_API_KEY', '')
+    AI_ASSISTANT_MODEL = os.environ.get('AI_ASSISTANT_MODEL', 'gpt-4o-mini')
+    AI_ASSISTANT_TIMEOUT = int(os.environ.get('AI_ASSISTANT_TIMEOUT', '30'))
+
 
 class DevelopmentConfig(BaseConfig):
     """开发环境配置"""
