@@ -7,6 +7,8 @@ Celery 异步任务模块
 from app.extensions import celery, db
 from app.models.web_test_script import WebTestScript
 from app.models.perf_test_scenario import PerfTestScenario
+from app.models.test_run import TestRun
+from app.models.test_report import TestReport
 import subprocess
 import tempfile
 import sys
@@ -144,119 +146,243 @@ def _build_locust_command(locustfile, base_host, csv_prefix, run_time, user_coun
     return cmd
 
 
-@celery.task(bind=True, name='tasks.run_web_test')
-def run_web_test_task(self, script_id, user_id):
-    """
-    异步执行 Web 测试脚本
+def _build_web_case_result(script, success, duration, result_payload):
+    """Build a report-friendly result item for a single web script run."""
+    payload = result_payload or {}
+    stdout = payload.get('stdout') or ''
+    stderr = payload.get('stderr') or ''
+    error_message = payload.get('error')
+    if not error_message and not success and stderr:
+        error_message = stderr.strip()[:1000]
 
-    Args:
-        self: Celery 任务实例
-        script_id: 脚本 ID
-        user_id: 用户 ID
+    attachments = []
+    if stdout:
+        attachments.append({
+            'name': 'stdout',
+            'type': 'text',
+            'content': stdout[:2000],
+        })
+    if stderr:
+        attachments.append({
+            'name': 'stderr',
+            'type': 'text',
+            'content': stderr[:2000],
+        })
+
+    return {
+        'case_id': script.id,
+        'name': script.name,
+        'passed': success,
+        'status_code': None,
+        'response_time': round((duration or 0) * 1000, 2),
+        'error': error_message,
+        'attachments': attachments,
+    }
+
+
+def _finalize_web_test_run(script, test_run, success, duration, result_payload):
+    """
+    Persist WebTestScript status and optional TestRun/TestReport records.
 
     Returns:
-        dict: 执行结果
+        tuple[int | None, int | None]: (test_run_id, report_id)
     """
-    # 使用 Flask 应用上下文
+    script.status = 'passed' if success else 'failed'
+    script.last_status = script.status
+    script.last_run_duration = duration
+    script.last_result = result_payload
+
+    report_id = None
+    test_run_id = None
+
+    if test_run:
+        case_result = _build_web_case_result(
+            script=script,
+            success=success,
+            duration=duration,
+            result_payload=result_payload,
+        )
+        test_run.status = 'success' if success else 'failed'
+        test_run.passed = 1 if success else 0
+        test_run.failed = 0 if success else 1
+        test_run.error = 0 if success else 1
+        test_run.duration = duration
+        test_run.finished_at = datetime.utcnow()
+        test_run.results = [case_result]
+        test_run_id = test_run.id
+
+        report = TestReport(
+            test_run_id=test_run.id,
+            project_id=test_run.project_id,
+            test_type='web',
+            title=f'{script.name} - Web Test Report',
+            summary={
+                'total': 1,
+                'passed': 1 if success else 0,
+                'failed': 0 if success else 1,
+                'success_rate': 100 if success else 0,
+                'duration': round(duration, 2),
+                'environment': script.browser or 'chromium',
+            },
+            report_data={
+                'script': {
+                    'id': script.id,
+                    'name': script.name,
+                    'target_url': script.target_url,
+                    'browser': script.browser,
+                },
+                'results': [case_result],
+                'execution': {
+                    'success': success,
+                    'duration': duration,
+                },
+            },
+            status='generated',
+        )
+        db.session.add(report)
+        db.session.flush()
+        report_id = report.id
+
+    db.session.commit()
+    return test_run_id, report_id
+
+
+@celery.task(bind=True, name='tasks.run_web_test')
+def run_web_test_task(self, script_id, user_id):
+    """Run a web script asynchronously and persist unified reporting records."""
     with _get_flask_app().app_context():
+        script = None
+        test_run = None
+
         try:
-            # 获取脚本
             script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
             if not script:
                 return {
                     'success': False,
-                    'error': '脚本不存在'
+                    'error': 'Script not found',
                 }
 
-            # 更新状态为运行中
             script.status = 'running'
             script.last_run_at = datetime.utcnow()
+
+            # Create a unified test run when script is bound to a project.
+            if script.project_id:
+                test_run = TestRun(
+                    project_id=script.project_id,
+                    test_type='web',
+                    test_object_id=script.id,
+                    test_object_name=script.name,
+                    status='running',
+                    total_cases=1,
+                    passed=0,
+                    failed=0,
+                    skipped=0,
+                    error=0,
+                    started_at=datetime.utcnow(),
+                    triggered_by='manual',
+                    triggered_user_id=user_id,
+                )
+                db.session.add(test_run)
+
             db.session.commit()
 
-            # 更新任务进度
-            self.update_state(state='PROGRESS', meta={'status': '正在执行脚本...'})
+            self.update_state(state='PROGRESS', meta={'status': 'Running web test script...'})
 
-            # 创建临时文件运行脚本
             with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
                 f.write(script.script_content)
                 temp_file = f.name
 
             try:
-                # 运行脚本
                 start_time = time.time()
-
                 result = subprocess.run(
                     [sys.executable, temp_file],
                     capture_output=True,
                     text=True,
-                    timeout=script.timeout / 1000,  # 转换为秒
-                    cwd=tempfile.gettempdir()
+                    timeout=script.timeout / 1000,
+                    cwd=tempfile.gettempdir(),
                 )
-
-                end_time = time.time()
-                duration = end_time - start_time
-
-                # 判断执行结果
+                duration = time.time() - start_time
                 success = result.returncode == 0
 
-                # 统一状态枚举，避免前后端语义不一致
-                script.status = 'passed' if success else 'failed'
-                script.last_status = script.status
-                script.last_run_duration = duration
-                script.last_result = {
+                run_payload = {
                     'success': success,
                     'duration': duration,
                     'stdout': result.stdout,
                     'stderr': result.stderr,
                     'return_code': result.returncode,
-                    'timestamp': datetime.utcnow().isoformat()
+                    'timestamp': datetime.utcnow().isoformat(),
                 }
-                db.session.commit()
+                test_run_id, report_id = _finalize_web_test_run(
+                    script=script,
+                    test_run=test_run,
+                    success=success,
+                    duration=duration,
+                    result_payload=run_payload,
+                )
 
                 return {
                     'success': success,
                     'script_id': script_id,
+                    'test_run_id': test_run_id,
+                    'report_id': report_id,
                     'duration': duration,
                     'stdout': result.stdout,
                     'stderr': result.stderr,
-                    'return_code': result.returncode
+                    'return_code': result.returncode,
                 }
-
             finally:
-                # 清理临时文件
                 try:
                     os.unlink(temp_file)
-                except:
+                except Exception:
                     pass
 
         except subprocess.TimeoutExpired:
-            script.status = 'failed'
-            script.last_status = 'failed'
-            script.last_result = {
-                'success': False,
-                'error': '执行超时',
-                'timestamp': datetime.utcnow().isoformat()
-            }
-            db.session.commit()
+            if script:
+                timeout_seconds = script.timeout / 1000 if script.timeout else 0
+                run_payload = {
+                    'success': False,
+                    'error': 'Execution timeout',
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+                test_run_id, report_id = _finalize_web_test_run(
+                    script=script,
+                    test_run=test_run,
+                    success=False,
+                    duration=timeout_seconds,
+                    result_payload=run_payload,
+                )
+            else:
+                test_run_id, report_id = None, None
 
             return {
                 'success': False,
-                'error': '执行超时'
+                'error': 'Execution timeout',
+                'test_run_id': test_run_id,
+                'report_id': report_id,
             }
 
         except Exception as e:
-            script.status = 'failed'
-            script.last_status = 'failed'
-            script.last_result = {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.utcnow().isoformat()
-            }
-            db.session.commit()
+            if script:
+                run_payload = {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+                test_run_id, report_id = _finalize_web_test_run(
+                    script=script,
+                    test_run=test_run,
+                    success=False,
+                    duration=0,
+                    result_payload=run_payload,
+                )
+            else:
+                test_run_id, report_id = None, None
 
             return {
                 'success': False,
-                'error': str(e)
+                'error': str(e),
+                'test_run_id': test_run_id,
+                'report_id': report_id,
             }
 
 

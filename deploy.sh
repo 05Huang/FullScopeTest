@@ -38,6 +38,23 @@ docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-sl
 # Deploy services.
 docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build
 
+# Run DB migrations inside backend container (idempotent).
+if [ "${SKIP_DB_MIGRATE:-0}" != "1" ]; then
+  for i in {1..10}; do
+    if docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" \
+      exec -T backend flask --app wsgi:app db upgrade; then
+      echo "Database migration OK"
+      break
+    fi
+    echo "Database migration retry ($i/10) ..."
+    sleep 3
+    if [ "$i" -eq 10 ]; then
+      echo "Database migration failed"
+      exit 1
+    fi
+  done
+fi
+
 # Health checks (backend only; OpenResty proxies externally).
 for i in {1..10}; do
   if curl -fsS "http://127.0.0.1:5211/api/v1/api-test/health" > /dev/null; then

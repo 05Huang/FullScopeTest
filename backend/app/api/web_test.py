@@ -7,6 +7,7 @@ from flask import request
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db, celery
+from ..models.web_test_collection import WebTestCollection
 from ..models.web_test_script import WebTestScript
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
@@ -22,10 +23,141 @@ from datetime import datetime
 recording_processes = {}
 
 
+def _get_collection_or_404(collection_id: int, user_id: int):
+    collection = WebTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
+    if not collection:
+        return None, error_response(message='用例集不存在', code=404)
+    return collection, None
+
+
 @api_bp.route('/web-test/health', methods=['GET'])
 def web_test_health():
     """Web 测试模块健康检查"""
     return success_response(message='Web 测试模块正常')
+
+
+# ==================== 用例集管理 ====================
+
+@api_bp.route('/web-test/collections', methods=['GET'])
+@jwt_required()
+def get_web_collections():
+    """获取 Web 用例集列表"""
+    user_id = get_current_user_id()
+    project_id = request.args.get('project_id', type=int)
+
+    query = WebTestCollection.query.filter_by(user_id=user_id)
+    if project_id:
+        query = query.filter_by(project_id=project_id)
+
+    collections = query.order_by(WebTestCollection.created_at.desc()).all()
+    return success_response(data=[c.to_dict() for c in collections])
+
+
+@api_bp.route('/web-test/collections', methods=['POST'])
+@jwt_required()
+def create_web_collection():
+    """创建 Web 用例集"""
+    user_id = get_current_user_id()
+    data = request.get_json() or {}
+
+    error = validate_required(data, ['name'])
+    if error:
+        return error_response(message=error)
+
+    collection = WebTestCollection(
+        name=data['name'],
+        description=data.get('description', ''),
+        project_id=data.get('project_id'),
+        sort_order=data.get('sort_order', 0),
+        user_id=user_id,
+    )
+    db.session.add(collection)
+    db.session.commit()
+
+    return success_response(data=collection.to_dict(), message='创建成功')
+
+
+@api_bp.route('/web-test/collections/<int:collection_id>', methods=['PUT'])
+@jwt_required()
+def update_web_collection(collection_id):
+    """更新 Web 用例集"""
+    user_id = get_current_user_id()
+    collection, err = _get_collection_or_404(collection_id, user_id)
+    if err:
+        return err
+
+    data = request.get_json() or {}
+    for field in ['name', 'description', 'sort_order']:
+        if field in data:
+            setattr(collection, field, data[field])
+
+    db.session.commit()
+    return success_response(data=collection.to_dict(), message='更新成功')
+
+
+@api_bp.route('/web-test/collections/<int:collection_id>', methods=['DELETE'])
+@jwt_required()
+def delete_web_collection(collection_id):
+    """删除 Web 用例集"""
+    user_id = get_current_user_id()
+    collection, err = _get_collection_or_404(collection_id, user_id)
+    if err:
+        return err
+
+    WebTestScript.query.filter_by(collection_id=collection.id, user_id=user_id).update(
+        {'collection_id': None},
+        synchronize_session=False
+    )
+    db.session.delete(collection)
+    db.session.commit()
+    return success_response(message='删除成功')
+
+
+@api_bp.route('/web-test/collections/<int:collection_id>/run', methods=['POST'])
+@jwt_required()
+def run_web_collection(collection_id):
+    """批量运行用例集内脚本（逐脚本异步提交）"""
+    user_id = get_current_user_id()
+    collection, err = _get_collection_or_404(collection_id, user_id)
+    if err:
+        return err
+
+    scripts = WebTestScript.query.filter_by(
+        user_id=user_id,
+        collection_id=collection.id,
+        is_enabled=True
+    ).all()
+    if not scripts:
+        return error_response(message='用例集内没有可执行脚本')
+
+    submitted = []
+    skipped = []
+
+    for script in scripts:
+        if script.status == 'running':
+            skipped.append({'script_id': script.id, 'reason': 'running'})
+            continue
+        try:
+            task = run_web_test_task.apply_async(
+                args=[script.id, user_id],
+                task_id=f'web_test_{script.id}_{user_id}'
+            )
+            script.status = 'running'
+            script.last_status = 'running'
+            script.last_run_at = datetime.utcnow()
+            submitted.append({'script_id': script.id, 'task_id': task.id})
+        except Exception as exc:
+            skipped.append({'script_id': script.id, 'reason': str(exc)})
+
+    db.session.commit()
+
+    return success_response(data={
+        'collection_id': collection.id,
+        'collection_name': collection.name,
+        'submitted_count': len(submitted),
+        'submitted': submitted,
+        'skipped': skipped,
+    }, message='批量提交完成')
 
 
 # ==================== 脚本管理 ====================
@@ -36,10 +168,13 @@ def get_scripts():
     """获取 Web 测试脚本列表"""
     user_id = get_current_user_id()
     project_id = request.args.get('project_id', type=int)
+    collection_id = request.args.get('collection_id', type=int)
     
     query = WebTestScript.query.filter_by(user_id=user_id)
     if project_id:
         query = query.filter_by(project_id=project_id)
+    if collection_id is not None:
+        query = query.filter_by(collection_id=collection_id)
     
     scripts = query.order_by(WebTestScript.created_at.desc()).all()
     
@@ -89,6 +224,19 @@ if __name__ == "__main__":
     print(result)
 '''
     
+    project_id = data.get('project_id')
+    collection_id = data.get('collection_id')
+    if collection_id is not None:
+        collection, err = _get_collection_or_404(collection_id, user_id)
+        if err:
+            return err
+        if collection.project_id and project_id and collection.project_id != project_id:
+            return error_response(message='collection_id 与 project_id 不匹配')
+        if project_id is None:
+            project_id = collection.project_id
+    else:
+        collection = None
+
     script = WebTestScript(
         name=data['name'],
         description=data.get('description', ''),
@@ -97,7 +245,8 @@ if __name__ == "__main__":
         browser=data.get('browser', 'chromium'),
         headless=data.get('headless', True),
         timeout=data.get('timeout', 30000),
-        project_id=data.get('project_id'),
+        collection_id=collection.id if collection else None,
+        project_id=project_id,
         user_id=user_id
     )
     
@@ -131,6 +280,20 @@ def update_script(script_id):
         return error_response(message='脚本不存在', code=404)
     
     data = request.get_json()
+
+    if 'collection_id' in data:
+        collection_id = data.get('collection_id')
+        if collection_id is None:
+            script.collection_id = None
+        else:
+            collection, err = _get_collection_or_404(collection_id, user_id)
+            if err:
+                return err
+            if script.project_id and collection.project_id and script.project_id != collection.project_id:
+                return error_response(message='collection_id 与脚本项目不匹配')
+            script.collection_id = collection.id
+            if script.project_id is None:
+                script.project_id = collection.project_id
     
     for field in ['name', 'description', 'script_content', 'target_url', 'browser', 'headless', 'timeout']:
         if field in data:

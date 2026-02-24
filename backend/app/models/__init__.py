@@ -6,6 +6,7 @@ from .user import User
 from .project import Project
 from .environment import Environment
 from .api_test_case import ApiTestCase, ApiTestCollection
+from .web_test_collection import WebTestCollection
 from .web_test_script import WebTestScript
 from .perf_test_scenario import PerfTestScenario
 from .test_run import TestRun
@@ -18,6 +19,7 @@ __all__ = [
     'Environment',
     'ApiTestCase',
     'ApiTestCollection',
+    'WebTestCollection',
     'WebTestScript',
     'PerfTestScenario',
     'TestRun',
