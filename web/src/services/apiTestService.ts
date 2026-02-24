@@ -114,6 +114,9 @@ export const runCollection = (collectionId: number, data?: { env_id?: number }):
 
 export const generateAiPlan = (data: {
   prompt: string
+  base_url?: string
+  model?: string
+  api_key?: string
   project_id?: number
   collection_id?: number
   case_id?: number
@@ -138,4 +141,3 @@ export const apiTestService = {
   runCollection,
   generateAiPlan,
 }
-

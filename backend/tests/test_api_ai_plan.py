@@ -55,3 +55,36 @@ def test_ai_plan_returns_400_when_disabled(client):
     assert payload["code"] == 400
     assert "disabled" in payload["message"].lower()
 
+
+def test_ai_plan_accepts_runtime_provider_config(client, monkeypatch):
+    headers = _auth_headers(client)
+    captured = {}
+
+    def fake_generate_api_test_plan(prompt, context, config):
+        captured["prompt"] = prompt
+        captured["config"] = config
+        return {"summary": "ok", "operations": [], "source": "llm"}
+
+    monkeypatch.setattr(
+        "app.api.api_test.generate_api_test_plan",
+        fake_generate_api_test_plan,
+    )
+
+    response = client.post(
+        "/api/v1/api-test/ai/plan",
+        headers=headers,
+        json={
+            "prompt": "use glm",
+            "base_url": "https://open.bigmodel.cn/api/paas/v4",
+            "model": "glm-5",
+            "api_key": "glm-key-123",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["code"] == 200
+    assert captured["prompt"] == "use glm"
+    assert captured["config"]["AI_ASSISTANT_BASE_URL"] == "https://open.bigmodel.cn/api/paas/v4"
+    assert captured["config"]["AI_ASSISTANT_MODEL"] == "glm-5"
+    assert captured["config"]["AI_ASSISTANT_API_KEY"] == "glm-key-123"
