@@ -11,6 +11,7 @@ export const createEnvironment = (data: {
   base_url: string
   description?: string
   variables?: Record<string, any>
+  headers?: Record<string, any>
   project_id?: number
   is_default?: boolean
 }): Promise<ApiResponse> => {

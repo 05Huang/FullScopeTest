@@ -17,6 +17,10 @@ import {
   Tooltip,
   message,
   Modal,
+  Drawer,
+  Switch,
+  Alert,
+  Divider,
 } from 'antd'
 import {
   PlusOutlined,
@@ -33,17 +37,20 @@ import {
   InfoCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { apiTestService } from '@/services/apiTestService'
+import type { AiPlanOperation } from '@/services/apiTestService'
 import { environmentService } from '@/services/environmentService'
 import CollectionManager from './CollectionManager'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
+const { TextArea } = Input
 
 // 脚本测试结果展示组件
 interface ScriptTestResultsProps {
@@ -191,6 +198,13 @@ const methodColors: Record<string, string> = {
   PATCH: '#722ed1',
 }
 
+type AiLogStatus = 'info' | 'success' | 'error'
+
+interface AiExecutionLog {
+  status: AiLogStatus
+  message: string
+}
+
 const ApiTestWorkspace = () => {
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
@@ -221,6 +235,14 @@ const ApiTestWorkspace = () => {
   const [currentEnv, setCurrentEnv] = useState<any>(null)
   const [sidebarTab, setSidebarTab] = useState<string>('cases') // 侧边栏标签页
   const [hasLoadedData, setHasLoadedData] = useState(false) // 标记数据是否已加载
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiAutoRun, setAiAutoRun] = useState(true)
+  const [aiRunning, setAiRunning] = useState(false)
+  const [aiSummary, setAiSummary] = useState('')
+  const [aiPlanSource, setAiPlanSource] = useState<'llm' | 'fallback' | ''>('')
+  const [aiPlanOperations, setAiPlanOperations] = useState<AiPlanOperation[]>([])
+  const [aiExecutionLogs, setAiExecutionLogs] = useState<AiExecutionLog[]>([])
 
   // 获取当前项目选择的环境存储键（按项目分别持久化）
   // TODO: 从路由参数或上下文获取当前项目 ID
@@ -1044,6 +1066,223 @@ const ApiTestWorkspace = () => {
   }
 
   // 更多操作菜单
+
+  const appendAiLog = (status: AiLogStatus, logMessage: string) => {
+    setAiExecutionLogs(prev => [...prev, { status, message: logMessage }])
+  }
+
+  const normalizeAiObject = (value: any): Record<string, any> => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value
+    }
+    return {}
+  }
+
+  const handleAiExecute = async () => {
+    if (!aiPrompt.trim()) {
+      message.warning('Please enter a prompt')
+      return
+    }
+
+    setAiRunning(true)
+    setAiSummary('')
+    setAiPlanSource('')
+    setAiPlanOperations([])
+    setAiExecutionLogs([])
+
+    try {
+      const planRes = await apiTestService.generateAiPlan({
+        prompt: aiPrompt,
+        project_id: currentProjectId,
+        collection_id: activeCollectionId,
+        case_id: currentCaseId || undefined,
+        environment_id: selectedEnvId,
+      })
+
+      if (planRes.code !== 200 || !planRes.data) {
+        throw new Error(planRes.message || 'AI plan generation failed')
+      }
+
+      const planData = planRes.data
+      const operations = Array.isArray(planData.operations) ? planData.operations : []
+
+      setAiSummary(planData.summary || '')
+      setAiPlanSource(planData.source || '')
+      setAiPlanOperations(operations)
+      appendAiLog('info', `AI generated ${operations.length} operation(s)`)
+
+      const localCollections = [...collections]
+      const localEnvironments = [...environments]
+      const localCases = [...cases]
+
+      const createdCollectionMap = new Map<string, number>()
+      const createdEnvironmentMap = new Map<string, number>()
+      const createdCaseMap = new Map<string, number>()
+
+      const resolveCollectionId = (op: any): number | undefined => {
+        if (op.collection_id) return Number(op.collection_id)
+        if (op.collection_name && createdCollectionMap.has(op.collection_name)) {
+          return createdCollectionMap.get(op.collection_name)
+        }
+        if (op.collection_name) {
+          const found = localCollections.find((c: any) => c.name === op.collection_name)
+          if (found) return found.id
+        }
+        return activeCollectionId
+      }
+
+      const resolveEnvironmentId = (op: any): number | undefined => {
+        if (op.environment_id) return Number(op.environment_id)
+        if (op.environment_name && createdEnvironmentMap.has(op.environment_name)) {
+          return createdEnvironmentMap.get(op.environment_name)
+        }
+        if (op.environment_name) {
+          const found = localEnvironments.find((e: any) => e.name === op.environment_name)
+          if (found) return found.id
+        }
+        return selectedEnvId
+      }
+
+      const resolveCaseId = (op: any): number | undefined => {
+        if (op.case_id) return Number(op.case_id)
+        if (op.case_name && createdCaseMap.has(op.case_name)) {
+          return createdCaseMap.get(op.case_name)
+        }
+        if (op.case_name) {
+          const found = localCases.find((c: any) => c.name === op.case_name)
+          if (found) return found.id
+        }
+        return currentCaseId || undefined
+      }
+
+      for (let index = 0; index < operations.length; index += 1) {
+        const op = operations[index]
+        const opTitle = `[${index + 1}/${operations.length}] ${op.type}`
+
+        try {
+          if (op.type === 'create_environment') {
+            const envRes = await environmentService.createEnvironment({
+              name: op.name || `AI Env ${Date.now()}`,
+              base_url: op.base_url || 'http://127.0.0.1:5211/api/v1',
+              description: op.description || '',
+              variables: normalizeAiObject(op.variables),
+              headers: normalizeAiObject(op.headers),
+              project_id: op.project_id || currentProjectId,
+            })
+            if (envRes.code !== 200 && envRes.code !== 201) throw new Error(envRes.message || 'create environment failed')
+            const envData = envRes.data
+            localEnvironments.push(envData)
+            if (envData?.name) createdEnvironmentMap.set(envData.name, envData.id)
+            appendAiLog('success', `${opTitle} created environment #${envData?.id}`)
+            continue
+          }
+
+          if (op.type === 'update_environment') {
+            const envId = resolveEnvironmentId(op)
+            if (!envId) throw new Error('environment id is required for update_environment')
+            const updatePayload: any = {}
+            if (op.name) updatePayload.name = op.name
+            if (op.base_url) updatePayload.base_url = op.base_url
+            if (op.variables) updatePayload.variables = normalizeAiObject(op.variables)
+            if (op.headers) updatePayload.headers = normalizeAiObject(op.headers)
+            const envRes = await environmentService.updateEnvironment(envId, updatePayload)
+            if (envRes.code !== 200) throw new Error(envRes.message || 'update environment failed')
+            appendAiLog('success', `${opTitle} updated environment #${envId}`)
+            continue
+          }
+
+          if (op.type === 'create_collection') {
+            const colRes = await apiTestService.createCollection({
+              name: op.name || `AI Collection ${Date.now()}`,
+              description: op.description || '',
+              project_id: op.project_id || currentProjectId,
+            })
+            if (colRes.code !== 200 && colRes.code !== 201) throw new Error(colRes.message || 'create collection failed')
+            const colData = colRes.data
+            localCollections.push(colData)
+            if (colData?.name) createdCollectionMap.set(colData.name, colData.id)
+            appendAiLog('success', `${opTitle} created collection #${colData?.id}`)
+            continue
+          }
+
+          if (op.type === 'create_case') {
+            const methodValue = String(op.method || 'GET').toUpperCase()
+            const bodyValue = op.body === undefined ? undefined : op.body
+            const caseRes = await apiTestService.createCase({
+              name: op.name || `AI Case ${Date.now()}`,
+              description: op.description || '',
+              method: methodValue,
+              url: op.url || '{{base_url}}/api-test/health',
+              headers: normalizeAiObject(op.headers),
+              params: normalizeAiObject(op.params),
+              body: bodyValue,
+              body_type: op.body_type || (typeof bodyValue === 'object' ? 'json' : 'raw'),
+              pre_script: op.pre_script || '',
+              post_script: op.post_script || '',
+              collection_id: resolveCollectionId(op),
+              project_id: op.project_id || currentProjectId,
+              environment_id: resolveEnvironmentId(op),
+            })
+            if (caseRes.code !== 200 && caseRes.code !== 201) throw new Error(caseRes.message || 'create case failed')
+            const caseData = caseRes.data
+            localCases.push(caseData)
+            if (caseData?.name) createdCaseMap.set(caseData.name, caseData.id)
+            appendAiLog('success', `${opTitle} created case #${caseData?.id}`)
+            continue
+          }
+
+          if (op.type === 'run_collection') {
+            if (!aiAutoRun) {
+              appendAiLog('info', `${opTitle} skipped (auto-run disabled)`)
+              continue
+            }
+            const collectionId = resolveCollectionId(op)
+            if (!collectionId) throw new Error('collection id is required for run_collection')
+            const envId = resolveEnvironmentId(op)
+            const runRes = await apiTestService.runCollection(
+              collectionId,
+              envId ? { env_id: envId } : {}
+            )
+            if (runRes.code !== 200) throw new Error(runRes.message || 'run collection failed')
+            appendAiLog(
+              'success',
+              `${opTitle} done: passed=${runRes.data?.passed ?? 0}, failed=${runRes.data?.failed ?? 0}`
+            )
+            continue
+          }
+
+          if (op.type === 'run_case') {
+            if (!aiAutoRun) {
+              appendAiLog('info', `${opTitle} skipped (auto-run disabled)`)
+              continue
+            }
+            const caseId = resolveCaseId(op)
+            if (!caseId) throw new Error('case id is required for run_case')
+            const envId = resolveEnvironmentId(op)
+            const runRes = await apiTestService.runCase(caseId, envId)
+            if (runRes.code !== 200) throw new Error(runRes.message || 'run case failed')
+            const passedText = runRes.data?.passed ? 'passed' : 'failed'
+            appendAiLog('success', `${opTitle} done: ${passedText}`)
+            continue
+          }
+
+          appendAiLog('info', `${opTitle} ignored (unsupported type)`)
+        } catch (error: any) {
+          appendAiLog('error', `${opTitle} failed: ${error?.message || 'unknown error'}`)
+        }
+      }
+
+      await loadData()
+      appendAiLog('success', 'AI workflow completed')
+      message.success('AI workflow completed')
+    } catch (error: any) {
+      appendAiLog('error', error?.message || 'AI workflow failed')
+      message.error(error?.message || 'AI workflow failed')
+    } finally {
+      setAiRunning(false)
+    }
+  }
+
   const moreMenuItems: MenuProps['items'] = [
     { key: 'copy', icon: <CopyOutlined />, label: '复制为 cURL', onClick: handleCopyCurl },
   ]
@@ -1440,6 +1679,14 @@ const ApiTestWorkspace = () => {
                 删除用例
               </Button>
             </Tooltip>
+            <Tooltip title="AI Assistant">
+              <Button
+                icon={<RobotOutlined />}
+                onClick={() => setAiDrawerOpen(true)}
+              >
+                AI Assistant
+              </Button>
+            </Tooltip>
             <Dropdown menu={{ items: moreMenuItems }}>
               <Button icon={<MoreOutlined />} />
             </Dropdown>
@@ -1699,6 +1946,86 @@ const ApiTestWorkspace = () => {
       </Content>
 
       {/* 保存用例弹窗 */}
+      <Drawer
+        title="AI Assistant"
+        placement="right"
+        width={520}
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Alert
+            type="info"
+            showIcon
+            message="AI will call existing APIs to create/update environments, collections, cases, and run tests."
+          />
+
+          <TextArea
+            rows={8}
+            placeholder="Describe what you want in natural language. Example: create a login collection with 3 cases, create env, then run the collection."
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Space>
+              <Text type="secondary">Auto run tests</Text>
+              <Switch checked={aiAutoRun} onChange={setAiAutoRun} />
+            </Space>
+            <Button type="primary" icon={<RobotOutlined />} loading={aiRunning} onClick={handleAiExecute}>
+              Run AI
+            </Button>
+          </div>
+
+          {aiSummary && <Alert type="success" showIcon message={aiSummary} />}
+
+          {aiPlanSource && (
+            <Tag color={aiPlanSource === 'llm' ? 'blue' : 'orange'}>
+              Source: {aiPlanSource}
+            </Tag>
+          )}
+
+          {aiPlanOperations.length > 0 && (
+            <Card size="small" title={`Planned Operations (${aiPlanOperations.length})`}>
+              <div style={{ maxHeight: 180, overflow: 'auto' }}>
+                {aiPlanOperations.map((op, index) => (
+                  <div key={`${op.type}-${index}`} style={{ marginBottom: 6 }}>
+                    <Text code>{`${index + 1}. ${op.type}`}</Text>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <Divider style={{ margin: '8px 0' }} />
+
+          <Card size="small" title="Execution Logs">
+            {aiExecutionLogs.length === 0 ? (
+              <Empty description="No logs yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <div style={{ maxHeight: 220, overflow: 'auto' }}>
+                {aiExecutionLogs.map((log, index) => (
+                  <div key={`${log.status}-${index}`} style={{ marginBottom: 8 }}>
+                    <Tag
+                      color={
+                        log.status === 'success'
+                          ? 'success'
+                          : log.status === 'error'
+                            ? 'error'
+                            : 'default'
+                      }
+                    >
+                      {log.status.toUpperCase()}
+                    </Tag>
+                    <Text>{log.message}</Text>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </Space>
+      </Drawer>
+
       <Modal
         title="保存到用例"
         open={saveModalOpen}
