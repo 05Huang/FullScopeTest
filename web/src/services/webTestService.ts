@@ -2,13 +2,17 @@ import api, { ApiResponse } from './api'
 
 // ==================== 脚本管理 ====================
 
-export const getScripts = (projectId?: number): Promise<ApiResponse> => {
-  return api.get('/web-test/scripts', { params: { project_id: projectId } }) as Promise<ApiResponse>
+export const getScripts = (params?: {
+  project_id?: number
+  collection_id?: number
+}): Promise<ApiResponse> => {
+  return api.get('/web-test/scripts', { params }) as Promise<ApiResponse>
 }
 
 export const createScript = (data: {
   name: string
   description?: string
+  collection_id?: number | null
   target_url?: string
   browser?: string
   script_content?: string
@@ -25,6 +29,7 @@ export const getScript = (id: number): Promise<ApiResponse> => {
 export const updateScript = (id: number, data: {
   name?: string
   description?: string
+  collection_id?: number | null
   target_url?: string
   browser?: string
   script_content?: string
@@ -35,6 +40,37 @@ export const updateScript = (id: number, data: {
 
 export const deleteScript = (id: number): Promise<ApiResponse> => {
   return api.delete(`/web-test/scripts/${id}`) as Promise<ApiResponse>
+}
+
+// ==================== 用例集管理 ====================
+
+export const getCollections = (projectId?: number): Promise<ApiResponse> => {
+  return api.get('/web-test/collections', { params: { project_id: projectId } }) as Promise<ApiResponse>
+}
+
+export const createCollection = (data: {
+  name: string
+  description?: string
+  project_id?: number
+  sort_order?: number
+}): Promise<ApiResponse> => {
+  return api.post('/web-test/collections', data) as Promise<ApiResponse>
+}
+
+export const updateCollection = (id: number, data: {
+  name?: string
+  description?: string
+  sort_order?: number
+}): Promise<ApiResponse> => {
+  return api.put(`/web-test/collections/${id}`, data) as Promise<ApiResponse>
+}
+
+export const deleteCollection = (id: number): Promise<ApiResponse> => {
+  return api.delete(`/web-test/collections/${id}`) as Promise<ApiResponse>
+}
+
+export const runCollection = (collectionId: number): Promise<ApiResponse> => {
+  return api.post(`/web-test/collections/${collectionId}/run`) as Promise<ApiResponse>
 }
 
 // ==================== 执行测试 ====================
@@ -67,6 +103,11 @@ export const webTestService = {
   getScript,
   updateScript,
   deleteScript,
+  getCollections,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  runCollection,
   runScript,
   startRecording,
   stopRecording,

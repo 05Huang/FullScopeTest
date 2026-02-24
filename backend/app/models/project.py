@@ -24,6 +24,7 @@ class Project(db.Model):
     # 关联
     environments = db.relationship('Environment', backref='project', lazy='dynamic', cascade='all, delete-orphan')
     api_collections = db.relationship('ApiTestCollection', backref='project', lazy='dynamic', cascade='all, delete-orphan')
+    web_collections = db.relationship('WebTestCollection', backref='project', lazy='dynamic', cascade='all, delete-orphan')
     web_scripts = db.relationship('WebTestScript', backref='project', lazy='dynamic', cascade='all, delete-orphan')
     perf_scenarios = db.relationship('PerfTestScenario', backref='project', lazy='dynamic', cascade='all, delete-orphan')
     test_runs = db.relationship('TestRun', backref='project', lazy='dynamic', cascade='all, delete-orphan')

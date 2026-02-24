@@ -15,6 +15,7 @@ class WebTestScript(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, comment='项目 ID')
+    collection_id = db.Column(db.Integer, db.ForeignKey('web_test_collections.id'), nullable=True, comment='用例集 ID')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='用户 ID')
     name = db.Column(db.String(255), nullable=False, comment='脚本名称')
     description = db.Column(db.Text, comment='脚本描述')
@@ -65,6 +66,8 @@ class WebTestScript(db.Model):
         return {
             'id': self.id,
             'project_id': self.project_id,
+            'collection_id': self.collection_id,
+            'collection_name': self.collection.name if self.collection else None,
             'user_id': self.user_id,
             'name': self.name,
             'description': self.description,

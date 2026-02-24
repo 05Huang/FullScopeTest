@@ -7,7 +7,6 @@ import ApiTestWorkspace from './pages/api-test/ApiTestWorkspace'
 import ApiTestCollections from './pages/api-test/ApiTestCollections'
 import ApiTestEnvironments from './pages/api-test/ApiTestEnvironments'
 import WebTestScripts from './pages/web-test/WebTestScripts'
-import WebTestRecorder from './pages/web-test/WebTestRecorder'
 import PerfTestScenarios from './pages/perf-test/PerfTestScenarios'
 import PerfTestMonitor from './pages/perf-test/PerfTestMonitor'
 import PerfTestResults from './pages/perf-test/PerfTestResults'
@@ -57,7 +56,7 @@ function App() {
         <Route path="web-test">
           <Route index element={<Navigate to="scripts" replace />} />
           <Route path="scripts" element={<WebTestScripts />} />
-          <Route path="recorder" element={<WebTestRecorder />} />
+          <Route path="recorder" element={<Navigate to="/web-test/scripts" replace />} />
         </Route>
         
         {/* 性能测试 */}

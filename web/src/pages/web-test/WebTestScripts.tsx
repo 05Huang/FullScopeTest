@@ -28,6 +28,8 @@ import {
   ExportOutlined,
   ReloadOutlined,
   FileTextOutlined,
+  FolderOpenOutlined,
+  FolderAddOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -42,6 +44,8 @@ interface WebTestScript {
   id: number
   name: string
   description: string
+  collection_id?: number | null
+  collection_name?: string
   target_url?: string
   browser: string
   status: 'passed' | 'failed' | 'pending' | 'running'
@@ -58,6 +62,14 @@ interface WebTestScript {
     duration?: number
     error?: string
   }
+}
+
+interface WebTestCollection {
+  id: number
+  name: string
+  description?: string
+  project_id?: number | null
+  script_count?: number
 }
 
 const browserConfig: Record<string, { color: string; name: string }> = {
@@ -85,21 +97,27 @@ const normalizeScriptStatus = (status?: string): WebTestScript['status'] => {
 const WebTestScripts = () => {
   const [loading, setLoading] = useState(false)
   const [scripts, setScripts] = useState<WebTestScript[]>([])
+  const [collections, setCollections] = useState<WebTestCollection[]>([])
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false)
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false)
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
   const [currentScript, setCurrentScript] = useState<WebTestScript | null>(null)
   const [editingScript, setEditingScript] = useState<WebTestScript | null>(null)
   const [runningIds, setRunningIds] = useState<number[]>([])
+  const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>(undefined)
   const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
+  const [collectionForm] = Form.useForm()
 
   // 加载脚本列表
   const loadScripts = async () => {
     setLoading(true)
     try {
-      const result = await webTestService.getScripts()
+      const result = await webTestService.getScripts({
+        collection_id: selectedCollectionId,
+      })
       if (result.code === 200) {
         const rawScripts = result.data || []
         const normalizedScripts = rawScripts.map((script: any) => ({
@@ -122,11 +140,26 @@ const WebTestScripts = () => {
     }
   }
 
+  const loadCollections = async () => {
+    try {
+      const result = await webTestService.getCollections()
+      if (result.code === 200) {
+        setCollections(result.data || [])
+      }
+    } catch (error) {
+      console.error('加载用例集失败', error)
+    }
+  }
+
+  useEffect(() => {
+    loadCollections()
+  }, [])
+
   useEffect(() => {
     loadScripts()
     const interval = setInterval(loadScripts, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [selectedCollectionId])
 
   // 创建脚本
   const handleCreate = async (values: any) => {
@@ -134,6 +167,7 @@ const WebTestScripts = () => {
       const result = await webTestService.createScript({
         name: values.name,
         description: values.description,
+        collection_id: values.collection_id ?? null,
         target_url: values.target_url,
         browser: values.browser,
       })
@@ -157,6 +191,7 @@ const WebTestScripts = () => {
       const result = await webTestService.updateScript(id, {
         name: values.name,
         description: values.description,
+        collection_id: values.collection_id ?? null,
         target_url: values.target_url,
         browser: values.browser,
       })
@@ -285,6 +320,63 @@ const WebTestScripts = () => {
     setSelectedRowKeys([])
   }
 
+  const handleRunCollection = async () => {
+    if (!selectedCollectionId) {
+      message.warning('请先选择用例集')
+      return
+    }
+
+    try {
+      const result = await webTestService.runCollection(selectedCollectionId)
+      if (result.code === 200) {
+        const submitted = result.data?.submitted_count ?? 0
+        const skipped = (result.data?.skipped || []).length
+        message.success(`批量提交完成，提交 ${submitted}，跳过 ${skipped}`)
+        loadScripts()
+      } else {
+        message.error(result.message || '批量执行失败')
+      }
+    } catch (error) {
+      message.error('批量执行失败')
+    }
+  }
+
+  const handleCreateCollection = async (values: any) => {
+    try {
+      const result = await webTestService.createCollection({
+        name: values.name,
+        description: values.description,
+      })
+      if (result.code === 200 || result.code === 201) {
+        message.success('用例集创建成功')
+        collectionForm.resetFields()
+        loadCollections()
+      } else {
+        message.error(result.message || '创建用例集失败')
+      }
+    } catch (error) {
+      message.error('创建用例集失败')
+    }
+  }
+
+  const handleDeleteCollection = async (id: number) => {
+    try {
+      const result = await webTestService.deleteCollection(id)
+      if (result.code === 200) {
+        message.success('用例集已删除')
+        if (selectedCollectionId === id) {
+          setSelectedCollectionId(undefined)
+        }
+        loadCollections()
+        loadScripts()
+      } else {
+        message.error(result.message || '删除用例集失败')
+      }
+    } catch (error) {
+      message.error('删除用例集失败')
+    }
+  }
+
   // 表格列配置
   const columns: ColumnsType<WebTestScript> = [
     {
@@ -308,6 +400,13 @@ const WebTestScripts = () => {
           )}
         </div>
       ),
+    },
+    {
+      title: '用例集',
+      dataIndex: 'collection_name',
+      key: 'collection_name',
+      width: 140,
+      render: (value) => value ? <Tag color="geekblue">{value}</Tag> : '-',
     },
     {
       title: '浏览器',
@@ -408,6 +507,7 @@ const WebTestScripts = () => {
                 form.setFieldsValue({
                   name: record.name,
                   description: record.description,
+                  collection_id: record.collection_id ?? undefined,
                   target_url: record.target_url,
                   browser: record.browser,
                 })
@@ -455,6 +555,17 @@ const WebTestScripts = () => {
           脚本管理
         </Title>
         <Space>
+          <Select
+            placeholder="按用例集筛选"
+            allowClear
+            style={{ width: 220 }}
+            value={selectedCollectionId}
+            onChange={(value) => setSelectedCollectionId(value)}
+            options={collections.map((c) => ({
+              value: c.id,
+              label: `${c.name} (${c.script_count || 0})`,
+            }))}
+          />
           <Input
             placeholder="搜索脚本..."
             prefix={<SearchOutlined />}
@@ -471,11 +582,27 @@ const WebTestScripts = () => {
             刷新
           </Button>
           <Button
+            icon={<FolderAddOutlined />}
+            onClick={() => setIsCollectionModalOpen(true)}
+          >
+            用例集
+          </Button>
+          <Button
+            icon={<FolderOpenOutlined />}
+            disabled={!selectedCollectionId}
+            onClick={handleRunCollection}
+          >
+            运行用例集
+          </Button>
+          <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
               setEditingScript(null)
               form.resetFields()
+              form.setFieldsValue({
+                collection_id: selectedCollectionId,
+              })
               setIsModalOpen(true)
             }}
           >
@@ -524,6 +651,79 @@ const WebTestScripts = () => {
         />
       </Card>
 
+      <Modal
+        title="用例集管理"
+        open={isCollectionModalOpen}
+        onCancel={() => {
+          setIsCollectionModalOpen(false)
+          collectionForm.resetFields()
+        }}
+        footer={null}
+        width={640}
+      >
+        <Form
+          form={collectionForm}
+          layout="inline"
+          onFinish={handleCreateCollection}
+          style={{ marginBottom: 16 }}
+        >
+          <Form.Item
+            name="name"
+            rules={[{ required: true, message: '请输入用例集名称' }]}
+            style={{ flex: 1 }}
+          >
+            <Input placeholder="新建用例集名称" />
+          </Form.Item>
+          <Form.Item name="description" style={{ flex: 1 }}>
+            <Input placeholder="描述（可选）" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              新建
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <div style={{ maxHeight: 320, overflow: 'auto' }}>
+          {collections.length > 0 ? (
+            collections.map((collection) => (
+              <div
+                key={collection.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  borderBottom: '1px solid #f0f0f0',
+                }}
+              >
+                <div>
+                  <Text strong>{collection.name}</Text>
+                  <Text type="secondary" style={{ marginLeft: 8 }}>
+                    ({collection.script_count || 0} 脚本)
+                  </Text>
+                  {collection.description ? (
+                    <div>
+                      <Text type="secondary">{collection.description}</Text>
+                    </div>
+                  ) : null}
+                </div>
+                <Popconfirm
+                  title="删除该用例集？其下脚本会保留并移到未分组"
+                  onConfirm={() => handleDeleteCollection(collection.id)}
+                >
+                  <Button danger size="small" icon={<DeleteOutlined />}>
+                    删除
+                  </Button>
+                </Popconfirm>
+              </div>
+            ))
+          ) : (
+            <Text type="secondary">暂无用例集</Text>
+          )}
+        </div>
+      </Modal>
+
       {/* 新建/编辑脚本弹窗 */}
       <Modal
         title={editingScript ? "编辑脚本" : "新建脚本"}
@@ -554,6 +754,16 @@ const WebTestScripts = () => {
           </Form.Item>
           <Form.Item name="description" label="描述">
             <TextArea rows={2} placeholder="请输入脚本描述" />
+          </Form.Item>
+          <Form.Item name="collection_id" label="所属用例集">
+            <Select
+              allowClear
+              placeholder="可选，不选则为未分组"
+              options={collections.map((c) => ({
+                value: c.id,
+                label: c.name,
+              }))}
+            />
           </Form.Item>
           <Form.Item
             name="browser"

@@ -43,7 +43,6 @@ const menuItems: MenuProps['items'] = [
     label: 'Web测试',
     children: [
       { key: '/web-test/scripts', label: '脚本管理' },
-      { key: '/web-test/recorder', label: '录制器' },
     ],
   },
   {
