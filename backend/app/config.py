@@ -65,7 +65,7 @@ class DevelopmentConfig(BaseConfig):
     # 使用 PostgreSQL 数据库
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
-        'postgresql://easytest:REDACTED_DB_PASSWORD@localhost:5432/easytest_dev'
+        'postgresql://admin:REDACTED_PASSWORD@localhost:5432/fullscopetest_dev'
     )
     SQLALCHEMY_ECHO = True  # 开发时打印 SQL
 
@@ -76,7 +76,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',
-        'postgresql://easytest:REDACTED_DB_PASSWORD@localhost:5432/easytest_test'
+        'postgresql://admin:REDACTED_PASSWORD@localhost:5432/fullscopetest_test'
     )
 
 

@@ -17,7 +17,7 @@ def app():
     os.environ.setdefault("FLASK_ENV", "testing")
     os.environ["CELERY_ENABLE"] = "false"
 
-    db_fd, db_path = tempfile.mkstemp(prefix="easytest_test_", suffix=".db")
+    db_fd, db_path = tempfile.mkstemp(prefix="fullscopetest_test_", suffix=".db")
     os.close(db_fd)
 
     os.environ["TEST_DATABASE_URL"] = f"sqlite:///{db_path}"

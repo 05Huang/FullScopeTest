@@ -1,4 +1,4 @@
-# EasyTest-Web API 接口文档
+# FullScopeTest-Web API 接口文档
 
 > 文档版本：1.0  
 > 基础URL：`http://localhost:5211/api/v1`  
@@ -24,7 +24,7 @@
 
 ## 概述
 
-EasyTest-Web 是一个综合性的测试平台，支持：
+FullScopeTest-Web 是一个综合性的测试平台，支持：
 - **接口测试**：HTTP/HTTPS 接口的功能测试
 - **性能测试**：基于 Locust 的压力测试
 - **Web 自动化测试**：基于 Playwright 的 UI 自动化测试
@@ -636,7 +636,7 @@ Authorization: Bearer <access_token>
     "method": "GET",
     "url": "https://httpbin.org/get",
     "headers": {
-        "User-Agent": "EasyTest/1.0"
+        "User-Agent": "FullScopeTest/1.0"
     },
     "params": {
         "name": "test"

@@ -1,7 +1,7 @@
 {
-  "name": "easytest-web",
+  "name": "fullscopetest-web",
   "version": "1.0.0",
-  "description": "EasyTest 自动化测试平台前端",
+  "description": "FullScopeTest 自动化测试平台前端",
   "type": "module",
   "scripts": {
     "dev": "vite",

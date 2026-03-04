@@ -2,7 +2,7 @@
 
 ## 概述
 
-EasyTest 平台支持在 API 测试中编写 JavaScript 脚本，实现类似 Postman 的前置脚本和后置断言功能。脚本在沙箱环境中执行，支持 Postman 风格的 API。
+FullScopeTest 平台支持在 API 测试中编写 JavaScript 脚本，实现类似 Postman 的前置脚本和后置断言功能。脚本在沙箱环境中执行，支持 Postman 风格的 API。
 
 ## 目录
 

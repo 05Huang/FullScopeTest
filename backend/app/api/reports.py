@@ -404,7 +404,7 @@ def export_report(run_id):
         report_data = {
             'report': test_run.to_dict(),
             'generated_at': datetime.utcnow().isoformat(),
-            'generated_by': 'EasyTest'
+            'generated_by': 'FullScopeTest'
         }
         return success_response(data=report_data)
     
@@ -516,7 +516,7 @@ def generate_html_report(test_run):
         </div>
         
         <div class="footer">
-            <p>由 EasyTest 自动化测试平台生成 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p>由 FullScopeTest 自动化测试平台生成 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
     </div>
 </body>

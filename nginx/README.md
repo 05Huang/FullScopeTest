@@ -17,7 +17,7 @@
 Copy-Item D:\nginx\conf\nginx.conf D:\nginx\conf\nginx.conf.bak
 
 # 复制新配置
-Copy-Item D:\AutoTestingLearingProject\EasyTest-Web\nginx\nginx.conf D:\nginx\conf\nginx.conf
+Copy-Item D:\AutoTestingLearingProject\FullScopeTest-Web\nginx\nginx.conf D:\nginx\conf\nginx.conf
 ```
 
 ### 3. 启动服务
@@ -25,7 +25,7 @@ Copy-Item D:\AutoTestingLearingProject\EasyTest-Web\nginx\nginx.conf D:\nginx\co
 使用提供的批处理脚本：
 
 ```powershell
-cd D:\AutoTestingLearingProject\EasyTest-Web\nginx
+cd D:\AutoTestingLearingProject\FullScopeTest-Web\nginx
 .\start-nginx.bat
 ```
 

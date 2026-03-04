@@ -1,4 +1,4 @@
-# EasyTest 后端依赖
+# FullScopeTest 后端依赖
 
 # Flask 核心
 Flask==3.0.0

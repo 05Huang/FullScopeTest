@@ -1,4 +1,4 @@
-# EasyTest 后端
+# FullScopeTest 后端
 
 ## 技术栈
 
@@ -56,7 +56,7 @@ copy .env.example .env
 
 ```bash
 # 确保 PostgreSQL 已启动，并创建数据库
-# 创建数据库: CREATE DATABASE easytest_dev;
+# 创建数据库: CREATE DATABASE fullscopetest_dev;
 
 # 初始化数据库表
 python manage.py init_db
