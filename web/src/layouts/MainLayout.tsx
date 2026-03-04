@@ -173,7 +173,7 @@ const MainLayout = () => {
                 color: themeToken.colorText,
               }}
             >
-              EasyTest
+              FullScopeTest
             </span>
           )}
         </div>

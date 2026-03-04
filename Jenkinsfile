@@ -5,9 +5,9 @@ pipeline {
   environment {
     DEPLOY_HOST = "104.236.22.107"
     DEPLOY_USER = "root"
-    DEPLOY_PATH = "/opt/easytest/repo/AutoTestingPlatform"
-    FRONTEND_SITE_PATH = "/opt/1panel/apps/openresty/openresty/www/sites/easytest/index"
-    SSH_CREDENTIALS_ID = "easytest-ssh"
+    DEPLOY_PATH = "/opt/fullscopetest/repo/AutoTestingPlatform"
+    FRONTEND_SITE_PATH = "/opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index"
+    SSH_CREDENTIALS_ID = "fullscopetest-ssh"
     DEPLOY_BRANCH = "main"
   }
 

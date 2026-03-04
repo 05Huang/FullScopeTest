@@ -1,4 +1,4 @@
-# EasyTest
+# FullScopeTest
 
 <div align="center">
 
@@ -11,7 +11,7 @@ AI 自动编排 · API 接口测试 · Web 脚本管理 · 性能测试
 [![React](https://img.shields.io/badge/react-18.3-blue.svg)](https://reactjs.org/)
 [![Flask](https://img.shields.io/badge/flask-3.0-green.svg)](https://flask.palletsprojects.com/)
 
-[![Star](https://img.shields.io/github/stars/Asukadaisiki/easytest?style=social)](https://github.com/Asukadaisiki/easytest)
+[![Star](https://img.shields.io/github/stars/Asukadaisiki/fullscopetest?style=social)](https://github.com/Asukadaisiki/fullscopetest)
 
 </div>
 
@@ -19,7 +19,7 @@ AI 自动编排 · API 接口测试 · Web 脚本管理 · 性能测试
 
 ## 项目简介
 
-EasyTest 是一款专为个人开发者和小型团队设计的自动化测试平台，覆盖接口测试、Web 脚本管理、性能测试，并新增 AI 自动编排能力。
+FullScopeTest 是一款专为个人开发者和小型团队设计的自动化测试平台，覆盖接口测试、Web 脚本管理、性能测试，并新增 AI 自动编排能力。
 
 - **AI 自动编排** - 自然语言生成执行计划，并复用现有接口自动落地执行
 - **接口测试** - 类似 Postman 的 HTTP 测试体验，支持 AI 协同创建环境/集合/用例
@@ -171,7 +171,7 @@ cd nginx
 ## 项目结构
 
 ```
-EasyTest-Web/
+FullScopeTest-Web/
 ├── backend/              # Flask 后端
 │   ├── app/
 │   │   ├── api/         # API 接口
@@ -282,7 +282,7 @@ npm run build
 
 A: 修改 `backend/.env` 中的 `DATABASE_URL`：
 ```bash
-DATABASE_URL=postgresql://user:password@localhost:5432/easytest_db
+DATABASE_URL=postgresql://user:password@localhost:5432/fullscopetest_db
 ```
 
 **Q: 如何重置数据库？**
@@ -290,8 +290,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/easytest_db
 A: 删除数据库文件后重新初始化：
 ```bash
 cd backend
-del easytest_dev.db  # Windows
-rm easytest_dev.db   # Linux/Mac
+del fullscopetest_dev.db  # Windows
+rm fullscopetest_dev.db   # Linux/Mac
 python init_db.py
 ```
 
@@ -342,7 +342,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - 性能测试实时监控
 - 环境变量自动补全
 
-详见 [Git 提交历史](https://github.com/Asukadaisiki/easytest/commits/main/)。
+详见 [Git 提交历史](https://github.com/Asukadaisiki/fullscopetest/commits/main/)。
 
 ---
 
@@ -360,6 +360,6 @@ docker-compose -f docker-compose.prod.yml up -d
 
 <div align="center">
 
-Made with ❤️ by EasyTest Team
+Made with ❤️ by FullScopeTest Team
 
 </div>

@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EasyTest is a full-stack automated testing platform with three main testing modules:
+FullScopeTest is a full-stack automated testing platform with three main testing modules:
 - **API Testing** - Postman-like interface for HTTP testing with environments, assertions, and cURL export
 - **Web Automation** - Playwright-based browser automation with recording and element library
 - **Performance Testing** - Locust-based load testing with real-time monitoring
@@ -126,7 +126,7 @@ python manage.py db migrate -m "description"
 ### Project Structure
 
 ```
-EasyTest-Web/
+FullScopeTest-Web/
 ├── backend/              # Flask backend application
 │   ├── app/             # Application core
 │   │   ├── api/         # API routes
@@ -198,7 +198,7 @@ app/
 ### State Management
 
 - **Zustand** with `persist` middleware for auth state
-- Auth store persists to localStorage as `easytest-auth`
+- Auth store persists to localStorage as `fullscopetest-auth`
 - Other modules use component state or React Query patterns
 
 ### Type System

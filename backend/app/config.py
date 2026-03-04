@@ -12,7 +12,7 @@ class BaseConfig:
     """基础配置"""
 
     # 密钥配置
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'easytest-secret-key-change-in-production')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'fullscopetest-secret-key-change-in-production')
 
     # 数据库配置
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -65,7 +65,7 @@ class DevelopmentConfig(BaseConfig):
     # 使用 PostgreSQL 数据库
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
-        'postgresql://easytest:easytest123@localhost:5432/easytest_dev'
+        'postgresql://admin:123456@localhost:5432/fullscopetest_dev'
     )
     SQLALCHEMY_ECHO = True  # 开发时打印 SQL
 
@@ -76,7 +76,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',
-        'postgresql://easytest:easytest123@localhost:5432/easytest_test'
+        'postgresql://admin:123456@localhost:5432/fullscopetest_test'
     )
 
 

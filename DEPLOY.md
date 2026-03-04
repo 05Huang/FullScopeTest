@@ -1,15 +1,15 @@
-# EasyTest Deployment (Full Flow)
+# FullScopeTest Deployment (Full Flow)
 
 This guide covers the full end-to-end flow:
 - Local development pushes code to GitHub.
 - Jenkins (Windows) pulls the repo and SSH deploys to the server.
-- The server runs EasyTest via Docker and serves through 1Panel (OpenResty).
+- The server runs FullScopeTest via Docker and serves through 1Panel (OpenResty).
 
 Assumptions:
 - Server IP: 104.236.22.107
 - Domain: asuka.codes (A record + www already bound)
 - Repo: https://github.com/Asukadaisiki/AutoTestingPlatform.git
-- Deployment layout: /opt/apps/easytest/{repo,data,logs}
+- Deployment layout: /opt/apps/fullscopetest/{repo,data,logs}
 - Jenkins runs on Windows
 
 ---
@@ -57,8 +57,8 @@ Use the default account printed by the installer, then change the password.
 ## 4) Clone the Repo
 
 ```bash
-mkdir -p /opt/apps/easytest/{repo,data,logs}
-cd /opt/apps/easytest/repo
+mkdir -p /opt/apps/fullscopetest/{repo,data,logs}
+cd /opt/apps/fullscopetest/repo
 git clone https://github.com/Asukadaisiki/AutoTestingPlatform.git .
 ```
 
@@ -67,8 +67,8 @@ git clone https://github.com/Asukadaisiki/AutoTestingPlatform.git .
 ## 5) Create .env
 
 ```bash
-cat > /opt/apps/easytest/repo/AutoTestingPlatform/.env << 'EOF'
-DATABASE_URL=postgresql://easytest:easytest123@host.docker.internal:5432/easytest_prod
+cat > /opt/apps/fullscopetest/repo/AutoTestingPlatform/.env << 'EOF'
+DATABASE_URL=postgresql://fullscopetest:fullscopetest123@host.docker.internal:5432/fullscopetest_prod
 REDIS_URL=redis://redis:6379/0
 
 SECRET_KEY=dev-secret-key-for-testing
@@ -77,7 +77,7 @@ EOF
 ```
 
 Notes:
-- This is the production `.env` at `/opt/apps/easytest/repo/.env` (root `.env` does not exist in the repo).
+- This is the production `.env` at `/opt/apps/fullscopetest/repo/.env` (root `.env` does not exist in the repo).
 - Redis in `docker-compose.prod.yml` has no password, so `REDIS_URL` must NOT include a password.
 - Nginx is managed by 1Panel on the host; there is no nginx container in production.
 - This deployment uses a shared PostgreSQL instance on the host (see step 5.1 below).
@@ -91,8 +91,8 @@ Run a single PostgreSQL container (shared by multiple projects) on the host:
 
 ```bash
 docker run -d --name postgres-shared \
-  -e POSTGRES_USER=easytest \
-  -e POSTGRES_PASSWORD=easytest123 \
+  -e POSTGRES_USER=fullscopetest \
+  -e POSTGRES_PASSWORD=fullscopetest123 \
   -p 127.0.0.1:5432:5432 \
   -v /opt/apps/postgres/data:/var/lib/postgresql/data \
   postgres:15-alpine
@@ -101,13 +101,13 @@ docker run -d --name postgres-shared \
 Create a database for this project:
 
 ```bash
-docker exec -it postgres-shared psql -U easytest -c "CREATE DATABASE easytest_prod;"
+docker exec -it postgres-shared psql -U fullscopetest -c "CREATE DATABASE fullscopetest_prod;"
 ```
 
 Create a separate database for tests (used by pytest in deploy.sh):
 
 ```bash
-docker exec -it postgres-shared psql -U easytest -c "CREATE DATABASE easytest_test;"
+docker exec -it postgres-shared psql -U fullscopetest -c "CREATE DATABASE fullscopetest_test;"
 ```
 
 ---
@@ -115,14 +115,14 @@ docker exec -it postgres-shared psql -U easytest -c "CREATE DATABASE easytest_te
 ## 6) Deploy Once on the Server (Manual)
 
 ```bash
-cd /opt/apps/easytest/repo/AutoTestingPlatform
+cd /opt/apps/fullscopetest/repo/AutoTestingPlatform
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
 Check containers:
 ```bash
-docker compose -p easytest -f docker-compose.prod.yml ps
+docker compose -p fullscopetest -f docker-compose.prod.yml ps
 ```
 
 ---
@@ -132,7 +132,7 @@ docker compose -p easytest -f docker-compose.prod.yml ps
 In 1Panel:
 1. Create a **Static Website**
 2. Domains: `asuka.codes` and `www.asuka.codes`
-3. Root path: `/opt/apps/easytest/repo/AutoTestingPlatform/web/dist`
+3. Root path: `/opt/apps/fullscopetest/repo/AutoTestingPlatform/web/dist`
 4. Add reverse proxy rule:
    - Path: `/api/`
    - Target: `127.0.0.1:5211`
@@ -150,7 +150,7 @@ Notes:
 - **GitHub access**: Username + PAT
 - **Server deploy**: SSH Username with private key
   - Username: `root` (or your deploy user)
-  - ID: `easytest-ssh` (example)
+  - ID: `fullscopetest-ssh` (example)
 
 ### 8.2 Create Pipeline Job
 - New Item → **Pipeline**
@@ -166,8 +166,8 @@ Notes:
 environment {
   DEPLOY_HOST = "104.236.22.107"
   DEPLOY_USER = "root"
-  DEPLOY_PATH = "/opt/apps/easytest/repo"
-  SSH_CREDENTIALS_ID = "easytest-ssh"
+  DEPLOY_PATH = "/opt/apps/fullscopetest/repo"
+  SSH_CREDENTIALS_ID = "fullscopetest-ssh"
   DEPLOY_BRANCH = "main"
 }
 ```
@@ -207,6 +207,6 @@ curl -I http://asuka.codes/api/v1/api-test/health
 ---
 
 ## Notes
-- Docker data is isolated under `/opt/apps/easytest/data`.
+- Docker data is isolated under `/opt/apps/fullscopetest/data`.
 - OpenResty runs via 1Panel and does not require domain HTTPS yet.
 - Add HTTPS later using 1Panel certificate management.

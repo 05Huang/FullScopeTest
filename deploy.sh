@@ -5,7 +5,7 @@ APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_ROOT="$(cd "${APP_DIR}/../.." && pwd)"
 DATA_DIR="${DATA_DIR:-${APP_ROOT}/data}"
 BRANCH="${BRANCH:-main}"
-PROJECT_NAME="${PROJECT_NAME:-easytest}"
+PROJECT_NAME="${PROJECT_NAME:-fullscopetest}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
 cd "$APP_DIR"
@@ -26,14 +26,14 @@ if [ "${SKIP_WEB_BUILD:-0}" != "1" ]; then
 fi
 
 # Sync built frontend to 1Panel OpenResty site directory (if present).
-if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/easytest/index" ] && [ -d "$APP_DIR/web/dist" ]; then
-  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/easytest/index/
+if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index" ] && [ -d "$APP_DIR/web/dist" ]; then
+  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index/
 fi
 
 # Run pytest using a Python container (no host Python required).
 # Use host network so tests can reach the shared Postgres on localhost.
 docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
-  sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=postgresql://easytest:easytest123@127.0.0.1:5432/easytest_test pytest -q tests"
+  sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=postgresql://fullscopetest:fullscopetest123@127.0.0.1:5432/fullscopetest_test pytest -q tests"
 
 # Deploy services.
 docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build

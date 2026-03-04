@@ -1,4 +1,4 @@
-# EasyTest 后端开发环境 Dockerfile
+# FullScopeTest 后端开发环境 Dockerfile
 
 FROM python:3.11-slim
 

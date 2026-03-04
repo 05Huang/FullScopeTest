@@ -18,7 +18,7 @@ def create_cli_app():
 
 @click.group(cls=FlaskGroup, create_app=create_cli_app)
 def cli():
-    """EasyTest 管理命令"""
+    """FullScopeTest 管理命令"""
     pass
 
 

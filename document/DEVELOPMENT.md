@@ -1,4 +1,4 @@
-# EasyTest 开发文档
+# FullScopeTest 开发文档
 
 ## 目录
 
@@ -46,7 +46,7 @@
 ### 模块架构
 
 ```
-EasyTest
+FullScopeTest
 ├── 用户认证模块
 │   ├── 注册/登录
 │   ├── JWT Token 管理

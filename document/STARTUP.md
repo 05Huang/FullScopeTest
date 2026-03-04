@@ -1,4 +1,4 @@
-# EasyTest 项目启动指南
+# FullScopeTest 项目启动指南
 
 详细的安装、配置和启动步骤。
 
@@ -113,8 +113,8 @@ brew services start postgresql redis
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Asukadaisiki/easytest.git
-cd EasyTest-Web
+git clone https://github.com/Asukadaisiki/fullscopetest.git
+cd FullScopeTest-Web
 ```
 
 ### 2. 创建 Python 虚拟环境（可选但推荐）
@@ -149,11 +149,11 @@ SECRET_KEY=dev-secret-key-change-in-production
 
 # 数据库配置
 # 开发环境（SQLite）
-DATABASE_URL=sqlite:///easytest_dev.db
+DATABASE_URL=sqlite:///fullscopetest_dev.db
 
 # 生产环境（PostgreSQL）
 # 根据你的 PostgreSQL 配置修改用户名、密码、主机、数据库名
-# DATABASE_URL=postgresql://easytest:password@localhost:5432/easytest_db
+# DATABASE_URL=postgresql://fullscopetest:password@localhost:5432/fullscopetest_db
 
 # JWT 配置
 JWT_SECRET_KEY=jwt-secret-key-change-in-production
@@ -183,7 +183,7 @@ python init_db.py
 ```
 
 此命令会：
-- 创建数据库文件 `easytest_dev.db`
+- 创建数据库文件 `fullscopetest_dev.db`
 - 创建所有表
 - 插入默认数据
 
@@ -196,13 +196,13 @@ python init_db.py
 psql -U postgres
 
 -- 创建用户
-CREATE USER easytest WITH PASSWORD 'password';
+CREATE USER fullscopetest WITH PASSWORD 'password';
 
 -- 创建数据库
-CREATE DATABASE easytest_db OWNER easytest;
+CREATE DATABASE fullscopetest_db OWNER fullscopetest;
 
 -- 授予权限
-GRANT ALL PRIVILEGES ON DATABASE easytest_db TO easytest;
+GRANT ALL PRIVILEGES ON DATABASE fullscopetest_db TO fullscopetest;
 
 -- 退出
 \q
@@ -211,7 +211,7 @@ GRANT ALL PRIVILEGES ON DATABASE easytest_db TO easytest;
 2. **修改 `.env` 中的数据库 URL**
 
 ```bash
-DATABASE_URL=postgresql://easytest:password@localhost:5432/easytest_db
+DATABASE_URL=postgresql://fullscopetest:password@localhost:5432/fullscopetest_db
 ```
 
 3. **初始化数据库**
@@ -441,10 +441,10 @@ curl http://127.0.0.1:5211/api/v1/auth/me -H "Authorization: Bearer <token>"
 
 ```bash
 # SQLite
-sqlite3 backend/easytest_dev.db ".tables"
+sqlite3 backend/fullscopetest_dev.db ".tables"
 
 # PostgreSQL
-psql -U easytest -d easytest_db -c "\dt"
+psql -U fullscopetest -d fullscopetest_db -c "\dt"
 ```
 
 ### 验证 Redis
@@ -474,7 +474,7 @@ pg_isready -h localhost -p 5432
 
 # 检查 .env 中的 DATABASE_URL 是否正确
 # 尝试手动连接
-psql -U easytest -d easytest_db -h localhost
+psql -U fullscopetest -d fullscopetest_db -h localhost
 
 # 重新初始化数据库
 python init_db.py
@@ -623,8 +623,8 @@ cd nginx
 cd backend
 
 # 删除旧数据库
-rm easytest_dev.db  # Linux/Mac
-del easytest_dev.db  # Windows
+rm fullscopetest_dev.db  # Linux/Mac
+del fullscopetest_dev.db  # Windows
 
 # 重新初始化
 python init_db.py
@@ -681,7 +681,7 @@ flask db upgrade
 
 <div align="center">
 
-**👍 成功启动？开始使用 EasyTest 进行测试吧！**
+**👍 成功启动？开始使用 FullScopeTest 进行测试吧！**
 
 参考 [API.md](API.md) 了解所有可用接口。
 

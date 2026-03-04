@@ -1,4 +1,4 @@
-# EasyTest 开发环境 Docker Compose
+# FullScopeTest 开发环境 Docker Compose
 # 启动命令: docker-compose up -d
 
 version: '3.8'
@@ -9,7 +9,7 @@ services:
   # Redis 缓存/消息队列
   redis:
     image: redis:7-alpine
-    container_name: easytest_redis
+    container_name: fullscopetest_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -27,13 +27,13 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/Dockerfile.backend.dev
-    container_name: easytest_backend
+    container_name: fullscopetest_backend
     restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://easytest:easytest123@postgres:5432/easytest_dev
+      - DATABASE_URL=postgresql://fullscopetest:fullscopetest123@postgres:5432/fullscopetest_dev
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=dev-secret-key
       - JWT_SECRET_KEY=dev-jwt-secret-key
@@ -53,11 +53,11 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/Dockerfile.backend.dev
-    container_name: easytest_celery
+    container_name: fullscopetest_celery
     restart: unless-stopped
     environment:
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://easytest:easytest123@postgres:5432/easytest_dev
+      - DATABASE_URL=postgresql://fullscopetest:fullscopetest123@postgres:5432/fullscopetest_dev
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./backend:/app

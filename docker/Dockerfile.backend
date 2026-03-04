@@ -1,4 +1,4 @@
-# EasyTest 后端生产环境 Dockerfile
+# FullScopeTest 后端生产环境 Dockerfile
 
 FROM python:3.11-slim-bookworm
 
@@ -35,9 +35,9 @@ COPY backend/ .
 RUN mkdir -p uploads reports
 
 # 创建非 root 用户
-RUN useradd --create-home --shell /bin/bash easytest && \
-    chown -R easytest:easytest /app
-USER easytest
+RUN useradd --create-home --shell /bin/bash fullscopetest && \
+    chown -R fullscopetest:fullscopetest /app
+USER fullscopetest
 
 # 暴露端口
 EXPOSE 5000

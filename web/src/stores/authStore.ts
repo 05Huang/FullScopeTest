@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'easytest-auth',
+      name: 'fullscopetest-auth',
     }
   )
 )

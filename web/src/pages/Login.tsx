@@ -77,7 +77,7 @@ const Login = () => {
             E
           </div>
           <Title level={3} style={{ margin: 0 }}>
-            欢迎使用 EasyTest
+            欢迎使用 FullScopeTest
           </Title>
           <Text type="secondary">简单高效的自动化测试平台</Text>
         </div>

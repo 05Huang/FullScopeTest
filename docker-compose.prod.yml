@@ -1,4 +1,4 @@
-# EasyTest production Docker Compose (OpenResty on host, services in Docker)
+# FullScopeTest production Docker Compose (OpenResty on host, services in Docker)
 
 version: '3.8'
 
@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - easytest_network
+      - fullscopetest_network
 
   backend:
     build:
@@ -39,7 +39,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
-      - easytest_network
+      - fullscopetest_network
 
   celery:
     build:
@@ -58,10 +58,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
-      - easytest_network
+      - fullscopetest_network
 
 networks:
-  easytest_network:
+  fullscopetest_network:
     driver: bridge
 
 volumes:
@@ -70,16 +70,16 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /opt/apps/easytest/data/redis
+      device: /opt/apps/fullscopetest/data/redis
   backend_uploads:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /opt/apps/easytest/data/uploads
+      device: /opt/apps/fullscopetest/data/uploads
   backend_reports:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /opt/apps/easytest/data/reports
+      device: /opt/apps/fullscopetest/data/reports

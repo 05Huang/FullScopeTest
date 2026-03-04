@@ -1,5 +1,5 @@
 """
-EasyTest 后端应用工厂
+FullScopeTest 后端应用工厂
 
 创建和配置 Flask 应用实例
 """
