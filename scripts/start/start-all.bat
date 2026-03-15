@@ -4,8 +4,9 @@ REM 此脚本会在不同的终端中启动所有必需的服务
 
 chcp 65001 >nul
 
-REM 设置项目根目录绝对路径
-set "PROJECT_ROOT=d:\AutoTestingLearingProject\EasyTest-Web"
+REM 设置项目根目录绝对路径（以脚本所在目录向上两级为根目录）
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..\..") do set "PROJECT_ROOT=%%~fI"
 cd /d "%PROJECT_ROOT%"
 
 echo.
@@ -28,7 +29,9 @@ echo.
 
 REM 检查 Python 依赖是否已安装
 echo 检查 Python 依赖...
-"%PROJECT_ROOT%\backend\venv\Scripts\python.exe" -c "import celery" >nul 2>&1
+set "PYTHON_EXE=%PROJECT_ROOT%\backend\venv\Scripts\python.exe"
+if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
+"%PYTHON_EXE%" -c "import celery" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [警告] Celery 模块未安装！
     echo 正在运行核心依赖安装脚本...

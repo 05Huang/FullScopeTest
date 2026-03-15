@@ -4,8 +4,9 @@ REM EasyTest Nginx 启动脚本 (Windows)
 chcp 65001 >nul
 
 REM 设置项目根目录和 Nginx 路径
-set "PROJECT_ROOT=d:\AutoTestingLearingProject\EasyTest-Web"
-set "NGINX_HOME=D:\nginx"
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..\..") do set "PROJECT_ROOT=%%~fI"
+if "%NGINX_HOME%"=="" set "NGINX_HOME=D:\nginx"
 
 cd /d "%PROJECT_ROOT%"
 
