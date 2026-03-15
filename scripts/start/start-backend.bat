@@ -4,7 +4,8 @@ REM 启动后端服务器
 setlocal enabledelayedexpansion
 
 REM 设置项目根目录绝对路径
-set "PROJECT_ROOT=d:\AutoTestingLearingProject\EasyTest-Web"
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..\..") do set "PROJECT_ROOT=%%~fI"
 cd /d "%PROJECT_ROOT%"
 
 echo ========================================
@@ -24,4 +25,6 @@ echo ========================================
 echo.
 
 cd "%PROJECT_ROOT%\backend"
-"%PROJECT_ROOT%\backend\venv\Scripts\python.exe" app.py
+set "PYTHON_EXE=%PROJECT_ROOT%\backend\venv\Scripts\python.exe"
+if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
+"%PYTHON_EXE%" app.py
