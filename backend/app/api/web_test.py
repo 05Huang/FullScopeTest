@@ -373,10 +373,10 @@ def start_recording():
     browser = data.get('browser', 'chromium')
     
     # 检查是否已有录制进程在运行
-        if user_id in recording_processes:
-            old_process = recording_processes[user_id]
-            if old_process.poll() is None:
-                return error_response(400, '已有录制进程在运行，请先停止')
+    if user_id in recording_processes:
+        old_process = recording_processes[user_id]
+        if old_process.poll() is None:
+            return error_response(400, '已有录制进程在运行，请先停止')
     
     try:
         # 获取当前 Python 解释器路径（支持虚拟环境）
