@@ -64,22 +64,13 @@ networks:
   fullscopetest_network:
     driver: bridge
 
-volumes:
-  redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/apps/fullscopetest/data/redis
-  backend_uploads:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/apps/fullscopetest/data/uploads
-  backend_reports:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/apps/fullscopetest/data/reports
+      - name: Backend tests (sqlite)
+        working-directory: backend
+        env:
+          FLASK_ENV: testing
+          CELERY_ENABLE: "false"
+          TEST_DATABASE_URL: "sqlite:////tmp/fullscopetest_test.db"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
+          pytest -q tests
