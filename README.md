@@ -13,7 +13,8 @@ AI 自动编排 · API 接口测试 · Web 自动化 · 性能测试 · 报告�
 [![Star](https://img.shields.io/github/stars/Asukadaisiki/fullscopetest?style=social)](https://github.com/Asukadaisiki/fullscopetest)
 
 <p>
-  <img src="images/首页图.png" alt="FullScopeTest 首页" width="100%" />
+  <img src="images/Snipaste_2026-03-20_18-05-42.png" alt="FullScopeTest 首页" width="100%" />
+  <img src="images/Snipaste_2026-03-20_18-06-22.png" alt="FullScopeTest 首页" width="100%" />
 </p>
 
 </div>
