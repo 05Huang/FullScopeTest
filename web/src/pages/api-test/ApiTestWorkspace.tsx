@@ -861,6 +861,69 @@ const ApiTestWorkspace = () => {
     let finalUrl = url
     let finalHeaders: Record<string, string> = {}
     let finalParams: Record<string, string> = {}
+    const envVars: Record<string, any> =
+      currentEnv?.variables && typeof currentEnv.variables === 'object' && !Array.isArray(currentEnv.variables)
+        ? currentEnv.variables
+        : {}
+    const templateVars: Record<string, any> = {
+      ...envVars,
+      base_url: currentEnv?.base_url,
+    }
+
+    const exactPlaceholderKey = (value: string): string | null => {
+      const trimmed = value.trim()
+      const doubleMatch = trimmed.match(/^\{\{\s*([a-zA-Z_][\w.-]*)\s*\}\}$/)
+      if (doubleMatch) return doubleMatch[1]
+      const singleMatch = trimmed.match(/^\{\s*([a-zA-Z_][\w.-]*)\s*\}$/)
+      if (singleMatch) return singleMatch[1]
+      return null
+    }
+
+    const resolveTemplateString = (input: string) => {
+      return input.replace(
+        /\{\{\s*([a-zA-Z_][\w.-]*)\s*\}\}|\{\s*([a-zA-Z_][\w.-]*)\s*\}/g,
+        (match, group1, group2) => {
+          const key = String(group1 || group2 || '')
+          if (!Object.prototype.hasOwnProperty.call(templateVars, key)) return match
+          const value = templateVars[key]
+          if (value === undefined || value === null) return match
+          return String(value)
+        }
+      )
+    }
+
+    const isPlainObject = (value: any) => {
+      if (!value || typeof value !== 'object') return false
+      if (Array.isArray(value)) return false
+      return Object.getPrototypeOf(value) === Object.prototype
+    }
+
+    const resolveTemplateValue = (input: any): any => {
+      if (typeof input === 'string') {
+        const key = exactPlaceholderKey(input)
+        if (key && Object.prototype.hasOwnProperty.call(templateVars, key)) {
+          const value = templateVars[key]
+          if (value === undefined || value === null) return input
+          if (typeof value === 'string') return value
+          return value
+        }
+        return resolveTemplateString(input)
+      }
+
+      if (Array.isArray(input)) {
+        return input.map(resolveTemplateValue)
+      }
+
+      if (isPlainObject(input)) {
+        const result: Record<string, any> = {}
+        Object.entries(input).forEach(([k, v]) => {
+          result[k] = resolveTemplateValue(v)
+        })
+        return result
+      }
+
+      return input
+    }
 
     // 应用环境配置
     if (currentEnv) {
@@ -872,16 +935,6 @@ const ApiTestWorkspace = () => {
       // 应用环境headers
       if (currentEnv.headers) {
         Object.assign(finalHeaders, currentEnv.headers)
-      }
-
-      // 应用环境变量到URL和请求头（简单的 {{var}} 替换）
-      if (currentEnv.variables) {
-        const vars = currentEnv.variables
-        finalUrl = finalUrl.replace(/\{\{(\w+)\}\}/g, (match, key) => vars[key] || match)
-        
-        Object.keys(finalHeaders).forEach(key => {
-          finalHeaders[key] = String(finalHeaders[key]).replace(/\{\{(\w+)\}\}/g, (match, varKey) => vars[varKey] || match)
-        })
       }
     }
 
@@ -895,7 +948,17 @@ const ApiTestWorkspace = () => {
       finalParams[p.key] = p.value
     })
 
-    return { finalUrl, finalHeaders, finalParams }
+    finalUrl = resolveTemplateString(finalUrl)
+
+    Object.keys(finalHeaders).forEach(key => {
+      finalHeaders[key] = resolveTemplateString(String(finalHeaders[key]))
+    })
+
+    Object.keys(finalParams).forEach(key => {
+      finalParams[key] = resolveTemplateString(String(finalParams[key]))
+    })
+
+    return { finalUrl, finalHeaders, finalParams, resolveTemplateValue }
   }
 
   // 生成 cURL 命令
@@ -1447,7 +1510,7 @@ const ApiTestWorkspace = () => {
     
     try {
       // 获取包含环境配置的请求参数
-      const { finalUrl, finalHeaders, finalParams } = await getRequestWithEnv()
+      const { finalUrl, finalHeaders, finalParams, resolveTemplateValue } = await getRequestWithEnv()
 
       // 准备请求头
       const reqHeaders: Record<string, string> = { ...finalHeaders }
@@ -1472,6 +1535,7 @@ const ApiTestWorkspace = () => {
           body = requestBody
         }
       }
+      body = resolveTemplateValue(body)
 
       // 调用后端 API 执行请求
       const result = await apiTestService.executeRequest({
