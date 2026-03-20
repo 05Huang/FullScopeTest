@@ -60,6 +60,7 @@ body {
   min-height: 100vh;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 24px;
@@ -195,6 +196,72 @@ body {
   z-index: 1;
 }
 
+.fst-app-footer.ant-layout-footer {
+  background: transparent;
+  padding: 0 24px 18px;
+  z-index: 1;
+}
+
+.fst-site-footer {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 56px rgba(15, 45, 40, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: rgba(15, 45, 40, 0.62);
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.fst-site-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(15, 45, 40, 0.66);
+  text-decoration: none;
+  font-weight: 650;
+  transition: color 200ms ease, transform 200ms ease;
+}
+
+.fst-site-footer-link:hover {
+  color: rgba(15, 45, 40, 0.9);
+  transform: translateY(-1px);
+}
+
+.fst-site-footer-icon {
+  width: 16px;
+  height: 16px;
+  color: rgba(61, 110, 102, 0.92);
+}
+
+.fst-site-footer-sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(15, 45, 40, 0.14);
+}
+
+@media (max-width: 420px) {
+  .fst-app-footer.ant-layout-footer {
+    padding: 0 12px 14px;
+  }
+  .fst-site-footer {
+    padding: 10px 12px;
+  }
+  .fst-site-footer-sep {
+    display: none;
+  }
+}
+
 .fst-auth-bg-blob {
   position: absolute;
   width: 560px;
@@ -246,6 +313,8 @@ body {
   position: relative;
   width: 100%;
   display: flex;
+  flex: 1;
+  align-items: center;
   justify-content: center;
 }
 
