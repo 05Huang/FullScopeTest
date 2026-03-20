@@ -89,7 +89,7 @@ jobs:
             SITE_DIR='${{ secrets.SITE_DIR }}'; \
             mkdir -p \"\$SITE_DIR\"; \
             rm -rf \"\$SITE_DIR\"/*; \
-            tar -xzf /tmp/fullscopetest-dist.tgz -C \"\$SITE_DIR\"; \
+            tar -xzf /tmp/fullscopetest-dist.tgz -C \"\$SITE_DIR\" --no-same-owner --no-same-permissions --no-overwrite-dir -m; \
           "
 
       - name: Health check
