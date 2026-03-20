@@ -1,43 +1,7 @@
-Successfully installed ConfigArgParse-1.7.5 Flask-3.0.0 Flask-BasicAuth-0.2.0 Flask-CORS-4.0.0 Flask-JWT-Extended-4.6.0 Flask-Migrate-4.0.5 Flask-SQLAlchemy-3.1.1 Jinja2-3.1.6 Mako-1.3.10 MarkupSafe-3.0.3 PyJWT-2.12.1 PyYAML-6.0.1 SQLAlchemy-2.0.23 Werkzeug-3.0.1 aiohappyeyeballs-2.6.1 aiohttp-3.13.3 aiosignal-1.4.0 alembic-1.18.4 amqp-5.3.1 anyio-4.12.1 attrs-26.1.0 billiard-4.2.4 black-23.12.0 blinker-1.9.0 brotli-1.2.0 celery-5.3.4 certifi-2026.2.25 charset-normalizer-3.4.6 click-8.3.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 flake8-6.1.0 frozenlist-1.8.0 gevent-24.2.1 geventhttpclient-2.3.9 greenlet-3.0.1 gunicorn-21.2.0 h11-0.16.0 httpcore-1.0.9 httpx-0.25.2 idna-3.11 iniconfig-2.3.0 itsdangerous-2.2.0 kombu-5.6.2 locust-2.20.0 markdown-3.5.1 mccabe-0.7.0 msgpack-1.1.2 multidict-6.7.1 mypy-extensions-1.1.0 packaging-26.0 pathspec-1.0.4 platformdirs-4.9.4 playwright-1.40.0 pluggy-1.6.0 prompt-toolkit-3.0.52 propcache-0.4.1 psutil-7.2.2 psycopg2-binary-2.9.9 pycodestyle-2.11.1 pyee-11.
-WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
-Notice:  A new release of pip is available: 24.0 -> 26.0.1
-Notice:  To update, run: pip install --upgrade pip
-...................                                                      [100%]
-=============================== warnings summary ===============================
-app/models/test_report.py:11
-  /app/app/models/test_report.py:11: PytestCollectionWarning: cannot collect test class 'TestReport' because it has a __init__ constructor (from: tests/test_web_test_reporting.py)
-    class TestReport(db.Model):
-app/models/test_run.py:11
-  /app/app/models/test_run.py:11: PytestCollectionWarning: cannot collect test class 'TestRun' because it has a __init__ constructor (from: tests/test_web_test_reporting.py)
-    class TestRun(db.Model):
-tests/test_api_ai_plan.py::test_ai_plan_generates_fallback_operations
-tests/test_api_ai_plan.py::test_ai_plan_returns_400_when_disabled
-tests/test_api_ai_plan.py::test_ai_plan_accepts_runtime_provider_config
-tests/test_auth.py::test_register_login_me_flow
-tests/test_perf_step_load.py::test_create_scenario_step_load_missing_required_field_returns_400
-tests/test_perf_step_load.py::test_update_scenario_step_load_missing_fields_returns_400
-tests/test_perf_step_load.py::test_run_scenario_step_load_missing_fields_returns_400
-tests/test_web_collections.py::test_web_collection_crud_and_script_filter
-tests/test_web_collections.py::test_run_web_collection_submit_and_skip_running
-  /usr/local/lib/python3.11/site-packages/jwt/api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 15 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
-    return self._jws.encode(
-tests/test_api_ai_plan.py::test_ai_plan_generates_fallback_operations
-tests/test_api_ai_plan.py::test_ai_plan_returns_400_when_disabled
-tests/test_api_ai_plan.py::test_ai_plan_accepts_runtime_provider_config
-tests/test_auth.py::test_register_login_me_flow
-tests/test_perf_step_load.py::test_create_scenario_step_load_missing_required_field_returns_400
-tests/test_perf_step_load.py::test_update_scenario_step_load_missing_fields_returns_400
-tests/test_perf_step_load.py::test_run_scenario_step_load_missing_fields_returns_400
-tests/test_web_collections.py::test_web_collection_crud_and_script_filter
-tests/test_web_collections.py::test_run_web_collection_submit_and_skip_running
-  /usr/local/lib/python3.11/site-packages/jwt/api_jwt.py:365: InsecureKeyLengthWarning: The HMAC key is 15 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
-    decoded = self.decode_complete(
-tests/test_auth.py::test_register_login_me_flow
-  /app/app/api/auth.py:125: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
-    user = User.query.get(user_id)
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-19 passed, 21 warnings in 4.73s
-failed to parse ***/docker-compose.prod.yml: yaml: line 67, column 13: mapping values are not allowed in this context
+Run ssh -i ~/.ssh/id_ed25519 ***@*** "\
+  
+rm: cannot remove '***/404.html': Permission denied
+rm: cannot remove '***/assets/index-C1wnCqYh.js': Permission denied
+rm: cannot remove '***/assets/index-DYlwHIWk.css': Permission denied
+rm: cannot remove '***/index.html': Permission denied
 Error: Process completed with exit code 1.
-0s
-0s
