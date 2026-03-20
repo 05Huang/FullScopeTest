@@ -133,9 +133,9 @@ const Dashboard = () => {
           show: false,
         },
         data: [
-          { value: stats.api_tests.total || 0, name: 'API测试', itemStyle: { color: '#2563EB' } },
-          { value: stats.web_tests.total || 0, name: 'Web测试', itemStyle: { color: '#7C3AED' } },
-          { value: stats.perf_tests.total || 0, name: '性能测试', itemStyle: { color: '#F59E0B' } },
+          { value: stats.api_tests.total || 0, name: 'API测试', itemStyle: { color: '#3D6E66' } },
+          { value: stats.web_tests.total || 0, name: 'Web测试', itemStyle: { color: '#5FA59B' } },
+          { value: stats.perf_tests.total || 0, name: '性能测试', itemStyle: { color: '#D7B56D' } },
         ],
       },
     ],
@@ -161,10 +161,10 @@ const Dashboard = () => {
   // 类型标签
   const TypeTag = ({ type }: { type: string }) => {
     const config: Record<string, { color: string; text: string }> = {
-      api: { color: 'blue', text: 'API' },
-      web: { color: 'purple', text: 'Web' },
-      performance: { color: 'orange', text: '性能' },
-      perf: { color: 'orange', text: '性能' },
+      api: { color: '#3D6E66', text: 'API' },
+      web: { color: '#5FA59B', text: 'Web' },
+      performance: { color: '#D7B56D', text: '性能' },
+      perf: { color: '#D7B56D', text: '性能' },
     }
     const { color, text } = config[type] || { color: 'default', text: type }
     return <Tag color={color}>{text}</Tag>
@@ -200,12 +200,12 @@ const Dashboard = () => {
             <Statistic
               title={
                 <span>
-                  <ApiOutlined style={{ marginRight: 8, color: '#2563EB' }} />
+                  <ApiOutlined style={{ marginRight: 8, color: '#3D6E66' }} />
                   API测试用例
                 </span>
               }
               value={stats.api_tests.total}
-              valueStyle={{ color: '#2563EB' }}
+              valueStyle={{ color: '#3D6E66' }}
               suffix={
                 <span style={{ fontSize: 14, color: '#52c41a' }}>
                   <RiseOutlined /> {getPassRate(stats.api_tests.passed, stats.api_tests.total)}%
@@ -229,12 +229,12 @@ const Dashboard = () => {
             <Statistic
               title={
                 <span>
-                  <GlobalOutlined style={{ marginRight: 8, color: '#7C3AED' }} />
+                  <GlobalOutlined style={{ marginRight: 8, color: '#5FA59B' }} />
                   Web测试脚本
                 </span>
               }
               value={stats.web_tests.total}
-              valueStyle={{ color: '#7C3AED' }}
+              valueStyle={{ color: '#5FA59B' }}
               suffix={
                 <span style={{ fontSize: 14, color: '#52c41a' }}>
                   <RiseOutlined /> {getPassRate(stats.web_tests.passed, stats.web_tests.total)}%
@@ -258,12 +258,12 @@ const Dashboard = () => {
             <Statistic
               title={
                 <span>
-                  <ThunderboltOutlined style={{ marginRight: 8, color: '#F59E0B' }} />
+                  <ThunderboltOutlined style={{ marginRight: 8, color: '#D7B56D' }} />
                   性能测试场景
                 </span>
               }
               value={stats.perf_tests.total}
-              valueStyle={{ color: '#F59E0B' }}
+              valueStyle={{ color: '#D7B56D' }}
             />
             <div style={{ marginTop: 8 }}>
               <Tag color="processing">{stats.perf_tests.running} 个执行中</Tag>

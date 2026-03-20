@@ -9,11 +9,12 @@ import './styles/index.css'
 // Ant Design 主题配置
 const theme = {
   token: {
-    colorPrimary: '#2563EB',
+    colorPrimary: '#3D6E66',
+    colorInfo: '#3D6E66',
     borderRadius: 8,
-    colorSuccess: '#10B981',
-    colorWarning: '#F59E0B',
-    colorError: '#EF4444',
+    colorSuccess: '#2F8F6B',
+    colorWarning: '#D7B56D',
+    colorError: '#D24C3F',
   },
 }
 

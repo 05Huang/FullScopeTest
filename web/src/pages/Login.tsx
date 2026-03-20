@@ -164,6 +164,9 @@ const Login = () => {
   const [loginForm] = Form.useForm<LoginForm>()
   const [registerForm] = Form.useForm<RegisterForm>()
   const [loginError, setLoginError] = useState<string | null>(null)
+  const [loginPwdVisible, setLoginPwdVisible] = useState(false)
+  const [registerPwdVisible, setRegisterPwdVisible] = useState(false)
+  const [registerConfirmPwdVisible, setRegisterConfirmPwdVisible] = useState(false)
 
   const [mode, setMode] = useState<AuthMode>(() => getModeFromPathname(location.pathname))
 
@@ -269,12 +272,23 @@ const Login = () => {
                   validateStatus={loginError ? 'error' : undefined}
                   help={loginError || undefined}
                 >
-                  <Input.Password
+                  <Input
                     className="fst-auth-input"
                     prefix={<IconLock className="fst-auth-icon" />}
+                    type={loginPwdVisible ? 'text' : 'password'}
                     placeholder="密码"
                     aria-label="密码"
-                    iconRender={(open) => <EyeGlyph open={open} />}
+                    suffix={
+                      <button
+                        type="button"
+                        className="fst-auth-eye-btn"
+                        aria-label={loginPwdVisible ? '隐藏密码' : '显示密码'}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setLoginPwdVisible((v) => !v)}
+                      >
+                        <EyeGlyph open={loginPwdVisible} />
+                      </button>
+                    }
                   />
                 </Form.Item>
 
@@ -373,12 +387,23 @@ const Login = () => {
                     { min: 6, message: '密码至少6个字符' },
                   ]}
                 >
-                  <Input.Password
+                  <Input
                     className="fst-auth-input"
                     prefix={<IconLock className="fst-auth-icon" />}
+                    type={registerPwdVisible ? 'text' : 'password'}
                     placeholder="密码"
                     aria-label="密码"
-                    iconRender={(open) => <EyeGlyph open={open} />}
+                    suffix={
+                      <button
+                        type="button"
+                        className="fst-auth-eye-btn"
+                        aria-label={registerPwdVisible ? '隐藏密码' : '显示密码'}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setRegisterPwdVisible((v) => !v)}
+                      >
+                        <EyeGlyph open={registerPwdVisible} />
+                      </button>
+                    }
                   />
                 </Form.Item>
 
@@ -395,12 +420,23 @@ const Login = () => {
                     }),
                   ]}
                 >
-                  <Input.Password
+                  <Input
                     className="fst-auth-input"
                     prefix={<IconLock className="fst-auth-icon" />}
+                    type={registerConfirmPwdVisible ? 'text' : 'password'}
                     placeholder="确认密码"
                     aria-label="确认密码"
-                    iconRender={(open) => <EyeGlyph open={open} />}
+                    suffix={
+                      <button
+                        type="button"
+                        className="fst-auth-eye-btn"
+                        aria-label={registerConfirmPwdVisible ? '隐藏密码' : '显示密码'}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setRegisterConfirmPwdVisible((v) => !v)}
+                      >
+                        <EyeGlyph open={registerConfirmPwdVisible} />
+                      </button>
+                    }
                   />
                 </Form.Item>
 
