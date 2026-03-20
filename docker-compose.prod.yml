@@ -28,6 +28,9 @@ services:
       - FLASK_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
+      - CELERY_ENABLE=true
+      - CELERY_BROKER_URL=${REDIS_URL}
+      - CELERY_RESULT_BACKEND=${REDIS_URL}
       - SECRET_KEY=${SECRET_KEY}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
@@ -50,6 +53,9 @@ services:
       - FLASK_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
+      - CELERY_ENABLE=true
+      - CELERY_BROKER_URL=${REDIS_URL}
+      - CELERY_RESULT_BACKEND=${REDIS_URL}
     volumes:
       - backend_reports:/app/reports
     depends_on:
