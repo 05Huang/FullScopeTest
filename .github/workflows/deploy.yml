@@ -87,9 +87,12 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
             set -e; \
             SITE_DIR='${{ secrets.SITE_DIR }}'; \
+            TMP_DIR=\"\$(mktemp -d)\"; \
+            tar -xzf /tmp/fullscopetest-dist.tgz -C \"\$TMP_DIR\" --no-same-owner --no-same-permissions -m; \
             mkdir -p \"\$SITE_DIR\"; \
-            rm -rf \"\$SITE_DIR\"/*; \
-            tar -xzf /tmp/fullscopetest-dist.tgz -C \"\$SITE_DIR\" --no-same-owner --no-same-permissions --no-overwrite-dir -m; \
+            find \"\$SITE_DIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
+            cp -R \"\$TMP_DIR\"/. \"\$SITE_DIR\"/; \
+            rm -rf \"\$TMP_DIR\"; \
           "
 
       - name: Health check
