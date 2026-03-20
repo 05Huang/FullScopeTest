@@ -20,6 +20,50 @@ import { useAuthStore } from '@/stores/authStore'
 
 const { Header, Sider, Content } = Layout
 
+const AppBrandMark = () => (
+  <div className="fst-app-brand" aria-hidden="true">
+    <svg viewBox="0 0 64 64" className="fst-app-brand-svg">
+      <defs>
+        <linearGradient id="fstAppBrandG" x1="10" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#5FA59B" />
+          <stop offset="0.6" stopColor="#3D6E66" />
+          <stop offset="1" stopColor="#D7B56D" />
+        </linearGradient>
+        <filter id="fstAppGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="3.2" result="blur" />
+          <feColorMatrix
+            in="blur"
+            type="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.85 0"
+            result="glow"
+          />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <path
+        d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
+        fill="url(#fstAppBrandG)"
+        filter="url(#fstAppGlow)"
+      />
+      <path
+        d="M22 23h24"
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M22 45h18"
+        stroke="rgba(255,255,255,0.38)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  </div>
+)
+
 // 侧边栏菜单配置
 const menuItems: MenuProps['items'] = [
   {
@@ -125,57 +169,19 @@ const MainLayout = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className="fst-app-root" style={{ minHeight: '100vh' }}>
       {/* 侧边栏 */}
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
         width={220}
-        style={{
-          background: '#fff',
-          borderRight: `1px solid ${themeToken.colorBorderSecondary}`,
-        }}
+        className="fst-app-sider"
       >
         {/* Logo */}
-        <div
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? 0 : '0 20px',
-            borderBottom: `1px solid ${themeToken.colorBorderSecondary}`,
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 'bold',
-              fontSize: 16,
-            }}
-          >
-            E
-          </div>
-          {!collapsed && (
-            <span
-              style={{
-                marginLeft: 12,
-                fontSize: 18,
-                fontWeight: 600,
-                color: themeToken.colorText,
-              }}
-            >
-              FullScopeTest
-            </span>
-          )}
+        <div className={`fst-app-logo ${collapsed ? 'is-collapsed' : ''}`}>
+          <AppBrandMark />
+          {!collapsed && <span className="fst-app-logo-text">FullScopeTest</span>}
         </div>
 
         {/* 菜单 */}
@@ -185,21 +191,15 @@ const MainLayout = () => {
           defaultOpenKeys={getOpenKeys()}
           items={menuItems}
           onClick={handleMenuClick}
-          style={{ border: 'none', marginTop: 8 }}
+          className="fst-app-menu"
         />
       </Sider>
 
       <Layout>
         {/* 顶部栏 */}
         <Header
-          style={{
-            padding: '0 24px',
-            background: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: `1px solid ${themeToken.colorBorderSecondary}`,
-          }}
+          className="fst-app-header"
+          style={{ padding: '0 24px' }}
         >
           {/* 左侧：折叠按钮 */}
           <Button
@@ -246,14 +246,8 @@ const MainLayout = () => {
 
         {/* 内容区域 */}
         <Content
-          style={{
-            margin: 24,
-            padding: 24,
-            background: '#fff',
-            borderRadius: 12,
-            minHeight: 'calc(100vh - 64px - 48px)',
-            overflow: 'auto',
-          }}
+          className="fst-app-content"
+          style={{ margin: 24, padding: 24, minHeight: 'calc(100vh - 64px - 48px)' }}
         >
           <Outlet />
         </Content>

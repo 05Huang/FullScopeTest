@@ -1557,6 +1557,7 @@ const ApiTestWorkspace = () => {
           activeKey={sidebarTab}
           onChange={setSidebarTab}
           style={{ height: '100%' }}
+          tabBarStyle={{ paddingLeft: 12, paddingRight: 12, marginBottom: 0 }}
           items={[
             {
               key: 'cases',

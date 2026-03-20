@@ -73,6 +73,128 @@ body {
   background: linear-gradient(135deg, #e7eef0 0%, #f3efe6 52%, #fbfaf6 100%);
 }
 
+.fst-app-root {
+  position: relative;
+  background: linear-gradient(135deg, #e7eef0 0%, #f3efe6 52%, #fbfaf6 100%);
+  overflow: hidden;
+}
+
+.fst-app-root::before {
+  content: '';
+  position: absolute;
+  inset: -40px;
+  background-image: linear-gradient(rgba(15, 45, 40, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 45, 40, 0.1) 1px, transparent 1px);
+  background-size: 84px 84px;
+  opacity: 0.18;
+  mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.95), transparent 72%);
+  animation: fst-auth-grid 26s linear infinite;
+  pointer-events: none;
+}
+
+.fst-app-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(95, 165, 155, 0.22), transparent 55%),
+    radial-gradient(circle at 88% 92%, rgba(215, 181, 109, 0.18), transparent 58%),
+    radial-gradient(circle at 70% 15%, rgba(61, 110, 102, 0.16), transparent 56%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.fst-app-root > .ant-layout {
+  background: transparent;
+}
+
+.fst-app-sider.ant-layout-sider {
+  position: relative;
+  background: rgba(255, 255, 255, 0.62) !important;
+  border-right: 1px solid rgba(15, 45, 40, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1;
+}
+
+.fst-app-logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(15, 45, 40, 0.12);
+  gap: 12px;
+}
+
+.fst-app-logo.is-collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.fst-app-brand {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  box-shadow: 0 16px 46px rgba(15, 45, 40, 0.12);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.fst-app-brand-svg {
+  width: 28px;
+  height: 28px;
+}
+
+.fst-app-logo-text {
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: rgba(15, 45, 40, 0.9);
+}
+
+.fst-app-menu.ant-menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+  padding: 8px 10px 12px;
+}
+
+.fst-app-menu .ant-menu-item,
+.fst-app-menu .ant-menu-submenu-title {
+  border-radius: 12px;
+  margin: 4px 0 !important;
+}
+
+.fst-app-menu .ant-menu-item-selected {
+  background: rgba(95, 165, 155, 0.16) !important;
+}
+
+.fst-app-header.ant-layout-header {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-bottom: 1px solid rgba(15, 45, 40, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1;
+}
+
+.fst-app-content.ant-layout-content {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 28px 90px rgba(15, 45, 40, 0.14);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: auto;
+  position: relative;
+  z-index: 1;
+}
+
 .fst-auth-bg-blob {
   position: absolute;
   width: 560px;
@@ -257,6 +379,32 @@ body {
   height: 20px;
   color: rgba(15, 45, 40, 0.56);
   transition: transform 240ms ease, opacity 240ms ease, filter 240ms ease;
+}
+
+.fst-auth-eye-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.fst-auth-eye-btn:hover {
+  background: rgba(95, 165, 155, 0.10);
+}
+
+.fst-auth-eye-btn:active {
+  transform: translateY(1px);
+}
+
+.fst-auth-eye-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(215, 181, 109, 0.22);
 }
 
 .fst-auth-eye.is-open {
