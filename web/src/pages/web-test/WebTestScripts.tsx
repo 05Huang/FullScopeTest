@@ -30,6 +30,7 @@ import {
   FileTextOutlined,
   FolderOpenOutlined,
   FolderAddOutlined,
+  SaveOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -110,6 +111,9 @@ const WebTestScripts = () => {
   const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
   const [collectionForm] = Form.useForm()
+  const [isEditingCode, setIsEditingCode] = useState(false)
+  const [codeContent, setCodeContent] = useState('')
+  const [savingCode, setSavingCode] = useState(false)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -256,7 +260,47 @@ const WebTestScripts = () => {
   // 查看代码
   const handleViewCode = (script: WebTestScript) => {
     setCurrentScript(script)
+    setCodeContent(script.script_content || '')
+    setIsEditingCode(false)
     setIsCodeModalOpen(true)
+  }
+
+  const handleUpdateScriptContent = async () => {
+    if (!currentScript) return
+    setSavingCode(true)
+    try {
+      const result = await webTestService.updateScript(currentScript.id, {
+        script_content: codeContent,
+      })
+      if (result.code === 200) {
+        message.success('脚本代码已更新')
+        const updatedScript = result.data
+        if (updatedScript) {
+          setScripts((prev) =>
+            prev.map((s) => (s.id === updatedScript.id ? { ...s, ...updatedScript } : s))
+          )
+          setCurrentScript((prev) =>
+            prev ? { ...prev, script_content: codeContent } : prev
+          )
+        } else if (currentScript) {
+          setCurrentScript((prev) =>
+            prev ? { ...prev, script_content: codeContent } : prev
+          )
+          setScripts((prev) =>
+            prev.map((s) =>
+              s.id === currentScript.id ? { ...s, script_content: codeContent } : s
+            )
+          )
+        }
+        setIsEditingCode(false)
+      } else {
+        message.error(result.message || '更新脚本代码失败')
+      }
+    } catch (error: any) {
+      message.error('更新脚本代码失败')
+    } finally {
+      setSavingCode(false)
+    }
   }
 
   // 查看执行日志
@@ -789,33 +833,78 @@ const WebTestScripts = () => {
         onCancel={() => {
           setIsCodeModalOpen(false)
           setCurrentScript(null)
+          setIsEditingCode(false)
         }}
-        footer={[
-          <Button
-            key="copy"
-            icon={<CopyOutlined />}
-            onClick={() => {
-              if (currentScript?.script_content) {
-                navigator.clipboard.writeText(currentScript.script_content)
-                message.success('已复制到剪贴板')
-              }
-            }}
-          >
-            复制代码
-          </Button>,
-          <Button key="edit" type="primary" icon={<EditOutlined />}>
-            编辑脚本
-          </Button>,
-        ]}
+        footer={
+          isEditingCode
+            ? [
+                <Button
+                  key="cancel"
+                  onClick={() => {
+                    if (currentScript) {
+                      setCodeContent(currentScript.script_content || '')
+                    }
+                    setIsEditingCode(false)
+                  }}
+                >
+                  取消
+                </Button>,
+                <Button
+                  key="save"
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  loading={savingCode}
+                  onClick={handleUpdateScriptContent}
+                >
+                  保存脚本
+                </Button>,
+              ]
+            : [
+                <Button
+                  key="copy"
+                  icon={<CopyOutlined />}
+                  onClick={() => {
+                    if (currentScript?.script_content) {
+                      navigator.clipboard.writeText(currentScript.script_content)
+                      message.success('已复制到剪贴板')
+                    }
+                  }}
+                >
+                  复制代码
+                </Button>,
+                <Button
+                  key="edit"
+                  type="primary"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    if (currentScript) {
+                      setCodeContent(currentScript.script_content || '')
+                      setIsEditingCode(true)
+                    }
+                  }}
+                >
+                  编辑脚本
+                </Button>,
+              ]
+        }
         width={800}
       >
         <MonacoEditor
           height={400}
           language="python"
           theme="vs-light"
-          value={currentScript?.script_content || '# 暂无脚本内容'}
+          value={
+            isEditingCode
+              ? codeContent
+              : currentScript?.script_content || '# 暂无脚本内容'
+          }
+          onChange={(value) => {
+            if (isEditingCode) {
+              setCodeContent(value || '')
+            }
+          }}
           options={{
-            readOnly: true,
+            readOnly: !isEditingCode,
             minimap: { enabled: false },
             fontSize: 13,
             scrollBeyondLastLine: false,
