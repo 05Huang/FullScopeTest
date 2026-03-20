@@ -1,0 +1,96 @@
+name: CI and Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Pack dist
+        run: |
+          tar -czf dist.tgz -C web/dist .
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: dist.tgz
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Backend tests (sqlite)
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
+          pytest -q tests
+
+  deploy:
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+
+      - name: Setup SSH
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload dist to server
+        shell: bash
+        run: |
+          scp -i ~/.ssh/id_ed25519 dist.tgz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/fullscopetest-dist.tgz
+
+      - name: Deploy backend on server (run deploy.sh)
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+            set -e; \
+            cd '${{ secrets.DEPLOY_DIR }}'; \
+            SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh \
+          "
+
+      - name: Publish frontend to 1Panel site dir
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+            set -e; \
+            SITE_DIR='${{ secrets.SITE_DIR }}'; \
+            mkdir -p \"\$SITE_DIR\"; \
+            rm -rf \"\$SITE_DIR\"/*; \
+            tar -xzf /tmp/fullscopetest-dist.tgz -C \"\$SITE_DIR\"; \
+          "
+
+      - name: Health check
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+            curl -fsS http://127.0.0.1:5211/api/v1/api-test/health >/dev/null \
+          "
