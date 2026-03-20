@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
-import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import ApiTestWorkspace from './pages/api-test/ApiTestWorkspace'
 import ApiTestCollections from './pages/api-test/ApiTestCollections'
@@ -29,8 +28,10 @@ function App() {
   return (
     <Routes>
       {/* 公开路由 */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route element={<Login />}>
+        <Route path="/login" element={<></>} />
+        <Route path="/register" element={<></>} />
+      </Route>
       
       {/* 受保护的路由 */}
       <Route
