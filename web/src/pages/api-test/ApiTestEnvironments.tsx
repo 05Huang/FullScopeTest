@@ -400,8 +400,13 @@ const ApiTestEnvironments = () => {
               return value || '';
             }}
             getValueProps={(value) => {
-              // 直接返回字符串值，不做额外处理
-              return { value: value || '' };
+              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                if (Object.keys(value).length === 0) {
+                  return { value: '' }
+                }
+                return { value: JSON.stringify(value, null, 2) }
+              }
+              return { value: value || '' }
             }}
           >
             <TextArea

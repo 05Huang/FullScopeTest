@@ -1,7 +1,0 @@
-Run ssh -i ~/.ssh/id_ed25519 ***@*** "\
-  
-rm: cannot remove '***/404.html': Permission denied
-rm: cannot remove '***/assets/index-C1wnCqYh.js': Permission denied
-rm: cannot remove '***/assets/index-DYlwHIWk.css': Permission denied
-rm: cannot remove '***/index.html': Permission denied
-Error: Process completed with exit code 1.
