@@ -40,9 +40,10 @@ class BaseConfig:
         'max_duration': int(os.environ.get('PERF_TEST_MAX_DURATION', '3600')),
     }
 
-    # Celery 配置（可选，如果Redis不可用则不使用异步任务）
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+    # Celery 配置（优先读取显式 Celery 配置，其次回退到 REDIS_URL）
+    _redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', _redis_url)
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', _redis_url)
     CELERY_TASK_TRACK_STARTED = True
     CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 分钟超时
     CELERY_ACCEPT_CONTENT = ['json']

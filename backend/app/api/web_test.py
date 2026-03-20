@@ -62,7 +62,7 @@ def create_web_collection():
 
     error = validate_required(data, ['name'])
     if error:
-        return error_response(message=error)
+        return error_response(400, error)
 
     collection = WebTestCollection(
         name=data['name'],
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         if err:
             return err
         if collection.project_id and project_id and collection.project_id != project_id:
-            return error_response(message='collection_id 与 project_id 不匹配')
+            return error_response(400, 'collection_id 与 project_id 不匹配')
         if project_id is None:
             project_id = collection.project_id
     else:
@@ -264,7 +264,7 @@ def get_script(script_id):
     script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
     if not script:
-        return error_response(message='脚本不存在', code=404)
+        return error_response(404, '脚本不存在')
     
     return success_response(data=script.to_dict())
 
@@ -277,7 +277,7 @@ def update_script(script_id):
     script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
     if not script:
-        return error_response(message='脚本不存在', code=404)
+        return error_response(404, '脚本不存在')
     
     data = request.get_json()
 
@@ -289,8 +289,8 @@ def update_script(script_id):
             collection, err = _get_collection_or_404(collection_id, user_id)
             if err:
                 return err
-            if script.project_id and collection.project_id and script.project_id != collection.project_id:
-                return error_response(message='collection_id 与脚本项目不匹配')
+                if script.project_id and collection.project_id and script.project_id != collection.project_id:
+                    return error_response(400, 'collection_id 与脚本项目不匹配')
             script.collection_id = collection.id
             if script.project_id is None:
                 script.project_id = collection.project_id
@@ -312,7 +312,7 @@ def delete_script(script_id):
     script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
     if not script:
-        return error_response(message='脚本不存在', code=404)
+        return error_response(404, '脚本不存在')
     
     db.session.delete(script)
     db.session.commit()
@@ -334,7 +334,7 @@ def run_script(script_id):
     
     # 检查是否已在运行
     if script.status == 'running':
-        return error_response(message='脚本正在运行中')
+        return error_response(400, '脚本正在运行中')
     
     try:
         # 异步执行测试任务
@@ -356,7 +356,7 @@ def run_script(script_id):
         })
         
     except Exception as e:
-        return error_response(message=f'提交失败: {str(e)}')
+        return error_response(500, f'提交失败: {str(e)}')
 
 
 @api_bp.route('/web-test/record/start', methods=['POST'])
@@ -373,10 +373,10 @@ def start_recording():
     browser = data.get('browser', 'chromium')
     
     # 检查是否已有录制进程在运行
-    if user_id in recording_processes:
-        old_process = recording_processes[user_id]
-        if old_process.poll() is None:  # 进程还在运行
-            return error_response(message='已有录制进程在运行，请先停止')
+        if user_id in recording_processes:
+            old_process = recording_processes[user_id]
+            if old_process.poll() is None:
+                return error_response(400, '已有录制进程在运行，请先停止')
     
     try:
         # 获取当前 Python 解释器路径（支持虚拟环境）
@@ -414,7 +414,7 @@ def start_recording():
         # 等待一小段时间确认进程启动成功
         time.sleep(1)
         if process.poll() is not None:
-            return error_response(message='录制器启动失败，进程立即退出，请检查 Playwright 是否正确安装')
+            return error_response(500, '录制器启动失败，进程立即退出，请检查 Playwright 是否正确安装')
         
         # 保存进程
         recording_processes[user_id] = process
