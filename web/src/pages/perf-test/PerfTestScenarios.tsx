@@ -34,9 +34,14 @@ import {
   UserOutlined,
   ClockCircleOutlined,
   ReloadOutlined,
+  CodeOutlined,
+  CopyOutlined,
+  SaveOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
+import MonacoEditor from '@monaco-editor/react'
 import { perfTestService } from '@/services/perfTestService'
 import { runWithConcurrency } from '@/utils/runWithConcurrency'
 
@@ -59,6 +64,7 @@ interface PerfTestScenario {
   step_users: number
   step_duration: number
   status: 'passed' | 'failed' | 'pending' | 'running'
+  script_content?: string
   avg_response_time: number
   throughput: number
   error_rate: number
@@ -86,6 +92,18 @@ const PerfTestScenarios = () => {
   const [runningIds, setRunningIds] = useState<number[]>([])
   const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
+
+  // Code Editor State
+  const [isCodeModalOpen, setIsCodeModalOpen] = useState(false)
+  const [currentScenario, setCurrentScenario] = useState<PerfTestScenario | null>(null)
+  const [isEditingCode, setIsEditingCode] = useState(false)
+  const [codeContent, setCodeContent] = useState('')
+  const [savingCode, setSavingCode] = useState(false)
+
+  // AI Script Generation State
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
 
   // 加载场景列表
   const loadScenarios = async () => {
@@ -165,6 +183,82 @@ const PerfTestScenarios = () => {
       }
     } catch (error: any) {
       message.error('创建场景失败')
+    }
+  }
+
+  // AI 辅助生成脚本
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      message.warning('请输入描述内容')
+      return
+    }
+    setAiGenerating(true)
+    try {
+      const res = await perfTestService.generateScriptAI({ prompt: aiPrompt })
+      if (res.code === 200 && res.data?.script_content) {
+        message.success('AI 脚本生成成功')
+        setIsAiModalOpen(false)
+        setAiPrompt('')
+        
+        const createRes = await perfTestService.createScenario({
+          name: 'AI 生成场景 - ' + new Date().toLocaleString(),
+          target_url: 'http://localhost',
+          method: 'GET',
+          user_count: 10,
+          duration: 60,
+          spawn_rate: 1,
+          step_load_enabled: false,
+          script_content: res.data.script_content,
+        } as any)
+        
+        if (createRes.code === 200 || createRes.code === 201) {
+          loadScenarios()
+          handleViewCode(createRes.data)
+        }
+      } else {
+        message.error(res.message || '生成失败')
+      }
+    } catch (e: any) {
+      message.error(e.response?.data?.message || '生成失败')
+    } finally {
+      setAiGenerating(false)
+    }
+  }
+
+  // 查看/编辑代码
+  const handleViewCode = (scenario: PerfTestScenario) => {
+    setCurrentScenario(scenario)
+    setCodeContent(scenario.script_content || '')
+    setIsEditingCode(false)
+    setIsCodeModalOpen(true)
+  }
+
+  const handleUpdateScriptContent = async () => {
+    if (!currentScenario) return
+    setSavingCode(true)
+    try {
+      const result = await perfTestService.updateScenario(currentScenario.id, {
+        script_content: codeContent,
+      } as any)
+      if (result.code === 200) {
+        message.success('脚本代码已更新')
+        const updatedScenario = result.data
+        if (updatedScenario) {
+          setScenarios((prev) =>
+            prev.map((s) => (s.id === updatedScenario.id ? { ...s, ...updatedScenario } : s))
+          )
+          setCurrentScenario((prev) =>
+            prev ? { ...prev, script_content: codeContent } : prev
+          )
+        }
+        setIsEditingCode(false)
+      } else {
+        message.error(result.message || '更新脚本代码失败')
+      }
+    } catch (error: any) {
+      message.error('更新脚本代码失败')
+    } finally {
+      setSavingCode(false)
     }
   }
 
@@ -523,6 +617,14 @@ const PerfTestScenarios = () => {
                 }}
               />
             </Tooltip>
+            <Tooltip title="查看代码">
+              <Button
+                type="text"
+                size="small"
+                icon={<CodeOutlined />}
+                onClick={() => handleViewCode(record)}
+              />
+            </Tooltip>
             <Popconfirm
               title="确定删除此场景吗？"
               onConfirm={() => handleDelete(record.id)}
@@ -578,6 +680,14 @@ const PerfTestScenarios = () => {
             loading={loading}
           >
             刷新
+          </Button>
+          <Button
+            type="primary"
+            style={{ backgroundColor: '#722ed1' }}
+            icon={<RobotOutlined />}
+            onClick={() => setIsAiModalOpen(true)}
+          >
+            AI 生成
           </Button>
           <Button
             type="primary"
@@ -779,6 +889,126 @@ const PerfTestScenarios = () => {
             }}
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* AI 辅助生成弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <RobotOutlined style={{ color: '#722ed1' }} />
+            <span>AI 辅助生成测试场景</span>
+          </Space>
+        }
+        open={isAiModalOpen}
+        onCancel={() => {
+          if (!aiGenerating) {
+            setIsAiModalOpen(false)
+            setAiPrompt('')
+          }
+        }}
+        onOk={handleAiGenerate}
+        confirmLoading={aiGenerating}
+        okText="生成并预览"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text type="secondary">
+            请输入自然语言描述，AI 将自动生成对应的 Locust 性能测试脚本。
+          </Text>
+        </div>
+        <TextArea
+          rows={6}
+          placeholder="例如：创建一个电商下单场景，用户需要先登录，获取 token，然后并发请求下单接口，要求并发100，持续5分钟。"
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+          disabled={aiGenerating}
+        />
+      </Modal>
+
+      {/* 查看代码弹窗 */}
+      <Modal
+        title={currentScenario ? `脚本代码 - ${currentScenario.name}` : '脚本代码'}
+        open={isCodeModalOpen}
+        onCancel={() => {
+          setIsCodeModalOpen(false)
+          setCurrentScenario(null)
+          setIsEditingCode(false)
+        }}
+        footer={
+          isEditingCode
+            ? [
+                <Button
+                  key="cancel"
+                  onClick={() => {
+                    if (currentScenario) {
+                      setCodeContent(currentScenario.script_content || '')
+                    }
+                    setIsEditingCode(false)
+                  }}
+                >
+                  取消
+                </Button>,
+                <Button
+                  key="save"
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  loading={savingCode}
+                  onClick={handleUpdateScriptContent}
+                >
+                  保存脚本
+                </Button>,
+              ]
+            : [
+                <Button
+                  key="copy"
+                  icon={<CopyOutlined />}
+                  onClick={() => {
+                    if (currentScenario?.script_content) {
+                      navigator.clipboard.writeText(currentScenario.script_content)
+                      message.success('已复制到剪贴板')
+                    }
+                  }}
+                >
+                  复制代码
+                </Button>,
+                <Button
+                  key="edit"
+                  type="primary"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    if (currentScenario) {
+                      setCodeContent(currentScenario.script_content || '')
+                      setIsEditingCode(true)
+                    }
+                  }}
+                >
+                  编辑脚本
+                </Button>,
+              ]
+        }
+        width={800}
+      >
+        <MonacoEditor
+          height={400}
+          language="python"
+          theme="vs-light"
+          value={
+            isEditingCode
+              ? codeContent
+              : currentScenario?.script_content || '# 暂无脚本内容'
+          }
+          onChange={(value) => {
+            if (isEditingCode) {
+              setCodeContent(value || '')
+            }
+          }}
+          options={{
+            readOnly: !isEditingCode,
+            minimap: { enabled: false },
+            fontSize: 13,
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+          }}
+        />
       </Modal>
     </div>
   )

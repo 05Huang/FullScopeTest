@@ -31,6 +31,7 @@ import {
   FolderOpenOutlined,
   FolderAddOutlined,
   SaveOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -114,6 +115,11 @@ const WebTestScripts = () => {
   const [isEditingCode, setIsEditingCode] = useState(false)
   const [codeContent, setCodeContent] = useState('')
   const [savingCode, setSavingCode] = useState(false)
+  
+  // AI Script Generation State
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -184,6 +190,41 @@ const WebTestScripts = () => {
       }
     } catch (error: any) {
       message.error('创建脚本失败')
+    }
+  }
+
+  // AI 辅助生成脚本
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      message.warning('请输入描述内容')
+      return
+    }
+    setAiGenerating(true)
+    try {
+      const res = await webTestService.generateScriptAI({ prompt: aiPrompt })
+      if (res.code === 200 && res.data?.script_content) {
+        message.success('AI 脚本生成成功')
+        setIsAiModalOpen(false)
+        setAiPrompt('')
+        
+        // 创建一个新脚本并打开代码编辑器
+        const createRes = await webTestService.createScript({
+          name: 'AI 生成脚本 - ' + new Date().toLocaleString(),
+          collection_id: selectedCollectionId,
+          browser: 'chromium',
+          script_content: res.data.script_content,
+        })
+        if (createRes.code === 200 || createRes.code === 201) {
+          loadScripts()
+          handleViewCode(createRes.data)
+        }
+      } else {
+        message.error(res.message || '生成失败')
+      }
+    } catch (e: any) {
+      message.error(e.response?.data?.message || '生成失败')
+    } finally {
+      setAiGenerating(false)
     }
   }
 
@@ -638,6 +679,14 @@ const WebTestScripts = () => {
           </Button>
           <Button
             type="primary"
+            style={{ backgroundColor: '#722ed1' }}
+            icon={<RobotOutlined />}
+            onClick={() => setIsAiModalOpen(true)}
+          >
+            AI 生成
+          </Button>
+          <Button
+            type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
               setEditingScript(null)
@@ -824,6 +873,39 @@ const WebTestScripts = () => {
             <Input placeholder="https://example.com" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* AI 辅助生成弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <RobotOutlined style={{ color: '#722ed1' }} />
+            <span>AI 辅助生成测试脚本</span>
+          </Space>
+        }
+        open={isAiModalOpen}
+        onCancel={() => {
+          if (!aiGenerating) {
+            setIsAiModalOpen(false)
+            setAiPrompt('')
+          }
+        }}
+        onOk={handleAiGenerate}
+        confirmLoading={aiGenerating}
+        okText="生成并预览"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text type="secondary">
+            请输入自然语言描述，AI 将自动生成对应的 Playwright Web UI 测试脚本。
+          </Text>
+        </div>
+        <TextArea
+          rows={6}
+          placeholder="例如：登录系统，进入控制台，点击新增用户，填写随机生成的用户名，验证是否出现成功提示"
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+          disabled={aiGenerating}
+        />
       </Modal>
 
       {/* 查看代码弹窗 */}
