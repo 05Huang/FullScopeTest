@@ -15,6 +15,7 @@ import {
   Tooltip,
   Dropdown,
   Badge,
+  Alert,
 } from 'antd'
 import {
   PlusOutlined,
@@ -34,6 +35,7 @@ import {
   RobotOutlined,
   BugOutlined,
   CheckCircleOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -126,6 +128,14 @@ const WebTestScripts = () => {
   // AI Healing State
   const [aiHealing, setAiHealing] = useState(false)
   const [aiAnalysisResult, setAiAnalysisResult] = useState<{ analysis: string; fixed_script: string | null } | null>(null)
+
+  // AI Web Explorer State
+  const [isExploreModalOpen, setIsExploreModalOpen] = useState(false)
+  const [exploreStartUrl, setExploreStartUrl] = useState('')
+  const [exploreObjective, setExploreObjective] = useState('尽可能多地点击不同页面并寻找报错')
+  const [exploreMaxSteps, setExploreMaxSteps] = useState(10)
+  const [exploring, setExploring] = useState(false)
+  const [exploreReport, setExploreReport] = useState<any>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -231,6 +241,33 @@ const WebTestScripts = () => {
       message.error(e.response?.data?.message || '生成失败')
     } finally {
       setAiGenerating(false)
+    }
+  }
+
+  // AI 探索性测试
+  const handleExplore = async () => {
+    if (!exploreStartUrl) {
+      message.warning('请输入起始 URL')
+      return
+    }
+    setExploring(true)
+    setExploreReport(null)
+    try {
+      const res = await webTestService.exploreWebAppAI({
+        start_url: exploreStartUrl,
+        objective: exploreObjective,
+        max_steps: exploreMaxSteps,
+      })
+      if (res.code === 200 && res.data) {
+        setExploreReport(res.data)
+        message.success('探索性测试完成')
+      } else {
+        message.error(res.message || '探索失败')
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '探索失败')
+    } finally {
+      setExploring(false)
     }
   }
 
@@ -745,6 +782,14 @@ const WebTestScripts = () => {
           </Button>
           <Button
             type="primary"
+            style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16' }}
+            icon={<GlobalOutlined />}
+            onClick={() => setIsExploreModalOpen(true)}
+          >
+            探索测试
+          </Button>
+          <Button
+            type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
               setEditingScript(null)
@@ -964,6 +1009,123 @@ const WebTestScripts = () => {
           onChange={(e) => setAiPrompt(e.target.value)}
           disabled={aiGenerating}
         />
+      </Modal>
+
+      {/* AI 探索性测试弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <GlobalOutlined style={{ color: '#fa8c16' }} />
+            <span>AI 探索性测试 (Monkey Test)</span>
+          </Space>
+        }
+        open={isExploreModalOpen}
+        onCancel={() => {
+          if (!exploring) {
+            setIsExploreModalOpen(false)
+            setExploreReport(null)
+          }
+        }}
+        width={800}
+        footer={
+          exploreReport ? (
+            <Button onClick={() => setIsExploreModalOpen(false)}>关闭</Button>
+          ) : (
+            <Button
+              type="primary"
+              style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16' }}
+              onClick={handleExplore}
+              loading={exploring}
+            >
+              开始探索
+            </Button>
+          )
+        }
+      >
+        {!exploreReport ? (
+          <Form layout="vertical">
+            <Alert
+              type="info"
+              showIcon
+              message="Autonomous Web Explorer"
+              description="提供一个起始 URL，AI 将自动分析页面元素并决定下一步操作（点击、输入等），像真实用户一样在网站中探索并收集报错信息。"
+              style={{ marginBottom: 24 }}
+            />
+            <Form.Item label="起始 URL" required>
+              <Input
+                placeholder="https://example.com"
+                value={exploreStartUrl}
+                onChange={(e) => setExploreStartUrl(e.target.value)}
+              />
+            </Form.Item>
+            <Form.Item label="探索目标">
+              <TextArea
+                rows={2}
+                placeholder="例如：尽可能多地点击不同页面并寻找报错，或者尝试完成下单流程"
+                value={exploreObjective}
+                onChange={(e) => setExploreObjective(e.target.value)}
+              />
+            </Form.Item>
+            <Form.Item label="最大探索步数">
+              <Select
+                value={exploreMaxSteps}
+                onChange={setExploreMaxSteps}
+                style={{ width: 120 }}
+                options={[
+                  { value: 5, label: '5 步 (快速)' },
+                  { value: 10, label: '10 步 (标准)' },
+                  { value: 20, label: '20 步 (深度)' },
+                ]}
+              />
+            </Form.Item>
+          </Form>
+        ) : (
+          <div style={{ maxHeight: 600, overflow: 'auto' }}>
+            <Alert
+              type={exploreReport.status === 'failed' ? 'error' : 'success'}
+              message={`探索完成 (状态: ${exploreReport.status})`}
+              description={`共执行 ${exploreReport.total_steps_executed} 步，发现 ${exploreReport.errors_found?.length || 0} 个错误。`}
+              style={{ marginBottom: 16 }}
+            />
+            
+            <Card size="small" title="发现的错误" style={{ marginBottom: 16 }}>
+              {exploreReport.errors_found && exploreReport.errors_found.length > 0 ? (
+                <Table
+                  size="small"
+                  dataSource={exploreReport.errors_found}
+                  columns={[
+                    { title: '类型', dataIndex: 'type', width: 120, render: (t) => <Tag color="red">{t}</Tag> },
+                    { title: '错误信息', dataIndex: 'text', ellipsis: true },
+                    { title: '页面 URL', dataIndex: 'url', ellipsis: true },
+                  ]}
+                  pagination={false}
+                  rowKey={(_, i) => String(i)}
+                />
+              ) : (
+                <Text type="secondary">未发现明显错误</Text>
+              )}
+            </Card>
+
+            <Card size="small" title="执行动作轨迹">
+              {exploreReport.actions_taken && exploreReport.actions_taken.length > 0 ? (
+                <Table
+                  size="small"
+                  dataSource={exploreReport.actions_taken}
+                  columns={[
+                    { title: '步数', dataIndex: 'step', width: 60 },
+                    { title: '动作', dataIndex: 'type', width: 80, render: (t) => <Tag color="blue">{t}</Tag> },
+                    { title: '目标', dataIndex: 'target_id' },
+                    { title: '原因', dataIndex: 'reason', ellipsis: true },
+                  ]}
+                  pagination={false}
+                  rowKey={(_, i) => String(i)}
+                />
+              ) : (
+                <Text type="secondary">无动作记录</Text>
+              )}
+            </Card>
+          </div>
+        )}
       </Modal>
 
       {/* 查看代码弹窗 */}
