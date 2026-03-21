@@ -16,6 +16,7 @@ from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils import get_current_user_id
 from ..utils.ai_planner import generate_api_test_plan
+from ..utils.ai_data_synthesizer import synthesize_test_cases
 from ..utils.env_variables import replace_variables, replace_variables_in_dict, get_environment_variables, merge_headers_with_env
 from ..utils.js_executor import get_executor
 from ..utils.script_context import (
@@ -125,6 +126,39 @@ def generate_ai_plan():
     except Exception as exc:
         logger.error('AI plan generation failed: %s', str(exc), exc_info=True)
         return error_response(500, f'AI plan generation failed: {str(exc)}')
+
+
+@api_bp.route('/api-test/ai/synthesize-cases', methods=['POST'])
+@jwt_required()
+def synthesize_api_cases():
+    """AI 智能扩充接口测试用例"""
+    data = request.get_json() or {}
+    base_request = data.get('base_request')
+    count = data.get('count', 5)  # 默认生成 5 个
+    
+    if not base_request:
+        return error_response(400, 'base_request is required')
+        
+    try:
+        runtime_config = {
+            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
+        }
+
+        if data.get('base_url'):
+            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+        if data.get('model'):
+            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+        if data.get('api_key'):
+            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+
+        cases = synthesize_test_cases(base_request, count, runtime_config)
+        return success_response(data={'cases': cases}, message='AI 用例扩充成功')
+    except Exception as exc:
+        return error_response(500, f'AI 用例扩充失败: {str(exc)}')
 
 
 # ==================== 用例集合 ====================

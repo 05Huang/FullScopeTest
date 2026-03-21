@@ -125,6 +125,16 @@ export const generateAiPlan = (data: {
   return api.post('/api-test/ai/plan', data) as Promise<ApiResponse<AiPlanResult>>
 }
 
+export const synthesizeCasesAI = (data: {
+  base_request: any
+  count?: number
+  base_url?: string
+  model?: string
+  api_key?: string
+}): Promise<ApiResponse<{ cases: any[] }>> => {
+  return api.post('/api-test/ai/synthesize-cases', data) as Promise<ApiResponse<{ cases: any[] }>>
+}
+
 // 导出服务对象
 export const apiTestService = {
   getCollections,
@@ -140,4 +150,5 @@ export const apiTestService = {
   runCase,
   runCollection,
   generateAiPlan,
+  synthesizeCasesAI,
 }
