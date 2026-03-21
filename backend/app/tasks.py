@@ -426,13 +426,13 @@ def run_perf_test_task(
                 last = lines[-1].split(',')
                 row = dict(zip(headers, last))
 
-                total_req = _safe_float(row.get('Total Requests') or row.get('Requests') or 0)
-                total_fail = _safe_float(row.get('Total Failures') or row.get('Failures') or row.get('Fails') or 0)
+                total_req = _safe_float(row.get('Total Request Count') or row.get('Total Requests') or row.get('Requests') or 0)
+                total_fail = _safe_float(row.get('Total Failure Count') or row.get('Total Failures') or row.get('Failures') or row.get('Fails') or 0)
                 throughput = _safe_float(row.get('Requests/s') or row.get('RPS') or 0)
-                avg_ms = _safe_float(row.get('Avg') or row.get('Average Response Time') or 0)
-                p95_ms = _safe_float(row.get('95%') or row.get('95%ile') or row.get('95') or 0)
-                min_ms = _safe_float(row.get('Min') or 0)
-                max_ms = _safe_float(row.get('Max') or 0)
+                avg_ms = _safe_float(row.get('Total Average Response Time') or row.get('Average Response Time') or row.get('Avg') or 0)
+                p95_ms = _safe_float(row.get('95%') or row.get('95%ile') or 0)
+                min_ms = _safe_float(row.get('Total Min Response Time') or row.get('Min Response Time') or row.get('Min') or 0)
+                max_ms = _safe_float(row.get('Total Max Response Time') or row.get('Max Response Time') or row.get('Max') or 0)
                 error_rate = (total_fail / total_req * 100) if total_req else 0
 
                 return {

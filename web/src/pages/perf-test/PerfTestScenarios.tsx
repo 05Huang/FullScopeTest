@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card,
   Table,
@@ -76,6 +77,7 @@ const BATCH_ACTION_CONCURRENCY = 5
 const PERF_MAX_USERS = 2000
 
 const PerfTestScenarios = () => {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [scenarios, setScenarios] = useState<PerfTestScenario[]>([])
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
@@ -421,7 +423,7 @@ const PerfTestScenarios = () => {
       render: (time, record) => {
         if (record.status === 'pending' || !time) return '-'
         const color = time < 500 ? '#52c41a' : time < 1500 ? '#faad14' : '#ff4d4f'
-        return <Text style={{ color }}>{time} ms</Text>
+        return <Text style={{ color }}>{Number(time).toFixed(2)} ms</Text>
       },
     },
     {
@@ -431,7 +433,7 @@ const PerfTestScenarios = () => {
       width: 120,
       render: (throughput, record) => {
         if (record.status === 'pending' || !throughput) return '-'
-        return <Text>{throughput} req/s</Text>
+        return <Text>{Number(throughput).toFixed(2)} req/s</Text>
       },
     },
     {
@@ -493,6 +495,7 @@ const PerfTestScenarios = () => {
                 size="small"
                 icon={<LineChartOutlined />}
                 disabled={record.status === 'pending'}
+                onClick={() => navigate('/perf-test/results')}
               />
             </Tooltip>
             <Tooltip title="编辑">

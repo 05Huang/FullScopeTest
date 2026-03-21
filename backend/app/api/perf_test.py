@@ -474,6 +474,10 @@ def run_scenario(scenario_id):
             return error_response(400, error)
         step_load_enabled, step_users, step_duration = step_config
 
+        scenario.status = 'running'
+        scenario.last_run_at = datetime.utcnow()
+        db.session.commit()
+
         task = run_perf_test_task.apply_async(
             args=[scenario_id, user_count, spawn_rate, run_time, step_load_enabled, step_users, step_duration],
             task_id=f'perf_test_{scenario_id}_{user_id}'
@@ -494,6 +498,18 @@ def run_scenario(scenario_id):
         })
 
     except Exception as e:
+        try:
+            scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
+            if scenario:
+                scenario.status = 'failed'
+                scenario.last_result = {
+                    'success': False,
+                    'error': f'Failed to submit: {str(e)}',
+                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                }
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
         return error_response(500, f'Failed to submit: {str(e)}')
 
 
