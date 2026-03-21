@@ -100,6 +100,9 @@ export const getRecordingStatus = (): Promise<ApiResponse> => {
 
 export const generateScriptAI = (data: {
   prompt: string
+  base_url?: string
+  model?: string
+  api_key?: string
 }): Promise<ApiResponse> => {
   return api.post('/web-test/ai/generate', data) as Promise<ApiResponse>
 }
@@ -107,6 +110,9 @@ export const generateScriptAI = (data: {
 export const analyzeErrorAI = (data: {
   script_id: number
   error_log: string
+  base_url?: string
+  model?: string
+  api_key?: string
 }): Promise<ApiResponse> => {
   return api.post('/web-test/ai/analyze-error', data) as Promise<ApiResponse>
 }
@@ -115,6 +121,9 @@ export const exploreWebAppAI = (data: {
   start_url: string
   objective?: string
   max_steps?: number
+  base_url?: string
+  model?: string
+  api_key?: string
 }): Promise<ApiResponse> => {
   return api.post('/web-test/ai/explore', data) as Promise<ApiResponse>
 }
