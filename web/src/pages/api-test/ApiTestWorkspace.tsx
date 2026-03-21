@@ -38,6 +38,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   RobotOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
@@ -246,6 +247,13 @@ const ApiTestWorkspace = () => {
   const [aiPlanSource, setAiPlanSource] = useState<'llm' | 'fallback' | ''>('')
   const [aiPlanOperations, setAiPlanOperations] = useState<AiPlanOperation[]>([])
   const [aiExecutionLogs, setAiExecutionLogs] = useState<AiExecutionLog[]>([])
+
+  // AI Synthesizer State
+  const [aiSynthesizeModalOpen, setAiSynthesizeModalOpen] = useState(false)
+  const [aiSynthesizeCount, setAiSynthesizeCount] = useState(5)
+  const [aiSynthesizing, setAiSynthesizing] = useState(false)
+  const [synthesizedCases, setSynthesizedCases] = useState<any[]>([])
+  const [synthesizeTargetCollectionId, setSynthesizeTargetCollectionId] = useState<number | undefined>()
 
   // 获取当前项目选择的环境存储键（按项目分别持久化）
   // TODO: 从路由参数或上下文获取当前项目 ID
@@ -1137,6 +1145,94 @@ const ApiTestWorkspace = () => {
     })
   }
 
+  // AI 用例裂变
+  const handleAiSynthesize = async () => {
+    if (!url) {
+      message.warning('请先输入有效的 URL')
+      return
+    }
+
+    setAiSynthesizing(true)
+    
+    // 构造 base_request
+    const headerObj: Record<string, string> = {}
+    headers.filter(h => h.key && h.value).forEach(h => {
+      headerObj[h.key] = h.value
+    })
+    const paramObj: Record<string, string> = {}
+    params.filter(p => p.key && p.value).forEach(p => {
+      paramObj[p.key] = p.value
+    })
+    let body = undefined
+    if (['POST', 'PUT', 'PATCH'].includes(method) && requestBody) {
+      try {
+        body = JSON.parse(requestBody)
+      } catch {
+        body = requestBody
+      }
+    }
+    
+    const baseRequest = {
+      method,
+      url,
+      headers: headerObj,
+      params: paramObj,
+      body,
+      body_type: bodyType
+    }
+
+    try {
+      const res = await apiTestService.synthesizeCasesAI({
+        base_request: baseRequest,
+        count: aiSynthesizeCount,
+      })
+      if (res.code === 200 && res.data?.cases) {
+        setSynthesizedCases(res.data.cases)
+        message.success(`成功生成 ${res.data.cases.length} 个测试用例`)
+      } else {
+        message.error(res.message || '生成失败')
+      }
+    } catch (e: any) {
+      message.error(e.response?.data?.message || '生成失败')
+    } finally {
+      setAiSynthesizing(false)
+    }
+  }
+
+  // 批量保存生成的用例
+  const handleSaveSynthesizedCases = async () => {
+    if (!synthesizedCases.length) return
+    
+    let savedCount = 0
+    for (const c of synthesizedCases) {
+      try {
+        await apiTestService.createCase({
+          name: c.name || `AI Generated Case ${savedCount + 1}`,
+          method: c.method,
+          url: c.url,
+          headers: c.headers,
+          params: c.params,
+          body: c.body,
+          body_type: c.body_type,
+          collection_id: synthesizeTargetCollectionId || undefined,
+          environment_id: selectedEnvId,
+        })
+        savedCount++
+      } catch (e) {
+        console.error('Failed to save case:', c.name, e)
+      }
+    }
+    
+    if (savedCount > 0) {
+      message.success(`成功保存 ${savedCount} 个用例`)
+      setAiSynthesizeModalOpen(false)
+      setSynthesizedCases([])
+      loadData()
+    } else {
+      message.error('保存失败')
+    }
+  }
+
   // 更多操作菜单
 
   const appendAiLog = (status: AiLogStatus, logMessage: string) => {
@@ -1772,6 +1868,18 @@ const ApiTestWorkspace = () => {
                 AI Assistant
               </Button>
             </Tooltip>
+            <Tooltip title="AI 扩充用例">
+              <Button
+                style={{ backgroundColor: '#722ed1', color: '#fff' }}
+                icon={<ExperimentOutlined />}
+                onClick={() => {
+                  setSynthesizeTargetCollectionId(selectedCollectionId || activeCollectionId)
+                  setAiSynthesizeModalOpen(true)
+                }}
+              >
+                AI 扩充用例
+              </Button>
+            </Tooltip>
             <Dropdown menu={{ items: moreMenuItems }}>
               <Button icon={<MoreOutlined />} />
             </Dropdown>
@@ -2180,6 +2288,122 @@ const ApiTestWorkspace = () => {
             </Card>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* AI 扩充用例弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <ExperimentOutlined style={{ color: '#722ed1' }} />
+            <span>AI 智能测试数据生成与用例裂变</span>
+          </Space>
+        }
+        open={aiSynthesizeModalOpen}
+        onCancel={() => {
+          if (!aiSynthesizing) {
+            setAiSynthesizeModalOpen(false)
+            setSynthesizedCases([])
+          }
+        }}
+        width={800}
+        footer={
+          synthesizedCases.length > 0 ? (
+            <Space>
+              <Button onClick={() => setSynthesizedCases([])}>重新生成</Button>
+              <Button type="primary" onClick={handleSaveSynthesizedCases}>
+                保存全部用例
+              </Button>
+            </Space>
+          ) : (
+            <Button
+              type="primary"
+              onClick={handleAiSynthesize}
+              loading={aiSynthesizing}
+            >
+              生成测试用例
+            </Button>
+          )
+        }
+      >
+        {!synthesizedCases.length ? (
+          <div style={{ padding: '20px 0' }}>
+            <Alert
+              type="info"
+              showIcon
+              message="基于当前 API 定义自动生成异常和边界测试用例"
+              description="AI 将自动分析当前的请求 URL、Headers、Params 和 Body，并生成包含边界值、非法注入、空值等异常测试用例，极大提升测试覆盖率。"
+              style={{ marginBottom: 24 }}
+            />
+            <Form layout="vertical">
+              <Form.Item label="生成数量">
+                <Select
+                  value={aiSynthesizeCount}
+                  onChange={setAiSynthesizeCount}
+                  style={{ width: 120 }}
+                  options={[
+                    { value: 3, label: '3 个' },
+                    { value: 5, label: '5 个' },
+                    { value: 10, label: '10 个' },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label="保存目标分组">
+                <Select
+                  value={synthesizeTargetCollectionId}
+                  onChange={setSynthesizeTargetCollectionId}
+                  placeholder="选择用例集合（默认未分组）"
+                  allowClear
+                  options={collections.map(c => ({
+                    value: c.id,
+                    label: c.name
+                  }))}
+                />
+              </Form.Item>
+            </Form>
+          </div>
+        ) : (
+          <div style={{ maxHeight: 500, overflow: 'auto' }}>
+            <Alert 
+              type="success" 
+              message={`成功生成 ${synthesizedCases.length} 个测试用例，您可以预览并一键保存到左侧用例树中。`} 
+              style={{ marginBottom: 16 }}
+            />
+            {synthesizedCases.map((c, idx) => (
+              <Card 
+                key={idx} 
+                size="small" 
+                title={<Space><Tag color={methodColors[c.method] || 'blue'}>{c.method}</Tag><Text strong>{c.name}</Text></Space>}
+                style={{ marginBottom: 16 }}
+              >
+                <div style={{ marginBottom: 8 }}>
+                  <Text type="secondary" style={{ width: 60, display: 'inline-block' }}>URL:</Text>
+                  <Text code>{c.url}</Text>
+                </div>
+                {c.params && Object.keys(c.params).length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <Text type="secondary" style={{ width: 60, display: 'inline-block' }}>Params:</Text>
+                    <Text code>{JSON.stringify(c.params)}</Text>
+                  </div>
+                )}
+                {c.body && Object.keys(c.body).length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <Text type="secondary" style={{ width: 60, display: 'inline-block', verticalAlign: 'top' }}>Body:</Text>
+                    <pre style={{ 
+                      display: 'inline-block', 
+                      margin: 0, 
+                      padding: '4px 8px', 
+                      background: '#f5f5f5', 
+                      borderRadius: 4,
+                      width: 'calc(100% - 70px)'
+                    }}>
+                      {JSON.stringify(c.body, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
       </Modal>
 
       {/* 右键菜单 */}
