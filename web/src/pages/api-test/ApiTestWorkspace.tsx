@@ -2158,28 +2158,28 @@ const ApiTestWorkspace = () => {
           <Alert
             type="info"
             showIcon
-            message="AI will call existing APIs to create/update environments, collections, cases, and run tests."
+            message="AI 将通过调用平台现有的 API 来创建或更新环境、集合、用例，并执行测试。"
           />
 
-          <Card size="small" title="Model Config">
+          <Card size="small" title="模型配置">
             <Form layout="vertical">
               <Form.Item label="Base URL" style={{ marginBottom: 12 }}>
                 <Input
-                  placeholder="https://open.bigmodel.cn/api/paas/v4"
+                  placeholder="https://api.openai.com/v1"
                   value={aiBaseUrl}
                   onChange={(e) => setAiBaseUrl(e.target.value)}
                 />
               </Form.Item>
               <Form.Item label="Model" style={{ marginBottom: 12 }}>
                 <Input
-                  placeholder="glm-5"
+                  placeholder="gpt-4o-mini"
                   value={aiModel}
                   onChange={(e) => setAiModel(e.target.value)}
                 />
               </Form.Item>
               <Form.Item label="API Key" style={{ marginBottom: 0 }}>
                 <Input.Password
-                  placeholder="Enter model provider API key"
+                  placeholder="请输入模型提供商的 API Key"
                   value={aiApiKey}
                   onChange={(e) => setAiApiKey(e.target.value)}
                 />
@@ -2189,18 +2189,18 @@ const ApiTestWorkspace = () => {
 
           <TextArea
             rows={8}
-            placeholder="Describe what you want in natural language. Example: create a login collection with 3 cases, create env, then run the collection."
+            placeholder="请用自然语言描述您的需求。例如：创建一个登录接口集合，包含3个测试用例，创建对应的测试环境，然后运行该集合。"
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
           />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Space>
-              <Text type="secondary">Auto run tests</Text>
+              <Text type="secondary">自动运行测试</Text>
               <Switch checked={aiAutoRun} onChange={setAiAutoRun} />
             </Space>
             <Button type="primary" icon={<RobotOutlined />} loading={aiRunning} onClick={handleAiExecute}>
-              Run AI
+              执行 AI 指令
             </Button>
           </div>
 
@@ -2208,12 +2208,12 @@ const ApiTestWorkspace = () => {
 
           {aiPlanSource && (
             <Tag color={aiPlanSource === 'llm' ? 'blue' : 'orange'}>
-              Source: {aiPlanSource}
+              来源: {aiPlanSource}
             </Tag>
           )}
 
           {aiPlanOperations.length > 0 && (
-            <Card size="small" title={`Planned Operations (${aiPlanOperations.length})`}>
+            <Card size="small" title={`计划执行的操作 (${aiPlanOperations.length})`}>
               <div style={{ maxHeight: 180, overflow: 'auto' }}>
                 {aiPlanOperations.map((op, index) => (
                   <div key={`${op.type}-${index}`} style={{ marginBottom: 6 }}>
@@ -2226,9 +2226,9 @@ const ApiTestWorkspace = () => {
 
           <Divider style={{ margin: '8px 0' }} />
 
-          <Card size="small" title="Execution Logs">
+          <Card size="small" title="执行日志">
             {aiExecutionLogs.length === 0 ? (
-              <Empty description="No logs yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description="暂无日志" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
               <div style={{ maxHeight: 220, overflow: 'auto' }}>
                 {aiExecutionLogs.map((log, index) => (

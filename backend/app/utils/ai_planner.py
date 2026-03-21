@@ -80,13 +80,14 @@ def _generate_via_llm(
         "Return a single JSON object only. No markdown. "
         "Schema: "
         "{"
-        '"summary":"string",'
+        '"summary":"string (在summary中用中文简要描述你计划执行的操作)",'
         '"operations":[{"type":"..."}]'
         "}. "
         "Allowed operation types: create_environment, update_environment, "
         "create_collection, create_case, run_collection, run_case. "
         "For create_case include at least name, method, url. "
-        "Use existing IDs/names from context whenever possible."
+        "Use existing IDs/names from context whenever possible. "
+        "IMPORTANT: The 'summary' field MUST be in Chinese (简体中文)."
     )
 
     user_payload = {
