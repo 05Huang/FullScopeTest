@@ -358,7 +358,7 @@ const PerfTestMonitor = () => {
                   <Card>
                     <Statistic
                       title="平均响应时间"
-                      value={selectedTest.avg_response_time || 0}
+                      value={Number((selectedTest.avg_response_time || 0).toFixed(2))}
                       suffix="ms"
                       prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
                     />
@@ -368,7 +368,7 @@ const PerfTestMonitor = () => {
                   <Card>
                     <Statistic
                       title="吞吐量"
-                      value={selectedTest.throughput || 0}
+                      value={Number((selectedTest.throughput || 0).toFixed(2))}
                       suffix="req/s"
                       prefix={<ThunderboltOutlined style={{ color: '#52c41a' }} />}
                     />
