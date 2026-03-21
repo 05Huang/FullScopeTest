@@ -104,6 +104,13 @@ export const generateScriptAI = (data: {
   return api.post('/web-test/ai/generate', data) as Promise<ApiResponse>
 }
 
+export const analyzeErrorAI = (data: {
+  script_id: number
+  error_log: string
+}): Promise<ApiResponse> => {
+  return api.post('/web-test/ai/analyze-error', data) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const webTestService = {
   getScripts,
@@ -121,4 +128,5 @@ export const webTestService = {
   stopRecording,
   getRecordingStatus,
   generateScriptAI,
+  analyzeErrorAI,
 }
