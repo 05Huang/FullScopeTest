@@ -188,7 +188,7 @@ def _decide_next_action(current_url: str, elements: List[Dict], objective: str, 
         "  'action': 'click' | 'input' | 'stop',\n"
         "  'target_id': 'string (id of the element to interact with, e.g., ai-elem-5)',\n"
         "  'input_value': 'string (only if action is input)',\n"
-        "  'reason': 'string (brief explanation of why you chose this action)'\n"
+        "  'reason': 'string (请用中文简短解释为什么选择这个操作)'\n"
         "}"
     )
     
