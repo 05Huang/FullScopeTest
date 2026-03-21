@@ -32,6 +32,8 @@ import {
   FolderAddOutlined,
   SaveOutlined,
   RobotOutlined,
+  BugOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
@@ -120,6 +122,10 @@ const WebTestScripts = () => {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiGenerating, setAiGenerating] = useState(false)
+
+  // AI Healing State
+  const [aiHealing, setAiHealing] = useState(false)
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<{ analysis: string; fixed_script: string | null } | null>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -347,7 +353,59 @@ const WebTestScripts = () => {
   // 查看执行日志
   const handleViewLog = (script: WebTestScript) => {
     setCurrentScript(script)
+    setAiAnalysisResult(null)
     setIsLogModalOpen(true)
+  }
+
+  // AI 智能诊断
+  const handleAiHeal = async () => {
+    if (!currentScript || !currentScript.last_result) return
+
+    const errorLog = currentScript.last_result.stderr || currentScript.last_result.error || ''
+    if (!errorLog) {
+      message.info('当前日志没有发现错误信息')
+      return
+    }
+
+    setAiHealing(true)
+    try {
+      const res = await webTestService.analyzeErrorAI({
+        script_id: currentScript.id,
+        error_log: errorLog,
+      })
+      if (res.code === 200 && res.data) {
+        setAiAnalysisResult(res.data)
+        message.success('AI 诊断完成')
+      } else {
+        message.error(res.message || '诊断失败')
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '诊断失败')
+    } finally {
+      setAiHealing(false)
+    }
+  }
+
+  // 应用修复脚本
+  const handleApplyFix = async () => {
+    if (!currentScript || !aiAnalysisResult?.fixed_script) return
+    
+    try {
+      const result = await webTestService.updateScript(currentScript.id, {
+        script_content: aiAnalysisResult.fixed_script,
+      })
+      if (result.code === 200) {
+        message.success('已应用修复，请重新运行测试')
+        setIsLogModalOpen(false)
+        loadScripts()
+        // 可选：直接打开代码编辑器查看修复后的代码
+        handleViewCode({ ...currentScript, script_content: aiAnalysisResult.fixed_script })
+      } else {
+        message.error(result.message || '应用修复失败')
+      }
+    } catch (error) {
+      message.error('应用修复失败')
+    }
   }
 
   // 批量删除
@@ -997,15 +1055,51 @@ const WebTestScripts = () => {
 
       {/* 执行日志模态框 */}
       <Modal
-        title={`执行日志 - ${currentScript?.name}`}
+        title={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 24 }}>
+            <span>执行日志 - {currentScript?.name}</span>
+            {currentScript?.last_result && !currentScript.last_result.success && (
+              <Button 
+                type="primary" 
+                danger 
+                icon={<BugOutlined />} 
+                onClick={handleAiHeal}
+                loading={aiHealing}
+              >
+                AI 智能诊断
+              </Button>
+            )}
+          </div>
+        }
         open={isLogModalOpen}
         onCancel={() => {
           setIsLogModalOpen(false)
           setCurrentScript(null)
+          setAiAnalysisResult(null)
         }}
         footer={null}
         width={800}
       >
+        {aiAnalysisResult && (
+          <div style={{ marginBottom: 24, padding: 16, backgroundColor: '#f9f0ff', border: '1px solid #d9d9d9', borderRadius: 8 }}>
+            <Title level={5} style={{ color: '#722ed1', marginTop: 0 }}>
+              <RobotOutlined style={{ marginRight: 8 }} /> AI 诊断结果
+            </Title>
+            <div style={{ whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+              {aiAnalysisResult.analysis}
+            </div>
+            {aiAnalysisResult.fixed_script && (
+              <Button 
+                type="primary" 
+                icon={<CheckCircleOutlined />} 
+                onClick={handleApplyFix}
+              >
+                一键修复脚本
+              </Button>
+            )}
+          </div>
+        )}
+
         {currentScript?.last_result ? (
           <div style={{ fontFamily: 'monospace' }}>
             <div style={{ marginBottom: 16 }}>

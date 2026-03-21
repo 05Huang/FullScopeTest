@@ -14,6 +14,7 @@ from ..utils.validators import validate_required
 from ..utils import get_current_user_id
 from ..tasks import run_web_test_task
 from ..utils.ai_script_generator import generate_test_script
+from ..utils.ai_script_healer import analyze_test_error
 import subprocess
 import sys
 import time
@@ -68,6 +69,50 @@ def generate_web_script():
         return success_response(data={'script_content': script_content}, message='AI 脚本生成成功')
     except Exception as exc:
         return error_response(500, f'AI 脚本生成失败: {str(exc)}')
+
+
+@api_bp.route('/web-test/ai/analyze-error', methods=['POST'])
+@jwt_required()
+def analyze_web_test_error():
+    """AI 智能诊断测试错误并提供修复建议"""
+    data = request.get_json() or {}
+    script_id = data.get('script_id')
+    error_log = data.get('error_log')
+    
+    if not script_id or not error_log:
+        return error_response(400, 'script_id and error_log are required')
+        
+    user_id = get_current_user_id()
+    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
+    if not script:
+        return error_response(404, '脚本不存在')
+        
+    try:
+        runtime_config = {
+            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
+        }
+
+        # Frontend runtime override
+        if data.get('base_url'):
+            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+        if data.get('model'):
+            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+        if data.get('api_key'):
+            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+
+        result = analyze_test_error(
+            script_content=script.script_content,
+            error_log=error_log,
+            test_type="web",
+            config=runtime_config
+        )
+        return success_response(data=result, message='AI 诊断完成')
+    except Exception as exc:
+        return error_response(500, f'AI 诊断失败: {str(exc)}')
 
 
 # ==================== 用例集管理 ====================
