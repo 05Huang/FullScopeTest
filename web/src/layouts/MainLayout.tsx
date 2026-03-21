@@ -138,6 +138,11 @@ const menuItems: MenuProps['items'] = [
     icon: <FileTextOutlined />,
     label: '测试文档',
   },
+  {
+    key: '/settings',
+    icon: <SettingOutlined />,
+    label: '系统设置',
+  },
 ]
 
 const MainLayout = () => {

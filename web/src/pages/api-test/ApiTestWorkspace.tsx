@@ -2138,9 +2138,14 @@ const ApiTestWorkspace = () => {
         </Card>
       </Content>
 
-      {/* 保存用例弹窗 */}
+      {/* AI Assistant 弹窗 */}
       <Drawer
-        title="AI Assistant"
+        title={
+          <Space>
+            <RobotOutlined style={{ color: '#3D6E66' }} />
+            <span style={{ color: '#3D6E66', fontWeight: 600 }}>AI Assistant (依赖全局系统设置)</span>
+          </Space>
+        }
         placement="right"
         width={520}
         open={aiDrawerOpen}

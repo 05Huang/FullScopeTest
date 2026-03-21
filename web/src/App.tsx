@@ -11,6 +11,7 @@ import PerfTestMonitor from './pages/perf-test/PerfTestMonitor'
 import PerfTestResults from './pages/perf-test/PerfTestResults'
 import Reports from './pages/Reports'
 import Documents from './pages/Documents'
+import Settings from './pages/Settings'
 import { useAuthStore } from './stores/authStore'
 
 // 受保护的路由组件
@@ -73,6 +74,7 @@ function App() {
         
         {/* 测试文档 */}
         <Route path="docs" element={<Documents />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       
       {/* 404 */}
