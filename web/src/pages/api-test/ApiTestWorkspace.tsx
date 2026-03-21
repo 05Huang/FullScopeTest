@@ -1185,6 +1185,9 @@ const ApiTestWorkspace = () => {
       const res = await apiTestService.synthesizeCasesAI({
         base_request: baseRequest,
         count: aiSynthesizeCount,
+        base_url: aiBaseUrl,
+        model: aiModel,
+        api_key: aiApiKey
       })
       if (res.code === 200 && res.data?.cases) {
         setSynthesizedCases(res.data.cases)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -166,6 +166,10 @@ const WebTestScripts = () => {
     }
   }
 
+  const [aiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1')
+  const [aiModel] = useState(() => localStorage.getItem('api-test-ai-model') || 'gpt-4o-mini')
+  const [aiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '')
+
   const loadCollections = async () => {
     try {
       const result = await webTestService.getCollections()
@@ -217,7 +221,12 @@ const WebTestScripts = () => {
     }
     setAiGenerating(true)
     try {
-      const res = await webTestService.generateScriptAI({ prompt: aiPrompt })
+      const res = await webTestService.generateScriptAI({ 
+        prompt: aiPrompt,
+        base_url: aiBaseUrl,
+        model: aiModel,
+        api_key: aiApiKey
+      })
       if (res.code === 200 && res.data?.script_content) {
         message.success('AI 脚本生成成功')
         setIsAiModalOpen(false)
@@ -257,6 +266,9 @@ const WebTestScripts = () => {
         start_url: exploreStartUrl,
         objective: exploreObjective,
         max_steps: exploreMaxSteps,
+        base_url: aiBaseUrl,
+        model: aiModel,
+        api_key: aiApiKey
       })
       if (res.code === 200 && res.data) {
         setExploreReport(res.data)
@@ -405,19 +417,23 @@ const WebTestScripts = () => {
     }
 
     setAiHealing(true)
+    setAiAnalysisResult(null)
     try {
       const res = await webTestService.analyzeErrorAI({
         script_id: currentScript.id,
         error_log: errorLog,
+        base_url: aiBaseUrl,
+        model: aiModel,
+        api_key: aiApiKey
       })
       if (res.code === 200 && res.data) {
         setAiAnalysisResult(res.data)
         message.success('AI 诊断完成')
       } else {
-        message.error(res.message || '诊断失败')
+        message.error(res.message || 'AI 诊断失败')
       }
     } catch (error: any) {
-      message.error(error.response?.data?.message || '诊断失败')
+      message.error(error.response?.data?.message || 'AI 诊断失败')
     } finally {
       setAiHealing(false)
     }
@@ -1222,7 +1238,7 @@ const WebTestScripts = () => {
                 type="primary" 
                 danger 
                 icon={<BugOutlined />} 
-                onClick={handleAiHeal}
+                onClick={() => handleAiHeal()}
                 loading={aiHealing}
               >
                 AI 智能诊断
