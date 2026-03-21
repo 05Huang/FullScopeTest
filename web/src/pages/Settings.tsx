@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Divider, Typography, Row, Col, Alert } from 'antd';
+import { Card, Form, Input, Button, message, Divider, Typography, Row, Col, Alert, Space } from 'antd';
 import { RobotOutlined, SaveOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -113,8 +113,5 @@ const Settings: React.FC = () => {
     </div>
   );
 };
-
-// 这里引入的 Space 需要在顶部导入
-import { Space } from 'antd';
 
 export default Settings;
