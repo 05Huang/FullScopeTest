@@ -13,6 +13,7 @@ from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required, is_valid_url, is_valid_http_method
 from ..utils import get_current_user_id
 from ..tasks import run_perf_test_task
+from ..utils.ai_script_generator import generate_test_script
 import json
 from datetime import datetime
 
@@ -204,6 +205,39 @@ class TestUser(HttpUser):
 def perf_test_health():
     """性能测试模块健康检查"""
     return success_response(message='性能测试模块正常')
+
+
+@api_bp.route('/perf-test/ai/generate', methods=['POST'])
+@jwt_required()
+def generate_perf_script():
+    """AI 生成性能测试脚本"""
+    data = request.get_json() or {}
+    prompt = (data.get('prompt') or '').strip()
+    
+    if not prompt:
+        return error_response(400, 'prompt is required')
+        
+    try:
+        runtime_config = {
+            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
+        }
+
+        # Frontend runtime override
+        if data.get('base_url'):
+            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+        if data.get('model'):
+            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+        if data.get('api_key'):
+            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+
+        script_content = generate_test_script(prompt, "perf", runtime_config)
+        return success_response(data={'script_content': script_content}, message='AI 脚本生成成功')
+    except Exception as exc:
+        return error_response(500, f'AI 脚本生成失败: {str(exc)}')
 
 
 # ==================== 场景管理 ====================

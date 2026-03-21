@@ -74,6 +74,14 @@ export const getRunningTests = (): Promise<ApiResponse> => {
   return api.get('/perf-test/running') as Promise<ApiResponse>
 }
 
+// ==================== AI ====================
+
+export const generateScriptAI = (data: {
+  prompt: string
+}): Promise<ApiResponse> => {
+  return api.post('/perf-test/ai/generate', data) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const perfTestService = {
   getScenarios,
@@ -85,4 +93,5 @@ export const perfTestService = {
   stopScenario,
   getScenarioStatus,
   getRunningTests,
+  generateScriptAI,
 }

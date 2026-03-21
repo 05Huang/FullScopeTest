@@ -96,6 +96,14 @@ export const getRecordingStatus = (): Promise<ApiResponse> => {
   return api.get('/web-test/record/status') as Promise<ApiResponse>
 }
 
+// ==================== AI ====================
+
+export const generateScriptAI = (data: {
+  prompt: string
+}): Promise<ApiResponse> => {
+  return api.post('/web-test/ai/generate', data) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const webTestService = {
   getScripts,
@@ -112,4 +120,5 @@ export const webTestService = {
   startRecording,
   stopRecording,
   getRecordingStatus,
+  generateScriptAI,
 }

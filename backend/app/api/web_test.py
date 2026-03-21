@@ -3,7 +3,7 @@ Web 自动化测试模块 - API
 实现基于 Playwright 的 Web 自动化测试功能
 """
 
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db, celery
@@ -13,6 +13,7 @@ from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils import get_current_user_id
 from ..tasks import run_web_test_task
+from ..utils.ai_script_generator import generate_test_script
 import subprocess
 import sys
 import time
@@ -34,6 +35,39 @@ def _get_collection_or_404(collection_id: int, user_id: int):
 def web_test_health():
     """Web 测试模块健康检查"""
     return success_response(message='Web 测试模块正常')
+
+
+@api_bp.route('/web-test/ai/generate', methods=['POST'])
+@jwt_required()
+def generate_web_script():
+    """AI 生成 Web 测试脚本"""
+    data = request.get_json() or {}
+    prompt = (data.get('prompt') or '').strip()
+    
+    if not prompt:
+        return error_response(400, 'prompt is required')
+        
+    try:
+        runtime_config = {
+            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
+        }
+
+        # Frontend runtime override
+        if data.get('base_url'):
+            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+        if data.get('model'):
+            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+        if data.get('api_key'):
+            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+
+        script_content = generate_test_script(prompt, "web", runtime_config)
+        return success_response(data={'script_content': script_content}, message='AI 脚本生成成功')
+    except Exception as exc:
+        return error_response(500, f'AI 脚本生成失败: {str(exc)}')
 
 
 # ==================== 用例集管理 ====================
