@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '@/stores/authStore'
+import GlobalCopilot from '../components/GlobalCopilot'
 
 const { Header, Sider, Content, Footer } = Layout
 
@@ -303,6 +304,7 @@ const MainLayout = () => {
             </a>
           </div>
         </Footer>
+        <GlobalCopilot />
       </Layout>
     </Layout>
   )

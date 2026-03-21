@@ -19,3 +19,4 @@ from . import web_test
 from . import perf_test
 from . import reports
 from . import docs
+from . import ai_copilot
