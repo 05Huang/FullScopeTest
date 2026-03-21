@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Input, Card, Space, Avatar, Typography, Tooltip, ConfigProvider } from 'antd';
+import { Button, Input, Card, Space, Avatar, Typography, Tooltip } from 'antd';
 import { 
   RobotOutlined, 
   UserOutlined, 
