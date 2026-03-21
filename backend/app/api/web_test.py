@@ -15,6 +15,7 @@ from ..utils import get_current_user_id
 from ..tasks import run_web_test_task
 from ..utils.ai_script_generator import generate_test_script
 from ..utils.ai_script_healer import analyze_test_error
+from ..utils.ai_web_explorer import run_exploration_task
 import subprocess
 import sys
 import time
@@ -114,6 +115,41 @@ def analyze_web_test_error():
     except Exception as exc:
         return error_response(500, f'AI 诊断失败: {str(exc)}')
 
+
+@api_bp.route('/web-test/ai/explore', methods=['POST'])
+@jwt_required()
+def explore_web_app():
+    """AI 探索性测试 (Autonomous Web Explorer)"""
+    data = request.get_json() or {}
+    start_url = data.get('start_url')
+    objective = data.get('objective', '尽可能多地点击不同页面并寻找报错')
+    max_steps = int(data.get('max_steps', 10))
+    
+    if not start_url:
+        return error_response(400, 'start_url is required')
+        
+    try:
+        runtime_config = {
+            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+        }
+
+        if data.get('base_url'):
+            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+        if data.get('model'):
+            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+        if data.get('api_key'):
+            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+
+        # 注意：这里直接同步执行，实际生产环境中应该使用 Celery 异步任务
+        # 为了演示和快速反馈，暂时使用同步调用，或者可以限制 max_steps 较小
+        report = run_exploration_task(start_url, max_steps, objective, runtime_config)
+        
+        return success_response(data=report, message='AI 探索测试完成')
+    except Exception as exc:
+        return error_response(500, f'AI 探索测试失败: {str(exc)}')
 
 # ==================== 用例集管理 ====================
 
