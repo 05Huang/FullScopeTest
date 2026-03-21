@@ -98,10 +98,10 @@ const GlobalCopilot: React.FC = () => {
               right: 40,
               width: 60,
               height: 60,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              boxShadow: '0 8px 24px rgba(61, 110, 102, 0.25)',
               zIndex: 9999,
-              backgroundColor: '#722ed1',
-              borderColor: '#722ed1'
+              background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)',
+              border: 'none'
             }}
             onClick={() => setIsOpen(true)}
           />
@@ -114,8 +114,8 @@ const GlobalCopilot: React.FC = () => {
           title={
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
-                <RobotOutlined style={{ color: '#722ed1', fontSize: 20 }} />
-                <span>AI Copilot</span>
+                <RobotOutlined style={{ color: '#3D6E66', fontSize: 20 }} />
+                <span style={{ fontWeight: 600, color: '#3D6E66' }}>AI Copilot</span>
               </Space>
               <Space>
                 <Button type="text" icon={<SettingOutlined />} onClick={() => setShowConfig(!showConfig)} />
@@ -177,30 +177,31 @@ const GlobalCopilot: React.FC = () => {
                     }}
                   >
                     {msg.role === 'assistant' && (
-                      <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#722ed1' }} />
+                      <Avatar icon={<RobotOutlined />} style={{ background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)' }} />
                     )}
                     <div style={{
                       maxWidth: '80%',
                       padding: '10px 14px',
                       borderRadius: 12,
-                      background: msg.role === 'user' ? '#1677ff' : '#ffffff',
-                      color: msg.role === 'user' ? '#fff' : '#000',
+                      background: msg.role === 'user' ? '#3D6E66' : '#ffffff',
+                      color: msg.role === 'user' ? '#fff' : 'rgba(0, 0, 0, 0.88)',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
                       whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word'
+                      wordBreak: 'break-word',
+                      border: msg.role === 'assistant' ? '1px solid rgba(61, 110, 102, 0.1)' : 'none'
                     }}>
                       {msg.content}
                     </div>
                     {msg.role === 'user' && (
-                      <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
+                      <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#D7B56D' }} />
                     )}
                   </div>
                 ))}
                 {loading && (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#722ed1' }} />
-                    <div style={{ padding: '10px', background: '#fff', borderRadius: 12 }}>
-                      <span className="loading-dots">思考中...</span>
+                    <Avatar icon={<RobotOutlined />} style={{ background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)' }} />
+                    <div style={{ padding: '10px', background: '#fff', borderRadius: 12, border: '1px solid rgba(61, 110, 102, 0.1)' }}>
+                      <span className="loading-dots" style={{ color: '#3D6E66' }}>思考中...</span>
                     </div>
                   </div>
                 )}
@@ -219,12 +220,12 @@ const GlobalCopilot: React.FC = () => {
                   suffix={
                     <Button 
                       type="text" 
-                      icon={<SendOutlined style={{ color: inputValue.trim() ? '#722ed1' : '#ccc' }} />} 
+                      icon={<SendOutlined style={{ color: inputValue.trim() ? '#3D6E66' : '#ccc' }} />} 
                       onClick={handleSend}
                       disabled={!inputValue.trim() || loading}
                     />
                   }
-                  style={{ borderRadius: 20 }}
+                  style={{ borderRadius: 20, borderColor: 'rgba(61, 110, 102, 0.2)' }}
                 />
               </div>
             </>

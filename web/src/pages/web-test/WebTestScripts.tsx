@@ -774,15 +774,13 @@ const WebTestScripts = () => {
           </Button>
           <Button
             type="primary"
-            style={{ backgroundColor: '#722ed1' }}
             icon={<RobotOutlined />}
             onClick={() => setIsAiModalOpen(true)}
           >
             AI 生成
           </Button>
           <Button
-            type="primary"
-            style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16' }}
+            type="default"
             icon={<GlobalOutlined />}
             onClick={() => setIsExploreModalOpen(true)}
           >
@@ -1015,7 +1013,7 @@ const WebTestScripts = () => {
       <Modal
         title={
           <Space>
-            <GlobalOutlined style={{ color: '#fa8c16' }} />
+            <GlobalOutlined style={{ color: '#3D6E66' }} />
             <span>AI 探索性测试 (Monkey Test)</span>
           </Space>
         }
@@ -1033,7 +1031,6 @@ const WebTestScripts = () => {
           ) : (
             <Button
               type="primary"
-              style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16' }}
               onClick={handleExplore}
               loading={exploring}
             >

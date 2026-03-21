@@ -1870,7 +1870,7 @@ const ApiTestWorkspace = () => {
             </Tooltip>
             <Tooltip title="AI 扩充用例">
               <Button
-                style={{ backgroundColor: '#722ed1', color: '#fff' }}
+                type="default"
                 icon={<ExperimentOutlined />}
                 onClick={() => {
                   setSynthesizeTargetCollectionId(selectedCollectionId || activeCollectionId)
@@ -2294,7 +2294,7 @@ const ApiTestWorkspace = () => {
       <Modal
         title={
           <Space>
-            <ExperimentOutlined style={{ color: '#722ed1' }} />
+            <ExperimentOutlined style={{ color: '#3D6E66' }} />
             <span>AI 智能测试数据生成与用例裂变</span>
           </Space>
         }
