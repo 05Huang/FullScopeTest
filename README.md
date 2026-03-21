@@ -14,7 +14,7 @@ AI 自动编排 · API 接口测试 · Web 自动化 · 性能测试 · 报告�
 
 <p>
   <img src="images/Snipaste_2026-03-20_18-05-42.png" alt="FullScopeTest 首页" width="100%" />
-  <img src="images/Snipaste_2026-03-20_18-06-22.png" alt="FullScopeTest 首页" width="100%" />
+  <img src="images/Snipaste_2026-03-20_23-21-38.png" alt="FullScopeTest 首页" width="100%" />
 </p>
 
 </div>
