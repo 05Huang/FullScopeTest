@@ -50,7 +50,9 @@ def synthesize_test_cases(
         "  'body': { ... },\n"
         "  'body_type': 'string, usually json or form'\n"
         "}\n"
-        "Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads()."
+        "CRITICAL REQUIREMENTS:\n"
+        "1. Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads().\n"
+        "2. ONLY use valid JSON syntax. DO NOT use JavaScript expressions or functions like `\"a\".repeat(1000)`. If you need a long string, write a literal string."
     )
 
     user_content = json.dumps(base_request, ensure_ascii=False, indent=2)
@@ -86,12 +88,35 @@ def synthesize_test_cases(
 
     content = ((choices[0] or {}).get("message") or {}).get("content", "")
     
+    # Clean up markdown code blocks
+    cleaned_content = content.strip()
+    if cleaned_content.startswith("```json"):
+        cleaned_content = cleaned_content[7:]
+    elif cleaned_content.startswith("```"):
+        cleaned_content = cleaned_content[3:]
+    if cleaned_content.endswith("```"):
+        cleaned_content = cleaned_content[:-3]
+    cleaned_content = cleaned_content.strip()
+    
     try:
-        result = json.loads(content)
+        result = json.loads(cleaned_content)
         cases = result.get("cases", [])
         if not isinstance(cases, list):
             return []
         return cases
     except json.JSONDecodeError:
-        logger.error("Failed to parse JSON from LLM: %s", content)
+        import re
+        match = re.search(r'\{[\s\S]*\}', content)
+        if match:
+            try:
+                json_str = match.group(0)
+                json_str = re.sub(r'"([^"]*)"\.repeat\(\d+\)', r'"\1\1\1\1\1"', json_str)
+                result = json.loads(json_str)
+                cases = result.get("cases", [])
+                if not isinstance(cases, list):
+                    return []
+                return cases
+            except json.JSONDecodeError:
+                pass
+        logger.error("Failed to parse JSON from LLM in data synthesizer: %s", content)
         return []

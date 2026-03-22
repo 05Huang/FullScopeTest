@@ -42,7 +42,9 @@ def analyze_test_error(
         "2. Provide a fixed version of the script if possible.\n"
         "You MUST return the result EXACTLY as a JSON object with two keys: 'analysis' and 'fixed_script'.\n"
         "For 'fixed_script', provide the FULL updated python code. If no fix is possible, return null for 'fixed_script'.\n"
-        "Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads()."
+        "CRITICAL REQUIREMENTS:\n"
+        "1. Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads().\n"
+        "2. ONLY use valid JSON syntax. DO NOT use JavaScript expressions or functions like `\"a\".repeat(1000)`."
     )
 
     user_content = f"Test Type: {test_type}\n\n=== Script Content ===\n{script_content}\n\n=== Error Log ===\n{error_log}"
@@ -78,15 +80,38 @@ def analyze_test_error(
 
     content = ((choices[0] or {}).get("message") or {}).get("content", "")
     
+    # Clean up markdown code blocks
+    cleaned_content = content.strip()
+    if cleaned_content.startswith("```json"):
+        cleaned_content = cleaned_content[7:]
+    elif cleaned_content.startswith("```"):
+        cleaned_content = cleaned_content[3:]
+    if cleaned_content.endswith("```"):
+        cleaned_content = cleaned_content[:-3]
+    cleaned_content = cleaned_content.strip()
+
     try:
-        result = json.loads(content)
+        result = json.loads(cleaned_content)
         return {
-            "analysis": result.get("analysis", "No analysis provided."),
-            "fixed_script": result.get("fixed_script")
+            "analysis": result.get("analysis", "No analysis provided"),
+            "fixed_script": result.get("fixed_script", None)
         }
     except json.JSONDecodeError:
-        logger.error("Failed to parse JSON from LLM: %s", content)
+        import re
+        match = re.search(r'\{[\s\S]*\}', content)
+        if match:
+            try:
+                json_str = match.group(0)
+                json_str = re.sub(r'"([^"]*)"\.repeat\(\d+\)', r'"\1\1\1\1\1"', json_str)
+                result = json.loads(json_str)
+                return {
+                    "analysis": result.get("analysis", "No analysis provided"),
+                    "fixed_script": result.get("fixed_script", None)
+                }
+            except json.JSONDecodeError:
+                pass
+        logger.error("Failed to parse JSON from LLM in script healer: %s", content)
         return {
-            "analysis": "AI response was not valid JSON. Raw output: " + content,
+            "analysis": f"Failed to parse LLM response: {content}",
             "fixed_script": None
         }
