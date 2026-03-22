@@ -16,6 +16,7 @@ import {
   Dropdown,
   Badge,
   Alert,
+  Image,
 } from 'antd'
 import {
   PlusOutlined,
@@ -67,6 +68,13 @@ interface WebTestScript {
     return_code?: number
     duration?: number
     error?: string
+    vision_results?: Array<{
+      name: string
+      status: 'new' | 'passed' | 'failed'
+      mismatch_ratio: number
+      mismatch_pixels: number
+      total_pixels: number
+    }>
   }
 }
 
@@ -100,7 +108,10 @@ const normalizeScriptStatus = (status?: string): WebTestScript['status'] => {
   return 'pending'
 }
 
+import { useAuthStore } from '@/stores/authStore'
+
 const WebTestScripts = () => {
+  const { token } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [scripts, setScripts] = useState<WebTestScript[]>([])
   const [collections, setCollections] = useState<WebTestCollection[]>([])
@@ -1308,6 +1319,53 @@ const WebTestScripts = () => {
                 >
                   {currentScript.last_result.stdout}
                 </pre>
+              </div>
+            )}
+
+            {currentScript.last_result.vision_results && currentScript.last_result.vision_results.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <Text strong>视觉回归测试结果 (Visual Regression):</Text>
+                {currentScript.last_result.vision_results.map((vr, idx) => (
+                  <Card key={idx} size="small" style={{ marginTop: 8 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <Text strong style={{ marginRight: 8 }}>{vr.name}</Text>
+                      <Tag color={vr.status === 'passed' ? 'success' : vr.status === 'failed' ? 'error' : 'processing'}>
+                        {vr.status === 'passed' ? '匹配通过' : vr.status === 'failed' ? '匹配失败' : '新基线'}
+                      </Tag>
+                      {vr.status !== 'new' && (
+                        <Text type="secondary">差异率: {(vr.mismatch_ratio * 100).toFixed(2)}% ({vr.mismatch_pixels} pixels)</Text>
+                      )}
+                    </div>
+                    {vr.status === 'failed' && (
+                      <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>预期 (Baseline)</Text>
+                          <Image
+                            src={`/api/v1/web-test/scripts/${currentScript.id}/snapshots/baseline/${vr.name}?token=${token}`}
+                            width="100%"
+                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>实际 (Actual)</Text>
+                          <Image
+                            src={`/api/v1/web-test/scripts/${currentScript.id}/snapshots/actual/${vr.name}?token=${token}`}
+                            width="100%"
+                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>差异 (Diff)</Text>
+                          <Image
+                            src={`/api/v1/web-test/scripts/${currentScript.id}/snapshots/diff/${vr.name}?token=${token}`}
+                            width="100%"
+                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                ))}
               </div>
             )}
 

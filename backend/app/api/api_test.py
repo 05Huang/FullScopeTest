@@ -3,7 +3,7 @@
 实现接口测试相关功能：用例管理、执行测试、结果存储
 """
 
-from flask import request, current_app
+from flask import request, current_app, Response, make_response
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db
@@ -287,7 +287,12 @@ def create_case():
         collection_id=data.get('collection_id'),
         project_id=data.get('project_id'),
         environment_id=data.get('environment_id'),
-        user_id=user_id
+        user_id=user_id,
+        mock_enabled=data.get('mock_enabled', False),
+        mock_response_code=data.get('mock_response_code', 200),
+        mock_response_body=data.get('mock_response_body', ''),
+        mock_response_headers=data.get('mock_response_headers', {}),
+        mock_delay_ms=data.get('mock_delay_ms', 0)
     )
 
     db.session.add(case)
@@ -324,7 +329,9 @@ def update_case(case_id):
     # 更新字段
     for field in ['name', 'description', 'method', 'url', 'headers', 'params',
                   'body', 'body_type', 'pre_script', 'post_script', 'assertions',
-                  'collection_id', 'environment_id']:
+                  'collection_id', 'environment_id', 'mock_enabled', 
+                  'mock_response_code', 'mock_response_body', 
+                  'mock_response_headers', 'mock_delay_ms']:
         if field in data:
             setattr(case, field, data[field])
     
@@ -332,6 +339,51 @@ def update_case(case_id):
     
     return success_response(data=case.to_dict(), message='更新成功')
 
+
+@api_bp.route('/api-test/mock/<int:case_id>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
+def mock_api_endpoint(case_id):
+    """
+    Mock Server 端点
+    根据用例 ID 返回预设的 Mock 数据
+    允许跨域，方便前端直接调用
+    """
+    # 处理跨域 OPTIONS 请求
+    if request.method == 'OPTIONS':
+        resp = make_response()
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return resp
+
+    case = ApiTestCase.query.get(case_id)
+    
+    if not case:
+        return error_response(404, '用例不存在')
+        
+    if not case.mock_enabled:
+        return error_response(400, '该用例未开启 Mock 功能')
+        
+    # 模拟延迟
+    if case.mock_delay_ms and case.mock_delay_ms > 0:
+        time.sleep(case.mock_delay_ms / 1000.0)
+        
+    # 构建响应
+    resp = make_response(case.mock_response_body or '')
+    resp.status_code = case.mock_response_code or 200
+    
+    # 设置响应头
+    if case.mock_response_headers:
+        for k, v in case.mock_response_headers.items():
+            resp.headers[k] = v
+            
+    # 默认 Content-Type 为 application/json 如果未设置
+    if 'Content-Type' not in [k.title() for k in (case.mock_response_headers or {}).keys()]:
+        resp.headers['Content-Type'] = 'application/json'
+        
+    # 允许跨域
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    
+    return resp
 
 @api_bp.route('/api-test/cases/<int:case_id>', methods=['DELETE'])
 @jwt_required()
@@ -450,6 +502,56 @@ def execute_request():
         url = replace_variables(url, env_vars)
         headers = replace_variables_in_dict(headers, env_vars)
         params = replace_variables_in_dict(params, env_vars)
+
+    # 如果前端传来了 mock_enabled 参数并开启了 Mock，直接返回 Mock 数据
+    if data.get('mock_enabled'):
+        mock_body = data.get('mock_response_body')
+        if mock_body and isinstance(mock_body, str):
+            try:
+                mock_body = json.loads(mock_body)
+            except Exception:
+                pass
+                
+        mock_delay_ms = data.get('mock_delay_ms', 0)
+        if mock_delay_ms and mock_delay_ms > 0:
+            time.sleep(mock_delay_ms / 1000.0)
+            
+        return success_response(data={
+            'success': True,
+            'status_code': data.get('mock_response_code', 200),
+            'body': mock_body,
+            'headers': data.get('mock_response_headers', {}),
+            'response_time': mock_delay_ms,
+            'script_execution': script_execution,
+            'passed': True,
+            'is_mock': True
+        })
+
+    # 如果是通过集合等触发且依赖数据库 case (作为兜底)
+    case_id = data.get('case_id')
+    if case_id and not data.get('mock_enabled'):
+        case = ApiTestCase.query.get(case_id)
+        if case and case.mock_enabled:
+            mock_body = case.mock_response_body
+            if mock_body:
+                try:
+                    mock_body = json.loads(mock_body)
+                except Exception:
+                    pass
+                    
+            if case.mock_delay_ms and case.mock_delay_ms > 0:
+                time.sleep(case.mock_delay_ms / 1000.0)
+                
+            return success_response(data={
+                'success': True,
+                'status_code': case.mock_response_code or 200,
+                'body': mock_body,
+                'headers': case.mock_response_headers or {},
+                'response_time': case.mock_delay_ms or 0,
+                'script_execution': script_execution,
+                'passed': True,
+                'is_mock': True
+            })
 
     # 执行请求
     start_time = time.time()
@@ -657,6 +759,27 @@ def run_case(case_id):
         params = case.params or {}
         body = case.body
 
+    # 如果开启了 Mock，直接返回 Mock 数据
+    if case.mock_enabled:
+        case.last_run_at = datetime.utcnow()
+        case.last_status = 'passed'
+        
+        mock_result = {
+            'success': True,
+            'status_code': case.mock_response_code or 200,
+            'body': case.mock_response_body,
+            'headers': case.mock_response_headers,
+            'response_time': case.mock_delay_ms or 0,
+            'script_execution': script_execution,
+            'passed': True,
+            'is_mock': True
+        }
+        
+        case.last_result = mock_result
+        db.session.commit()
+        
+        return success_response(data=mock_result)
+
     # 应用环境变量替换
     if env_vars:
         url = replace_variables(url, env_vars)
@@ -851,6 +974,47 @@ def run_collection(collection_id):
         }
 
         try:
+            # 如果开启了 Mock，直接走 Mock 逻辑
+            if case.mock_enabled:
+                case.last_run_at = datetime.utcnow()
+                case.last_status = 'passed'
+                
+                mock_result = {
+                    'case_id': case.id,
+                    'name': case.name,
+                    'method': case.method,
+                    'url': case.url,
+                    'passed': True,
+                    'status_code': case.mock_response_code or 200,
+                    'response_time': case.mock_delay_ms or 0,
+                    'response_body': case.mock_response_body,
+                    'response_headers': case.mock_response_headers,
+                    'response_cookies': {},
+                    'request_headers': case.headers,
+                    'request_params': case.params,
+                    'request_body': case.body,
+                    'attachments': [],
+                    'script_execution': script_execution,
+                    'environment_id': env_id,
+                    'environment_name': unified_env_name,
+                    'is_mock': True
+                }
+                
+                total_passed += 1
+                results.append(mock_result)
+                case.last_result = {
+                    'success': True,
+                    'status_code': case.mock_response_code or 200,
+                    'body': case.mock_response_body,
+                    'headers': case.mock_response_headers,
+                    'response_time': case.mock_delay_ms or 0,
+                    'script_execution': script_execution,
+                    'passed': True,
+                    'is_mock': True
+                }
+                db.session.commit()
+                continue
+
             # 准备请求参数
             url = case.url
             headers = case.headers or {}
@@ -1117,6 +1281,7 @@ def run_collection(collection_id):
 
             case.last_run_at = datetime.utcnow()
             case.last_status = 'failed'
+            db.session.commit()
 
             # 捕获可能存在的响应信息
             resp = getattr(e, 'response', None)

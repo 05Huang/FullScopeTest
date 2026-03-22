@@ -21,6 +21,8 @@ import {
   Switch,
   Alert,
   Divider,
+  InputNumber,
+  Badge,
 } from 'antd'
 import {
   PlusOutlined,
@@ -221,6 +223,14 @@ const ApiTestWorkspace = () => {
   // 新增：脚本状态
   const [preScript, setPreScript] = useState('')
   const [postScript, setPostScript] = useState('')
+  
+  // 新增：Mock 状态
+  const [mockEnabled, setMockEnabled] = useState(false)
+  const [mockResponseCode, setMockResponseCode] = useState(200)
+  const [mockResponseBody, setMockResponseBody] = useState('{\n  "success": true,\n  "data": {}\n}')
+  const [mockResponseHeaders, setMockResponseHeaders] = useState<{ key: string; value: string }[]>([{ key: 'Content-Type', value: 'application/json' }])
+  const [mockDelayMs, setMockDelayMs] = useState(0)
+
   const [collections, setCollections] = useState<any[]>([])
   const [cases, setCases] = useState<any[]>([])
   const [treeData, setTreeData] = useState<DataNode[]>([])
@@ -345,6 +355,11 @@ const ApiTestWorkspace = () => {
       params: params.filter(p => p.key || p.value),
       preScript,
       postScript,
+      mockEnabled,
+      mockResponseCode,
+      mockResponseBody,
+      mockResponseHeaders: mockResponseHeaders.filter(h => h.key || h.value),
+      mockDelayMs,
     }
 
     // 简单比较是否有变化
@@ -356,10 +371,15 @@ const ApiTestWorkspace = () => {
       JSON.stringify(currentFormData.headers) !== JSON.stringify(originalFormData.headers) ||
       JSON.stringify(currentFormData.params) !== JSON.stringify(originalFormData.params) ||
       currentFormData.preScript !== originalFormData.preScript ||
-      currentFormData.postScript !== originalFormData.postScript
+      currentFormData.postScript !== originalFormData.postScript ||
+      currentFormData.mockEnabled !== originalFormData.mockEnabled ||
+      currentFormData.mockResponseCode !== originalFormData.mockResponseCode ||
+      currentFormData.mockResponseBody !== originalFormData.mockResponseBody ||
+      JSON.stringify(currentFormData.mockResponseHeaders) !== JSON.stringify(originalFormData.mockResponseHeaders) ||
+      currentFormData.mockDelayMs !== originalFormData.mockDelayMs
 
     setHasUnsavedChanges(hasChanged)
-  }, [method, url, requestName, requestBody, headers, params, preScript, postScript, originalFormData, currentCaseId])
+  }, [method, url, requestName, requestBody, headers, params, preScript, postScript, mockEnabled, mockResponseCode, mockResponseBody, mockResponseHeaders, mockDelayMs, originalFormData, currentCaseId])
 
   // 从localStorage恢复表单草稿
   const restoreFormDraft = () => {
@@ -437,6 +457,14 @@ const ApiTestWorkspace = () => {
     setPreScript('')
     setPostScript('')
     setResponse(null)
+    
+    // 重置 Mock 状态
+    setMockEnabled(false)
+    setMockResponseCode(200)
+    setMockResponseBody('{\n  "success": true,\n  "data": {}\n}')
+    setMockResponseHeaders([{ key: 'Content-Type', value: 'application/json' }])
+    setMockDelayMs(0)
+
     localStorage.removeItem('api-test-form-draft')
 
     setCurrentCaseId(null)
@@ -647,6 +675,13 @@ const ApiTestWorkspace = () => {
           : [{ key: '', value: '' }],
         preScript: caseData.pre_script || '',
         postScript: caseData.post_script || '',
+        mockEnabled: caseData.mock_enabled || false,
+        mockResponseCode: caseData.mock_response_code || 200,
+        mockResponseBody: caseData.mock_response_body || '{\n  "success": true,\n  "data": {}\n}',
+        mockResponseHeaders: caseData.mock_response_headers 
+          ? Object.entries(caseData.mock_response_headers).map(([k, v]) => ({ key: k, value: String(v) }))
+          : [{ key: 'Content-Type', value: 'application/json' }],
+        mockDelayMs: caseData.mock_delay_ms || 0,
       }
 
       setRequestName(formData.name)
@@ -657,6 +692,11 @@ const ApiTestWorkspace = () => {
       setParams(formData.params)
       setPreScript(formData.preScript)
       setPostScript(formData.postScript)
+      setMockEnabled(formData.mockEnabled)
+      setMockResponseCode(formData.mockResponseCode)
+      setMockResponseBody(formData.mockResponseBody)
+      setMockResponseHeaders(formData.mockResponseHeaders)
+      setMockDelayMs(formData.mockDelayMs)
 
       // 保存原始表单数据用于比较
       setOriginalFormData(formData)
@@ -700,6 +740,11 @@ const ApiTestWorkspace = () => {
         }
       }
 
+      const mockHeaderObj: Record<string, string> = {}
+      mockResponseHeaders.filter(h => h.key && h.value).forEach(h => {
+        mockHeaderObj[h.key] = h.value
+      })
+
       const res = await apiTestService.updateCase(currentCaseId, {
         name: requestName,
         method,
@@ -711,6 +756,11 @@ const ApiTestWorkspace = () => {
         pre_script: preScript,
         post_script: postScript,
         environment_id: selectedEnvId,
+        mock_enabled: mockEnabled,
+        mock_response_code: mockResponseCode,
+        mock_response_body: mockResponseBody,
+        mock_response_headers: mockHeaderObj,
+        mock_delay_ms: mockDelayMs,
       })
 
       if (res.code === 200) {
@@ -726,6 +776,11 @@ const ApiTestWorkspace = () => {
           params: params.filter(p => p.key || p.value),
           preScript,
           postScript,
+          mockEnabled,
+          mockResponseCode,
+          mockResponseBody,
+          mockResponseHeaders: mockResponseHeaders.filter(h => h.key || h.value),
+          mockDelayMs,
         })
         loadData()
       }
@@ -758,6 +813,11 @@ const ApiTestWorkspace = () => {
         }
       }
 
+      const mockHeaderObj: Record<string, string> = {}
+      mockResponseHeaders.filter(h => h.key && h.value).forEach(h => {
+        mockHeaderObj[h.key] = h.value
+      })
+
       const res = await apiTestService.updateCase(currentCaseId, {
         name: requestName,
         method,
@@ -769,6 +829,11 @@ const ApiTestWorkspace = () => {
         pre_script: preScript,
         post_script: postScript,
         environment_id: selectedEnvId,
+        mock_enabled: mockEnabled,
+        mock_response_code: mockResponseCode,
+        mock_response_body: mockResponseBody,
+        mock_response_headers: mockHeaderObj,
+        mock_delay_ms: mockDelayMs,
       })
 
       if (res.code === 200) {
@@ -782,6 +847,11 @@ const ApiTestWorkspace = () => {
           params: params.filter(p => p.key || p.value),
           preScript,
           postScript,
+          mockEnabled,
+          mockResponseCode,
+          mockResponseBody,
+          mockResponseHeaders: mockResponseHeaders.filter(h => h.key || h.value),
+          mockDelayMs,
         })
         loadData()
         return true
@@ -1029,6 +1099,11 @@ const ApiTestWorkspace = () => {
         }
       }
 
+      const mockHeaderObj: Record<string, string> = {}
+      mockResponseHeaders.filter(h => h.key && h.value).forEach(h => {
+        mockHeaderObj[h.key] = h.value
+      })
+
       const targetCollectionId = selectedCollectionId
       let res
       // 如果是编辑现有用例，调用更新接口
@@ -1045,6 +1120,11 @@ const ApiTestWorkspace = () => {
           post_script: postScript,
           collection_id: selectedCollectionId,
           environment_id: selectedEnvId,
+          mock_enabled: mockEnabled,
+          mock_response_code: mockResponseCode,
+          mock_response_body: mockResponseBody,
+          mock_response_headers: mockHeaderObj,
+          mock_delay_ms: mockDelayMs,
         })
       } else {
         // 新建用例
@@ -1060,6 +1140,11 @@ const ApiTestWorkspace = () => {
           post_script: postScript,
           collection_id: selectedCollectionId,
           environment_id: selectedEnvId,
+          mock_enabled: mockEnabled,
+          mock_response_code: mockResponseCode,
+          mock_response_body: mockResponseBody,
+          mock_response_headers: mockHeaderObj,
+          mock_delay_ms: mockDelayMs,
         })
       }
 
@@ -1086,6 +1171,13 @@ const ApiTestWorkspace = () => {
             requestBody,
             headers: headers.filter(h => h.key || h.value),
             params: params.filter(p => p.key || p.value),
+            preScript,
+            postScript,
+            mockEnabled,
+            mockResponseCode,
+            mockResponseBody,
+            mockResponseHeaders: mockResponseHeaders.filter(h => h.key || h.value),
+            mockDelayMs,
           })
         }
         loadData()
@@ -1648,6 +1740,15 @@ const ApiTestWorkspace = () => {
         env_id: selectedEnvId,
         pre_script: preScript,
         post_script: postScript,
+        case_id: currentCaseId || undefined,
+        mock_enabled: mockEnabled,
+        mock_response_code: mockResponseCode,
+        mock_response_body: mockResponseBody,
+        mock_response_headers: mockResponseHeaders.reduce((acc, curr) => {
+          if (curr.key && curr.value) acc[curr.key] = curr.value
+          return acc
+        }, {} as Record<string, string>),
+        mock_delay_ms: mockDelayMs,
       })
 
       const elapsed = Date.now() - startTime
@@ -1664,6 +1765,7 @@ const ApiTestWorkspace = () => {
             headers: respData.headers || {},
             data: respData.body,
             script_execution: respData.script_execution,
+            is_mock: respData.is_mock,
           })
           message.success('请求发送成功')
         } else {
@@ -1994,9 +2096,12 @@ const ApiTestWorkspace = () => {
                           { value: 'urlencoded', label: 'x-www-form-urlencoded' },
                           { value: 'raw', label: 'raw' },
                         ]}
-                      />
-                    </Space>
-                    <MonacoEditor
+                  />
+                  {response?.is_mock && (
+                    <Tag color="purple" style={{ marginLeft: 8 }}>Mock 数据</Tag>
+                  )}
+                </Space>
+                <MonacoEditor
                       height={150}
                       language={bodyType === 'json' ? 'json' : 'plaintext'}
                       theme="vs-light"
@@ -2049,6 +2154,147 @@ const ApiTestWorkspace = () => {
                       automaticLayout: true,
                     }}
                   />
+                ),
+              },
+              {
+                key: 'mock',
+                label: (
+                  <Space size={4}>
+                    <span>Mock</span>
+                    {mockEnabled && <Badge status="success" />}
+                  </Space>
+                ),
+                children: (
+                  <div style={{ padding: '8px 0' }}>
+                    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <Space>
+                          <Text>启用 Mock:</Text>
+                          <Switch checked={mockEnabled} onChange={setMockEnabled} size="small" />
+                        </Space>
+                        <Space>
+                          <Text>状态码:</Text>
+                          <InputNumber 
+                            value={mockResponseCode} 
+                            onChange={(val) => setMockResponseCode(val || 200)} 
+                            size="small" 
+                            style={{ width: 80 }} 
+                          />
+                        </Space>
+                        <Space>
+                          <Text>延迟(ms):</Text>
+                          <InputNumber 
+                            value={mockDelayMs} 
+                            onChange={(val) => setMockDelayMs(val || 0)} 
+                            size="small" 
+                            style={{ width: 80 }} 
+                            min={0}
+                          />
+                        </Space>
+                        {currentCaseId && (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            Mock 地址: <Text code copyable>{`${window.location.origin}/api/v1/api-test/mock/${currentCaseId}`}</Text>
+                          </Text>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: 16, height: 200 }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                          <Text type="secondary" style={{ marginBottom: 4 }}>响应头 (Headers):</Text>
+                          <div style={{ flex: 1, overflow: 'auto', border: '1px solid #d9d9d9', borderRadius: 4 }}>
+                            <Table
+                              size="small"
+                              rowKey="rowKey"
+                              columns={[
+                                {
+                                  title: 'Header 名',
+                                  dataIndex: 'key',
+                                  render: (_: any, record: any, index: number) => (
+                                    <Input
+                                      placeholder="Content-Type"
+                                      size="small"
+                                      value={record.key}
+                                      onChange={(e) => {
+                                        const newHeaders = [...mockResponseHeaders]
+                                        newHeaders[index].key = e.target.value
+                                        setMockResponseHeaders(newHeaders)
+                                      }}
+                                    />
+                                  ),
+                                },
+                                {
+                                  title: 'Header 值',
+                                  dataIndex: 'value',
+                                  render: (_: any, record: any, index: number) => (
+                                    <Input
+                                      placeholder="application/json"
+                                      size="small"
+                                      value={record.value}
+                                      onChange={(e) => {
+                                        const newHeaders = [...mockResponseHeaders]
+                                        newHeaders[index].value = e.target.value
+                                        setMockResponseHeaders(newHeaders)
+                                      }}
+                                    />
+                                  ),
+                                },
+                                {
+                                  title: '操作',
+                                  width: 50,
+                                  render: (_: any, __: any, index: number) => (
+                                    <Button
+                                      type="text"
+                                      danger
+                                      size="small"
+                                      icon={<DeleteOutlined />}
+                                      onClick={() => {
+                                        const newHeaders = mockResponseHeaders.filter((_, i) => i !== index)
+                                        setMockResponseHeaders(newHeaders.length > 0 ? newHeaders : [{ key: '', value: '' }])
+                                      }}
+                                    />
+                                  ),
+                                },
+                              ]}
+                              dataSource={mockResponseHeaders.map((h, i) => ({ ...h, rowKey: String(i) }))}
+                              pagination={false}
+                              footer={() => (
+                                <Button
+                                  type="dashed"
+                                  size="small"
+                                  icon={<PlusOutlined />}
+                                  block
+                                  onClick={() => setMockResponseHeaders([...mockResponseHeaders, { key: '', value: '' }])}
+                                >
+                                  添加 Header
+                                </Button>
+                              )}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div style={{ flex: 2, display: 'flex', flexDirection: 'column' }}>
+                          <Text type="secondary" style={{ marginBottom: 4 }}>响应体 (Body):</Text>
+                          <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: 4, overflow: 'hidden' }}>
+                            <MonacoEditor
+                              language="json"
+                              theme="vs-light"
+                              value={mockResponseBody}
+                              onChange={(value) => setMockResponseBody(value || '')}
+                              options={{
+                                minimap: { enabled: false },
+                                fontSize: 13,
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </Space>
+                {response?.is_mock && (
+                  <Tag color="purple" style={{ marginLeft: 16 }}>Mock 数据</Tag>
+                )}
+              </div>
                 ),
               },
             ]}

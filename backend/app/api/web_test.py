@@ -3,7 +3,8 @@ Web 自动化测试模块 - API
 实现基于 Playwright 的 Web 自动化测试功能
 """
 
-from flask import request, current_app
+from flask import request, current_app, send_from_directory
+import os
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db, celery
@@ -312,6 +313,7 @@ def create_script():
 Playwright 自动化测试脚本
 """
 from playwright.sync_api import sync_playwright, expect
+from fst_vision import assert_snapshot  # 导入视觉回归测试断言
 
 def run():
     with sync_playwright() as p:
@@ -326,8 +328,8 @@ def run():
         title = page.title()
         print(f"页面标题: {title}")
         
-        # 截图
-        page.screenshot(path="screenshot.png")
+        # 视觉回归测试 (第一次运行会生成基线图片，后续运行会进行像素级对比)
+        assert_snapshot(page, "example_homepage", mismatch_tolerance=0.01)
         
         # 关闭浏览器
         browser.close()
@@ -436,6 +438,32 @@ def delete_script(script_id):
 
 
 # ==================== 执行脚本 ====================
+
+@api_bp.route('/web-test/scripts/<int:script_id>/snapshots/<image_type>/<snapshot_name>', methods=['GET'])
+@jwt_required()
+def get_snapshot_image(script_id, image_type, snapshot_name):
+    """
+    获取视觉回归测试截图 (baseline, actual, diff)
+    """
+    user_id = get_current_user_id()
+    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
+    
+    if not script:
+        return error_response(404, '脚本不存在')
+        
+    if image_type not in ['baseline', 'actual', 'diff']:
+        return error_response(400, '无效的图片类型')
+        
+    if not snapshot_name.endswith('.png'):
+        snapshot_name += '.png'
+        
+    work_dir = os.path.join(os.path.dirname(current_app.root_path), 'data', 'web_tests', str(script_id))
+    image_dir = os.path.join(work_dir, 'snapshots', image_type)
+    
+    if not os.path.exists(os.path.join(image_dir, snapshot_name)):
+        return error_response(404, '图片不存在')
+        
+    return send_from_directory(image_dir, snapshot_name)
 
 @api_bp.route('/web-test/scripts/<int:script_id>/run', methods=['POST'])
 @jwt_required()

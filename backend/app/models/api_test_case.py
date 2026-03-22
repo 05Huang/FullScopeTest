@@ -97,6 +97,14 @@ class ApiTestCase(db.Model):
     # 执行状态
     last_run_at = db.Column(db.DateTime, comment='最后执行时间')
     last_status = db.Column(db.String(20), comment='最后执行状态: passed/failed/pending')
+    last_result = db.Column(db.JSON, comment='最后执行结果')
+    
+    # Mock 配置
+    mock_enabled = db.Column(db.Boolean, default=False, comment='是否启用 Mock')
+    mock_response_code = db.Column(db.Integer, default=200, comment='Mock 响应状态码')
+    mock_response_body = db.Column(db.Text, comment='Mock 响应体 (通常是 JSON 字符串)')
+    mock_response_headers = db.Column(db.JSON, default=dict, comment='Mock 响应头')
+    mock_delay_ms = db.Column(db.Integer, default=0, comment='Mock 响应延迟(毫秒)')
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
@@ -130,6 +138,12 @@ class ApiTestCase(db.Model):
             'sort_order': self.sort_order,
             'last_run_at': self.last_run_at.isoformat() if self.last_run_at else None,
             'last_status': self.last_status or 'pending',
+            'last_result': self.last_result,
+            'mock_enabled': self.mock_enabled,
+            'mock_response_code': self.mock_response_code,
+            'mock_response_body': self.mock_response_body,
+            'mock_response_headers': self.mock_response_headers,
+            'mock_delay_ms': self.mock_delay_ms,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
