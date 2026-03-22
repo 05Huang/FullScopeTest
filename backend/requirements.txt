@@ -31,6 +31,8 @@ python-dotenv==1.0.0
 PyYAML==6.0.1
 Werkzeug==3.0.1
 markdown==3.5.1
+Flask-APScheduler==1.13.1
+APScheduler==3.10.4
 
 # 代码质量
 black==23.12.0

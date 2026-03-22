@@ -12,6 +12,8 @@ from .perf_test_scenario import PerfTestScenario
 from .test_run import TestRun
 from .test_document import TestDocument
 from .test_report import TestReport
+from .webhook_token import WebhookToken
+from .scheduled_task import ScheduledTask
 
 __all__ = [
     'User',
@@ -24,5 +26,7 @@ __all__ = [
     'PerfTestScenario',
     'TestRun',
     'TestDocument',
-    'TestReport'
+    'TestReport',
+    'WebhookToken',
+    'ScheduledTask'
 ]
