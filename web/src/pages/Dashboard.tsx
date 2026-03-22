@@ -193,11 +193,12 @@ const Dashboard = () => {
         工作台
       </Title>
 
-      {/* 统计卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card loading={loading}>
-            <Statistic
+      <div id="tour-step-dashboard-api">
+        {/* 统计卡片 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card loading={loading}>
+              <Statistic
               title={
                 <span>
                   <ApiOutlined style={{ marginRight: 8, color: '#3D6E66' }} />
@@ -291,6 +292,7 @@ const Dashboard = () => {
           </Card>
         </Col>
       </Row>
+      </div>
 
       {/* 图表区域 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
