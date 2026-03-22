@@ -818,7 +818,9 @@ def run_collection(collection_id):
         total_cases=len(cases),
         environment_id=env_id,
         environment_name=unified_env_name if use_unified_env else '用例自身环境',
-        started_at=datetime.utcnow()
+        started_at=datetime.utcnow(),
+        triggered_by='manual',
+        triggered_user_id=user_id
     )
     db.session.add(test_run)
     db.session.commit()

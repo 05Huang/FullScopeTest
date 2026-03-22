@@ -13,11 +13,11 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  BellOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '@/stores/authStore'
 import GlobalCopilot from '../components/GlobalCopilot'
+import NotificationPopover from '../components/NotificationPopover'
 
 const { Header, Sider, Content, Footer } = Layout
 
@@ -247,11 +247,7 @@ const MainLayout = () => {
 
           {/* 右侧：通知和用户 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Button
-              type="text"
-              icon={<BellOutlined />}
-              style={{ fontSize: 18 }}
-            />
+            <NotificationPopover />
 
             <Dropdown
               menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
