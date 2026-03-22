@@ -16,7 +16,6 @@ import {
   MenuUnfoldOutlined,
   PhoneOutlined,
   MailOutlined,
-  WechatOutlined,
   CustomerServiceOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
@@ -90,8 +89,8 @@ const FooterBeianIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-const FooterGithubIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+const FooterGithubIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} style={style} aria-hidden="true">
     <path
       d="M12 2.6c-5.3 0-9.6 4.3-9.6 9.6 0 4.2 2.7 7.8 6.5 9.1.5.1.7-.2.7-.5v-1.7c-2.6.6-3.2-1.1-3.2-1.1-.4-1-1.1-1.3-1.1-1.3-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.7.4-1.1.6-1.3-2.1-.2-4.3-1.1-4.3-4.8 0-1 .4-1.9 1-2.6-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1a9 9 0 0 1 4.8 0c1.8-1.3 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.6 1 2.6 0 3.7-2.2 4.6-4.3 4.8.4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 3.8-1.3 6.5-4.9 6.5-9.1 0-5.3-4.3-9.6-9.6-9.6Z"
       fill="currentColor"
