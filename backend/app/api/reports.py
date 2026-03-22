@@ -274,6 +274,27 @@ def get_report_statistics():
         func.date(TestRun.created_at)
     ).order_by(func.date(TestRun.created_at)).all()
     
+    # 构建完整的日期范围
+    daily_stats_dict = {
+        str(stat.date): {
+            'passed': stat.passed or 0,
+            'failed': stat.failed or 0,
+            'total': stat.total or 0
+        }
+        for stat in daily_stats
+    }
+    
+    daily_trend = []
+    for i in range(days - 1, -1, -1):
+        # 注意：这里需要与 func.date() 返回的格式一致，通常为 YYYY-MM-DD
+        date_str = (end_date - timedelta(days=i)).strftime('%Y-%m-%d')
+        daily_trend.append({
+            'date': date_str,
+            'passed': daily_stats_dict.get(date_str, {}).get('passed', 0),
+            'failed': daily_stats_dict.get(date_str, {}).get('failed', 0),
+            'total': daily_stats_dict.get(date_str, {}).get('total', 0)
+        })
+    
     return success_response(data={
         'summary': {
             'total_runs': total_runs,
@@ -291,15 +312,7 @@ def get_report_statistics():
             }
             for stat in type_stats
         ],
-        'daily_trend': [
-            {
-                'date': str(stat.date),
-                'passed': stat.passed or 0,
-                'failed': stat.failed or 0,
-                'total': stat.total
-            }
-            for stat in daily_stats
-        ]
+        'daily_trend': daily_trend
     })
 
 
