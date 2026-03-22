@@ -18,6 +18,7 @@ import type { MenuProps } from 'antd'
 import { useAuthStore } from '@/stores/authStore'
 import GlobalCopilot from '../components/GlobalCopilot'
 import NotificationPopover from '../components/NotificationPopover'
+import GlobalSearch from '../components/GlobalSearch'
 
 const { Header, Sider, Content, Footer } = Layout
 
@@ -243,12 +244,15 @@ const MainLayout = () => {
           style={{ padding: '0 24px' }}
         >
           {/* 左侧：折叠按钮 */}
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: 16, width: 48, height: 48 }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ fontSize: 16, width: 48, height: 48 }}
+            />
+            <GlobalSearch />
+          </div>
 
           {/* 右侧：通知和用户 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

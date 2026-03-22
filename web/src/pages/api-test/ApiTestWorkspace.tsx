@@ -23,6 +23,7 @@ import {
   Divider,
   InputNumber,
   Badge,
+  Spin,
 } from 'antd'
 import {
   PlusOutlined,
@@ -264,6 +265,12 @@ const ApiTestWorkspace = () => {
   const [aiSynthesizing, setAiSynthesizing] = useState(false)
   const [synthesizedCases, setSynthesizedCases] = useState<any[]>([])
   const [synthesizeTargetCollectionId, setSynthesizeTargetCollectionId] = useState<number | undefined>()
+
+  // AI Reviewer State
+  const [aiReviewModalOpen, setAiReviewModalOpen] = useState(false)
+  const [aiReviewing, setAiReviewing] = useState(false)
+  const [reviewSummary, setReviewSummary] = useState('')
+  const [reviewSuggestedCases, setReviewSuggestedCases] = useState<any[]>([])
 
   // 获取当前项目选择的环境存储键（按项目分别持久化）
   // TODO: 从路由参数或上下文获取当前项目 ID
@@ -1330,6 +1337,67 @@ const ApiTestWorkspace = () => {
 
   // 更多操作菜单
 
+  const handleAiReviewCollection = async () => {
+    const targetCollectionId = selectedCollectionId || activeCollectionId
+    if (!targetCollectionId) {
+      message.warning('请先在左侧选择一个用例集合')
+      return
+    }
+    setAiReviewing(true)
+    try {
+      const res = await apiTestService.reviewCollectionAI({
+        collection_id: targetCollectionId,
+        base_url: aiBaseUrl,
+        model: aiModel,
+        api_key: aiApiKey
+      })
+      if (res.code === 200 && res.data) {
+        setReviewSummary(res.data.review_summary)
+        setReviewSuggestedCases(res.data.suggested_cases || [])
+        message.success('AI 集合评审完成')
+      } else {
+        message.error(res.message || '评审失败')
+      }
+    } catch (e: any) {
+      message.error(e.response?.data?.message || '评审失败')
+    } finally {
+      setAiReviewing(false)
+    }
+  }
+
+  const handleSaveReviewCases = async () => {
+    const targetCollectionId = selectedCollectionId || activeCollectionId
+    if (!targetCollectionId) {
+      message.error('未找到目标集合')
+      return
+    }
+
+    let successCount = 0
+    for (const c of reviewSuggestedCases) {
+      try {
+        await apiTestService.createCase({
+          name: c.name || 'AI 补充用例',
+          description: c.description || '',
+          method: c.method || 'GET',
+          url: c.url || 'http://localhost',
+          headers: c.headers || {},
+          params: c.params || {},
+          body: c.body,
+          body_type: c.body_type || 'json',
+          collection_id: targetCollectionId,
+        })
+        successCount++
+      } catch (e) {
+        console.error('保存用例失败:', e)
+      }
+    }
+    message.success(`成功保存 ${successCount} 个补充用例`)
+    setAiReviewModalOpen(false)
+    setReviewSuggestedCases([])
+    setReviewSummary('')
+    loadData() // 刷新左侧列表
+  }
+
   const appendAiLog = (status: AiLogStatus, logMessage: string) => {
     setAiExecutionLogs(prev => [...prev, { status, message: logMessage }])
   }
@@ -1983,6 +2051,21 @@ const ApiTestWorkspace = () => {
                 }}
               >
                 AI 扩充用例
+              </Button>
+            </Tooltip>
+            <Tooltip title="AI 集合评审">
+              <Button
+                type="dashed"
+                icon={<RobotOutlined />}
+                onClick={() => {
+                  if (!(selectedCollectionId || activeCollectionId)) {
+                    message.warning('请先在左侧选择一个用例集合')
+                    return
+                  }
+                  setAiReviewModalOpen(true)
+                }}
+              >
+                AI 集合评审
               </Button>
             </Tooltip>
             <Dropdown menu={{ items: moreMenuItems }}>
@@ -2686,6 +2769,99 @@ const ApiTestWorkspace = () => {
           </Card>
         </div>
       )}
+
+      {/* AI 集合评审弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <RobotOutlined style={{ color: '#1890ff' }} />
+            <span>AI 智能用例评审与补全</span>
+          </Space>
+        }
+        open={aiReviewModalOpen}
+        onCancel={() => {
+          if (!aiReviewing) {
+            setAiReviewModalOpen(false)
+            setReviewSummary('')
+            setReviewSuggestedCases([])
+          }
+        }}
+        width={900}
+        footer={
+          reviewSuggestedCases.length > 0 ? (
+            <Space>
+              <Button onClick={() => {
+                setReviewSummary('')
+                setReviewSuggestedCases([])
+              }}>重新评审</Button>
+              <Button type="primary" onClick={handleSaveReviewCases}>
+                一键保存所有补充用例
+              </Button>
+            </Space>
+          ) : (
+            <Button
+              type="primary"
+              onClick={handleAiReviewCollection}
+              loading={aiReviewing}
+            >
+              开始智能评审
+            </Button>
+          )
+        }
+      >
+        {!reviewSummary && !aiReviewing ? (
+          <div style={{ padding: '20px 0' }}>
+            <Alert
+              type="info"
+              showIcon
+              message="基于当前集合自动评审并补充用例"
+              description="AI 将自动分析当前集合内的所有用例，指出哪些边界条件、异常场景或安全漏洞没有被覆盖，并提供一键生成补充用例的功能。"
+              style={{ marginBottom: 24 }}
+            />
+          </div>
+        ) : (
+          <Spin spinning={aiReviewing} tip="AI 正在深度评审当前集合...">
+            {reviewSummary && (
+              <div style={{ padding: '10px 0' }}>
+                <Alert
+                  type="success"
+                  showIcon
+                  message="评审总结"
+                  description={<div style={{ whiteSpace: 'pre-wrap' }}>{reviewSummary}</div>}
+                  style={{ marginBottom: 24 }}
+                />
+                
+                {reviewSuggestedCases.length > 0 && (
+                  <div>
+                    <div style={{ marginBottom: 12, fontWeight: 500 }}>
+                      AI 建议补充的测试用例 ({reviewSuggestedCases.length} 个):
+                    </div>
+                    <div style={{ maxHeight: 400, overflow: 'auto', paddingRight: 8 }}>
+                      {reviewSuggestedCases.map((c, i) => (
+                        <Card key={i} size="small" style={{ marginBottom: 12 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Space>
+                              <Tag color={methodColors[c.method] || 'default'}>{c.method}</Tag>
+                              <Text strong>{c.name}</Text>
+                            </Space>
+                          </div>
+                          <div style={{ marginBottom: 8 }}>
+                            <Text type="secondary" style={{ fontSize: 13 }}>URL: </Text>
+                            <Text code>{c.url}</Text>
+                          </div>
+                          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
+                            {c.description}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Spin>
+        )}
+      </Modal>
     </Layout>
   )
 }
