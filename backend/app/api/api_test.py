@@ -17,6 +17,7 @@ from ..utils.validators import validate_required
 from ..utils import get_current_user_id
 from ..utils.ai_planner import generate_api_test_plan
 from ..utils.ai_data_synthesizer import synthesize_test_cases
+from ..utils.ai_reviewer import review_api_collection
 from ..utils.env_variables import replace_variables, replace_variables_in_dict, get_environment_variables, merge_headers_with_env
 from ..utils.js_executor import get_executor
 from ..utils.script_context import (
@@ -159,6 +160,59 @@ def synthesize_api_cases():
         return success_response(data={'cases': cases}, message='AI 用例扩充成功')
     except Exception as exc:
         return error_response(500, f'AI 用例扩充失败: {str(exc)}')
+
+@api_bp.route('/api-test/ai/review-collection', methods=['POST'])
+@jwt_required()
+def review_collection_cases():
+    """AI 智能评审测试用例集合并补充用例"""
+    user_id = get_current_user_id()
+    data = request.get_json() or {}
+    collection_id = data.get('collection_id')
+    
+    if not collection_id:
+        return error_response(400, 'collection_id is required')
+        
+    collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
+    if not collection:
+        return error_response(404, '集合不存在')
+        
+    cases = ApiTestCase.query.filter_by(collection_id=collection_id, user_id=user_id).all()
+    if not cases:
+        return error_response(400, '该集合下没有测试用例，无法评审')
+        
+    case_list = []
+    for c in cases:
+        case_list.append({
+            'name': c.name,
+            'method': c.method,
+            'url': c.url,
+            'headers': c.headers,
+            'params': c.params,
+            'body': c.body,
+            'body_type': c.body_type,
+        })
+        
+    try:
+        runtime_config = {
+            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 60),
+        }
+
+        if data.get('base_url'):
+            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+        if data.get('model'):
+            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+        if data.get('api_key'):
+            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+
+        result = review_api_collection(collection.name, case_list, runtime_config)
+        return success_response(data=result, message='AI 评审完成')
+    except Exception as exc:
+        return error_response(500, f'AI 评审失败: {str(exc)}')
+
 
 
 # ==================== 用例集合 ====================
