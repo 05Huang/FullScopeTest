@@ -206,6 +206,20 @@ const Login = () => {
   const isRegister = mode === 'register'
 
   useEffect(() => {
+    // 移动端检测
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    if (isMobile) {
+      message.warning({
+        content: <span style={{ color: '#3D6E66', fontWeight: 500 }}>建议使用PC端，以获得更佳体验</span>,
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18, marginRight: 8, verticalAlign: '-4px', color: '#D7B56D' }} aria-hidden="true">
+            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z" fill="currentColor" />
+          </svg>
+        ),
+        duration: 5
+      })
+    }
+
     if (!isRegister && !autoFilled.current) {
       loginForm.setFieldsValue({
         username: 'huangxuan',

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Avatar, Dropdown, Button, theme, Tour, ConfigProvider } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Button, theme, Tour, ConfigProvider, Popover, Typography } from 'antd'
 import type { TourProps } from 'antd'
 import {
   HomeOutlined,
@@ -14,6 +14,10 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  WechatOutlined,
+  CustomerServiceOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '@/stores/authStore'
@@ -22,6 +26,7 @@ import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
 
 const { Header, Sider, Content, Footer } = Layout
+const { Text } = Typography
 
 const AppBrandMark = () => (
   <div className="fst-app-brand" aria-hidden="true">
@@ -301,7 +306,101 @@ const MainLayout = () => {
           </div>
 
           {/* 右侧：通知和用户 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            {/* 联系作者 */}
+            <Popover
+              content={
+                <div style={{ width: 260, padding: '4px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: '#3D6E66', marginBottom: 4 }}>
+                      联系作者
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+                      全栈测试开发 / 独立开发者
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Button 
+                      type="primary" 
+                      style={{ background: '#5FA59B', border: 'none', width: '100%', borderRadius: 6 }}
+                      href="https://huangxuan.chat/resume"
+                      target="_blank"
+                    >
+                      查看个人主页 & 简历
+                    </Button>
+
+                    <div style={{ background: '#f6f8f8', padding: '12px', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+                        <PhoneOutlined style={{ color: '#5FA59B', marginRight: 10, fontSize: 16 }} />
+                        <Text copyable={{ text: '18888888888' }} style={{ color: '#333' }}>+86 188-5212-2635</Text>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <MailOutlined style={{ color: '#5FA59B', marginRight: 10, fontSize: 16 }} />
+                        <Text copyable={{ text: 'author@example.com' }} style={{ color: '#333' }}>3441578327@qq.com</Text>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: 4 }}>
+                      <div style={{ display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 8 }}>
+                        <div style={{ width: 120, height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <img 
+                            src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png" 
+                            alt="WeChat QRCode" 
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                          />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
+                        扫一扫添加微信
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+              trigger="hover"
+              placement="bottom"
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#4b5563', // 更深的灰色以统一视觉
+                  transition: 'color 0.3s',
+                  width: 24,
+                  height: 24,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#3D6E66')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#4b5563')}
+                aria-label="联系作者"
+              >
+                <CustomerServiceOutlined style={{ fontSize: 18 }} />
+              </div>
+            </Popover>
+
+            {/* GitHub 链接 */}
+            <a
+              href="https://github.com/05Huang/FullScopeTest"
+              target="_blank"
+              rel="noreferrer noopener"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#4b5563', // 统一为较深的灰色
+                transition: 'color 0.3s',
+                width: 24,
+                height: 24,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#3D6E66')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#4b5563')}
+              aria-label="GitHub"
+            >
+              <FooterGithubIcon style={{ width: 18, height: 18 }} />
+            </a>
+
             <NotificationPopover />
 
             <Dropdown
