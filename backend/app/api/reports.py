@@ -7,7 +7,7 @@
 from flask import request, send_file
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, or_
 import json
 import os
 import tempfile
@@ -17,6 +17,9 @@ from ..extensions import db
 from ..models.test_run import TestRun
 from ..models.test_report import TestReport
 from ..models.project import Project
+from ..models.api_test_case import ApiTestCase
+from ..models.web_test_script import WebTestScript
+from ..models.perf_test_scenario import PerfTestScenario
 from ..utils.response import success_response, error_response, paginate_response
 from ..utils import get_current_user_id
 
@@ -311,61 +314,71 @@ def get_dashboard_stats():
     # 获取用户的所有项目 ID
     project_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
     
-    if not project_ids:
-        return success_response(data={
-            'api_tests': {'total': 0, 'passed': 0, 'failed': 0},
-            'web_tests': {'total': 0, 'passed': 0, 'failed': 0},
-            'perf_tests': {'total': 0, 'running': 0},
-            'recent_runs': []
-        })
-    
     # API 测试统计
-    api_stats = db.session.query(
-        func.sum(TestRun.total_cases).label('total'),
-        func.sum(TestRun.passed).label('passed'),
-        func.sum(TestRun.failed).label('failed')
-    ).filter(
-        TestRun.project_id.in_(project_ids),
-        TestRun.test_type == 'api'
-    ).first()
-    
-    # Web 测试统计
-    web_stats = db.session.query(
-        func.sum(TestRun.total_cases).label('total'),
-        func.sum(TestRun.passed).label('passed'),
-        func.sum(TestRun.failed).label('failed')
-    ).filter(
-        TestRun.project_id.in_(project_ids),
-        TestRun.test_type == 'web'
-    ).first()
-    
-    # 性能测试统计
-    perf_total = TestRun.query.filter(
-        TestRun.project_id.in_(project_ids),
-        TestRun.test_type == 'performance'
+    api_total = ApiTestCase.query.filter(
+        or_(ApiTestCase.project_id.in_(project_ids), ApiTestCase.user_id == user_id) if project_ids else ApiTestCase.user_id == user_id
     ).count()
     
-    perf_running = TestRun.query.filter(
-        TestRun.project_id.in_(project_ids),
-        TestRun.test_type == 'performance',
-        TestRun.status == 'running'
+    api_passed = ApiTestCase.query.filter(
+        or_(ApiTestCase.project_id.in_(project_ids), ApiTestCase.user_id == user_id) if project_ids else ApiTestCase.user_id == user_id,
+        ApiTestCase.last_status == 'passed'
+    ).count()
+    
+    api_failed = ApiTestCase.query.filter(
+        or_(ApiTestCase.project_id.in_(project_ids), ApiTestCase.user_id == user_id) if project_ids else ApiTestCase.user_id == user_id,
+        ApiTestCase.last_status == 'failed'
+    ).count()
+    
+    # Web 测试统计
+    web_total = WebTestScript.query.filter(
+        or_(WebTestScript.project_id.in_(project_ids), WebTestScript.user_id == user_id) if project_ids else WebTestScript.user_id == user_id
+    ).count()
+    
+    web_passed = WebTestScript.query.filter(
+        or_(WebTestScript.project_id.in_(project_ids), WebTestScript.user_id == user_id) if project_ids else WebTestScript.user_id == user_id,
+        WebTestScript.status == 'passed'
+    ).count()
+    
+    web_failed = WebTestScript.query.filter(
+        or_(WebTestScript.project_id.in_(project_ids), WebTestScript.user_id == user_id) if project_ids else WebTestScript.user_id == user_id,
+        WebTestScript.status == 'failed'
+    ).count()
+    
+    # 性能测试统计
+    perf_total = PerfTestScenario.query.filter(
+        or_(PerfTestScenario.project_id.in_(project_ids), PerfTestScenario.user_id == user_id) if project_ids else PerfTestScenario.user_id == user_id
+    ).count()
+    
+    perf_running = PerfTestScenario.query.filter(
+        or_(PerfTestScenario.project_id.in_(project_ids), PerfTestScenario.user_id == user_id) if project_ids else PerfTestScenario.user_id == user_id,
+        PerfTestScenario.status == 'running'
     ).count()
     
     # 最近执行记录
-    recent_runs = TestRun.query.filter(
-        TestRun.project_id.in_(project_ids)
-    ).order_by(TestRun.created_at.desc()).limit(10).all()
+    recent_runs_query = TestRun.query
+    if project_ids:
+        recent_runs_query = recent_runs_query.filter(
+            or_(
+                TestRun.project_id.in_(project_ids),
+                TestRun.triggered_user_id == user_id
+            )
+        )
+    else:
+        recent_runs_query = recent_runs_query.filter(
+            TestRun.triggered_user_id == user_id
+        )
+    recent_runs = recent_runs_query.order_by(TestRun.created_at.desc()).limit(10).all()
     
     return success_response(data={
         'api_tests': {
-            'total': api_stats.total or 0,
-            'passed': api_stats.passed or 0,
-            'failed': api_stats.failed or 0
+            'total': api_total,
+            'passed': api_passed,
+            'failed': api_failed
         },
         'web_tests': {
-            'total': web_stats.total or 0,
-            'passed': web_stats.passed or 0,
-            'failed': web_stats.failed or 0
+            'total': web_total,
+            'passed': web_passed,
+            'failed': web_failed
         },
         'perf_tests': {
             'total': perf_total,
