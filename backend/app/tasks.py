@@ -253,6 +253,7 @@ def run_web_test_task(self, script_id, user_id):
     with _get_flask_app().app_context():
         script = None
         test_run = None
+        work_dir = None
 
         try:
             script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
@@ -288,21 +289,38 @@ def run_web_test_task(self, script_id, user_id):
 
             self.update_state(state='PROGRESS', meta={'status': 'Running web test script...'})
 
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+            # 准备工作目录
+            work_dir = os.path.join(os.path.dirname(_get_flask_app().root_path), 'data', 'web_tests', str(script_id))
+            os.makedirs(work_dir, exist_ok=True)
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8', dir=work_dir) as f:
                 f.write(script.script_content)
                 temp_file = f.name
 
             try:
                 start_time = time.time()
+                env = os.environ.copy()
+                env['PYTHONPATH'] = os.path.dirname(_get_flask_app().root_path) + os.pathsep + env.get('PYTHONPATH', '')
+                
                 result = subprocess.run(
                     [sys.executable, temp_file],
                     capture_output=True,
                     text=True,
                     timeout=script.timeout / 1000,
-                    cwd=tempfile.gettempdir(),
+                    cwd=work_dir,
+                    env=env
                 )
                 duration = time.time() - start_time
                 success = result.returncode == 0
+
+                vision_results_path = os.path.join(work_dir, 'vision_results.json')
+                vision_data = None
+                if os.path.exists(vision_results_path):
+                    try:
+                        with open(vision_results_path, 'r', encoding='utf-8') as f:
+                            vision_data = json.load(f)
+                    except Exception:
+                        pass
 
                 run_payload = {
                     'success': success,
@@ -310,6 +328,7 @@ def run_web_test_task(self, script_id, user_id):
                     'stdout': result.stdout,
                     'stderr': result.stderr,
                     'return_code': result.returncode,
+                    'vision_results': vision_data,
                     'timestamp': datetime.utcnow().isoformat(),
                 }
                 test_run_id, report_id = _finalize_web_test_run(
@@ -338,10 +357,21 @@ def run_web_test_task(self, script_id, user_id):
 
         except subprocess.TimeoutExpired:
             if script:
+                vision_data = None
+                try:
+                    if work_dir:
+                        vision_results_path = os.path.join(work_dir, 'vision_results.json')
+                        if os.path.exists(vision_results_path):
+                            with open(vision_results_path, 'r', encoding='utf-8') as f:
+                                vision_data = json.load(f)
+                except Exception:
+                    pass
+
                 timeout_seconds = script.timeout / 1000 if script.timeout else 0
                 run_payload = {
                     'success': False,
                     'error': 'Execution timeout',
+                    'vision_results': vision_data,
                     'timestamp': datetime.utcnow().isoformat(),
                 }
                 test_run_id, report_id = _finalize_web_test_run(
@@ -363,9 +393,20 @@ def run_web_test_task(self, script_id, user_id):
 
         except Exception as e:
             if script:
+                vision_data = None
+                try:
+                    if work_dir:
+                        vision_results_path = os.path.join(work_dir, 'vision_results.json')
+                        if os.path.exists(vision_results_path):
+                            with open(vision_results_path, 'r', encoding='utf-8') as f:
+                                vision_data = json.load(f)
+                except Exception:
+                    pass
+
                 run_payload = {
                     'success': False,
                     'error': str(e),
+                    'vision_results': vision_data,
                     'timestamp': datetime.utcnow().isoformat(),
                 }
                 test_run_id, report_id = _finalize_web_test_run(

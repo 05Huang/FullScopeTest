@@ -67,6 +67,11 @@ export const createCase = (data: {
   collection_id?: number
   project_id?: number
   environment_id?: number
+  mock_enabled?: boolean
+  mock_response_code?: number
+  mock_response_body?: string
+  mock_response_headers?: Record<string, any>
+  mock_delay_ms?: number
 }): Promise<ApiResponse> => {
   return api.post('/api-test/cases', data) as Promise<ApiResponse>
 }
@@ -75,7 +80,25 @@ export const getCase = (id: number): Promise<ApiResponse> => {
   return api.get(`/api-test/cases/${id}`) as Promise<ApiResponse>
 }
 
-export const updateCase = (id: number, data: any): Promise<ApiResponse> => {
+export const updateCase = (id: number, data: {
+  name?: string
+  method?: string
+  url?: string
+  description?: string
+  headers?: Record<string, any>
+  params?: Record<string, any>
+  body?: any
+  body_type?: string
+  pre_script?: string
+  post_script?: string
+  collection_id?: number | null
+  environment_id?: number | null
+  mock_enabled?: boolean
+  mock_response_code?: number
+  mock_response_body?: string
+  mock_response_headers?: Record<string, any>
+  mock_delay_ms?: number
+}): Promise<ApiResponse> => {
   return api.put(`/api-test/cases/${id}`, data) as Promise<ApiResponse>
 }
 
@@ -96,6 +119,12 @@ export const executeRequest = (data: {
   env_id?: number
   pre_script?: string
   post_script?: string
+  case_id?: number
+  mock_enabled?: boolean
+  mock_response_code?: number
+  mock_response_body?: string
+  mock_response_headers?: Record<string, any>
+  mock_delay_ms?: number
 }): Promise<ApiResponse> => {
   return api.post('/api-test/execute', data) as Promise<ApiResponse>
 }
