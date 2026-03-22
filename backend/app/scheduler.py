@@ -61,9 +61,16 @@ def init_scheduler(app):
         # 启动时加载数据库中所有激活的任务
         with app.app_context():
             from .models.scheduled_task import ScheduledTask
-            active_tasks = ScheduledTask.query.filter_by(is_active=True).all()
-            for task in active_tasks:
-                add_or_update_job(task)
+            # 检查表是否存在，防止在测试环境或初始化时报错
+            from sqlalchemy import inspect
+            from .extensions import db
+            inspector = inspect(db.engine)
+            if inspector.has_table("scheduled_tasks"):
+                active_tasks = ScheduledTask.query.filter_by(is_active=True).all()
+                for task in active_tasks:
+                    add_or_update_job(task)
+            else:
+                logger.warning("scheduled_tasks 表不存在，跳过加载定时任务")
                 
     except IOError:
         # 获取锁失败，说明其他进程已经启动了调度器

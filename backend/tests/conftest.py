@@ -22,20 +22,24 @@ def app():
     from app import create_app
     from app.extensions import db
 
-    app = create_app("testing")
-    app.config.update(
+    flask_app = create_app("testing")
+    flask_app.config.update(
         TESTING=True,
         SQLALCHEMY_ENGINE_OPTIONS={"connect_args": {"check_same_thread": False}},
         JWT_SECRET_KEY="test-jwt-secret",
     )
 
-    with app.app_context():
+    with flask_app.app_context():
+        # 确保所有模型都被导入，以便 create_all 能创建它们
+        import app.models
         db.create_all()
 
-    yield app
+    yield flask_app
 
-    with app.app_context():
+    with flask_app.app_context():
+        db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
     try:
         os.remove(_db_path)
