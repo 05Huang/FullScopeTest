@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Typography, message } from 'antd'
 import { authService } from '@/services/authService'
@@ -197,12 +197,33 @@ const Login = () => {
   const [registerConfirmPwdVisible, setRegisterConfirmPwdVisible] = useState(false)
 
   const [mode, setMode] = useState<AuthMode>(() => getModeFromPathname(location.pathname))
+  const autoFilled = useRef(false)
 
   useEffect(() => {
     setMode(getModeFromPathname(location.pathname))
   }, [location.pathname])
 
   const isRegister = mode === 'register'
+
+  useEffect(() => {
+    if (!isRegister && !autoFilled.current) {
+      loginForm.setFieldsValue({
+        username: 'huangxuan',
+        password: 'hx123456'
+      })
+      
+      message.open({
+        content: <span style={{ color: '#3D6E66', fontWeight: 500 }}>已自动填充游客账户密码，您可直接点击登录进入系统</span>,
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18, marginRight: 8, verticalAlign: '-4px', color: '#5FA59B' }} aria-hidden="true">
+            <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            <path d="M12 13a4.6 4.6 0 1 0 0-9.2A4.6 4.6 0 0 0 12 13Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        )
+      })
+      autoFilled.current = true
+    }
+  }, [isRegister, loginForm])
 
   const onLoginFinish = async (values: LoginForm) => {
     setLoginLoading(true)

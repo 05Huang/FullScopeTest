@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Avatar, Dropdown, Button, theme } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Button, theme, Tour, ConfigProvider } from 'antd'
+import type { TourProps } from 'antd'
 import {
   HomeOutlined,
   ApiOutlined,
@@ -210,6 +211,49 @@ const MainLayout = () => {
     return []
   }
 
+  const [tourOpen, setTourOpen] = useState(false)
+
+  useEffect(() => {
+    // 检查是否是首次访问首页
+    const hasToured = localStorage.getItem('fst_has_toured')
+    if (!hasToured && location.pathname === '/dashboard') {
+      // 延迟确保 Dashboard 中的 DOM 元素渲染完毕
+      const timer = setTimeout(() => {
+        setTourOpen(true)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [location.pathname])
+
+  const handleTourClose = () => {
+    setTourOpen(false)
+    localStorage.setItem('fst_has_toured', 'true')
+  }
+
+  const tourSteps: TourProps['steps'] = [
+    {
+      title: '欢迎来到 FullScopeTest',
+      description: '这是一个简单高效的自动化测试平台。让我们花半分钟了解一下基本功能布局。',
+      target: () => document.querySelector('.fst-app-logo') as HTMLElement,
+    },
+    {
+      title: '工作台概览',
+      description: '在这里，您可以直观地查看各类型测试（API/Web/性能）的用例数量与通过率，实时掌握质量状况。',
+      target: () => document.getElementById('tour-step-dashboard-api') as HTMLElement,
+    },
+    {
+      title: '功能导航',
+      description: '通过左侧菜单，您可以随时切换进入接口测试、Web自动化、性能压测等核心模块。',
+      target: () => document.querySelector('.fst-app-menu') as HTMLElement,
+      placement: 'right',
+    },
+    {
+      title: '全局搜索',
+      description: '想要快速找东西？点击这里或使用快捷键 (Ctrl+K / ⌘+K) 即可唤起全局搜索。',
+      target: () => document.getElementById('tour-step-search') as HTMLElement,
+    },
+  ]
+
   return (
     <Layout className="fst-app-root" style={{ minHeight: '100vh' }}>
       {/* 侧边栏 */}
@@ -251,7 +295,9 @@ const MainLayout = () => {
               onClick={() => setCollapsed(!collapsed)}
               style={{ fontSize: 16, width: 48, height: 48 }}
             />
-            <GlobalSearch />
+            <div id="tour-step-search">
+              <GlobalSearch />
+            </div>
           </div>
 
           {/* 右侧：通知和用户 */}
@@ -318,6 +364,26 @@ const MainLayout = () => {
         </Footer>
         <GlobalCopilot />
       </Layout>
+
+      {/* 用户引导 */}
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: '#5FA59B',
+          },
+          components: {
+            Tour: {
+              boxShadowSecondary: '0 6px 16px 0 rgba(95, 165, 155, 0.15), 0 3px 6px -4px rgba(95, 165, 155, 0.1), 0 9px 28px 8px rgba(95, 165, 155, 0.08)',
+            }
+          }
+        }}
+      >
+        <Tour
+          open={tourOpen}
+          onClose={handleTourClose}
+          steps={tourSteps}
+        />
+      </ConfigProvider>
     </Layout>
   )
 }
