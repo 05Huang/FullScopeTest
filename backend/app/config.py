@@ -58,6 +58,13 @@ class BaseConfig:
     AI_ASSISTANT_MODEL = os.environ.get('AI_ASSISTANT_MODEL', 'gpt-4o-mini')
     AI_ASSISTANT_TIMEOUT = int(os.environ.get('AI_ASSISTANT_TIMEOUT', '30'))
 
+    # Aliyun OSS configuration
+    OSS_ENDPOINT = os.environ.get('OSS_ENDPOINT', '')
+    OSS_ACCESS_KEY_ID = os.environ.get('OSS_ACCESS_KEY_ID', '')
+    OSS_ACCESS_KEY_SECRET = os.environ.get('OSS_ACCESS_KEY_SECRET', '')
+    OSS_BUCKET_NAME = os.environ.get('OSS_BUCKET_NAME', '')
+    OSS_DOMAIN = os.environ.get('OSS_DOMAIN', '')  # Custom domain if available
+
 
 class DevelopmentConfig(BaseConfig):
     """开发环境配置"""

@@ -18,6 +18,7 @@ from ..models.user import User
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_json, is_valid_email
 from ..utils import get_current_user_id
+from ..utils.oss_upload import upload_to_oss
 
 
 @api_bp.route('/auth/register', methods=['POST'])
@@ -128,6 +129,69 @@ def get_current_user():
         return error_response(404, '用户不存在')
     
     return success_response(data=user.to_dict())
+
+
+@api_bp.route('/auth/me', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    """修改个人信息"""
+    user_id = get_current_user_id()
+    user = User.query.get(user_id)
+    
+    if not user:
+        return error_response(404, '用户不存在')
+        
+    data = request.get_json()
+    
+    if 'username' in data:
+        username = data['username'].strip()
+        if len(username) < 3 or len(username) > 50:
+            return error_response(400, '用户名长度应为 3-50 个字符')
+        if User.query.filter(User.username == username, User.id != user_id).first():
+            return error_response(400, '用户名已被使用')
+        user.username = username
+        
+    if 'email' in data:
+        email = data['email'].strip().lower()
+        if not is_valid_email(email):
+            return error_response(400, '邮箱格式不正确')
+        if User.query.filter(User.email == email, User.id != user_id).first():
+            return error_response(400, '邮箱已被注册')
+        user.email = email
+        
+    if 'avatar' in data:
+        user.avatar = data['avatar']
+        
+    db.session.commit()
+    
+    return success_response(data=user.to_dict(), message='个人信息修改成功')
+
+
+@api_bp.route('/auth/me/avatar', methods=['POST'])
+@jwt_required()
+def upload_avatar():
+    """上传个人头像到 OSS"""
+    user_id = get_current_user_id()
+    user = User.query.get(user_id)
+    
+    if not user:
+        return error_response(404, '用户不存在')
+        
+    if 'file' not in request.files:
+        return error_response(400, '未找到文件')
+        
+    file = request.files['file']
+    if file.filename == '':
+        return error_response(400, '未选择文件')
+        
+    success, result = upload_to_oss(file, folder='avatars')
+    if not success:
+        return error_response(500, result)
+        
+    user.avatar = result
+    db.session.commit()
+    
+    return success_response(data={'avatar': result}, message='头像上传成功')
 
 
 @api_bp.route('/auth/refresh', methods=['POST'])

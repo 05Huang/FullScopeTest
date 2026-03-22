@@ -41,7 +41,15 @@ def kill_process_on_port(port):
 # 第一步：终止旧进程
 kill_process_on_port(PORT)
 
-# 第二步：启动Flask应用
+# 第二步：加载环境变量
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path, override=True)
+else:
+    load_dotenv(override=True)
+
+# 第三步：启动Flask应用
 from app import create_app
 
 app = create_app('development')

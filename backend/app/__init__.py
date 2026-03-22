@@ -25,7 +25,12 @@ def create_app(config_name='development'):
         Flask: 配置好的 Flask 应用实例
     """
     # 加载 .env 文件（如果在 Celery Worker 中运行，确保环境变量被加载）
-    load_dotenv()
+    # 明确指定加载 backend 目录下的 .env 文件
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=True)
+    else:
+        load_dotenv(override=True)
 
     app = Flask(__name__)
 

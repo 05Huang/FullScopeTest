@@ -183,6 +183,8 @@ const MainLayout = () => {
       navigate('/login')
     } else if (key === 'settings') {
       navigate('/settings')
+    } else if (key === 'profile') {
+      navigate('/profile')
     }
   }
 
