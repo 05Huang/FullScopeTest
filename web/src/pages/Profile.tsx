@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Form, Input, Button, message, Typography, Row, Col, Space, Divider, Avatar, Upload, Spin } from 'antd'
+import { Card, Form, Input, Button, message, Typography, Row, Col, Space, Avatar, Upload, Spin } from 'antd'
 import { UserOutlined, MailOutlined, SaveOutlined, LockOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { authService } from '@/services/authService'
