@@ -87,7 +87,10 @@ def _generate_via_llm(
         "create_collection, create_case, run_collection, run_case. "
         "For create_case include at least name, method, url. "
         "Use existing IDs/names from context whenever possible. "
-        "IMPORTANT: The 'summary' field MUST be in Chinese (简体中文)."
+        "IMPORTANT: The 'summary' field MUST be in Chinese (简体中文). "
+        "CRITICAL REQUIREMENTS:\n"
+        "1. Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads().\n"
+        "2. ONLY use valid JSON syntax. DO NOT use JavaScript expressions or functions like `\"a\".repeat(1000)`."
     )
 
     user_payload = {
@@ -157,7 +160,9 @@ def _parse_json_content(content: Any) -> Any:
     match = re.search(r"\{[\s\S]*\}", text)
     if match:
         try:
-            return json.loads(match.group(0))
+            json_str = match.group(0)
+            json_str = re.sub(r'"([^"]*)"\.repeat\(\d+\)', r'"\1\1\1\1\1"', json_str)
+            return json.loads(json_str)
         except Exception:
             return {}
     return {}

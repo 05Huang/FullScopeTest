@@ -1945,7 +1945,28 @@ const ApiTestWorkspace = () => {
               label: '集合管理',
               children: (
                 <div style={{ padding: 12, height: 'calc(100vh - 240px)', overflow: 'auto' }}>
-                  <CollectionManager onCollectionChange={loadData} />
+                  <CollectionManager 
+                    onCollectionChange={loadData}
+                    onSelectCollection={(collectionId) => {
+                      setActiveCollectionId(collectionId)
+                      setSelectedCollectionId(collectionId)
+                      setSidebarTab('cases')
+                      setSelectedTreeKeys([`collection-${collectionId}`])
+                      setExpandedTreeKeys(prev => 
+                        prev.includes(`collection-${collectionId}`) ? prev : [...prev, `collection-${collectionId}`]
+                      )
+                    }}
+                    onAiReview={(collectionId) => {
+                      setActiveCollectionId(collectionId)
+                      setSelectedCollectionId(collectionId)
+                      setSidebarTab('cases')
+                      setSelectedTreeKeys([`collection-${collectionId}`])
+                      setExpandedTreeKeys(prev => 
+                        prev.includes(`collection-${collectionId}`) ? prev : [...prev, `collection-${collectionId}`]
+                      )
+                      setAiReviewModalOpen(true)
+                    }}
+                  />
                 </div>
               ),
             },

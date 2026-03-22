@@ -151,7 +151,7 @@ export const generateAiPlan = (data: {
   case_id?: number
   environment_id?: number
 }): Promise<ApiResponse<AiPlanResult>> => {
-  return api.post('/api-test/ai/plan', data) as Promise<ApiResponse<AiPlanResult>>
+  return api.post('/api-test/ai/plan', data, { timeout: 120000 }) as Promise<ApiResponse<AiPlanResult>>
 }
 
 export const synthesizeCasesAI = (data: {
@@ -161,7 +161,7 @@ export const synthesizeCasesAI = (data: {
   model?: string
   api_key?: string
 }): Promise<ApiResponse<{ cases: any[] }>> => {
-  return api.post('/api-test/ai/synthesize-cases', data) as Promise<ApiResponse<{ cases: any[] }>>
+  return api.post('/api-test/ai/synthesize-cases', data, { timeout: 120000 }) as Promise<ApiResponse<{ cases: any[] }>>
 }
 
 export const reviewCollectionAI = (data: {
@@ -170,7 +170,7 @@ export const reviewCollectionAI = (data: {
   model?: string
   api_key?: string
 }): Promise<ApiResponse<{ review_summary: string, suggested_cases: any[] }>> => {
-  return api.post('/api-test/ai/review-collection', data) as Promise<ApiResponse<{ review_summary: string, suggested_cases: any[] }>>
+  return api.post('/api-test/ai/review-collection', data, { timeout: 120000 }) as Promise<ApiResponse<{ review_summary: string, suggested_cases: any[] }>>
 }
 
 // 导出服务对象

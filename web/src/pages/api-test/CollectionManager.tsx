@@ -43,9 +43,11 @@ interface Environment {
 interface Props {
   onCollectionChange?: () => void
   onRunSuccess?: (result: any) => void
+  onSelectCollection?: (collectionId: number) => void
+  onAiReview?: (collectionId: number) => void
 }
 
-const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }) => {
+const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, onSelectCollection, onAiReview }) => {
   const [collections, setCollections] = useState<Collection[]>([])
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [loading, setLoading] = useState(false)
@@ -184,27 +186,77 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }
           dataSource={collections}
           renderItem={(collection) => (
             <List.Item
-              actions={[
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '12px 16px',
+                gap: '12px'
+              }}
+            >
+              <div 
+                style={{ width: '100%', cursor: 'pointer' }}
+                onClick={() => onSelectCollection?.(collection.id)}
+              >
+                <List.Item.Meta
+                  title={
+                    <Space style={{ width: '100%', wordBreak: 'break-all' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 500 }}>{collection.name}</span>
+                      <Tag color="blue" style={{ marginLeft: '4px' }}>{collection.case_count} 个用例</Tag>
+                    </Space>
+                  }
+                  description={collection.description || '暂无描述'}
+                  style={{ width: '100%' }}
+                />
+              </div>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+                <Button
+                  key="ai-review"
+                  type="dashed"
+                  size="small"
+                  icon={<InfoCircleOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onAiReview?.(collection.id)
+                  }}
+                  title="AI 评审"
+                >
+                  AI 评审
+                </Button>
                 <Button
                   key="run"
                   type="primary"
                   size="small"
                   icon={<PlayCircleOutlined />}
-                  onClick={() => showRunModal(collection)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    showRunModal(collection)
+                  }}
                   disabled={collection.case_count === 0}
                   title="运行"
-                />,
+                >
+                  运行
+                </Button>
                 <Button
                   key="edit"
                   size="small"
                   icon={<EditOutlined />}
-                  onClick={() => showEditModal(collection)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    showEditModal(collection)
+                  }}
                   title="编辑"
-                />,
+                >
+                  编辑
+                </Button>
                 <Popconfirm
                   key="delete"
                   title="确认删除这个集合吗？"
-                  onConfirm={() => handleDelete(collection.id)}
+                  onConfirm={(e) => {
+                    e?.stopPropagation()
+                    handleDelete(collection.id)
+                  }}
+                  onCancel={(e) => e?.stopPropagation()}
                   okText="确认"
                   cancelText="取消"
                 >
@@ -213,19 +265,12 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess }
                     danger
                     icon={<DeleteOutlined />}
                     title="删除"
-                  />
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    删除
+                  </Button>
                 </Popconfirm>
-              ]}
-            >
-              <List.Item.Meta
-                title={
-                  <Space>
-                    {collection.name}
-                    <Tag>{collection.case_count} 个用例</Tag>
-                  </Space>
-                }
-                description={collection.description || '暂无描述'}
-              />
+              </div>
             </List.Item>
           )}
         />

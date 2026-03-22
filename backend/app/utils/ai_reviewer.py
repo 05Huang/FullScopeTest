@@ -52,7 +52,9 @@ def review_api_collection(
         "   - body (object or string)\n"
         "   - body_type (string, e.g. json, form, raw)\n"
         "   - description (string explaining the purpose of this case)\n\n"
-        "Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads()."
+        "CRITICAL REQUIREMENTS:\n"
+        "1. Do NOT return markdown blocks outside the JSON. The response must be parseable by json.loads().\n"
+        "2. ONLY use valid JSON syntax. DO NOT use JavaScript expressions or functions like `\"a\".repeat(1000)`. If you need a long string, write a literal string like `\"aaaa...\"` (but keep it reasonable, e.g. 50 characters) or explain it in the description."
     )
 
     user_content = json.dumps({
@@ -91,15 +93,42 @@ def review_api_collection(
 
     content = ((choices[0] or {}).get("message") or {}).get("content", "")
     
+    # Clean up markdown code blocks if the LLM still returns them
+    cleaned_content = content.strip()
+    if cleaned_content.startswith("```json"):
+        cleaned_content = cleaned_content[7:]
+    elif cleaned_content.startswith("```"):
+        cleaned_content = cleaned_content[3:]
+    if cleaned_content.endswith("```"):
+        cleaned_content = cleaned_content[:-3]
+    cleaned_content = cleaned_content.strip()
+
     try:
-        result = json.loads(content)
+        result = json.loads(cleaned_content)
         return {
             "review_summary": result.get("review_summary", "无评审总结"),
             "suggested_cases": result.get("suggested_cases", [])
         }
     except json.JSONDecodeError:
+        # Fallback: try to find a JSON object in the string using regex or simple search
+        import re
+        match = re.search(r'\{[\s\S]*\}', content)
+        if match:
+            try:
+                # If there's invalid JS like .repeat(), let's just do a naive replace
+                # This is a hacky fix for common LLM mistakes like "a".repeat(1000)
+                json_str = match.group(0)
+                json_str = re.sub(r'"([^"]*)"\.repeat\(\d+\)', r'"\1\1\1\1\1"', json_str)
+                result = json.loads(json_str)
+                return {
+                    "review_summary": result.get("review_summary", "无评审总结"),
+                    "suggested_cases": result.get("suggested_cases", [])
+                }
+            except json.JSONDecodeError:
+                pass
+                
         logger.error("Failed to parse JSON from LLM: %s", content)
         return {
-            "review_summary": "AI response was not valid JSON. Raw output: " + content,
+            "review_summary": "AI 返回的数据格式无法解析。请重试，或检查其是否返回了非标准 JSON 格式（如 JavaScript 代码）。\n\n原始返回内容：\n" + content,
             "suggested_cases": []
         }
