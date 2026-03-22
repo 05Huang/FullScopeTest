@@ -37,6 +37,22 @@ export const getCurrentUser = (): Promise<ApiResponse> => {
   return api.get('/auth/me') as Promise<ApiResponse>
 }
 
+// 修改个人信息
+export const updateProfile = (data: { username?: string; email?: string; avatar?: string }): Promise<ApiResponse> => {
+  return api.put('/auth/me', data) as Promise<ApiResponse>
+}
+
+// 上传个人头像
+export const uploadAvatar = (file: File): Promise<ApiResponse<{ avatar: string }>> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api.post('/auth/me/avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }) as Promise<ApiResponse<{ avatar: string }>>
+}
+
 // 修改密码
 export const changePassword = (oldPassword: string, newPassword: string): Promise<ApiResponse> => {
   return api.put('/auth/password', { old_password: oldPassword, new_password: newPassword }) as Promise<ApiResponse>
@@ -47,5 +63,7 @@ export const authService = {
   login,
   register,
   getCurrentUser,
+  updateProfile,
+  uploadAvatar,
   changePassword,
 }
