@@ -12,6 +12,7 @@ from flask_cors import CORS
 from .extensions import db, migrate, jwt, celery
 from .config import config
 from .celery_app import init_celery
+from .scheduler import init_scheduler
 
 
 def create_app(config_name='development'):
@@ -53,8 +54,11 @@ def create_app(config_name='development'):
     # 注册蓝图
     register_blueprints(app)
 
-    # 注册错误处理
+    # 注册全局错误处理器
     register_error_handlers(app)
+
+    # 初始化定时任务
+    init_scheduler(app)
 
     return app
 

@@ -10,6 +10,7 @@ import PerfTestScenarios from './pages/perf-test/PerfTestScenarios'
 import PerfTestMonitor from './pages/perf-test/PerfTestMonitor'
 import PerfTestResults from './pages/perf-test/PerfTestResults'
 import Reports from './pages/Reports'
+import CICD from './pages/CICD'
 import Documents from './pages/Documents'
 import Settings from './pages/Settings'
 import Profile from './pages/Profile'
@@ -72,6 +73,9 @@ function App() {
         
         {/* 测试报告 */}
         <Route path="reports" element={<Reports />} />
+        
+        {/* CI/CD与定时任务 */}
+        <Route path="ci-cd" element={<CICD />} />
         
         {/* 测试文档 */}
         <Route path="docs" element={<Documents />} />

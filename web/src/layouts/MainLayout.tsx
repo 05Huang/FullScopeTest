@@ -134,6 +134,11 @@ const menuItems: MenuProps['items'] = [
     label: '测试报告',
   },
   {
+    key: '/ci-cd',
+    icon: <ApiOutlined />,
+    label: 'CI/CD与定时任务',
+  },
+  {
     key: '/docs',
     icon: <FileTextOutlined />,
     label: '测试文档',

@@ -46,6 +46,7 @@ class TestRun(db.Model):
     results = db.Column(db.JSON, default=list, comment='执行结果详情')
     
     # 报告
+    report_id = db.Column(db.Integer, comment='关联报告ID')
     report_path = db.Column(db.String(500), comment='报告文件路径')
     allure_report_path = db.Column(db.String(500), comment='Allure 报告路径')
     

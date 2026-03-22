@@ -683,7 +683,6 @@ const PerfTestScenarios = () => {
           </Button>
           <Button
             type="primary"
-            style={{ backgroundColor: '#722ed1' }}
             icon={<RobotOutlined />}
             onClick={() => setIsAiModalOpen(true)}
           >
