@@ -56,33 +56,13 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('api_test_cases', schema=None) as batch_op:
-        batch_op.alter_column('last_result',
-               existing_type=postgresql.JSON(astext_type=sa.Text()),
-               comment='最后执行结果',
-               existing_nullable=True)
-        batch_op.alter_column('mock_enabled',
-               existing_type=sa.BOOLEAN(),
-               comment='是否启用 Mock',
-               existing_nullable=True,
-               existing_server_default=sa.text('false'))
-        batch_op.alter_column('mock_response_code',
-               existing_type=sa.INTEGER(),
-               comment='Mock 响应状态码',
-               existing_nullable=True,
-               existing_server_default=sa.text('200'))
-        batch_op.alter_column('mock_response_body',
-               existing_type=sa.TEXT(),
-               comment='Mock 响应体 (通常是 JSON 字符串)',
-               existing_nullable=True)
-        batch_op.alter_column('mock_response_headers',
-               existing_type=postgresql.JSON(astext_type=sa.Text()),
-               comment='Mock 响应头',
-               existing_nullable=True)
-        batch_op.alter_column('mock_delay_ms',
-               existing_type=sa.INTEGER(),
-               comment='Mock 响应延迟(毫秒)',
-               existing_nullable=True,
-               existing_server_default=sa.text('0'))
+        # Instead of altering non-existent columns, we add them
+        batch_op.add_column(sa.Column('last_result', sa.JSON(), nullable=True, comment='最后执行结果'))
+        batch_op.add_column(sa.Column('mock_enabled', sa.Boolean(), server_default=sa.text('false'), nullable=True, comment='是否启用 Mock'))
+        batch_op.add_column(sa.Column('mock_response_code', sa.Integer(), server_default=sa.text('200'), nullable=True, comment='Mock 响应状态码'))
+        batch_op.add_column(sa.Column('mock_response_body', sa.Text(), nullable=True, comment='Mock 响应体 (通常是 JSON 字符串)'))
+        batch_op.add_column(sa.Column('mock_response_headers', sa.JSON(), nullable=True, comment='Mock 响应头'))
+        batch_op.add_column(sa.Column('mock_delay_ms', sa.Integer(), server_default=sa.text('0'), nullable=True, comment='Mock 响应延迟(毫秒)'))
 
     with op.batch_alter_table('test_runs', schema=None) as batch_op:
         batch_op.alter_column('report_id',
@@ -104,39 +84,12 @@ def downgrade():
                existing_nullable=True)
 
     with op.batch_alter_table('api_test_cases', schema=None) as batch_op:
-        batch_op.alter_column('mock_delay_ms',
-               existing_type=sa.INTEGER(),
-               comment=None,
-               existing_comment='Mock 响应延迟(毫秒)',
-               existing_nullable=True,
-               existing_server_default=sa.text('0'))
-        batch_op.alter_column('mock_response_headers',
-               existing_type=postgresql.JSON(astext_type=sa.Text()),
-               comment=None,
-               existing_comment='Mock 响应头',
-               existing_nullable=True)
-        batch_op.alter_column('mock_response_body',
-               existing_type=sa.TEXT(),
-               comment=None,
-               existing_comment='Mock 响应体 (通常是 JSON 字符串)',
-               existing_nullable=True)
-        batch_op.alter_column('mock_response_code',
-               existing_type=sa.INTEGER(),
-               comment=None,
-               existing_comment='Mock 响应状态码',
-               existing_nullable=True,
-               existing_server_default=sa.text('200'))
-        batch_op.alter_column('mock_enabled',
-               existing_type=sa.BOOLEAN(),
-               comment=None,
-               existing_comment='是否启用 Mock',
-               existing_nullable=True,
-               existing_server_default=sa.text('false'))
-        batch_op.alter_column('last_result',
-               existing_type=postgresql.JSON(astext_type=sa.Text()),
-               comment=None,
-               existing_comment='最后执行结果',
-               existing_nullable=True)
+        batch_op.drop_column('mock_delay_ms')
+        batch_op.drop_column('mock_response_headers')
+        batch_op.drop_column('mock_response_body')
+        batch_op.drop_column('mock_response_code')
+        batch_op.drop_column('mock_enabled')
+        batch_op.drop_column('last_result')
 
     op.drop_table('app_test_scripts')
     op.drop_table('app_test_collections')
