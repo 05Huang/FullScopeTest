@@ -7,7 +7,8 @@ import {
   CloseOutlined, 
   SettingOutlined 
 } from '@ant-design/icons';
-import api from '../services/api';
+import ReactMarkdown from 'react-markdown';
+import api, { ApiResponse } from '../services/api';
 
 const { Text } = Typography;
 
@@ -15,6 +16,24 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
+
+const normalizeMarkdownLineBreaks = (text: string) => {
+  const lines = String(text ?? '').split('\n');
+  let inFence = false;
+  const out: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith('```')) {
+      inFence = !inFence;
+      out.push(line);
+      continue;
+    }
+    out.push(inFence ? line : `${line}  `);
+  }
+
+  return out.join('\n');
+};
 
 const GlobalCopilot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -52,21 +71,17 @@ const GlobalCopilot: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await api.post('/copilot/chat', {
+      const res = (await api.post('/copilot/chat', {
         messages: newMessages.filter(m => m.role === 'user' || m.role === 'assistant'),
         base_url: aiBaseUrl,
         model: aiModel,
         api_key: aiApiKey
-      });
-
-      // 适配 Axios 拦截器后的响应结构
-      // 如果使用了统一拦截器，res.data 已经被解包，或者 res 本身就是解包后的数据
-      const responseData = res.data || res;
+      })) as unknown as ApiResponse<Message>;
       
-      if (responseData?.code === 200 && responseData?.data) {
-        setMessages(prev => [...prev, responseData.data]);
+      if (res?.code === 200 && res?.data) {
+        setMessages(prev => [...prev, res.data]);
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: `请求失败: ${responseData?.message || '未知错误'}` }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: `请求失败: ${res?.message || '未知错误'}` }]);
       }
     } catch (error: any) {
       setMessages(prev => [...prev, { role: 'assistant', content: `网络错误: ${error.message || '未知错误'}` }]);
@@ -186,11 +201,54 @@ const GlobalCopilot: React.FC = () => {
                       background: msg.role === 'user' ? '#3D6E66' : '#ffffff',
                       color: msg.role === 'user' ? '#fff' : 'rgba(0, 0, 0, 0.88)',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                      whiteSpace: 'pre-wrap',
+                      whiteSpace: msg.role === 'assistant' ? 'normal' : 'pre-wrap',
                       wordBreak: 'break-word',
                       border: msg.role === 'assistant' ? '1px solid rgba(61, 110, 102, 0.1)' : 'none'
                     }}>
-                      {msg.content}
+                      {msg.role === 'assistant' ? (
+                        <ReactMarkdown
+                          components={{
+                            p: (props) => <p style={{ margin: 0 }} {...props} />,
+                            ol: (props) => <ol style={{ margin: 0, paddingLeft: 20 }} {...props} />,
+                            ul: (props) => <ul style={{ margin: 0, paddingLeft: 20 }} {...props} />,
+                            li: (props) => <li style={{ margin: '4px 0' }} {...props} />,
+                            a: ({ href, children, ...rest }) => (
+                              <a href={href} target="_blank" rel="noreferrer" {...rest}>
+                                {children}
+                              </a>
+                            ),
+                            code: ({ children, ...rest }) => (
+                              <code
+                                style={{
+                                  background: 'rgba(0,0,0,0.06)',
+                                  borderRadius: 4,
+                                  padding: '0 6px',
+                                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                }}
+                                {...rest}
+                              >
+                                {children}
+                              </code>
+                            ),
+                            pre: (props) => (
+                              <pre
+                                style={{
+                                  margin: 0,
+                                  padding: 12,
+                                  background: 'rgba(0,0,0,0.06)',
+                                  borderRadius: 8,
+                                  overflowX: 'auto',
+                                }}
+                                {...props}
+                              />
+                            ),
+                          }}
+                        >
+                          {normalizeMarkdownLineBreaks(msg.content)}
+                        </ReactMarkdown>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                     {msg.role === 'user' && (
                       <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#D7B56D' }} />
