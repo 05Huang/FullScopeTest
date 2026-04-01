@@ -6,6 +6,25 @@ version: '3.8'
 services:
 
 
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: fullscopetest_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=fullscopetest
+      - POSTGRES_PASSWORD=fullscopetest123
+      - POSTGRES_DB=fullscopetest_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fullscopetest -d fullscopetest_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   # Redis 缓存/消息队列
   redis:
     image: redis:7-alpine
