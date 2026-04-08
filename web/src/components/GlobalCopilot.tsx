@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Card, Space, Avatar, Typography, Tooltip } from 'antd';
 import { 
-  RobotOutlined, 
   UserOutlined, 
   SendOutlined, 
   CloseOutlined, 
@@ -16,6 +15,41 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
+
+const CopilotSpriteMark = ({ size = 22 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 64 64"
+    style={{ display: 'block' }}
+    aria-hidden="true"
+    focusable="false"
+  >
+    <defs>
+      <linearGradient id="fstCopilotMarkG" x1="12" y1="10" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#5FA59B" />
+        <stop offset="0.7" stopColor="#3D6E66" />
+        <stop offset="1" stopColor="#2F8F6B" />
+      </linearGradient>
+    </defs>
+    <path d="M32 10.5c-10.1 0-18.3 8.2-18.3 18.3 0 10.5 7.2 20.3 18.3 20.3s18.3-9.8 18.3-20.3c0-10.1-8.2-18.3-18.3-18.3z" fill="url(#fstCopilotMarkG)" opacity="0.94" />
+    <path d="M43.8 16.4c-2.6-2.4-6.6-4-11.8-4s-9.2 1.6-11.8 4" fill="none" stroke="rgba(255,255,255,0.36)" strokeWidth="3" strokeLinecap="round" />
+    <path d="M21.1 28.1c2.4-5.1 7-8.2 10.9-8.2 4.2 0 8.6 3 10.9 8.2" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="3.2" strokeLinecap="round" />
+    <path d="M24.7 31.9c0 6.2 3.6 11 7.3 11s7.3-4.8 7.3-11" fill="rgba(255,255,255,0.86)" opacity="0.96" />
+    <circle cx="29.1" cy="34.2" r="2.1" fill="rgba(61,110,102,0.62)" />
+    <circle cx="34.9" cy="34.2" r="2.1" fill="rgba(61,110,102,0.62)" />
+    <path d="M29.6 38.4c1.6 1.7 3.2 1.7 4.8 0" fill="none" stroke="rgba(61,110,102,0.68)" strokeWidth="2.6" strokeLinecap="round" />
+    <path d="M17.4 25.2c.3-6 4.4-10.8 10.2-12.3" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3.2" strokeLinecap="round" />
+    <path d="M46.6 25.2c-.3-6-4.4-10.8-10.2-12.3" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3.2" strokeLinecap="round" />
+    <path d="M36.2 10.7c.1-2.2-1.2-3.7-4.2-4.4-3 .7-4.3 2.2-4.2 4.4" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.8" strokeLinecap="round" />
+    <path d="M20.5 20.6c1.3-1.6 2.7-2.7 4.4-3.5" fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="2.8" strokeLinecap="round" />
+    <path d="M43.5 20.6c-1.3-1.6-2.7-2.7-4.4-3.5" fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="2.8" strokeLinecap="round" />
+    <path d="M19 47.7c2.7 3.2 7 5.6 13 5.6s10.3-2.4 13-5.6" fill="rgba(255,255,255,0.58)" />
+    <path d="M21.5 50.6c2.9-2.4 6.2-3.7 10.5-3.7s7.6 1.3 10.5 3.7" fill="none" stroke="rgba(15,45,40,0.22)" strokeWidth="3.1" strokeLinecap="round" />
+    <path d="M22.7 16.9c2.3-3 5.6-4.5 9.3-4.5s7 1.5 9.3 4.5" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="5.6" strokeLinecap="round" />
+    <path d="M26.2 15.4c1.7-1.2 3.6-1.8 5.8-1.8 2.2 0 4.1.6 5.8 1.8" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.8" strokeLinecap="round" />
+  </svg>
+);
 
 const normalizeMarkdownLineBreaks = (text: string) => {
   const lines = String(text ?? '').split('\n');
@@ -48,6 +82,8 @@ const GlobalCopilot: React.FC = () => {
   const [nudgeText, setNudgeText] = useState('');
   const [reduceMotion, setReduceMotion] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(null);
   
   // AI Config (from localStorage)
   const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1');
@@ -57,10 +93,34 @@ const GlobalCopilot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const nudgeTimersRef = useRef<{ show?: number; hide?: number }>({});
   const nudgeShownCountRef = useRef(0);
+  const panelDragRef = useRef<{
+    active: boolean;
+    pointerId: number | null;
+    startClientX: number;
+    startClientY: number;
+    originX: number;
+    originY: number;
+    rafId: number | null;
+    pending: { x: number; y: number } | null;
+  }>({
+    active: false,
+    pointerId: null,
+    startClientX: 0,
+    startClientY: 0,
+    originX: 0,
+    originY: 0,
+    rafId: null,
+    pending: null,
+  });
+  const panelPosRef = useRef(panelPos);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    panelPosRef.current = panelPos;
+  }, [panelPos]);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,6 +146,62 @@ const GlobalCopilot: React.FC = () => {
     mq.addEventListener?.('change', setFromMq);
     return () => mq.removeEventListener?.('change', setFromMq);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(max-width: 480px)');
+    const setFromMq = () => setIsSmallScreen(Boolean(mq.matches));
+    setFromMq();
+    mq.addEventListener?.('change', setFromMq);
+    return () => mq.removeEventListener?.('change', setFromMq);
+  }, []);
+
+  const clampPanelPos = (x: number, y: number) => {
+    const margin = 18;
+    const width = 420;
+    const height = 640;
+    const maxX = Math.max(margin, window.innerWidth - width - margin);
+    const maxY = Math.max(margin, window.innerHeight - height - margin);
+    return {
+      x: Math.min(maxX, Math.max(margin, x)),
+      y: Math.min(maxY, Math.max(margin, y)),
+    };
+  };
+
+  const ensurePanelPos = () => {
+    if (typeof window === 'undefined') return;
+    if (isSmallScreen) return;
+    if (panelPosRef.current) return;
+    let next: { x: number; y: number } | null = null;
+    try {
+      const raw = sessionStorage.getItem('fst-copilot-panel-pos');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+          next = clampPanelPos(parsed.x, parsed.y);
+        }
+      }
+    } catch {}
+    if (!next) {
+      next = clampPanelPos(window.innerWidth - 420 - 28, window.innerHeight - 640 - 28);
+    }
+    setPanelPos(next);
+  };
+
+  useEffect(() => {
+    if (!panelMounted || !isOpen || isSmallScreen) return;
+    ensurePanelPos();
+  }, [panelMounted, isOpen, isSmallScreen]);
+
+  useEffect(() => {
+    if (!panelMounted || isSmallScreen) return;
+    const onResize = () => {
+      if (!panelPosRef.current) return;
+      setPanelPos(clampPanelPos(panelPosRef.current.x, panelPosRef.current.y));
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [panelMounted, isSmallScreen]);
 
   const nudgeCandidates = useMemo(
     () => [
@@ -194,11 +310,60 @@ const GlobalCopilot: React.FC = () => {
     setHasInteracted(true);
     setIsOpen(true);
     hideNudge();
+    ensurePanelPos();
   };
 
   const handleClose = () => {
     setIsOpen(false);
     setShowConfig(false);
+  };
+
+  const handlePanelPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
+    if (isSmallScreen) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.fst-copilot-header-actions')) return;
+    if (!panelPosRef.current) ensurePanelPos();
+    if (!panelPosRef.current) return;
+
+    setHasInteracted(true);
+    const state = panelDragRef.current;
+    state.active = true;
+    state.pointerId = e.pointerId;
+    state.startClientX = e.clientX;
+    state.startClientY = e.clientY;
+    state.originX = panelPosRef.current.x;
+    state.originY = panelPosRef.current.y;
+
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+
+    const onMove = (ev: PointerEvent) => {
+      if (!state.active) return;
+      const dx = ev.clientX - state.startClientX;
+      const dy = ev.clientY - state.startClientY;
+      const next = clampPanelPos(state.originX + dx, state.originY + dy);
+      state.pending = next;
+      if (state.rafId) return;
+      state.rafId = window.requestAnimationFrame(() => {
+        state.rafId = null;
+        if (state.pending) setPanelPos(state.pending);
+        state.pending = null;
+      });
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      state.active = false;
+      state.pointerId = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      try {
+        const current = panelPosRef.current;
+        if (current) sessionStorage.setItem('fst-copilot-panel-pos', JSON.stringify(current));
+      } catch {}
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(ev.pointerId);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   return (
@@ -286,14 +451,14 @@ const GlobalCopilot: React.FC = () => {
       {panelMounted && (
         <Card
           title={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="fst-copilot-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onPointerDown={handlePanelPointerDown}>
               <Space>
                 <span className="fst-copilot-header-icon" aria-hidden="true">
-                  <RobotOutlined />
+                  <CopilotSpriteMark size={20} />
                 </span>
                 <span className="fst-copilot-header-title">AI Copilot</span>
               </Space>
-              <Space>
+              <Space className="fst-copilot-header-actions">
                 <Button type="text" icon={<SettingOutlined />} onClick={() => setShowConfig(!showConfig)} />
                 <Button type="text" icon={<CloseOutlined />} onClick={handleClose} />
               </Space>
@@ -302,8 +467,8 @@ const GlobalCopilot: React.FC = () => {
           className={`fst-copilot-panel ${isOpen ? 'is-open' : 'is-closing'}`}
           style={{
             position: 'fixed',
-            bottom: 28,
-            right: 28,
+            left: isSmallScreen ? undefined : (panelPos?.x ?? 28),
+            top: isSmallScreen ? undefined : (panelPos?.y ?? 28),
             width: 420,
             height: 640,
             display: 'flex',
@@ -345,7 +510,7 @@ const GlobalCopilot: React.FC = () => {
                     }}
                   >
                     {msg.role === 'assistant' && (
-                      <Avatar icon={<RobotOutlined />} className="fst-copilot-avatar-ai" />
+                      <Avatar icon={<CopilotSpriteMark size={18} />} className="fst-copilot-avatar-ai" />
                     )}
                     <div style={{
                       maxWidth: '80%',
@@ -409,9 +574,9 @@ const GlobalCopilot: React.FC = () => {
                     )}
                   </div>
                 ))}
-                {loading && (
+                {loading && (messages.filter(m => m.role === 'assistant').slice(-1)[0]?.content ?? '') === '' && (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Avatar icon={<RobotOutlined />} className="fst-copilot-avatar-ai" />
+                    <Avatar icon={<CopilotSpriteMark size={18} />} className="fst-copilot-avatar-ai" />
                     <div className="fst-copilot-typing">
                       <span className="fst-copilot-typing-dot" />
                       <span className="fst-copilot-typing-dot" />
