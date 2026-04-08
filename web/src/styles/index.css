@@ -784,3 +784,425 @@ body {
     transition: none !important;
   }
 }
+
+.fst-copilot-sprite {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  width: 62px;
+  height: 62px;
+  border-radius: 22px;
+  border: 1px solid rgba(15, 45, 40, 0.14);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 22px 60px rgba(15, 45, 40, 0.18);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 9999;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  animation: fst-copilot-float 3.6s ease-in-out infinite;
+}
+
+.fst-copilot-sprite:focus-visible {
+  outline: 3px solid rgba(95, 165, 155, 0.35);
+  outline-offset: 4px;
+}
+
+.fst-copilot-sprite:hover {
+  transform: translate3d(0, -2px, 0) scale(1.02);
+  border-color: rgba(95, 165, 155, 0.28);
+  box-shadow: 0 26px 70px rgba(15, 45, 40, 0.22);
+}
+
+.fst-copilot-sprite-glow {
+  position: absolute;
+  inset: -20px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(95, 165, 155, 0.34), transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(215, 181, 109, 0.24), transparent 58%),
+    radial-gradient(circle at 55% 40%, rgba(61, 110, 102, 0.26), transparent 60%);
+  filter: blur(10px);
+  opacity: 0.9;
+  animation: fst-copilot-glow 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.fst-copilot-sprite-svg {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 10px 16px rgba(15, 45, 40, 0.20));
+}
+
+.fst-copilot-sprite-spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 6px rgba(95, 165, 155, 0.12);
+  opacity: 0.85;
+  animation: fst-copilot-orbit 2.6s linear infinite;
+  pointer-events: none;
+}
+
+.fst-copilot-sprite-spark.s1 {
+  top: 10px;
+  left: 10px;
+}
+
+.fst-copilot-sprite-spark.s2 {
+  top: 12px;
+  right: 12px;
+  animation-duration: 3.1s;
+  opacity: 0.7;
+}
+
+.fst-copilot-sprite-spark.s3 {
+  bottom: 12px;
+  left: 14px;
+  animation-duration: 3.6s;
+  opacity: 0.65;
+}
+
+@keyframes fst-copilot-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+@keyframes fst-copilot-glow {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
+}
+
+@keyframes fst-copilot-orbit {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(34px, 6px, 0);
+  }
+  50% {
+    transform: translate3d(10px, 34px, 0);
+  }
+  75% {
+    transform: translate3d(-18px, 14px, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.fst-copilot-nudge {
+  position: fixed;
+  right: 104px;
+  bottom: 28px;
+  z-index: 9999;
+  max-width: min(320px, calc(100vw - 140px));
+  animation: fst-copilot-nudge-in 180ms ease-out both;
+}
+
+.fst-copilot-nudge-bubble {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 76px rgba(15, 45, 40, 0.18);
+  padding: 14px 14px 12px;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.fst-copilot-nudge-bubble::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  bottom: 18px;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  border-right: 1px solid rgba(15, 45, 40, 0.12);
+  border-bottom: 1px solid rgba(15, 45, 40, 0.12);
+  transform: rotate(-45deg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.fst-copilot-nudge-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 45, 40, 0.10);
+  background: rgba(255, 255, 255, 0.55);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: rgba(15, 45, 40, 0.65);
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.fst-copilot-nudge-close:hover {
+  transform: translate3d(0, -1px, 0);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.fst-copilot-nudge-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  color: rgba(15, 45, 40, 0.88);
+  padding-right: 30px;
+  margin-bottom: 8px;
+}
+
+.fst-copilot-nudge-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%);
+  box-shadow: 0 0 0 6px rgba(95, 165, 155, 0.14);
+}
+
+.fst-copilot-nudge-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.78);
+  margin-bottom: 12px;
+}
+
+.fst-copilot-nudge-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.fst-copilot-nudge-primary,
+.fst-copilot-nudge-secondary {
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.fst-copilot-nudge-primary {
+  color: white;
+  border: none;
+  background: linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%);
+  box-shadow: 0 18px 40px rgba(61, 110, 102, 0.22);
+}
+
+.fst-copilot-nudge-secondary {
+  background: rgba(255, 255, 255, 0.55);
+  color: rgba(15, 45, 40, 0.82);
+}
+
+.fst-copilot-nudge-primary:hover,
+.fst-copilot-nudge-secondary:hover {
+  transform: translate3d(0, -1px, 0);
+  border-color: rgba(95, 165, 155, 0.22);
+}
+
+@keyframes fst-copilot-nudge-in {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, 10px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.fst-copilot-panel.ant-card {
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  background: rgba(255, 255, 255, 0.56);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 32px 100px rgba(15, 45, 40, 0.18);
+}
+
+.fst-copilot-panel.ant-card.is-open {
+  animation: fst-copilot-panel-in 180ms ease-out both;
+}
+
+.fst-copilot-panel.ant-card.is-closing {
+  animation: fst-copilot-panel-out 180ms ease-in both;
+}
+
+.fst-copilot-panel .ant-card-head {
+  background: rgba(255, 255, 255, 0.52);
+  border-bottom: 1px solid rgba(15, 45, 40, 0.10);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.fst-copilot-panel .ant-card-head-title {
+  padding: 14px 0;
+}
+
+.fst-copilot-panel .ant-card-body {
+  background: transparent;
+}
+
+.fst-copilot-header-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  background: rgba(255, 255, 255, 0.56);
+  display: grid;
+  place-items: center;
+  color: #3D6E66;
+  box-shadow: 0 16px 44px rgba(15, 45, 40, 0.12);
+}
+
+.fst-copilot-header-title {
+  font-weight: 700;
+  color: rgba(15, 45, 40, 0.9);
+  letter-spacing: 0.01em;
+}
+
+.fst-copilot-config {
+  padding: 16px;
+  flex: 1;
+  background: transparent;
+}
+
+.fst-copilot-messages {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(95, 165, 155, 0.16), transparent 48%),
+    radial-gradient(circle at 88% 92%, rgba(215, 181, 109, 0.12), transparent 52%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06));
+}
+
+.fst-copilot-avatar-ai.ant-avatar {
+  background: linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%);
+}
+
+.fst-copilot-typing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 45, 40, 0.10);
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.fst-copilot-typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(61, 110, 102, 0.65);
+  animation: fst-copilot-dot 1.1s ease-in-out infinite;
+}
+
+.fst-copilot-typing-dot:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.fst-copilot-typing-dot:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+@keyframes fst-copilot-dot {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(0, -4px, 0);
+    opacity: 0.9;
+  }
+}
+
+.fst-copilot-input {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(15, 45, 40, 0.10);
+  background: rgba(255, 255, 255, 0.46);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@keyframes fst-copilot-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(10px, 12px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes fst-copilot-panel-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(10px, 12px, 0) scale(0.985);
+  }
+}
+
+@media (max-width: 480px) {
+  .fst-copilot-panel.ant-card {
+    right: 14px !important;
+    bottom: 14px !important;
+    width: calc(100vw - 28px) !important;
+    height: calc(100dvh - 28px) !important;
+    border-radius: 18px !important;
+  }
+  .fst-copilot-sprite {
+    right: 14px;
+    bottom: 14px;
+  }
+  .fst-copilot-nudge {
+    right: 88px;
+    bottom: 14px;
+    max-width: min(320px, calc(100vw - 120px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fst-copilot-sprite,
+  .fst-copilot-sprite-glow,
+  .fst-copilot-sprite-spark,
+  .fst-copilot-nudge,
+  .fst-copilot-typing-dot,
+  .fst-copilot-panel.ant-card.is-open,
+  .fst-copilot-panel.ant-card.is-closing {
+    animation: none !important;
+    transition: none !important;
+  }
+}

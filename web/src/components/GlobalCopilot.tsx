@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button, Input, Card, Space, Avatar, Typography, Tooltip } from 'antd';
 import { 
   RobotOutlined, 
@@ -37,12 +37,17 @@ const normalizeMarkdownLineBreaks = (text: string) => {
 
 const GlobalCopilot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [panelMounted, setPanelMounted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: '你好！我是你的 AI 测试平台助手。你可以让我帮你创建性能测试任务，或者查询最近失败的 Web 测试记录。' }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  const [nudgeText, setNudgeText] = useState('');
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   
   // AI Config (from localStorage)
   const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1');
@@ -50,6 +55,8 @@ const GlobalCopilot: React.FC = () => {
   const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const nudgeTimersRef = useRef<{ show?: number; hide?: number }>({});
+  const nudgeShownCountRef = useRef(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,6 +68,91 @@ const GlobalCopilot: React.FC = () => {
     }
   }, [messages, isOpen]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setPanelMounted(true);
+      return;
+    }
+    if (!panelMounted) return;
+    const t = window.setTimeout(() => setPanelMounted(false), 180);
+    return () => window.clearTimeout(t);
+  }, [isOpen, panelMounted]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const setFromMq = () => setReduceMotion(Boolean(mq.matches));
+    setFromMq();
+    mq.addEventListener?.('change', setFromMq);
+    return () => mq.removeEventListener?.('change', setFromMq);
+  }, []);
+
+  const nudgeCandidates = useMemo(
+    () => [
+      '需要我帮你查看最近失败的 Web 测试记录吗？',
+      '要不要我帮你创建一个性能测试任务？',
+      '需要我帮你解释这页数据的含义吗？',
+      '想快速定位问题？把报错信息发我就行。',
+    ],
+    []
+  );
+
+  const clearNudgeTimers = () => {
+    if (nudgeTimersRef.current.show) window.clearTimeout(nudgeTimersRef.current.show);
+    if (nudgeTimersRef.current.hide) window.clearTimeout(nudgeTimersRef.current.hide);
+    nudgeTimersRef.current = {};
+  };
+
+  const hideNudge = (dismiss?: boolean) => {
+    setNudgeOpen(false);
+    if (dismiss) {
+      try {
+        sessionStorage.setItem('fst-copilot-nudge-dismissed', '1');
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    if (reduceMotion) {
+      clearNudgeTimers();
+      return;
+    }
+    if (isOpen) {
+      clearNudgeTimers();
+      setNudgeOpen(false);
+      return;
+    }
+    if (hasInteracted) {
+      clearNudgeTimers();
+      setNudgeOpen(false);
+      return;
+    }
+    let dismissed = false;
+    try {
+      dismissed = sessionStorage.getItem('fst-copilot-nudge-dismissed') === '1';
+    } catch {}
+    if (dismissed) return;
+
+    const scheduleNext = () => {
+      if (nudgeShownCountRef.current >= 3) return;
+      const delay = 45000 + Math.floor(Math.random() * 45000);
+      nudgeTimersRef.current.show = window.setTimeout(() => {
+        if (isOpen) return;
+        const text = nudgeCandidates[Math.floor(Math.random() * nudgeCandidates.length)];
+        setNudgeText(text);
+        setNudgeOpen(true);
+        nudgeShownCountRef.current += 1;
+        nudgeTimersRef.current.hide = window.setTimeout(() => {
+          setNudgeOpen(false);
+          scheduleNext();
+        }, 7000);
+      }, delay);
+    };
+
+    scheduleNext();
+    return () => clearNudgeTimers();
+  }, [reduceMotion, isOpen, hasInteracted, nudgeCandidates]);
+
   const handleSend = async () => {
     if (!inputValue.trim() || loading) return;
 
@@ -69,6 +161,7 @@ const GlobalCopilot: React.FC = () => {
     setMessages(newMessages);
     setInputValue('');
     setLoading(true);
+    setHasInteracted(true);
 
     try {
       const res = (await api.post('/copilot/chat', {
@@ -97,58 +190,126 @@ const GlobalCopilot: React.FC = () => {
     setShowConfig(false);
   };
 
+  const handleOpen = () => {
+    setHasInteracted(true);
+    setIsOpen(true);
+    hideNudge();
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setShowConfig(false);
+  };
+
   return (
     <>
       {/* 悬浮按钮 */}
       {!isOpen && (
-        <Tooltip title="AI 测试助手" placement="left">
-          <Button
-            type="primary"
-            shape="circle"
-            size="large"
-            icon={<RobotOutlined style={{ fontSize: 24 }} />}
-            style={{
-              position: 'fixed',
-              bottom: 40,
-              right: 40,
-              width: 60,
-              height: 60,
-              boxShadow: '0 8px 24px rgba(61, 110, 102, 0.25)',
-              zIndex: 9999,
-              background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)',
-              border: 'none'
-            }}
-            onClick={() => setIsOpen(true)}
-          />
-        </Tooltip>
+        <>
+          <Tooltip title="AI 测试助手" placement="left">
+            <button className="fst-copilot-sprite" type="button" onClick={handleOpen} aria-label="打开 AI Copilot">
+              <span className="fst-copilot-sprite-glow" aria-hidden="true" />
+              <span className="fst-copilot-sprite-spark s1" aria-hidden="true" />
+              <span className="fst-copilot-sprite-spark s2" aria-hidden="true" />
+              <span className="fst-copilot-sprite-spark s3" aria-hidden="true" />
+              <svg viewBox="0 0 64 64" className="fst-copilot-sprite-svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fstCopilotG" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stopColor="#5FA59B" />
+                    <stop offset="0.6" stopColor="#3D6E66" />
+                    <stop offset="1" stopColor="#D7B56D" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M32 9c9.2 0 16.9 7.6 16.9 16.9 0 6.4-2.7 10.7-6.4 15.3-2 2.5-3.8 5.3-4.6 9.2-.3 1.5-1.6 2.7-3.2 2.7h-5.4c-1.6 0-2.9-1.2-3.2-2.7-.8-3.9-2.6-6.7-4.6-9.2-3.7-4.6-6.4-8.9-6.4-15.3C15.1 16.6 22.8 9 32 9z"
+                  fill="url(#fstCopilotG)"
+                  opacity="0.92"
+                />
+                <path
+                  d="M20.5 26.2c4.2-4.7 11.7-6.6 19-3.7 2.2.9 4.2 2.2 5.9 4.1"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.75)"
+                  strokeWidth="3.4"
+                  strokeLinecap="round"
+                />
+                <circle cx="26.8" cy="32.2" r="2.3" fill="rgba(255,255,255,0.9)" />
+                <circle cx="37.2" cy="32.2" r="2.3" fill="rgba(255,255,255,0.9)" />
+                <path
+                  d="M28.5 38.5c2.1 2.3 4.9 2.3 7 0"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.9)"
+                  strokeWidth="3.2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M26 54.2c1.8 1.4 3.9 2.2 6 2.2s4.2-.8 6-2.2"
+                  fill="none"
+                  stroke="rgba(15,45,40,0.22)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </Tooltip>
+
+          {nudgeOpen && (
+            <div className="fst-copilot-nudge" role="dialog" aria-label="Copilot 提示">
+              <div className="fst-copilot-nudge-bubble">
+                <button
+                  type="button"
+                  className="fst-copilot-nudge-close"
+                  onClick={() => hideNudge(true)}
+                  aria-label="关闭提示"
+                >
+                  <CloseOutlined />
+                </button>
+                <div className="fst-copilot-nudge-title">
+                  <span className="fst-copilot-nudge-dot" aria-hidden="true" />
+                  <span>需要我帮忙吗？</span>
+                </div>
+                <div className="fst-copilot-nudge-text">{nudgeText}</div>
+                <div className="fst-copilot-nudge-actions">
+                  <button type="button" className="fst-copilot-nudge-primary" onClick={handleOpen}>
+                    打开 Copilot
+                  </button>
+                  <button type="button" className="fst-copilot-nudge-secondary" onClick={() => hideNudge(true)}>
+                    暂不需要
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* 聊天窗口 */}
-      {isOpen && (
+      {panelMounted && (
         <Card
           title={
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
-                <RobotOutlined style={{ color: '#3D6E66', fontSize: 20 }} />
-                <span style={{ fontWeight: 600, color: '#3D6E66' }}>AI Copilot</span>
+                <span className="fst-copilot-header-icon" aria-hidden="true">
+                  <RobotOutlined />
+                </span>
+                <span className="fst-copilot-header-title">AI Copilot</span>
               </Space>
               <Space>
                 <Button type="text" icon={<SettingOutlined />} onClick={() => setShowConfig(!showConfig)} />
-                <Button type="text" icon={<CloseOutlined />} onClick={() => setIsOpen(false)} />
+                <Button type="text" icon={<CloseOutlined />} onClick={handleClose} />
               </Space>
             </div>
           }
+          className={`fst-copilot-panel ${isOpen ? 'is-open' : 'is-closing'}`}
           style={{
             position: 'fixed',
-            bottom: 40,
-            right: 40,
-            width: 380,
-            height: 600,
+            bottom: 28,
+            right: 28,
+            width: 420,
+            height: 640,
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             zIndex: 9999,
-            borderRadius: 12,
+            borderRadius: 18,
             overflow: 'hidden'
           }}
           bodyStyle={{
@@ -160,7 +321,7 @@ const GlobalCopilot: React.FC = () => {
           }}
         >
           {showConfig ? (
-            <div style={{ padding: 16, flex: 1, background: '#fafafa' }}>
+            <div className="fst-copilot-config">
               <div style={{ marginBottom: 16 }}><Text strong>Copilot 配置 (与 API 测试共享)</Text></div>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Input addonBefore="Base URL" value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)} />
@@ -172,15 +333,7 @@ const GlobalCopilot: React.FC = () => {
           ) : (
             <>
               {/* 消息列表区 */}
-              <div style={{ 
-                flex: 1, 
-                padding: '16px', 
-                overflowY: 'auto', 
-                background: '#f0f2f5',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 16
-              }}>
+              <div className="fst-copilot-messages">
                 {messages.filter(m => m.role !== 'system').map((msg, index) => (
                   <div 
                     key={index} 
@@ -192,18 +345,19 @@ const GlobalCopilot: React.FC = () => {
                     }}
                   >
                     {msg.role === 'assistant' && (
-                      <Avatar icon={<RobotOutlined />} style={{ background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)' }} />
+                      <Avatar icon={<RobotOutlined />} className="fst-copilot-avatar-ai" />
                     )}
                     <div style={{
                       maxWidth: '80%',
                       padding: '10px 14px',
                       borderRadius: 12,
-                      background: msg.role === 'user' ? '#3D6E66' : '#ffffff',
+                      background: msg.role === 'user' ? 'rgba(61, 110, 102, 0.94)' : 'rgba(255, 255, 255, 0.78)',
                       color: msg.role === 'user' ? '#fff' : 'rgba(0, 0, 0, 0.88)',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                      boxShadow: msg.role === 'user' ? '0 10px 22px rgba(15, 45, 40, 0.18)' : '0 10px 22px rgba(15, 45, 40, 0.10)',
                       whiteSpace: msg.role === 'assistant' ? 'normal' : 'pre-wrap',
                       wordBreak: 'break-word',
-                      border: msg.role === 'assistant' ? '1px solid rgba(61, 110, 102, 0.1)' : 'none'
+                      border: msg.role === 'assistant' ? '1px solid rgba(15, 45, 40, 0.10)' : 'none',
+                      backdropFilter: msg.role === 'assistant' ? 'blur(12px)' : 'none'
                     }}>
                       {msg.role === 'assistant' ? (
                         <ReactMarkdown
@@ -257,9 +411,11 @@ const GlobalCopilot: React.FC = () => {
                 ))}
                 {loading && (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Avatar icon={<RobotOutlined />} style={{ background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)' }} />
-                    <div style={{ padding: '10px', background: '#fff', borderRadius: 12, border: '1px solid rgba(61, 110, 102, 0.1)' }}>
-                      <span className="loading-dots" style={{ color: '#3D6E66' }}>思考中...</span>
+                    <Avatar icon={<RobotOutlined />} className="fst-copilot-avatar-ai" />
+                    <div className="fst-copilot-typing">
+                      <span className="fst-copilot-typing-dot" />
+                      <span className="fst-copilot-typing-dot" />
+                      <span className="fst-copilot-typing-dot" />
                     </div>
                   </div>
                 )}
@@ -267,7 +423,7 @@ const GlobalCopilot: React.FC = () => {
               </div>
 
               {/* 输入区 */}
-              <div style={{ padding: '12px 16px', background: '#fff', borderTop: '1px solid #f0f0f0' }}>
+              <div className="fst-copilot-input">
                 <Input
                   size="large"
                   placeholder="给 Copilot 发送指令..."
@@ -283,7 +439,7 @@ const GlobalCopilot: React.FC = () => {
                       disabled={!inputValue.trim() || loading}
                     />
                   }
-                  style={{ borderRadius: 20, borderColor: 'rgba(61, 110, 102, 0.2)' }}
+                  style={{ borderRadius: 20, borderColor: 'rgba(15, 45, 40, 0.14)', background: 'rgba(255, 255, 255, 0.78)', backdropFilter: 'blur(12px)' }}
                 />
               </div>
             </>
