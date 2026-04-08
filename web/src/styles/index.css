@@ -1056,6 +1056,15 @@ body {
   -webkit-backdrop-filter: blur(18px);
 }
 
+.fst-copilot-header {
+  cursor: grab;
+  user-select: none;
+}
+
+.fst-copilot-header:active {
+  cursor: grabbing;
+}
+
 .fst-copilot-panel .ant-card-head-title {
   padding: 14px 0;
 }
@@ -1177,8 +1186,8 @@ body {
 
 @media (max-width: 480px) {
   .fst-copilot-panel.ant-card {
-    right: 14px !important;
-    bottom: 14px !important;
+    left: 14px !important;
+    top: 14px !important;
     width: calc(100vw - 28px) !important;
     height: calc(100dvh - 28px) !important;
     border-radius: 18px !important;
