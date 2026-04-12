@@ -39,6 +39,15 @@ def _to_bool(value: Any, default: bool) -> bool:
     return default
 
 
+def _to_int(value: Any, default: int) -> int:
+    if value is None:
+        return default
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
 def _launch_chromium_with_fallback(playwright_instance: Any, headless: bool, slow_mo: int):
     launch_kwargs = {
         "headless": headless,
@@ -158,11 +167,15 @@ def run_exploration_task(
         os.environ.get("AI_EXPLORE_BROWSER_HEADLESS", config.get("AI_EXPLORE_BROWSER_HEADLESS")),
         True,
     )
-    explore_slow_mo = int(
+    explore_slow_mo = _to_int(
         os.environ.get("AI_EXPLORE_BROWSER_SLOW_MO")
         or config.get("AI_EXPLORE_BROWSER_SLOW_MO")
-        or 0
+        or 0,
+        0,
     )
+    effective_headless = explore_headless
+    if not explore_headless and os.name != "nt" and not str(os.environ.get("DISPLAY") or "").strip():
+        effective_headless = True
 
     if not api_key:
         raise ValueError("AI_ASSISTANT_API_KEY is not configured")
@@ -192,8 +205,10 @@ def run_exploration_task(
 
     try:
         with sync_playwright() as p:
-            _emit_log(f"启动浏览器并打开页面: {start_url} (headless={str(explore_headless).lower()}, slow_mo={explore_slow_mo}ms)")
-            browser = _launch_chromium_with_fallback(p, explore_headless, explore_slow_mo)
+            if not explore_headless and effective_headless:
+                _emit_log("未检测到 DISPLAY，自动回退为 headless 模式。若需可视化窗口，请在具备 XServer 的环境运行后端。")
+            _emit_log(f"启动浏览器并打开页面: {start_url} (headless={str(effective_headless).lower()}, slow_mo={explore_slow_mo}ms)")
+            browser = _launch_chromium_with_fallback(p, effective_headless, explore_slow_mo)
             context = browser.new_context(viewport={'width': 1280, 'height': 720})
             page = context.new_page()
             
