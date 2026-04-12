@@ -18,41 +18,6 @@ interface Message {
   status?: 'pending' | 'done' | 'error';
 }
 
-const CopilotSpriteMark = ({ size = 22 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 64 64"
-    style={{ display: 'block' }}
-    aria-hidden="true"
-    focusable="false"
-  >
-    <defs>
-      <linearGradient id="fstCopilotMarkG" x1="12" y1="10" x2="54" y2="56" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stopColor="#5FA59B" />
-        <stop offset="0.7" stopColor="#3D6E66" />
-        <stop offset="1" stopColor="#2F8F6B" />
-      </linearGradient>
-    </defs>
-    <path d="M32 10.5c-10.1 0-18.3 8.2-18.3 18.3 0 10.5 7.2 20.3 18.3 20.3s18.3-9.8 18.3-20.3c0-10.1-8.2-18.3-18.3-18.3z" fill="url(#fstCopilotMarkG)" opacity="0.94" />
-    <path d="M43.8 16.4c-2.6-2.4-6.6-4-11.8-4s-9.2 1.6-11.8 4" fill="none" stroke="rgba(255,255,255,0.36)" strokeWidth="3" strokeLinecap="round" />
-    <path d="M21.1 28.1c2.4-5.1 7-8.2 10.9-8.2 4.2 0 8.6 3 10.9 8.2" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="3.2" strokeLinecap="round" />
-    <path d="M24.7 31.9c0 6.2 3.6 11 7.3 11s7.3-4.8 7.3-11" fill="rgba(255,255,255,0.86)" opacity="0.96" />
-    <circle cx="29.1" cy="34.2" r="2.1" fill="rgba(61,110,102,0.62)" />
-    <circle cx="34.9" cy="34.2" r="2.1" fill="rgba(61,110,102,0.62)" />
-    <path d="M29.6 38.4c1.6 1.7 3.2 1.7 4.8 0" fill="none" stroke="rgba(61,110,102,0.68)" strokeWidth="2.6" strokeLinecap="round" />
-    <path d="M17.4 25.2c.3-6 4.4-10.8 10.2-12.3" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3.2" strokeLinecap="round" />
-    <path d="M46.6 25.2c-.3-6-4.4-10.8-10.2-12.3" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3.2" strokeLinecap="round" />
-    <path d="M36.2 10.7c.1-2.2-1.2-3.7-4.2-4.4-3 .7-4.3 2.2-4.2 4.4" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.8" strokeLinecap="round" />
-    <path d="M20.5 20.6c1.3-1.6 2.7-2.7 4.4-3.5" fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="2.8" strokeLinecap="round" />
-    <path d="M43.5 20.6c-1.3-1.6-2.7-2.7-4.4-3.5" fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="2.8" strokeLinecap="round" />
-    <path d="M19 47.7c2.7 3.2 7 5.6 13 5.6s10.3-2.4 13-5.6" fill="rgba(255,255,255,0.58)" />
-    <path d="M21.5 50.6c2.9-2.4 6.2-3.7 10.5-3.7s7.6 1.3 10.5 3.7" fill="none" stroke="rgba(15,45,40,0.22)" strokeWidth="3.1" strokeLinecap="round" />
-    <path d="M22.7 16.9c2.3-3 5.6-4.5 9.3-4.5s7 1.5 9.3 4.5" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="5.6" strokeLinecap="round" />
-    <path d="M26.2 15.4c1.7-1.2 3.6-1.8 5.8-1.8 2.2 0 4.1.6 5.8 1.8" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.8" strokeLinecap="round" />
-  </svg>
-);
-
 const AppBrandMark = ({ size = 22 }: { size?: number }) => (
   <svg
     width={size}
