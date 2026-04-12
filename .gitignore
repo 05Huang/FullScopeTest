@@ -126,3 +126,4 @@ lpt1-9
 
 # Windows batch scripts (Linux server not used)
 *.bat
+backend/.deps/
