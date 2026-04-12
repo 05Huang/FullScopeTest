@@ -24,8 +24,10 @@ services:
     restart: always
     ports:
       - "127.0.0.1:5211:5000"
+      - "127.0.0.1:6080:6080"
     environment:
       - FLASK_ENV=production
+      - DISPLAY=:99
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - CELERY_ENABLE=true
@@ -52,7 +54,7 @@ services:
       - AI_EXPLORE_LIVE_VIEW_URL_TEMPLATE=${AI_EXPLORE_LIVE_VIEW_URL_TEMPLATE:-}
       - AI_EXPLORE_LIVE_VIEW_RELEASE_URL=${AI_EXPLORE_LIVE_VIEW_RELEASE_URL:-}
       - AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT=${AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT:-6}
-      - AI_EXPLORE_BROWSER_HEADLESS=${AI_EXPLORE_BROWSER_HEADLESS:-true}
+      - AI_EXPLORE_BROWSER_HEADLESS=${AI_EXPLORE_BROWSER_HEADLESS:-false}
       - AI_EXPLORE_BROWSER_SLOW_MO=${AI_EXPLORE_BROWSER_SLOW_MO:-0}
     volumes:
       - backend_uploads:/app/uploads
@@ -60,6 +62,14 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    command: >
+      bash -lc "
+      Xvfb :99 -screen 0 1366x768x24 -ac +extension RANDR >/tmp/xvfb.log 2>&1 &
+      fluxbox >/tmp/fluxbox.log 2>&1 &
+      x11vnc -display :99 -rfbport 5900 -forever -shared -nopw >/tmp/x11vnc.log 2>&1 &
+      websockify --web=/usr/share/novnc/ 0.0.0.0:6080 localhost:5900 >/tmp/websockify.log 2>&1 &
+      exec gunicorn --bind 0.0.0.0:5000 --workers 4 --threads 2 wsgi:app
+      "
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
