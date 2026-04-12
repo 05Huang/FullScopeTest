@@ -148,7 +148,7 @@ const WebTestScripts = () => {
   const [exploring, setExploring] = useState(false)
   const [exploreReport, setExploreReport] = useState<any>(null)
   const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
-  const exploreHeartbeatRef = useRef<number | null>(null)
+  const exploreAbortRef = useRef<AbortController | null>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -207,9 +207,9 @@ const WebTestScripts = () => {
 
   useEffect(() => {
     return () => {
-      if (exploreHeartbeatRef.current) {
-        window.clearInterval(exploreHeartbeatRef.current)
-        exploreHeartbeatRef.current = null
+      if (exploreAbortRef.current) {
+        exploreAbortRef.current.abort()
+        exploreAbortRef.current = null
       }
     }
   }, [])
@@ -295,17 +295,18 @@ const WebTestScripts = () => {
     pushExploreLog(`启动探索任务，目标 URL: ${exploreStartUrl}`)
     pushExploreLog(`探索目标: ${exploreObjective}`)
     pushExploreLog(`最大步数: ${exploreMaxSteps}`)
-    if (exploreHeartbeatRef.current) {
-      window.clearInterval(exploreHeartbeatRef.current)
-    }
-    exploreHeartbeatRef.current = window.setInterval(() => {
-      pushExploreLog('Agent 正在执行中，请稍候...')
-    }, 1500)
     setExploring(true)
     setExploreReport(null)
+    if (exploreAbortRef.current) {
+      exploreAbortRef.current.abort()
+    }
+    const controller = new AbortController()
+    exploreAbortRef.current = controller
     try {
-      pushExploreLog('已发送探索请求到后端')
-      const res = await webTestService.exploreWebAppAI({
+      pushExploreLog('已发送流式探索请求到后端')
+      let streamError = ''
+      let finalReport: any = null
+      await webTestService.exploreWebAppAIStream({
         start_url: exploreStartUrl,
         objective: exploreObjective,
         max_steps: exploreMaxSteps,
@@ -315,37 +316,58 @@ const WebTestScripts = () => {
         vision_base_url: aiVisionBaseUrl,
         vision_model: aiVisionModel,
         vision_api_key: aiVisionApiKey
+      }, {
+        token,
+        signal: controller.signal,
+        onLog: (line) => {
+          if (line) {
+            pushExploreLog(line)
+          }
+        },
+        onReport: (report) => {
+          finalReport = report
+          setExploreReport(report)
+        },
+        onError: (errMessage) => {
+          streamError = errMessage || '探索任务失败'
+          pushExploreLog(`服务端异常: ${streamError}`)
+        }
       })
-      if (res.code === 200 && res.data) {
-        setExploreReport(res.data)
-        pushExploreLog(`任务返回状态: ${res.data.status || 'unknown'}`)
-        pushExploreLog(`执行步数: ${res.data.total_steps_executed || 0}`)
-        pushExploreLog(`发现错误数: ${res.data.errors_found?.length || 0}`)
-        const actions = Array.isArray(res.data.actions_taken) ? res.data.actions_taken : []
+      if (streamError) {
+        message.error(streamError)
+      } else if (finalReport) {
+        pushExploreLog(`任务返回状态: ${finalReport.status || 'unknown'}`)
+        pushExploreLog(`执行步数: ${finalReport.total_steps_executed || 0}`)
+        pushExploreLog(`发现错误数: ${finalReport.errors_found?.length || 0}`)
+        if (finalReport.error_summary) {
+          pushExploreLog(
+            `错误分级统计: critical=${finalReport.error_summary.critical || 0}, warning=${finalReport.error_summary.warning || 0}, info=${finalReport.error_summary.info || 0}`
+          )
+        }
+        const actions = Array.isArray(finalReport.actions_taken) ? finalReport.actions_taken : []
         actions.slice(0, 30).forEach((item: any, index: number) => {
           const actionType = item.type || item.action || 'unknown'
           const target = item.target_id || '-'
           const reason = item.reason || ''
           pushExploreLog(`步骤 ${index + 1}: ${actionType} -> ${target} ${reason}`)
         })
-        if (res.data.status === 'failed') {
-          pushExploreLog(`失败原因: ${res.data.error_message || '未知错误'}`)
-          message.error(res.data.error_message || '探索性测试失败')
+        if (finalReport.status === 'failed') {
+          pushExploreLog(`失败原因: ${finalReport.error_message || '未知错误'}`)
+          message.error(finalReport.error_message || '探索性测试失败')
         } else {
           pushExploreLog('探索任务已完成')
           message.success('探索性测试完成')
         }
       } else {
-        pushExploreLog(`请求失败: ${res.message || '未知错误'}`)
-        message.error(res.message || '探索失败')
+        pushExploreLog('未收到探索结果')
+        message.error('探索失败')
       }
     } catch (error: any) {
       pushExploreLog(`请求异常: ${error.response?.data?.message || error.message || '探索失败'}`)
       message.error(error.response?.data?.message || '探索失败')
     } finally {
-      if (exploreHeartbeatRef.current) {
-        window.clearInterval(exploreHeartbeatRef.current)
-        exploreHeartbeatRef.current = null
+      if (exploreAbortRef.current === controller) {
+        exploreAbortRef.current = null
       }
       setExploring(false)
     }
@@ -1211,7 +1233,11 @@ const WebTestScripts = () => {
             <Alert
               type={exploreReport.status === 'failed' ? 'error' : 'success'}
               message={`探索完成 (状态: ${exploreReport.status})`}
-              description={`共执行 ${exploreReport.total_steps_executed} 步，发现 ${exploreReport.errors_found?.length || 0} 个错误。`}
+              description={
+                exploreReport.error_summary
+                  ? `共执行 ${exploreReport.total_steps_executed} 步，错误统计：critical ${exploreReport.error_summary.critical || 0} / warning ${exploreReport.error_summary.warning || 0} / info ${exploreReport.error_summary.info || 0}。`
+                  : `共执行 ${exploreReport.total_steps_executed} 步，发现 ${exploreReport.errors_found?.length || 0} 个错误。`
+              }
               style={{ marginBottom: 16 }}
             />
             
@@ -1222,6 +1248,17 @@ const WebTestScripts = () => {
                   dataSource={exploreReport.errors_found}
                   columns={[
                     { title: '类型', dataIndex: 'type', width: 120, render: (t) => <Tag color="red">{t}</Tag> },
+                    {
+                      title: '等级',
+                      dataIndex: 'severity',
+                      width: 100,
+                      render: (s) => (
+                        <Tag color={s === 'critical' ? 'red' : s === 'warning' ? 'orange' : 'blue'}>
+                          {s || 'warning'}
+                        </Tag>
+                      ),
+                    },
+                    { title: '分类', dataIndex: 'category', width: 120, render: (c) => <Tag>{c || '-'}</Tag> },
                     { title: '错误信息', dataIndex: 'text', ellipsis: true },
                     { title: '页面 URL', dataIndex: 'url', ellipsis: true },
                   ]}

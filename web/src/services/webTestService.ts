@@ -137,6 +137,111 @@ export const exploreWebAppAI = (data: {
   return api.post('/web-test/ai/explore', data) as Promise<ApiResponse>
 }
 
+export const exploreWebAppAIStream = async (
+  data: {
+    start_url: string
+    objective?: string
+    max_steps?: number
+    base_url?: string
+    model?: string
+    api_key?: string
+    vision_base_url?: string
+    vision_model?: string
+    vision_api_key?: string
+  },
+  options: {
+    token?: string | null
+    onLog?: (line: string) => void
+    onReport?: (report: any) => void
+    onError?: (message: string) => void
+    signal?: AbortSignal
+  }
+): Promise<void> => {
+  const response = await fetch('/api/v1/web-test/ai/explore/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+    },
+    body: JSON.stringify(data),
+    signal: options.signal,
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(text || `HTTP ${response.status}`)
+  }
+
+  if (!response.body) {
+    throw new Error('未获取到流式响应体')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finished = false
+
+  const handleEventBlock = (block: string) => {
+    const lines = block.split('\n')
+    let eventName = 'message'
+    const dataLines: string[] = []
+
+    for (const line of lines) {
+      if (line.startsWith('event:')) {
+        eventName = line.slice(6).trim()
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trim())
+      }
+    }
+
+    if (dataLines.length === 0) {
+      return
+    }
+
+    const rawData = dataLines.join('\n')
+    let payload: any = {}
+    try {
+      payload = JSON.parse(rawData)
+    } catch {
+      payload = { message: rawData }
+    }
+
+    if (eventName === 'log') {
+      options.onLog?.(String(payload?.line || ''))
+      return
+    }
+    if (eventName === 'report') {
+      options.onReport?.(payload)
+      return
+    }
+    if (eventName === 'error') {
+      options.onError?.(String(payload?.message || '探索任务失败'))
+      return
+    }
+    if (eventName === 'done') {
+      finished = true
+    }
+  }
+
+  while (!finished) {
+    const { done, value } = await reader.read()
+    if (done) {
+      break
+    }
+    buffer += decoder.decode(value, { stream: true })
+
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary !== -1) {
+      const block = buffer.slice(0, boundary).trim()
+      buffer = buffer.slice(boundary + 2)
+      if (block) {
+        handleEventBlock(block)
+      }
+      boundary = buffer.indexOf('\n\n')
+    }
+  }
+}
+
 // 导出服务对象
 export const webTestService = {
   getScripts,
@@ -156,4 +261,5 @@ export const webTestService = {
   generateScriptAI,
   analyzeErrorAI,
   exploreWebAppAI,
+  exploreWebAppAIStream,
 }
