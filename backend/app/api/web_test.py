@@ -17,6 +17,7 @@ from ..tasks import run_web_test_task
 from ..utils.ai_script_generator import generate_test_script
 from ..utils.ai_script_healer import analyze_test_error
 from ..utils.ai_web_explorer import run_exploration_task
+import requests
 import subprocess
 import sys
 import time
@@ -24,10 +25,13 @@ import json
 import threading
 from queue import Queue, Empty
 from datetime import datetime
+from urllib.parse import quote_plus
+import uuid
 
 
 # 存储录制进程（录制功能仍使用进程方式）
 recording_processes = {}
+live_view_sessions = {}
 
 
 def _build_runtime_ai_config(data: dict) -> dict:
@@ -39,6 +43,8 @@ def _build_runtime_ai_config(data: dict) -> dict:
         'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
         'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
         'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
+        'AI_EXPLORE_BROWSER_HEADLESS': current_app.config.get('AI_EXPLORE_BROWSER_HEADLESS', 'true'),
+        'AI_EXPLORE_BROWSER_SLOW_MO': current_app.config.get('AI_EXPLORE_BROWSER_SLOW_MO', 0),
     }
 
     if data.get('base_url'):
@@ -53,12 +59,152 @@ def _build_runtime_ai_config(data: dict) -> dict:
         runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
     if data.get('vision_api_key'):
         runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+    if 'explore_browser_headless' in data:
+        runtime_config['AI_EXPLORE_BROWSER_HEADLESS'] = data.get('explore_browser_headless')
+    if data.get('explore_browser_slow_mo') is not None:
+        runtime_config['AI_EXPLORE_BROWSER_SLOW_MO'] = int(data.get('explore_browser_slow_mo'))
 
     return runtime_config
 
 
 def _format_sse(event: str, payload: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+def _resolve_live_view_url(data: dict, start_url: str) -> str:
+    direct_url = str(data.get('live_view_url') or '').strip()
+    if direct_url.startswith('http://') or direct_url.startswith('https://'):
+        return direct_url
+    template = str(
+        data.get('live_view_url_template')
+        or current_app.config.get('AI_EXPLORE_LIVE_VIEW_URL_TEMPLATE')
+        or ''
+    ).strip()
+    if not template:
+        return ''
+    return (
+        template
+        .replace('{start_url}', quote_plus(start_url))
+        .replace('{start_url_raw}', start_url)
+    )
+
+
+def _build_internal_live_view_url(start_url: str, session_id: str) -> str:
+    template = str(current_app.config.get('AI_EXPLORE_LIVE_VIEW_INTERNAL_URL_TEMPLATE') or '').strip()
+    if not template:
+        return ''
+    return (
+        template
+        .replace('{session_id}', quote_plus(session_id))
+        .replace('{session_id_raw}', session_id)
+        .replace('{start_url}', quote_plus(start_url))
+        .replace('{start_url_raw}', start_url)
+    )
+
+
+def _allocate_internal_live_view_session(start_url: str, objective: str, max_steps: int, user_id: int) -> dict:
+    session_id = str(uuid.uuid4())
+    url = _build_internal_live_view_url(start_url, session_id)
+    if not url:
+        return {}
+    live_view_sessions[session_id] = {
+        'session_id': session_id,
+        'user_id': user_id,
+        'start_url': start_url,
+        'objective': objective,
+        'max_steps': max_steps,
+        'created_at': time.time(),
+    }
+    return {
+        'url': url,
+        'source': 'internal',
+        'session_id': session_id,
+    }
+
+
+def _allocate_live_view_session(data: dict, start_url: str, objective: str, max_steps: int, user_id: int) -> dict:
+    direct_url = str(data.get('live_view_url') or '').strip()
+    if direct_url.startswith('http://') or direct_url.startswith('https://'):
+        return {'url': direct_url, 'source': 'manual'}
+    allocator_url = str(
+        data.get('live_view_allocator_url')
+        or current_app.config.get('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL')
+        or ''
+    ).strip()
+    if not allocator_url:
+        internal_session = _allocate_internal_live_view_session(start_url, objective, max_steps, user_id)
+        if internal_session:
+            return internal_session
+        fallback_url = _resolve_live_view_url(data, start_url)
+        return {'url': fallback_url, 'source': 'template'} if fallback_url else {}
+    allocator_token = str(
+        data.get('live_view_allocator_token')
+        or current_app.config.get('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN')
+        or ''
+    ).strip()
+    timeout_seconds = int(
+        data.get('live_view_allocator_timeout')
+        or current_app.config.get('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT')
+        or 15
+    )
+    headers = {'Content-Type': 'application/json'}
+    if allocator_token:
+        headers['Authorization'] = f'Bearer {allocator_token}'
+    payload = {
+        'start_url': start_url,
+        'objective': objective,
+        'max_steps': max_steps,
+        'user_id': user_id,
+        'requested_by': 'fullscopetest-web-explorer',
+    }
+    try:
+        response = requests.post(
+            allocator_url,
+            json=payload,
+            headers=headers,
+            timeout=timeout_seconds,
+        )
+        if response.status_code >= 400:
+            raise RuntimeError(f'allocator http {response.status_code}')
+        body = response.json() if response.text else {}
+        url = str(body.get('url') or body.get('live_view_url') or '').strip()
+        if not url:
+            raise RuntimeError('allocator missing url')
+        return {
+            'url': url,
+            'source': str(body.get('source') or 'allocator'),
+            'session_id': body.get('session_id'),
+            'release_url': body.get('release_url'),
+        }
+    except Exception as exc:
+        current_app.logger.warning('allocate live view session failed: %s', str(exc))
+        fallback_url = _resolve_live_view_url(data, start_url)
+        return {'url': fallback_url, 'source': 'template'} if fallback_url else {}
+
+
+def _release_live_view_session(session: dict):
+    if not isinstance(session, dict):
+        return
+    session_id = str(session.get('session_id') or '').strip()
+    if session_id and session_id in live_view_sessions:
+        live_view_sessions.pop(session_id, None)
+    release_url = str(session.get('release_url') or '').strip()
+    if not release_url and session_id:
+        release_template = str(
+            current_app.config.get('AI_EXPLORE_LIVE_VIEW_RELEASE_URL')
+            or ''
+        ).strip()
+        if release_template:
+            release_url = release_template.replace('{session_id}', quote_plus(session_id)).replace('{session_id_raw}', session_id)
+    if not release_url:
+        return
+    timeout_seconds = int(current_app.config.get('AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT') or 6)
+    try:
+        response = requests.delete(release_url, timeout=timeout_seconds)
+        if response.status_code >= 400:
+            requests.post(release_url, timeout=timeout_seconds)
+    except Exception as exc:
+        current_app.logger.warning('release live view session failed: %s', str(exc))
 
 
 def _get_collection_or_404(collection_id: int, user_id: int):
@@ -195,6 +341,7 @@ def explore_web_app():
 @jwt_required()
 def explore_web_app_stream():
     data = request.get_json() or {}
+    user_id = get_current_user_id()
     start_url = data.get('start_url')
     objective = data.get('objective', '尽可能多地点击不同页面并寻找报错')
     max_steps = int(data.get('max_steps', 10))
@@ -203,6 +350,7 @@ def explore_web_app_stream():
         return error_response(400, 'start_url is required')
 
     runtime_config = _build_runtime_ai_config(data)
+    live_view_session = _allocate_live_view_session(data, start_url, objective, max_steps, user_id)
 
     def generate():
         log_queue: Queue = Queue()
@@ -234,6 +382,12 @@ def explore_web_app_stream():
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
 
+        if live_view_session.get('url'):
+            yield _format_sse('live_view', {
+                'url': live_view_session.get('url'),
+                'source': live_view_session.get('source') or 'allocator',
+                'session_id': live_view_session.get('session_id'),
+            })
         yield _format_sse('log', {'line': f'探索任务已创建，目标 URL: {start_url}'})
         yield _format_sse('log', {'line': f'探索目标: {objective}'})
         yield _format_sse('log', {'line': f'最大步数: {max_steps}'})
@@ -251,11 +405,14 @@ def explore_web_app_stream():
             except Empty:
                 pass
 
-        if state['error']:
-            yield _format_sse('error', {'message': state['error']})
-        else:
-            yield _format_sse('report', state['report'] or {})
-        yield _format_sse('done', {'ok': state['error'] is None})
+        try:
+            if state['error']:
+                yield _format_sse('error', {'message': state['error']})
+            else:
+                yield _format_sse('report', state['report'] or {})
+            yield _format_sse('done', {'ok': state['error'] is None})
+        finally:
+            _release_live_view_session(live_view_session)
 
     return Response(
         stream_with_context(generate()),

@@ -184,6 +184,7 @@ const WebTestScripts = () => {
   const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
   const [exploreHistory, setExploreHistory] = useState<ExploreHistoryItem[]>([])
   const [exploreLivePreview, setExploreLivePreview] = useState('')
+  const [exploreLiveViewUrl, setExploreLiveViewUrl] = useState('')
   const [exploreLiveUrl, setExploreLiveUrl] = useState('')
   const [exploreLiveAction, setExploreLiveAction] = useState('')
   const [exploreLiveStep, setExploreLiveStep] = useState(0)
@@ -262,6 +263,7 @@ const WebTestScripts = () => {
     setExploreReport(null)
     setExploreConsoleLines([])
     setExploreLivePreview('')
+    setExploreLiveViewUrl('')
     setExploreLiveUrl('')
     setExploreLiveAction('')
     setExploreLiveStep(0)
@@ -393,6 +395,7 @@ const WebTestScripts = () => {
     }
     setExploreConsoleLines([])
     setExploreLivePreview('')
+    setExploreLiveViewUrl('')
     setExploreLiveUrl(exploreStartUrl)
     setExploreLiveAction('初始化探索会话')
     setExploreLiveStep(0)
@@ -457,6 +460,13 @@ const WebTestScripts = () => {
           const actionLabel = [phase, action, reason].filter(Boolean).join(' · ')
           if (actionLabel) {
             setExploreLiveAction(actionLabel)
+          }
+        },
+        onLiveView: (payload) => {
+          const url = String(payload?.url || '').trim()
+          if (url) {
+            setExploreLiveViewUrl(url)
+            pushExploreLog(`已自动接入真实浏览器引擎视图: ${url}`)
           }
         },
         onError: (errMessage) => {
@@ -1365,6 +1375,13 @@ const WebTestScripts = () => {
                 ]}
               />
             </Form.Item>
+            <Alert
+              type="info"
+              showIcon
+              message="系统将自动分配真实浏览器引擎会话"
+              description="点击开始探索后，系统会优先自动创建并接入 noVNC/远程浏览器视图；若后端未配置可用模板或会话服务，将自动回退为截图预览。"
+              style={{ marginBottom: 16 }}
+            />
             {exploreHistory.length > 0 && !exploring && (
               <Form.Item>
                 <Card
@@ -1483,6 +1500,12 @@ const WebTestScripts = () => {
                           src={exploreLivePreview}
                           alt="live-browser-preview"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : exploreLiveViewUrl ? (
+                        <iframe
+                          title="live-browser-engine"
+                          src={exploreLiveViewUrl}
+                          style={{ width: '100%', height: '100%', border: 0, background: '#fff' }}
                         />
                       ) : (
                         <iframe
