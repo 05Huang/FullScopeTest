@@ -103,9 +103,24 @@ const GlobalCopilot: React.FC = () => {
   const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(null);
   
   // AI Config (from localStorage)
-  const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1');
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem('api-test-ai-model') || 'gpt-4o-mini');
+  const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || '');
+  const [aiModel, setAiModel] = useState(() => localStorage.getItem('api-test-ai-model') || '');
   const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '');
+
+  // Global Config Loading
+  const [globalAiConfig, setGlobalAiConfig] = useState<{base_url: string, model: string, api_key: string} | null>(null);
+
+  useEffect(() => {
+    if (showConfig && !globalAiConfig) {
+      api.get('/api-test/ai/config')
+        .then((res: any) => {
+          if (res.code === 200 && res.data) {
+            setGlobalAiConfig(res.data);
+          }
+        })
+        .catch(err => console.error('Failed to load global AI config', err));
+    }
+  }, [showConfig]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const nudgeTimersRef = useRef<{ show?: number; hide?: number }>({});
@@ -529,9 +544,9 @@ const GlobalCopilot: React.FC = () => {
             <div className="fst-copilot-config">
               <div style={{ marginBottom: 16 }}><Text strong>Copilot 配置 (与 API 测试共享)</Text></div>
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Input addonBefore="Base URL" value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)} />
-                <Input addonBefore="Model" value={aiModel} onChange={e => setAiModel(e.target.value)} />
-                <Input.Password addonBefore="API Key" value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} />
+                <Input addonBefore="Base URL" placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"} value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)} />
+                <Input addonBefore="Model" placeholder={globalAiConfig?.model || "gpt-4o-mini"} value={aiModel} onChange={e => setAiModel(e.target.value)} />
+                <Input.Password addonBefore="API Key" placeholder={globalAiConfig?.api_key || "请输入模型提供商的 API Key"} value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} />
                 <Button type="primary" block onClick={saveConfig}>保存配置</Button>
               </Space>
             </div>

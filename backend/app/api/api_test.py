@@ -43,6 +43,27 @@ def api_test_health():
     return success_response(message='接口测试模块正常')
 
 
+@api_bp.route('/api-test/ai/config', methods=['GET'])
+@jwt_required()
+def get_ai_config():
+    """Get the current global AI assistant configuration"""
+    runtime_config = {
+        'base_url': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+        'model': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+        'api_key': current_app.config.get('AI_ASSISTANT_API_KEY', '')
+    }
+    
+    # Partially mask the API key for security
+    if runtime_config['api_key']:
+        key = runtime_config['api_key']
+        if len(key) > 8:
+            runtime_config['api_key'] = f"{key[:4]}...{key[-4:]}"
+        else:
+            runtime_config['api_key'] = "***"
+
+    return success_response(data=runtime_config, message='AI configuration fetched')
+
+
 @api_bp.route('/api-test/ai/plan', methods=['POST'])
 @jwt_required()
 def generate_ai_plan():

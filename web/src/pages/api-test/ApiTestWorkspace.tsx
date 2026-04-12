@@ -249,15 +249,34 @@ const ApiTestWorkspace = () => {
   const [hasLoadedData, setHasLoadedData] = useState(false) // 标记数据是否已加载
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
-  const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1')
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem('api-test-ai-model') || 'gpt-4o-mini')
-  const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '')
+  const [aiBaseUrl, setAiBaseUrl] = useState('')
+  const [aiModel, setAiModel] = useState('')
+  const [aiApiKey, setAiApiKey] = useState('')
   const [aiAutoRun, setAiAutoRun] = useState(true)
   const [aiRunning, setAiRunning] = useState(false)
   const [aiSummary, setAiSummary] = useState('')
   const [aiPlanSource, setAiPlanSource] = useState<'llm' | 'fallback' | ''>('')
   const [aiPlanOperations, setAiPlanOperations] = useState<AiPlanOperation[]>([])
   const [aiExecutionLogs, setAiExecutionLogs] = useState<AiExecutionLog[]>([])
+
+  // 全局配置加载
+  const [globalAiConfig, setGlobalAiConfig] = useState<{base_url: string, model: string, api_key: string} | null>(null)
+  const [loadingConfig, setLoadingConfig] = useState(false)
+
+  // Fetch global AI config when drawer opens
+  useEffect(() => {
+    if (aiDrawerOpen && !globalAiConfig && !loadingConfig) {
+      setLoadingConfig(true)
+      apiTestService.getAiConfig()
+        .then(res => {
+          if (res.code === 200 && res.data) {
+            setGlobalAiConfig(res.data)
+          }
+        })
+        .catch(err => console.error('Failed to load global AI config', err))
+        .finally(() => setLoadingConfig(false))
+    }
+  }, [aiDrawerOpen])
 
   // AI Synthesizer State
   const [aiSynthesizeModalOpen, setAiSynthesizeModalOpen] = useState(false)
@@ -303,29 +322,6 @@ const ApiTestWorkspace = () => {
   }, [])
 
   // 表单状态自动保存到localStorage
-  useEffect(() => {
-    const draft = {
-      method,
-      url,
-      requestName,
-      requestBody,
-      bodyType,
-      headers: headers.filter(h => h.key || h.value),
-      params: params.filter(p => p.key || p.value),
-    }
-    // 只有当表单有实际内容时才保存
-    if (url || requestName || draft.headers.length > 0 || draft.params.length > 0) {
-      localStorage.setItem('api-test-form-draft', JSON.stringify(draft))
-    }
-  }, [method, url, requestName, requestBody, bodyType, headers, params])
-
-  useEffect(() => {
-    localStorage.setItem('api-test-ai-base-url', aiBaseUrl)
-    localStorage.setItem('api-test-ai-model', aiModel)
-    localStorage.setItem('api-test-ai-api-key', aiApiKey)
-  }, [aiBaseUrl, aiModel, aiApiKey])
-
-  // 点击其他地方关闭右键菜单
   useEffect(() => {
     const handleClick = () => {
       if (contextMenuState.visible) {
@@ -1418,14 +1414,6 @@ const ApiTestWorkspace = () => {
       message.warning('Please enter a prompt')
       return
     }
-    if (!aiBaseUrl.trim()) {
-      message.warning('Please enter Base URL')
-      return
-    }
-    if (!aiModel.trim()) {
-      message.warning('Please enter Model')
-      return
-    }
 
     setAiRunning(true)
     setAiSummary('')
@@ -2515,25 +2503,25 @@ const ApiTestWorkspace = () => {
             message="AI 将通过调用平台现有的 API 来创建或更新环境、集合、用例，并执行测试。"
           />
 
-          <Card size="small" title="模型配置">
+          <Card size="small" title="模型配置" loading={loadingConfig}>
             <Form layout="vertical">
               <Form.Item label="Base URL" style={{ marginBottom: 12 }}>
                 <Input
-                  placeholder="https://api.openai.com/v1"
+                  placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"}
                   value={aiBaseUrl}
                   onChange={(e) => setAiBaseUrl(e.target.value)}
                 />
               </Form.Item>
               <Form.Item label="Model" style={{ marginBottom: 12 }}>
                 <Input
-                  placeholder="gpt-4o-mini"
+                  placeholder={globalAiConfig?.model || "gpt-4o-mini"}
                   value={aiModel}
                   onChange={(e) => setAiModel(e.target.value)}
                 />
               </Form.Item>
               <Form.Item label="API Key" style={{ marginBottom: 0 }}>
                 <Input.Password
-                  placeholder="请输入模型提供商的 API Key"
+                  placeholder={globalAiConfig?.api_key || "请输入模型提供商的 API Key"}
                   value={aiApiKey}
                   onChange={(e) => setAiApiKey(e.target.value)}
                 />
