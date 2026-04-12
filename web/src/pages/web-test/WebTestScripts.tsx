@@ -183,6 +183,11 @@ const WebTestScripts = () => {
   const [exploreReport, setExploreReport] = useState<any>(null)
   const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
   const [exploreHistory, setExploreHistory] = useState<ExploreHistoryItem[]>([])
+  const [exploreLivePreview, setExploreLivePreview] = useState('')
+  const [exploreLiveUrl, setExploreLiveUrl] = useState('')
+  const [exploreLiveAction, setExploreLiveAction] = useState('')
+  const [exploreLiveStep, setExploreLiveStep] = useState(0)
+  const [exploreLiveMaxSteps, setExploreLiveMaxSteps] = useState(0)
   const exploreAbortRef = useRef<AbortController | null>(null)
 
   // 加载脚本列表
@@ -256,6 +261,11 @@ const WebTestScripts = () => {
   const resetExploreResultState = () => {
     setExploreReport(null)
     setExploreConsoleLines([])
+    setExploreLivePreview('')
+    setExploreLiveUrl('')
+    setExploreLiveAction('')
+    setExploreLiveStep(0)
+    setExploreLiveMaxSteps(0)
   }
 
   const openExploreModal = () => {
@@ -382,6 +392,11 @@ const WebTestScripts = () => {
       setExploreConsoleLines((prev) => [...prev, text])
     }
     setExploreConsoleLines([])
+    setExploreLivePreview('')
+    setExploreLiveUrl(exploreStartUrl)
+    setExploreLiveAction('初始化探索会话')
+    setExploreLiveStep(0)
+    setExploreLiveMaxSteps(exploreMaxSteps)
     pushExploreLog(`启动探索任务，目标 URL: ${exploreStartUrl}`)
     pushExploreLog(`探索目标: ${exploreObjective}`)
     pushExploreLog(`最大步数: ${exploreMaxSteps}`)
@@ -417,6 +432,32 @@ const WebTestScripts = () => {
         onReport: (report) => {
           finalReport = report
           setExploreReport(report)
+        },
+        onProgress: (progress) => {
+          if (!progress || typeof progress !== 'object') return
+          const currentUrl = String(progress.current_url || '').trim()
+          if (currentUrl) {
+            setExploreLiveUrl(currentUrl)
+          }
+          const screenshot = String(progress.screenshot || '')
+          if (screenshot) {
+            setExploreLivePreview(screenshot)
+          }
+          const step = Number(progress.step || 0)
+          if (Number.isFinite(step) && step >= 0) {
+            setExploreLiveStep(step)
+          }
+          const maxSteps = Number(progress.max_steps || exploreMaxSteps)
+          if (Number.isFinite(maxSteps) && maxSteps > 0) {
+            setExploreLiveMaxSteps(maxSteps)
+          }
+          const action = String(progress.action || '').trim()
+          const phase = String(progress.phase || '').trim()
+          const reason = String(progress.reason || '').trim()
+          const actionLabel = [phase, action, reason].filter(Boolean).join(' · ')
+          if (actionLabel) {
+            setExploreLiveAction(actionLabel)
+          }
         },
         onError: (errMessage) => {
           streamError = errMessage || '探索任务失败'
@@ -1270,7 +1311,7 @@ const WebTestScripts = () => {
         }
         open={isExploreModalOpen}
         onCancel={closeExploreModal}
-        width={800}
+        width={1080}
         footer={
           exploreReport ? (
             <Button onClick={closeExploreModal}>关闭</Button>
@@ -1299,6 +1340,7 @@ const WebTestScripts = () => {
                 placeholder="https://example.com"
                 value={exploreStartUrl}
                 onChange={(e) => setExploreStartUrl(e.target.value)}
+                disabled={exploring}
               />
             </Form.Item>
             <Form.Item label="探索目标">
@@ -1307,6 +1349,7 @@ const WebTestScripts = () => {
                 placeholder="例如：尽可能多地点击不同页面并寻找报错，或者尝试完成下单流程"
                 value={exploreObjective}
                 onChange={(e) => setExploreObjective(e.target.value)}
+                disabled={exploring}
               />
             </Form.Item>
             <Form.Item label="最大探索步数">
@@ -1314,6 +1357,7 @@ const WebTestScripts = () => {
                 value={exploreMaxSteps}
                 onChange={setExploreMaxSteps}
                 style={{ width: 120 }}
+                disabled={exploring}
                 options={[
                   { value: 5, label: '5 步 (快速)' },
                   { value: 10, label: '10 步 (标准)' },
@@ -1321,7 +1365,7 @@ const WebTestScripts = () => {
                 ]}
               />
             </Form.Item>
-            {exploreHistory.length > 0 && (
+            {exploreHistory.length > 0 && !exploring && (
               <Form.Item>
                 <Card
                   size="small"
@@ -1390,23 +1434,76 @@ const WebTestScripts = () => {
               </Form.Item>
             )}
             {(exploring || exploreConsoleLines.length > 0) && (
-              <Form.Item label="命令窗口">
+              <Form.Item>
                 <div
                   style={{
-                    background: '#0f172a',
-                    color: '#e2e8f0',
-                    borderRadius: 8,
-                    border: '1px solid #1e293b',
-                    padding: 12,
-                    maxHeight: 240,
-                    overflowY: 'auto',
-                    fontFamily: 'Consolas, Menlo, Monaco, monospace',
-                    fontSize: 12,
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 12,
                   }}
                 >
-                  {exploreConsoleLines.length > 0 ? exploreConsoleLines.join('\n') : '等待日志输出...'}
+                  <Card size="small" title="命令窗口">
+                    <div
+                      style={{
+                        background: '#0f172a',
+                        color: '#e2e8f0',
+                        borderRadius: 8,
+                        border: '1px solid #1e293b',
+                        padding: 12,
+                        height: 260,
+                        overflowY: 'auto',
+                        fontFamily: 'Consolas, Menlo, Monaco, monospace',
+                        fontSize: 12,
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {exploreConsoleLines.length > 0 ? exploreConsoleLines.join('\n') : '等待日志输出...'}
+                    </div>
+                  </Card>
+                  <Card
+                    size="small"
+                    title="浏览器 UI"
+                    extra={<Tag color={exploring ? 'processing' : 'default'}>{exploring ? '探索中' : '已完成'}</Tag>}
+                  >
+                    <div
+                      style={{
+                        border: '1px solid #d9d9d9',
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        background: '#0b1220',
+                        height: 260,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {exploreLivePreview ? (
+                        <img
+                          src={exploreLivePreview}
+                          alt="live-browser-preview"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <iframe
+                          title="live-browser-fallback"
+                          src={exploreLiveUrl || exploreStartUrl || 'about:blank'}
+                          style={{ width: '100%', height: '100%', border: 0, background: '#fff' }}
+                        />
+                      )}
+                    </div>
+                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <Text type="secondary" ellipsis style={{ maxWidth: '72%' }}>
+                        {exploreLiveUrl || exploreStartUrl || '等待页面加载...'}
+                      </Text>
+                      <Text type="secondary">
+                        {exploreLiveStep}/{exploreLiveMaxSteps || exploreMaxSteps} 步
+                      </Text>
+                    </div>
+                    <div style={{ marginTop: 4 }}>
+                      <Text type="secondary">{exploreLiveAction || '等待动作...'}</Text>
+                    </div>
+                  </Card>
                 </div>
               </Form.Item>
             )}
