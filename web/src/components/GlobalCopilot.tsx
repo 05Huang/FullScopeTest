@@ -12,8 +12,10 @@ import api, { ApiResponse } from '../services/api';
 const { Text } = Typography;
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  status?: 'pending' | 'done' | 'error';
 }
 
 const CopilotSpriteMark = ({ size = 22 }: { size?: number }) => (
@@ -51,6 +53,45 @@ const CopilotSpriteMark = ({ size = 22 }: { size?: number }) => (
   </svg>
 );
 
+const AppBrandMark = ({ size = 22 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 64 64"
+    style={{ display: 'block' }}
+    aria-hidden="true"
+    focusable="false"
+  >
+    <defs>
+      <linearGradient id="fstAppBrandG" x1="10" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#5FA59B" />
+        <stop offset="0.6" stopColor="#3D6E66" />
+        <stop offset="1" stopColor="#D7B56D" />
+      </linearGradient>
+      <filter id="fstAppGlow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="3.2" result="blur" />
+        <feColorMatrix
+          in="blur"
+          type="matrix"
+          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.85 0"
+          result="glow"
+        />
+        <feMerge>
+          <feMergeNode in="glow" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <path
+      d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
+      fill="url(#fstAppBrandG)"
+      filter="url(#fstAppGlow)"
+    />
+    <path d="M22 23h24" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" />
+    <path d="M22 45h18" stroke="rgba(255,255,255,0.38)" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 const normalizeMarkdownLineBreaks = (text: string) => {
   const lines = String(text ?? '').split('\n');
   let inFence = false;
@@ -72,8 +113,19 @@ const normalizeMarkdownLineBreaks = (text: string) => {
 const GlobalCopilot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
+  const createMessageId = () => {
+    const cryptoId = globalThis.crypto?.randomUUID?.();
+    if (cryptoId) return cryptoId;
+    return `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  };
+
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: '你好！我是你的 AI 测试平台助手。你可以让我帮你创建性能测试任务，或者查询最近失败的 Web 测试记录。' }
+    {
+      id: 'init',
+      role: 'assistant',
+      content: '你好！我是你的 AI 测试平台助手。你可以让我帮你创建性能测试任务，或者查询最近失败的 Web 测试记录。',
+      status: 'done',
+    },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -272,8 +324,11 @@ const GlobalCopilot: React.FC = () => {
   const handleSend = async () => {
     if (!inputValue.trim() || loading) return;
 
-    const userMsg: Message = { role: 'user', content: inputValue.trim() };
-    const newMessages = [...messages, userMsg];
+    const userMsg: Message = { id: createMessageId(), role: 'user', content: inputValue.trim(), status: 'done' };
+    const pendingAssistantId = createMessageId();
+    const pendingAssistantMsg: Message = { id: pendingAssistantId, role: 'assistant', content: '', status: 'pending' };
+
+    const newMessages = [...messages, userMsg, pendingAssistantMsg];
     setMessages(newMessages);
     setInputValue('');
     setLoading(true);
@@ -281,19 +336,39 @@ const GlobalCopilot: React.FC = () => {
 
     try {
       const res = (await api.post('/copilot/chat', {
-        messages: newMessages.filter(m => m.role === 'user' || m.role === 'assistant'),
+        messages: newMessages
+          .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.status !== 'pending')
+          .map((m) => ({ role: m.role, content: m.content })),
         base_url: aiBaseUrl,
         model: aiModel,
         api_key: aiApiKey
-      })) as unknown as ApiResponse<Message>;
+      })) as unknown as ApiResponse<{ role: Message['role']; content: string }>;
       
       if (res?.code === 200 && res?.data) {
-        setMessages(prev => [...prev, res.data]);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === pendingAssistantId
+              ? { ...m, role: 'assistant', content: res.data.content ?? '', status: 'done' }
+              : m
+          )
+        );
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: `请求失败: ${res?.message || '未知错误'}` }]);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === pendingAssistantId
+              ? { ...m, role: 'assistant', content: `请求失败: ${res?.message || '未知错误'}`, status: 'error' }
+              : m
+          )
+        );
       }
     } catch (error: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `网络错误: ${error.message || '未知错误'}` }]);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === pendingAssistantId
+            ? { ...m, role: 'assistant', content: `网络错误: ${error?.message || '未知错误'}`, status: 'error' }
+            : m
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -454,7 +529,7 @@ const GlobalCopilot: React.FC = () => {
             <div className="fst-copilot-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onPointerDown={handlePanelPointerDown}>
               <Space>
                 <span className="fst-copilot-header-icon" aria-hidden="true">
-                  <CopilotSpriteMark size={20} />
+                  <AppBrandMark size={20} />
                 </span>
                 <span className="fst-copilot-header-title">AI Copilot</span>
               </Space>
@@ -501,7 +576,7 @@ const GlobalCopilot: React.FC = () => {
               <div className="fst-copilot-messages">
                 {messages.filter(m => m.role !== 'system').map((msg, index) => (
                   <div 
-                    key={index} 
+                    key={msg.id || index} 
                     style={{ 
                       display: 'flex', 
                       justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
@@ -510,7 +585,17 @@ const GlobalCopilot: React.FC = () => {
                     }}
                   >
                     {msg.role === 'assistant' && (
-                      <Avatar icon={<CopilotSpriteMark size={18} />} className="fst-copilot-avatar-ai" />
+                      <Avatar
+                        shape="square"
+                        icon={<AppBrandMark size={18} />}
+                        className="fst-copilot-avatar-ai"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.56)',
+                          border: '1px solid rgba(15, 45, 40, 0.12)',
+                          boxShadow: '0 10px 22px rgba(15, 45, 40, 0.10)',
+                          borderRadius: 12,
+                        }}
+                      />
                     )}
                     <div style={{
                       maxWidth: '80%',
@@ -525,46 +610,55 @@ const GlobalCopilot: React.FC = () => {
                       backdropFilter: msg.role === 'assistant' ? 'blur(12px)' : 'none'
                     }}>
                       {msg.role === 'assistant' ? (
-                        <ReactMarkdown
-                          components={{
-                            p: (props) => <p style={{ margin: 0 }} {...props} />,
-                            ol: (props) => <ol style={{ margin: 0, paddingLeft: 20 }} {...props} />,
-                            ul: (props) => <ul style={{ margin: 0, paddingLeft: 20 }} {...props} />,
-                            li: (props) => <li style={{ margin: '4px 0' }} {...props} />,
-                            a: ({ href, children, ...rest }) => (
-                              <a href={href} target="_blank" rel="noreferrer" {...rest}>
-                                {children}
-                              </a>
-                            ),
-                            code: ({ children, ...rest }) => (
-                              <code
-                                style={{
-                                  background: 'rgba(0,0,0,0.06)',
-                                  borderRadius: 4,
-                                  padding: '0 6px',
-                                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                }}
-                                {...rest}
-                              >
-                                {children}
-                              </code>
-                            ),
-                            pre: (props) => (
-                              <pre
-                                style={{
-                                  margin: 0,
-                                  padding: 12,
-                                  background: 'rgba(0,0,0,0.06)',
-                                  borderRadius: 8,
-                                  overflowX: 'auto',
-                                }}
-                                {...props}
-                              />
-                            ),
-                          }}
-                        >
-                          {normalizeMarkdownLineBreaks(msg.content)}
-                        </ReactMarkdown>
+                        msg.status === 'pending' ? (
+                          <div role="status" aria-label="Copilot 正在思考" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: 2 }}>
+                            <span className="fst-copilot-typing-dot" />
+                            <span className="fst-copilot-typing-dot" />
+                            <span className="fst-copilot-typing-dot" />
+                          </div>
+                        ) : (
+                          <ReactMarkdown
+                            components={{
+                              p: (props) => <p style={{ margin: 0 }} {...props} />,
+                              ol: (props) => <ol style={{ margin: 0, paddingLeft: 20 }} {...props} />,
+                              ul: (props) => <ul style={{ margin: 0, paddingLeft: 20 }} {...props} />,
+                              li: (props) => <li style={{ margin: '4px 0' }} {...props} />,
+                              a: ({ href, children, ...rest }) => (
+                                <a href={href} target="_blank" rel="noreferrer" {...rest}>
+                                  {children}
+                                </a>
+                              ),
+                              code: ({ children, ...rest }) => (
+                                <code
+                                  style={{
+                                    background: 'rgba(0,0,0,0.06)',
+                                    borderRadius: 4,
+                                    padding: '0 6px',
+                                    fontFamily:
+                                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                  }}
+                                  {...rest}
+                                >
+                                  {children}
+                                </code>
+                              ),
+                              pre: (props) => (
+                                <pre
+                                  style={{
+                                    margin: 0,
+                                    padding: 12,
+                                    background: 'rgba(0,0,0,0.06)',
+                                    borderRadius: 8,
+                                    overflowX: 'auto',
+                                  }}
+                                  {...props}
+                                />
+                              ),
+                            }}
+                          >
+                            {normalizeMarkdownLineBreaks(msg.content)}
+                          </ReactMarkdown>
+                        )
                       ) : (
                         msg.content
                       )}
@@ -574,16 +668,6 @@ const GlobalCopilot: React.FC = () => {
                     )}
                   </div>
                 ))}
-                {loading && (messages.filter(m => m.role === 'assistant').slice(-1)[0]?.content ?? '') === '' && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Avatar icon={<CopilotSpriteMark size={18} />} className="fst-copilot-avatar-ai" />
-                    <div className="fst-copilot-typing">
-                      <span className="fst-copilot-typing-dot" />
-                      <span className="fst-copilot-typing-dot" />
-                      <span className="fst-copilot-typing-dot" />
-                    </div>
-                  </div>
-                )}
                 <div ref={messagesEndRef} />
               </div>
 

@@ -405,7 +405,11 @@ const ApiTestWorkspace = () => {
         if (draft.params && draft.params.length > 0) {
           setParams([...draft.params, { key: '', value: '' }])
         }
-        message.info('已恢复上次未保存的草稿')
+        message.open({
+          type: 'info',
+          content: '已恢复上次未保存的草稿',
+          key: 'api-test-form-draft-restored',
+        })
       }
     } catch (error) {
       console.error('恢复草稿失败', error)
