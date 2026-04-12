@@ -162,6 +162,15 @@ const MainLayout = () => {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { token: themeToken } = theme.useToken()
+  const rawEnvNotice = (import.meta as any).env?.VITE_ENV_NOTICE as string | undefined
+  const envMode = (import.meta as any).env?.MODE as string | undefined
+  const deployEnv = (import.meta as any).env?.VITE_DEPLOY_ENV as string | undefined
+  const isProduction = envMode === 'production' || deployEnv === 'prod' || deployEnv === 'production'
+  const noticeOverride = (rawEnvNotice ?? '').trim()
+  const noticeDisabled = ['off', 'none', 'false', '0'].includes(noticeOverride.toLowerCase())
+  const envNotice = noticeDisabled
+    ? ''
+    : noticeOverride || '您目前处于线上环境，受限于个人服务器配置，部分功能性能可能会不理想。'
 
   // 用户下拉菜单
   const userMenuItems: MenuProps['items'] = [
@@ -302,6 +311,10 @@ const MainLayout = () => {
             <div id="tour-step-search">
               <GlobalSearch />
             </div>
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+            {isProduction && envNotice && <div className="fst-env-notice">{envNotice}</div>}
           </div>
 
           {/* 右侧：通知和用户 */}

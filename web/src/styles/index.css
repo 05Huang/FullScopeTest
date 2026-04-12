@@ -184,6 +184,22 @@ body {
   z-index: 1;
 }
 
+.fst-env-notice {
+  max-width: min(680px, calc(100vw - 520px));
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 45, 40, 0.12);
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgba(15, 45, 40, 0.66);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .fst-app-content.ant-layout-content {
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(15, 45, 40, 0.12);
