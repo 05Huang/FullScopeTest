@@ -66,25 +66,47 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${{ secrets.SSH_HOST }}
+            User ${{ secrets.SSH_USER }}
+            IdentityFile ~/.ssh/id_ed25519
+            ConnectTimeout 15
+            ServerAliveInterval 30
+            ServerAliveCountMax 6
+            TCPKeepAlive yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+          EOF
+          chmod 600 ~/.ssh/config
 
       - name: Upload dist to server
         shell: bash
         run: |
-          scp -i ~/.ssh/id_ed25519 dist.tgz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/fullscopetest-dist.tgz
+          for i in 1 2 3; do
+            scp dist.tgz deploy-target:/tmp/fullscopetest-dist.tgz && break
+            if [ "$i" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
 
       - name: Deploy backend on server (run deploy.sh)
         shell: bash
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          for i in 1 2 3; do
+            ssh deploy-target "\
             set -e; \
             cd '${{ secrets.DEPLOY_DIR }}'; \
             SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh \
-          "
+            " && break
+            if [ "$i" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
 
       - name: Publish frontend to 1Panel site dir
         shell: bash
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          for i in 1 2 3; do
+            ssh deploy-target "\
             set -e; \
             SITE_DIR='${{ secrets.SITE_DIR }}'; \
             TMP_DIR=\"\$(mktemp -d)\"; \
@@ -93,11 +115,18 @@ jobs:
             find \"\$SITE_DIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
             cp -R \"\$TMP_DIR\"/. \"\$SITE_DIR\"/; \
             rm -rf \"\$TMP_DIR\"; \
-          "
+            " && break
+            if [ "$i" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
 
       - name: Health check
         shell: bash
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          for i in 1 2 3; do
+            ssh deploy-target "\
             curl -fsS http://127.0.0.1:5211/api/v1/api-test/health >/dev/null \
-          "
+            " && break
+            if [ "$i" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
