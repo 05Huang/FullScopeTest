@@ -86,6 +86,16 @@ interface WebTestCollection {
   script_count?: number
 }
 
+interface ExploreHistoryItem {
+  id: string
+  started_at: string
+  start_url: string
+  objective: string
+  max_steps: number
+  report: any
+  console_lines: string[]
+}
+
 const browserConfig: Record<string, { color: string; name: string }> = {
   chromium: { color: 'blue', name: 'Chromium' },
   firefox: { color: 'orange', name: 'Firefox' },
@@ -100,6 +110,7 @@ const statusConfig: Record<string, { color: string; text: string }> = {
 }
 
 const BATCH_ACTION_CONCURRENCY = 5
+const EXPLORE_HISTORY_LIMIT = 20
 
 const normalizeScriptStatus = (status?: string): WebTestScript['status'] => {
   if (status === 'success') return 'passed'
@@ -108,10 +119,33 @@ const normalizeScriptStatus = (status?: string): WebTestScript['status'] => {
   return 'pending'
 }
 
+const getExploreHistoryStorageKey = (userId?: number) => `web-test-ai-explore-history-${userId || 'guest'}`
+
+const loadExploreHistory = (userId?: number): ExploreHistoryItem[] => {
+  try {
+    const raw = localStorage.getItem(getExploreHistoryStorageKey(userId))
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((item) => item && item.id && item.report)
+  } catch {
+    return []
+  }
+}
+
+const trimExploreReport = (report: any) => {
+  const safeReport = report || {}
+  return {
+    ...safeReport,
+    errors_found: Array.isArray(safeReport.errors_found) ? safeReport.errors_found.slice(0, 200) : [],
+    actions_taken: Array.isArray(safeReport.actions_taken) ? safeReport.actions_taken.slice(0, 200) : [],
+  }
+}
+
 import { useAuthStore } from '@/stores/authStore'
 
 const WebTestScripts = () => {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [scripts, setScripts] = useState<WebTestScript[]>([])
   const [collections, setCollections] = useState<WebTestCollection[]>([])
@@ -148,6 +182,7 @@ const WebTestScripts = () => {
   const [exploring, setExploring] = useState(false)
   const [exploreReport, setExploreReport] = useState<any>(null)
   const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
+  const [exploreHistory, setExploreHistory] = useState<ExploreHistoryItem[]>([])
   const exploreAbortRef = useRef<AbortController | null>(null)
 
   // 加载脚本列表
@@ -213,6 +248,57 @@ const WebTestScripts = () => {
       }
     }
   }, [])
+
+  useEffect(() => {
+    setExploreHistory(loadExploreHistory(user?.id))
+  }, [user?.id])
+
+  const resetExploreResultState = () => {
+    setExploreReport(null)
+    setExploreConsoleLines([])
+  }
+
+  const openExploreModal = () => {
+    if (exploring) return
+    resetExploreResultState()
+    setIsExploreModalOpen(true)
+  }
+
+  const closeExploreModal = () => {
+    if (exploring) return
+    setIsExploreModalOpen(false)
+    resetExploreResultState()
+  }
+
+  const appendExploreHistory = (payload: {
+    start_url: string
+    objective: string
+    max_steps: number
+    report: any
+    console_lines: string[]
+  }) => {
+    setExploreHistory((prev) => {
+      const next: ExploreHistoryItem[] = [
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          started_at: new Date().toISOString(),
+          start_url: payload.start_url,
+          objective: payload.objective,
+          max_steps: payload.max_steps,
+          report: trimExploreReport(payload.report),
+          console_lines: payload.console_lines.slice(-300),
+        },
+        ...prev,
+      ].slice(0, EXPLORE_HISTORY_LIMIT)
+      localStorage.setItem(getExploreHistoryStorageKey(user?.id), JSON.stringify(next))
+      return next
+    })
+  }
+
+  const clearExploreHistory = () => {
+    setExploreHistory([])
+    localStorage.removeItem(getExploreHistoryStorageKey(user?.id))
+  }
 
   // 创建脚本
   const handleCreate = async (values: any) => {
@@ -287,9 +373,13 @@ const WebTestScripts = () => {
       message.warning('请输入起始 URL')
       return
     }
+    const runtimeConsoleLines: string[] = []
+    let reportForHistory: any = null
     const pushExploreLog = (line: string) => {
       const timestamp = new Date().toLocaleTimeString()
-      setExploreConsoleLines((prev) => [...prev, `[${timestamp}] ${line}`])
+      const text = `[${timestamp}] ${line}`
+      runtimeConsoleLines.push(text)
+      setExploreConsoleLines((prev) => [...prev, text])
     }
     setExploreConsoleLines([])
     pushExploreLog(`启动探索任务，目标 URL: ${exploreStartUrl}`)
@@ -334,8 +424,20 @@ const WebTestScripts = () => {
         }
       })
       if (streamError) {
+        reportForHistory = {
+          ...(finalReport || {}),
+          start_url: exploreStartUrl,
+          objective: exploreObjective,
+          status: 'failed',
+          error_message: streamError,
+          total_steps_executed: finalReport?.total_steps_executed || 0,
+          errors_found: finalReport?.errors_found || [],
+          actions_taken: finalReport?.actions_taken || [],
+          error_summary: finalReport?.error_summary || { critical: 0, warning: 0, info: 0 },
+        }
         message.error(streamError)
       } else if (finalReport) {
+        reportForHistory = finalReport
         pushExploreLog(`任务返回状态: ${finalReport.status || 'unknown'}`)
         pushExploreLog(`执行步数: ${finalReport.total_steps_executed || 0}`)
         pushExploreLog(`发现错误数: ${finalReport.errors_found?.length || 0}`)
@@ -359,16 +461,56 @@ const WebTestScripts = () => {
           message.success('探索性测试完成')
         }
       } else {
+        reportForHistory = {
+          start_url: exploreStartUrl,
+          objective: exploreObjective,
+          total_steps_executed: 0,
+          visited_urls: [],
+          errors_found: [],
+          error_summary: { critical: 0, warning: 0, info: 0 },
+          actions_taken: [],
+          status: 'failed',
+          error_message: '未收到探索结果',
+        }
         pushExploreLog('未收到探索结果')
         message.error('探索失败')
       }
     } catch (error: any) {
-      pushExploreLog(`请求异常: ${error.response?.data?.message || error.message || '探索失败'}`)
-      message.error(error.response?.data?.message || '探索失败')
+      const errorMessage = error.response?.data?.message || error.message || '探索失败'
+      reportForHistory = {
+        start_url: exploreStartUrl,
+        objective: exploreObjective,
+        total_steps_executed: 0,
+        visited_urls: [],
+        errors_found: [],
+        error_summary: { critical: 0, warning: 0, info: 0 },
+        actions_taken: [],
+        status: 'failed',
+        error_message: errorMessage,
+      }
+      pushExploreLog(`请求异常: ${errorMessage}`)
+      message.error(errorMessage)
     } finally {
       if (exploreAbortRef.current === controller) {
         exploreAbortRef.current = null
       }
+      appendExploreHistory({
+        start_url: exploreStartUrl,
+        objective: exploreObjective,
+        max_steps: exploreMaxSteps,
+        report: reportForHistory || {
+          start_url: exploreStartUrl,
+          objective: exploreObjective,
+          total_steps_executed: 0,
+          visited_urls: [],
+          errors_found: [],
+          error_summary: { critical: 0, warning: 0, info: 0 },
+          actions_taken: [],
+          status: 'failed',
+          error_message: '任务异常结束',
+        },
+        console_lines: runtimeConsoleLines,
+      })
       setExploring(false)
     }
   }
@@ -891,7 +1033,7 @@ const WebTestScripts = () => {
           <Button
             type="default"
             icon={<GlobalOutlined />}
-            onClick={() => setIsExploreModalOpen(true)}
+            onClick={openExploreModal}
           >
             探索测试
           </Button>
@@ -1127,17 +1269,11 @@ const WebTestScripts = () => {
           </Space>
         }
         open={isExploreModalOpen}
-        onCancel={() => {
-          if (!exploring) {
-            setIsExploreModalOpen(false)
-            setExploreReport(null)
-            setExploreConsoleLines([])
-          }
-        }}
+        onCancel={closeExploreModal}
         width={800}
         footer={
           exploreReport ? (
-            <Button onClick={() => setIsExploreModalOpen(false)}>关闭</Button>
+            <Button onClick={closeExploreModal}>关闭</Button>
           ) : (
             <Button
               type="primary"
@@ -1185,6 +1321,74 @@ const WebTestScripts = () => {
                 ]}
               />
             </Form.Item>
+            {exploreHistory.length > 0 && (
+              <Form.Item>
+                <Card
+                  size="small"
+                  title={`历史探索记录 (${exploreHistory.length})`}
+                  extra={<Button type="link" onClick={clearExploreHistory}>清空记录</Button>}
+                >
+                  <Table
+                    size="small"
+                    dataSource={exploreHistory}
+                    pagination={false}
+                    rowKey="id"
+                    columns={[
+                      {
+                        title: '时间',
+                        dataIndex: 'started_at',
+                        width: 160,
+                        render: (value) => new Date(value).toLocaleString(),
+                      },
+                      { title: '起始 URL', dataIndex: 'start_url', ellipsis: true },
+                      {
+                        title: '状态',
+                        width: 100,
+                        render: (_, record: ExploreHistoryItem) => (
+                          <Tag color={record.report?.status === 'failed' ? 'red' : 'green'}>
+                            {record.report?.status || 'unknown'}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: '错误数',
+                        width: 80,
+                        render: (_, record: ExploreHistoryItem) => String(record.report?.errors_found?.length || 0),
+                      },
+                      {
+                        title: '操作',
+                        width: 150,
+                        render: (_, record: ExploreHistoryItem) => (
+                          <Space size={4}>
+                            <Button
+                              type="link"
+                              size="small"
+                              onClick={() => {
+                                setExploreReport(record.report)
+                                setExploreConsoleLines(record.console_lines || [])
+                              }}
+                            >
+                              查看结果
+                            </Button>
+                            <Button
+                              type="link"
+                              size="small"
+                              onClick={() => {
+                                setExploreStartUrl(record.start_url)
+                                setExploreObjective(record.objective)
+                                setExploreMaxSteps(record.max_steps)
+                              }}
+                            >
+                              复用参数
+                            </Button>
+                          </Space>
+                        ),
+                      },
+                    ]}
+                  />
+                </Card>
+              </Form.Item>
+            )}
             {(exploring || exploreConsoleLines.length > 0) && (
               <Form.Item label="命令窗口">
                 <div
