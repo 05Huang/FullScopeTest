@@ -142,6 +142,7 @@ export const exploreWebAppAIStream = async (
     start_url: string
     objective?: string
     max_steps?: number
+    live_view_url?: string
     base_url?: string
     model?: string
     api_key?: string
@@ -154,6 +155,7 @@ export const exploreWebAppAIStream = async (
     onLog?: (line: string) => void
     onReport?: (report: any) => void
     onProgress?: (progress: any) => void
+    onLiveView?: (payload: { url?: string }) => void
     onError?: (message: string) => void
     signal?: AbortSignal
   }
@@ -217,6 +219,10 @@ export const exploreWebAppAIStream = async (
     }
     if (eventName === 'progress') {
       options.onProgress?.(payload)
+      return
+    }
+    if (eventName === 'live_view') {
+      options.onLiveView?.(payload || {})
       return
     }
     if (eventName === 'error') {

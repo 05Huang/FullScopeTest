@@ -26,9 +26,27 @@ def _install_playwright_chromium() -> None:
     )
 
 
-def _launch_chromium_with_fallback(playwright_instance: Any):
+def _to_bool(value: Any, default: bool) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
+def _launch_chromium_with_fallback(playwright_instance: Any, headless: bool, slow_mo: int):
+    launch_kwargs = {
+        "headless": headless,
+    }
+    if slow_mo > 0:
+        launch_kwargs["slow_mo"] = slow_mo
     try:
-        return playwright_instance.chromium.launch(headless=True)
+        return playwright_instance.chromium.launch(**launch_kwargs)
     except Exception as launch_error:
         error_message = str(launch_error)
         if "Executable doesn't exist" not in error_message:
@@ -40,7 +58,7 @@ def _launch_chromium_with_fallback(playwright_instance: Any):
             raise RuntimeError(
                 "Playwright Chromium 浏览器未安装且自动安装失败，请手动执行: playwright install chromium"
             ) from install_error
-        return playwright_instance.chromium.launch(headless=True)
+        return playwright_instance.chromium.launch(**launch_kwargs)
 
 
 def _select_input_target(elements: List[Dict[str, Any]]) -> Optional[str]:
@@ -136,6 +154,15 @@ def run_exploration_task(
     vision_base_url = str(os.environ.get("AI_VISION_BASE_URL") or config.get("AI_VISION_BASE_URL") or base_url).rstrip("/")
     vision_model = str(os.environ.get("AI_VISION_MODEL") or config.get("AI_VISION_MODEL") or model)
     vision_api_key = str(os.environ.get("AI_VISION_API_KEY") or config.get("AI_VISION_API_KEY") or api_key).strip()
+    explore_headless = _to_bool(
+        os.environ.get("AI_EXPLORE_BROWSER_HEADLESS", config.get("AI_EXPLORE_BROWSER_HEADLESS")),
+        True,
+    )
+    explore_slow_mo = int(
+        os.environ.get("AI_EXPLORE_BROWSER_SLOW_MO")
+        or config.get("AI_EXPLORE_BROWSER_SLOW_MO")
+        or 0
+    )
 
     if not api_key:
         raise ValueError("AI_ASSISTANT_API_KEY is not configured")
@@ -165,8 +192,8 @@ def run_exploration_task(
 
     try:
         with sync_playwright() as p:
-            _emit_log(f"启动浏览器并打开页面: {start_url}")
-            browser = _launch_chromium_with_fallback(p)
+            _emit_log(f"启动浏览器并打开页面: {start_url} (headless={str(explore_headless).lower()}, slow_mo={explore_slow_mo}ms)")
+            browser = _launch_chromium_with_fallback(p, explore_headless, explore_slow_mo)
             context = browser.new_context(viewport={'width': 1280, 'height': 720})
             page = context.new_page()
             
