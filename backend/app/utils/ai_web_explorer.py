@@ -3,14 +3,44 @@ AI Autonomous Web Explorer.
 Uses Playwright to navigate a web application and LLM to decide actions.
 """
 
+import base64
 import json
 import logging
 import os
+import subprocess
+import sys
 import time
 from typing import Dict, Any, List
 from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
+
+
+def _install_playwright_chromium() -> None:
+    subprocess.run(
+        [sys.executable, "-m", "playwright", "install", "chromium"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=600,
+    )
+
+
+def _launch_chromium_with_fallback(playwright_instance: Any):
+    try:
+        return playwright_instance.chromium.launch(headless=True)
+    except Exception as launch_error:
+        error_message = str(launch_error)
+        if "Executable doesn't exist" not in error_message:
+            raise
+        logger.warning("Chromium executable missing, trying to auto install Playwright browser.")
+        try:
+            _install_playwright_chromium()
+        except Exception as install_error:
+            raise RuntimeError(
+                "Playwright Chromium 浏览器未安装且自动安装失败，请手动执行: playwright install chromium"
+            ) from install_error
+        return playwright_instance.chromium.launch(headless=True)
 
 def run_exploration_task(
     start_url: str,
@@ -26,6 +56,9 @@ def run_exploration_task(
     base_url = str(os.environ.get("AI_ASSISTANT_BASE_URL") or config.get("AI_ASSISTANT_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
     model = str(os.environ.get("AI_ASSISTANT_MODEL") or config.get("AI_ASSISTANT_MODEL") or "gpt-4o-mini")
     api_key = str(os.environ.get("AI_ASSISTANT_API_KEY") or config.get("AI_ASSISTANT_API_KEY") or "").strip()
+    vision_base_url = str(os.environ.get("AI_VISION_BASE_URL") or config.get("AI_VISION_BASE_URL") or base_url).rstrip("/")
+    vision_model = str(os.environ.get("AI_VISION_MODEL") or config.get("AI_VISION_MODEL") or model)
+    vision_api_key = str(os.environ.get("AI_VISION_API_KEY") or config.get("AI_VISION_API_KEY") or api_key).strip()
 
     if not api_key:
         raise ValueError("AI_ASSISTANT_API_KEY is not configured")
@@ -42,7 +75,7 @@ def run_exploration_task(
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = _launch_chromium_with_fallback(p)
             context = browser.new_context(viewport={'width': 1280, 'height': 720})
             page = context.new_page()
             
@@ -112,14 +145,25 @@ def run_exploration_task(
                 }''')
                 
                 # 请求 LLM 决定下一步
+                screenshot_base64 = ""
+                try:
+                    screenshot_bytes = page.screenshot(type="jpeg", quality=65, full_page=False)
+                    screenshot_base64 = base64.b64encode(screenshot_bytes).decode("utf-8")
+                except Exception as screenshot_error:
+                    logger.warning(f"Failed to capture screenshot on step {step}: {screenshot_error}")
+
                 action = _decide_next_action(
                     current_url, 
                     elements, 
                     objective, 
                     report["actions_taken"][-5:], # 提供最近5步历史防止循环
+                    screenshot_base64,
                     api_key, 
                     base_url, 
-                    model
+                    model,
+                    vision_api_key,
+                    vision_base_url,
+                    vision_model,
                 )
                 
                 if not action or action.get("action") == "stop":
@@ -169,10 +213,20 @@ def run_exploration_task(
 
     return report
 
-def _decide_next_action(current_url: str, elements: List[Dict], objective: str, history: List[Dict], api_key: str, base_url: str, model: str) -> Dict[str, Any]:
+def _decide_next_action(
+    current_url: str,
+    elements: List[Dict],
+    objective: str,
+    history: List[Dict],
+    screenshot_base64: str,
+    api_key: str,
+    base_url: str,
+    model: str,
+    vision_api_key: str,
+    vision_base_url: str,
+    vision_model: str,
+) -> Dict[str, Any]:
     import requests
-    
-    endpoint = f"{base_url}/chat/completions"
     
     system_prompt = (
         "You are an Autonomous Web Explorer Agent. "
@@ -195,37 +249,86 @@ def _decide_next_action(current_url: str, elements: List[Dict], objective: str, 
     # 限制元素数量以防止上下文超限
     elements_subset = elements[:50]
     
-    user_content = json.dumps({
+    user_text_content = json.dumps({
         "objective": objective,
         "current_url": current_url,
         "recent_history": history,
         "interactable_elements": elements_subset
     }, indent=2)
 
-    payload = {
+    def _parse_action_response(resp: Any) -> Dict[str, Any]:
+        if resp.status_code != 200:
+            return {}
+        content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        if isinstance(content, dict):
+            return content
+        if not isinstance(content, str):
+            return {}
+        content_text = content.strip()
+        if not content_text:
+            return {}
+        return json.loads(content_text)
+
+    try:
+        vision_user_content: Any = [{"type": "text", "text": user_text_content}]
+        if screenshot_base64:
+            vision_user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{screenshot_base64}"}
+            })
+        vision_payload = {
+            "model": vision_model,
+            "temperature": 0.5,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": vision_user_content},
+            ],
+        }
+        vision_resp = requests.post(
+            f"{vision_base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {vision_api_key}",
+                "Content-Type": "application/json",
+            },
+            json=vision_payload,
+            timeout=20,
+        )
+        vision_action = _parse_action_response(vision_resp)
+        if vision_action:
+            return vision_action
+        logger.warning(
+            "Vision action decision failed with status %s, falling back to text model.",
+            vision_resp.status_code,
+        )
+    except Exception as e:
+        logger.error(f"Vision LLM decision failed: {e}")
+
+    fallback_payload = {
         "model": model,
         "temperature": 0.5,
         "response_format": {"type": "json_object"},
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
+            {"role": "user", "content": user_text_content},
         ],
     }
 
     try:
-        resp = requests.post(
-            endpoint,
+        fallback_resp = requests.post(
+            f"{base_url}/chat/completions",
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
-            json=payload,
+            json=fallback_payload,
             timeout=15,
         )
-        if resp.status_code == 200:
-            content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
-            return json.loads(content)
+        fallback_action = _parse_action_response(fallback_resp)
+        if fallback_action:
+            return fallback_action
+        logger.warning("Text fallback decision failed with status %s.", fallback_resp.status_code)
     except Exception as e:
-        logger.error(f"LLM decision failed: {e}")
+        logger.error(f"Text LLM decision failed: {e}")
     
     return {"action": "stop", "reason": "Failed to get LLM decision"}

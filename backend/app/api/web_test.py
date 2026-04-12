@@ -56,6 +56,9 @@ def generate_web_script():
             'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
             'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
             'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
             'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
         }
 
@@ -66,6 +69,12 @@ def generate_web_script():
             runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
         if data.get('api_key'):
             runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+        if data.get('vision_base_url'):
+            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+        if data.get('vision_model'):
+            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+        if data.get('vision_api_key'):
+            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
         script_content = generate_test_script(prompt, "web", runtime_config)
         return success_response(data={'script_content': script_content}, message='AI 脚本生成成功')
@@ -95,6 +104,9 @@ def analyze_web_test_error():
             'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
             'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
             'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
             'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
         }
 
@@ -105,6 +117,12 @@ def analyze_web_test_error():
             runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
         if data.get('api_key'):
             runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+        if data.get('vision_base_url'):
+            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+        if data.get('vision_model'):
+            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+        if data.get('vision_api_key'):
+            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
         result = analyze_test_error(
             script_content=script.script_content,
@@ -135,6 +153,9 @@ def explore_web_app():
             'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
             'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
             'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
         }
 
         if data.get('base_url'):
@@ -143,6 +164,12 @@ def explore_web_app():
             runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
         if data.get('api_key'):
             runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+        if data.get('vision_base_url'):
+            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+        if data.get('vision_model'):
+            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+        if data.get('vision_api_key'):
+            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
         # 注意：这里直接同步执行，实际生产环境中应该使用 Celery 异步任务
         # 为了演示和快速反馈，暂时使用同步调用，或者可以限制 max_steps 较小
@@ -637,5 +664,4 @@ def recording_status():
         'pid': process.pid,
         'python_path': sys.executable
     })
-
 

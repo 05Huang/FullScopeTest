@@ -59,6 +59,9 @@ class BaseConfig:
     AI_ASSISTANT_API_KEY = os.environ.get('AI_ASSISTANT_API_KEY', '')
     AI_ASSISTANT_MODEL = os.environ.get('AI_ASSISTANT_MODEL', 'gpt-4o-mini')
     AI_ASSISTANT_TIMEOUT = int(os.environ.get('AI_ASSISTANT_TIMEOUT', '30'))
+    AI_VISION_BASE_URL = os.environ.get('AI_VISION_BASE_URL', AI_ASSISTANT_BASE_URL)
+    AI_VISION_API_KEY = os.environ.get('AI_VISION_API_KEY', AI_ASSISTANT_API_KEY)
+    AI_VISION_MODEL = os.environ.get('AI_VISION_MODEL', 'gpt-4o-mini')
 
     # Aliyun OSS configuration
     OSS_ENDPOINT = os.environ.get('OSS_ENDPOINT', '')
