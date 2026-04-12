@@ -252,6 +252,9 @@ const ApiTestWorkspace = () => {
   const [aiBaseUrl, setAiBaseUrl] = useState('')
   const [aiModel, setAiModel] = useState('')
   const [aiApiKey, setAiApiKey] = useState('')
+  const [aiVisionBaseUrl, setAiVisionBaseUrl] = useState('')
+  const [aiVisionModel, setAiVisionModel] = useState('')
+  const [aiVisionApiKey, setAiVisionApiKey] = useState('')
   const [aiAutoRun, setAiAutoRun] = useState(true)
   const [aiRunning, setAiRunning] = useState(false)
   const [aiSummary, setAiSummary] = useState('')
@@ -260,7 +263,14 @@ const ApiTestWorkspace = () => {
   const [aiExecutionLogs, setAiExecutionLogs] = useState<AiExecutionLog[]>([])
 
   // 全局配置加载
-  const [globalAiConfig, setGlobalAiConfig] = useState<{base_url: string, model: string, api_key: string} | null>(null)
+  const [globalAiConfig, setGlobalAiConfig] = useState<{
+    base_url: string
+    model: string
+    api_key: string
+    vision_base_url: string
+    vision_model: string
+    vision_api_key: string
+  } | null>(null)
   const [loadingConfig, setLoadingConfig] = useState(false)
 
   // Fetch global AI config when drawer opens
@@ -1286,7 +1296,10 @@ const ApiTestWorkspace = () => {
         count: aiSynthesizeCount,
         base_url: aiBaseUrl,
         model: aiModel,
-        api_key: aiApiKey
+        api_key: aiApiKey,
+        vision_base_url: aiVisionBaseUrl,
+        vision_model: aiVisionModel,
+        vision_api_key: aiVisionApiKey
       })
       if (res.code === 200 && res.data?.cases) {
         setSynthesizedCases(res.data.cases)
@@ -1349,7 +1362,10 @@ const ApiTestWorkspace = () => {
         collection_id: targetCollectionId,
         base_url: aiBaseUrl,
         model: aiModel,
-        api_key: aiApiKey
+        api_key: aiApiKey,
+        vision_base_url: aiVisionBaseUrl,
+        vision_model: aiVisionModel,
+        vision_api_key: aiVisionApiKey
       })
       if (res.code === 200 && res.data) {
         setReviewSummary(res.data.review_summary)
@@ -1415,6 +1431,58 @@ const ApiTestWorkspace = () => {
       return
     }
 
+    const extractAiExecutionErrorParts = (error: any): string[] => {
+      const response = error?.response
+      const data = response?.data
+      const segments: string[] = []
+      const pushSegment = (value: any) => {
+        const text = String(value || '').trim()
+        if (!text) return
+        if (!segments.includes(text)) {
+          segments.push(text.slice(0, 500))
+        }
+      }
+
+      if (response?.status) {
+        pushSegment(`status=${response.status}`)
+      }
+
+      pushSegment(data?.message)
+      pushSegment(data?.error)
+      pushSegment(data?.msg)
+      pushSegment(data?.data?.message)
+      pushSegment(data?.data?.error)
+
+      if (data?.errors) {
+        if (Array.isArray(data.errors)) {
+          const briefErrors = data.errors.slice(0, 5).map((item: any) => {
+            if (typeof item === 'string') return item
+            return item?.message || item?.msg || JSON.stringify(item)
+          })
+          briefErrors.forEach((item: string) => pushSegment(item))
+        } else if (typeof data.errors === 'object') {
+          pushSegment(JSON.stringify(data.errors))
+        } else if (typeof data.errors === 'string') {
+          pushSegment(data.errors)
+        }
+      }
+
+      if (data?.data && typeof data.data === 'object') {
+        pushSegment(data.data.detail)
+        pushSegment(data.data.traceback)
+        pushSegment(data.data.response_body)
+        pushSegment(data.data.body)
+      }
+
+      if (segments.length === 0) {
+        pushSegment(error?.message)
+      }
+      if (segments.length === 0) {
+        return ['unknown error']
+      }
+      return segments
+    }
+
     setAiRunning(true)
     setAiSummary('')
     setAiPlanSource('')
@@ -1427,6 +1495,9 @@ const ApiTestWorkspace = () => {
         base_url: aiBaseUrl.trim(),
         model: aiModel.trim(),
         api_key: aiApiKey.trim(),
+        vision_base_url: aiVisionBaseUrl.trim(),
+        vision_model: aiVisionModel.trim(),
+        vision_api_key: aiVisionApiKey.trim(),
         project_id: currentProjectId,
         collection_id: activeCollectionId,
         case_id: currentCaseId || undefined,
@@ -1496,6 +1567,73 @@ const ApiTestWorkspace = () => {
         return currentCaseId || undefined
       }
 
+      const inferAiCaseMethod = (op: any): string => {
+        const rawMethod = String(op.method || '').trim().toUpperCase()
+        const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
+        if (allowedMethods.includes(rawMethod)) return rawMethod
+
+        const hasBody =
+          op.body !== undefined &&
+          op.body !== null &&
+          (typeof op.body !== 'string' || op.body.trim().length > 0)
+        const hintedBodyType = String(op.body_type || '').trim().toLowerCase()
+        if (
+          hasBody ||
+          ['json', 'raw', 'form-data', 'x-www-form-urlencoded', 'multipart'].includes(hintedBodyType)
+        ) {
+          return 'POST'
+        }
+
+        const hint = `${op.name || ''} ${op.description || ''} ${op.url || ''}`.toLowerCase()
+        if (/(login|signin|signup|register|create|add|save|submit|token)/.test(hint)) return 'POST'
+        if (/(update|edit|modify)/.test(hint)) return 'PUT'
+        if (/(delete|remove)/.test(hint)) return 'DELETE'
+        if (/(patch)/.test(hint)) return 'PATCH'
+        return 'GET'
+      }
+
+      const buildRunCaseFailureReasons = (runData: any): string[] => {
+        if (!runData || typeof runData !== 'object') return ['unknown reason']
+        const parts: string[] = []
+        const pushPart = (value: any) => {
+          const text = String(value || '').trim()
+          if (!text) return
+          if (!parts.includes(text)) {
+            parts.push(text.slice(0, 500))
+          }
+        }
+
+        if (runData.status_code !== undefined && runData.status_code !== null) {
+          pushPart(`status=${runData.status_code}`)
+        }
+        pushPart(runData.error)
+
+        if (runData.script_execution?.pre_script?.error) {
+          pushPart(`pre_script: ${runData.script_execution.pre_script.error}`)
+        }
+        if (runData.script_execution?.post_script?.error) {
+          pushPart(`post_script: ${runData.script_execution.post_script.error}`)
+        }
+
+        const bodyData = runData.body
+        if (typeof bodyData === 'string' && bodyData.trim()) {
+          pushPart(bodyData)
+          try {
+            const parsed = JSON.parse(bodyData)
+            pushPart(parsed?.message)
+            pushPart(parsed?.error)
+            pushPart(parsed?.msg)
+          } catch {}
+        } else if (bodyData && typeof bodyData === 'object') {
+          pushPart(bodyData.message)
+          pushPart(bodyData.msg)
+          pushPart(bodyData.error)
+        }
+
+        if (parts.length === 0) return ['unknown reason']
+        return parts
+      }
+
       for (let index = 0; index < operations.length; index += 1) {
         const op = operations[index]
         const opTitle = `[${index + 1}/${operations.length}] ${op.type}`
@@ -1547,7 +1685,7 @@ const ApiTestWorkspace = () => {
           }
 
           if (op.type === 'create_case') {
-            const methodValue = String(op.method || 'GET').toUpperCase()
+            const methodValue = inferAiCaseMethod(op)
             const bodyValue = op.body === undefined ? undefined : op.body
             const caseRes = await apiTestService.createCase({
               name: op.name || `AI Case ${Date.now()}`,
@@ -1603,14 +1741,25 @@ const ApiTestWorkspace = () => {
             const runRes = await apiTestService.runCase(caseId, envId)
             if (runRes.code !== 200) throw new Error(runRes.message || 'run case failed')
             const isPassed = runRes.data?.passed
-            const passedText = isPassed ? 'passed' : 'failed'
-            appendAiLog(isPassed ? 'success' : 'error', `${opTitle} done: ${passedText}`)
+            if (isPassed) {
+              appendAiLog('success', `${opTitle} done: passed`)
+            } else {
+              const failureReasons = buildRunCaseFailureReasons(runRes.data)
+              appendAiLog('error', `${opTitle} done: failed (${failureReasons[0]})`)
+              failureReasons.slice(1).forEach((reason, detailIndex) => {
+                appendAiLog('error', `${opTitle} detail ${detailIndex + 1}: ${reason}`)
+              })
+            }
             continue
           }
 
           appendAiLog('info', `${opTitle} ignored (unsupported type)`)
         } catch (error: any) {
-          appendAiLog('error', `${opTitle} failed: ${error?.message || 'unknown error'}`)
+          const errorParts = extractAiExecutionErrorParts(error)
+          appendAiLog('error', `${opTitle} failed: ${errorParts[0]}`)
+          errorParts.slice(1).forEach((part, detailIndex) => {
+            appendAiLog('error', `${opTitle} detail ${detailIndex + 1}: ${part}`)
+          })
         }
       }
 
@@ -1618,8 +1767,12 @@ const ApiTestWorkspace = () => {
       appendAiLog('success', 'AI workflow completed')
       message.success('AI workflow completed')
     } catch (error: any) {
-      appendAiLog('error', error?.message || 'AI workflow failed')
-      message.error(error?.message || 'AI workflow failed')
+      const errorParts = extractAiExecutionErrorParts(error)
+      appendAiLog('error', `AI workflow failed: ${errorParts[0]}`)
+      errorParts.slice(1).forEach((part, detailIndex) => {
+        appendAiLog('error', `AI workflow detail ${detailIndex + 1}: ${part}`)
+      })
+      message.error(errorParts[0] || 'AI workflow failed')
     } finally {
       setAiRunning(false)
     }
@@ -2532,6 +2685,27 @@ const ApiTestWorkspace = () => {
                   placeholder={globalAiConfig?.api_key || "请输入模型提供商的 API Key"}
                   value={aiApiKey}
                   onChange={(e) => setAiApiKey(e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Vision Base URL" style={{ marginTop: 12, marginBottom: 12 }}>
+                <Input
+                  placeholder={globalAiConfig?.vision_base_url || globalAiConfig?.base_url || "https://api.openai.com/v1"}
+                  value={aiVisionBaseUrl}
+                  onChange={(e) => setAiVisionBaseUrl(e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Vision Model" style={{ marginBottom: 12 }}>
+                <Input
+                  placeholder={globalAiConfig?.vision_model || "gpt-4o-mini"}
+                  value={aiVisionModel}
+                  onChange={(e) => setAiVisionModel(e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Vision API Key" style={{ marginBottom: 0 }}>
+                <Input.Password
+                  placeholder={globalAiConfig?.vision_api_key || "请输入视觉模型 API Key"}
+                  value={aiVisionApiKey}
+                  onChange={(e) => setAiVisionApiKey(e.target.value)}
                 />
               </Form.Item>
             </Form>

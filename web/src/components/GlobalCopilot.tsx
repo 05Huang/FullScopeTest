@@ -106,9 +106,19 @@ const GlobalCopilot: React.FC = () => {
   const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || '');
   const [aiModel, setAiModel] = useState(() => localStorage.getItem('api-test-ai-model') || '');
   const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '');
+  const [aiVisionBaseUrl, setAiVisionBaseUrl] = useState(() => localStorage.getItem('api-test-ai-vision-base-url') || '');
+  const [aiVisionModel, setAiVisionModel] = useState(() => localStorage.getItem('api-test-ai-vision-model') || '');
+  const [aiVisionApiKey, setAiVisionApiKey] = useState(() => localStorage.getItem('api-test-ai-vision-api-key') || '');
 
   // Global Config Loading
-  const [globalAiConfig, setGlobalAiConfig] = useState<{base_url: string, model: string, api_key: string} | null>(null);
+  const [globalAiConfig, setGlobalAiConfig] = useState<{
+    base_url: string
+    model: string
+    api_key: string
+    vision_base_url: string
+    vision_model: string
+    vision_api_key: string
+  } | null>(null);
 
   useEffect(() => {
     if (showConfig && !globalAiConfig) {
@@ -321,7 +331,10 @@ const GlobalCopilot: React.FC = () => {
           .map((m) => ({ role: m.role, content: m.content })),
         base_url: aiBaseUrl,
         model: aiModel,
-        api_key: aiApiKey
+        api_key: aiApiKey,
+        vision_base_url: aiVisionBaseUrl,
+        vision_model: aiVisionModel,
+        vision_api_key: aiVisionApiKey
       })) as unknown as ApiResponse<{ role: Message['role']; content: string }>;
       
       if (res?.code === 200 && res?.data) {
@@ -358,6 +371,9 @@ const GlobalCopilot: React.FC = () => {
     localStorage.setItem('api-test-ai-base-url', aiBaseUrl);
     localStorage.setItem('api-test-ai-model', aiModel);
     localStorage.setItem('api-test-ai-api-key', aiApiKey);
+    localStorage.setItem('api-test-ai-vision-base-url', aiVisionBaseUrl);
+    localStorage.setItem('api-test-ai-vision-model', aiVisionModel);
+    localStorage.setItem('api-test-ai-vision-api-key', aiVisionApiKey);
     setShowConfig(false);
   };
 
@@ -547,6 +563,9 @@ const GlobalCopilot: React.FC = () => {
                 <Input addonBefore="Base URL" placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"} value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)} />
                 <Input addonBefore="Model" placeholder={globalAiConfig?.model || "gpt-4o-mini"} value={aiModel} onChange={e => setAiModel(e.target.value)} />
                 <Input.Password addonBefore="API Key" placeholder={globalAiConfig?.api_key || "请输入模型提供商的 API Key"} value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} />
+                <Input addonBefore="Vision URL" placeholder={globalAiConfig?.vision_base_url || globalAiConfig?.base_url || "https://api.openai.com/v1"} value={aiVisionBaseUrl} onChange={e => setAiVisionBaseUrl(e.target.value)} />
+                <Input addonBefore="Vision Model" placeholder={globalAiConfig?.vision_model || "gpt-4o-mini"} value={aiVisionModel} onChange={e => setAiVisionModel(e.target.value)} />
+                <Input.Password addonBefore="Vision Key" placeholder={globalAiConfig?.vision_api_key || "请输入视觉模型 API Key"} value={aiVisionApiKey} onChange={e => setAiVisionApiKey(e.target.value)} />
                 <Button type="primary" block onClick={saveConfig}>保存配置</Button>
               </Space>
             </div>

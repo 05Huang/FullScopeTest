@@ -103,6 +103,9 @@ export const generateScriptAI = (data: {
   base_url?: string
   model?: string
   api_key?: string
+  vision_base_url?: string
+  vision_model?: string
+  vision_api_key?: string
 }): Promise<ApiResponse> => {
   return api.post('/web-test/ai/generate', data) as Promise<ApiResponse>
 }
@@ -113,6 +116,9 @@ export const analyzeErrorAI = (data: {
   base_url?: string
   model?: string
   api_key?: string
+  vision_base_url?: string
+  vision_model?: string
+  vision_api_key?: string
 }): Promise<ApiResponse> => {
   return api.post('/web-test/ai/analyze-error', data) as Promise<ApiResponse>
 }
@@ -124,6 +130,9 @@ export const exploreWebAppAI = (data: {
   base_url?: string
   model?: string
   api_key?: string
+  vision_base_url?: string
+  vision_model?: string
+  vision_api_key?: string
 }): Promise<ApiResponse> => {
   return api.post('/web-test/ai/explore', data) as Promise<ApiResponse>
 }

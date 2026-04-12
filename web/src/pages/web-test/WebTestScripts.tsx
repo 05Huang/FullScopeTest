@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Card,
   Table,
@@ -147,6 +147,8 @@ const WebTestScripts = () => {
   const [exploreMaxSteps, setExploreMaxSteps] = useState(10)
   const [exploring, setExploring] = useState(false)
   const [exploreReport, setExploreReport] = useState<any>(null)
+  const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
+  const exploreHeartbeatRef = useRef<number | null>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -180,6 +182,9 @@ const WebTestScripts = () => {
   const [aiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || '')
   const [aiModel] = useState(() => localStorage.getItem('api-test-ai-model') || '')
   const [aiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '')
+  const [aiVisionBaseUrl] = useState(() => localStorage.getItem('api-test-ai-vision-base-url') || '')
+  const [aiVisionModel] = useState(() => localStorage.getItem('api-test-ai-vision-model') || '')
+  const [aiVisionApiKey] = useState(() => localStorage.getItem('api-test-ai-vision-api-key') || '')
 
   const loadCollections = async () => {
     try {
@@ -199,6 +204,15 @@ const WebTestScripts = () => {
   useEffect(() => {
     loadScripts()
   }, [selectedCollectionId])
+
+  useEffect(() => {
+    return () => {
+      if (exploreHeartbeatRef.current) {
+        window.clearInterval(exploreHeartbeatRef.current)
+        exploreHeartbeatRef.current = null
+      }
+    }
+  }, [])
 
   // 创建脚本
   const handleCreate = async (values: any) => {
@@ -236,7 +250,10 @@ const WebTestScripts = () => {
         prompt: aiPrompt,
         base_url: aiBaseUrl,
         model: aiModel,
-        api_key: aiApiKey
+        api_key: aiApiKey,
+        vision_base_url: aiVisionBaseUrl,
+        vision_model: aiVisionModel,
+        vision_api_key: aiVisionApiKey
       })
       if (res.code === 200 && res.data?.script_content) {
         message.success('AI 脚本生成成功')
@@ -270,26 +287,66 @@ const WebTestScripts = () => {
       message.warning('请输入起始 URL')
       return
     }
+    const pushExploreLog = (line: string) => {
+      const timestamp = new Date().toLocaleTimeString()
+      setExploreConsoleLines((prev) => [...prev, `[${timestamp}] ${line}`])
+    }
+    setExploreConsoleLines([])
+    pushExploreLog(`启动探索任务，目标 URL: ${exploreStartUrl}`)
+    pushExploreLog(`探索目标: ${exploreObjective}`)
+    pushExploreLog(`最大步数: ${exploreMaxSteps}`)
+    if (exploreHeartbeatRef.current) {
+      window.clearInterval(exploreHeartbeatRef.current)
+    }
+    exploreHeartbeatRef.current = window.setInterval(() => {
+      pushExploreLog('Agent 正在执行中，请稍候...')
+    }, 1500)
     setExploring(true)
     setExploreReport(null)
     try {
+      pushExploreLog('已发送探索请求到后端')
       const res = await webTestService.exploreWebAppAI({
         start_url: exploreStartUrl,
         objective: exploreObjective,
         max_steps: exploreMaxSteps,
         base_url: aiBaseUrl,
         model: aiModel,
-        api_key: aiApiKey
+        api_key: aiApiKey,
+        vision_base_url: aiVisionBaseUrl,
+        vision_model: aiVisionModel,
+        vision_api_key: aiVisionApiKey
       })
       if (res.code === 200 && res.data) {
         setExploreReport(res.data)
-        message.success('探索性测试完成')
+        pushExploreLog(`任务返回状态: ${res.data.status || 'unknown'}`)
+        pushExploreLog(`执行步数: ${res.data.total_steps_executed || 0}`)
+        pushExploreLog(`发现错误数: ${res.data.errors_found?.length || 0}`)
+        const actions = Array.isArray(res.data.actions_taken) ? res.data.actions_taken : []
+        actions.slice(0, 30).forEach((item: any, index: number) => {
+          const actionType = item.type || item.action || 'unknown'
+          const target = item.target_id || '-'
+          const reason = item.reason || ''
+          pushExploreLog(`步骤 ${index + 1}: ${actionType} -> ${target} ${reason}`)
+        })
+        if (res.data.status === 'failed') {
+          pushExploreLog(`失败原因: ${res.data.error_message || '未知错误'}`)
+          message.error(res.data.error_message || '探索性测试失败')
+        } else {
+          pushExploreLog('探索任务已完成')
+          message.success('探索性测试完成')
+        }
       } else {
+        pushExploreLog(`请求失败: ${res.message || '未知错误'}`)
         message.error(res.message || '探索失败')
       }
     } catch (error: any) {
+      pushExploreLog(`请求异常: ${error.response?.data?.message || error.message || '探索失败'}`)
       message.error(error.response?.data?.message || '探索失败')
     } finally {
+      if (exploreHeartbeatRef.current) {
+        window.clearInterval(exploreHeartbeatRef.current)
+        exploreHeartbeatRef.current = null
+      }
       setExploring(false)
     }
   }
@@ -435,7 +492,10 @@ const WebTestScripts = () => {
         error_log: errorLog,
         base_url: aiBaseUrl,
         model: aiModel,
-        api_key: aiApiKey
+        api_key: aiApiKey,
+        vision_base_url: aiVisionBaseUrl,
+        vision_model: aiVisionModel,
+        vision_api_key: aiVisionApiKey
       })
       if (res.code === 200 && res.data) {
         setAiAnalysisResult(res.data)
@@ -1049,6 +1109,7 @@ const WebTestScripts = () => {
           if (!exploring) {
             setIsExploreModalOpen(false)
             setExploreReport(null)
+            setExploreConsoleLines([])
           }
         }}
         width={800}
@@ -1102,9 +1163,51 @@ const WebTestScripts = () => {
                 ]}
               />
             </Form.Item>
+            {(exploring || exploreConsoleLines.length > 0) && (
+              <Form.Item label="命令窗口">
+                <div
+                  style={{
+                    background: '#0f172a',
+                    color: '#e2e8f0',
+                    borderRadius: 8,
+                    border: '1px solid #1e293b',
+                    padding: 12,
+                    maxHeight: 240,
+                    overflowY: 'auto',
+                    fontFamily: 'Consolas, Menlo, Monaco, monospace',
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {exploreConsoleLines.length > 0 ? exploreConsoleLines.join('\n') : '等待日志输出...'}
+                </div>
+              </Form.Item>
+            )}
           </Form>
         ) : (
           <div style={{ maxHeight: 600, overflow: 'auto' }}>
+            {exploreConsoleLines.length > 0 && (
+              <Card size="small" title="命令窗口" style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    background: '#0f172a',
+                    color: '#e2e8f0',
+                    borderRadius: 8,
+                    border: '1px solid #1e293b',
+                    padding: 12,
+                    maxHeight: 220,
+                    overflowY: 'auto',
+                    fontFamily: 'Consolas, Menlo, Monaco, monospace',
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {exploreConsoleLines.join('\n')}
+                </div>
+              </Card>
+            )}
             <Alert
               type={exploreReport.status === 'failed' ? 'error' : 'success'}
               message={`探索完成 (状态: ${exploreReport.status})`}

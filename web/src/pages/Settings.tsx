@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, message, Divider, Typography, Row, Col, Alert, Space } from 'antd';
 import { RobotOutlined, SaveOutlined } from '@ant-design/icons';
-import api from '../services/api';
+import { apiTestService } from '../services/apiTestService';
 
 const { Title, Text } = Typography;
 
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [globalAiConfig, setGlobalAiConfig] = useState<{base_url: string, model: string, api_key: string} | null>(null);
+  const [globalAiConfig, setGlobalAiConfig] = useState<{
+    base_url: string
+    model: string
+    api_key: string
+    vision_base_url: string
+    vision_model: string
+    vision_api_key: string
+  } | null>(null);
 
   useEffect(() => {
-    // Fetch global configuration
-    api.get('/api-test/ai/config')
+    apiTestService.getAiConfig()
       .then((res: any) => {
         if (res.code === 200 && res.data) {
           setGlobalAiConfig(res.data);
@@ -20,27 +26,51 @@ const Settings: React.FC = () => {
       })
       .catch(err => console.error('Failed to load global AI config', err));
 
-    // 从 localStorage 加载配置
     const aiBaseUrl = localStorage.getItem('api-test-ai-base-url') || '';
     const aiModel = localStorage.getItem('api-test-ai-model') || '';
     const aiApiKey = localStorage.getItem('api-test-ai-api-key') || '';
+    const aiVisionBaseUrl = localStorage.getItem('api-test-ai-vision-base-url') || '';
+    const aiVisionModel = localStorage.getItem('api-test-ai-vision-model') || '';
+    const aiVisionApiKey = localStorage.getItem('api-test-ai-vision-api-key') || '';
 
     form.setFieldsValue({
       aiBaseUrl,
       aiModel,
-      aiApiKey
+      aiApiKey,
+      aiVisionBaseUrl,
+      aiVisionModel,
+      aiVisionApiKey
     });
   }, [form]);
 
   const handleSave = async (values: any) => {
     setLoading(true);
     try {
-      // 保存到 localStorage，供全局使用
+      const payload = {
+        base_url: values.aiBaseUrl || '',
+        model: values.aiModel || '',
+        api_key: values.aiApiKey || '',
+        vision_base_url: values.aiVisionBaseUrl || '',
+        vision_model: values.aiVisionModel || '',
+        vision_api_key: values.aiVisionApiKey || '',
+      };
+      const res = await apiTestService.saveAiConfig(payload);
+      if (res.code !== 200) {
+        message.error(res.message || '保存失败');
+        return;
+      }
+
       localStorage.setItem('api-test-ai-base-url', values.aiBaseUrl || '');
       localStorage.setItem('api-test-ai-model', values.aiModel || '');
       localStorage.setItem('api-test-ai-api-key', values.aiApiKey || '');
+      localStorage.setItem('api-test-ai-vision-base-url', values.aiVisionBaseUrl || '');
+      localStorage.setItem('api-test-ai-vision-model', values.aiVisionModel || '');
+      localStorage.setItem('api-test-ai-vision-api-key', values.aiVisionApiKey || '');
+      if (res.data) {
+        setGlobalAiConfig(res.data);
+      }
       
-      message.success('设置保存成功');
+      message.success('设置保存成功，已写入后端 .env');
     } catch (error) {
       message.error('保存失败');
     } finally {
@@ -75,7 +105,10 @@ const Settings: React.FC = () => {
           initialValues={{
             aiBaseUrl: '',
             aiModel: '',
-            aiApiKey: ''
+            aiApiKey: '',
+            aiVisionBaseUrl: '',
+            aiVisionModel: '',
+            aiVisionApiKey: ''
           }}
         >
           <Row gutter={24}>
@@ -109,6 +142,39 @@ const Settings: React.FC = () => {
                 rules={[{ required: true, message: '请输入 API Key' }]}
               >
                 <Input.Password placeholder={globalAiConfig?.api_key || "sk-..."} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="视觉模型 Base URL"
+                name="aiVisionBaseUrl"
+                rules={[{ required: true, message: '请输入视觉模型 Base URL' }]}
+              >
+                <Input placeholder={globalAiConfig?.vision_base_url || globalAiConfig?.base_url || "https://api.openai.com/v1"} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="视觉模型名称 (Vision Model)"
+                name="aiVisionModel"
+                rules={[{ required: true, message: '请输入视觉模型名称' }]}
+              >
+                <Input placeholder={globalAiConfig?.vision_model || "gpt-4o-mini"} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="视觉模型 API Key"
+                name="aiVisionApiKey"
+                rules={[{ required: true, message: '请输入视觉模型 API Key' }]}
+              >
+                <Input.Password placeholder={globalAiConfig?.vision_api_key || "sk-..."} />
               </Form.Item>
             </Col>
           </Row>

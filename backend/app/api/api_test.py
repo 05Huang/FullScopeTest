@@ -30,11 +30,61 @@ from ..utils.script_context import (
 import requests
 import json
 import logging
+import os
+import re
 import time
 from datetime import datetime
 
 # 配置日志
 logger = logging.getLogger(__name__)
+
+
+AI_CONFIG_ENV_MAP = {
+    'base_url': 'AI_ASSISTANT_BASE_URL',
+    'model': 'AI_ASSISTANT_MODEL',
+    'api_key': 'AI_ASSISTANT_API_KEY',
+    'vision_base_url': 'AI_VISION_BASE_URL',
+    'vision_model': 'AI_VISION_MODEL',
+    'vision_api_key': 'AI_VISION_API_KEY',
+}
+
+
+def _mask_secret(value: str) -> str:
+    if not value:
+        return value
+    if len(value) > 8:
+        return f"{value[:4]}...{value[-4:]}"
+    return "***"
+
+
+def _sanitize_env_value(value: str) -> str:
+    return str(value or '').replace('\n', '').replace('\r', '').strip()
+
+
+def _get_backend_env_path() -> str:
+    return os.path.join(os.path.dirname(current_app.root_path), '.env')
+
+
+def _upsert_env_file(file_path: str, mapping: dict) -> None:
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.read().splitlines()
+    else:
+        lines = []
+
+    for env_key, env_value in mapping.items():
+        pattern = re.compile(rf'^\s*{re.escape(env_key)}\s*=')
+        replaced = False
+        for idx, line in enumerate(lines):
+            if pattern.match(line):
+                lines[idx] = f"{env_key}={env_value}"
+                replaced = True
+                break
+        if not replaced:
+            lines.append(f"{env_key}={env_value}")
+
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines) + '\n')
 
 
 @api_bp.route('/api-test/health', methods=['GET'])
@@ -50,18 +100,61 @@ def get_ai_config():
     runtime_config = {
         'base_url': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
         'model': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-        'api_key': current_app.config.get('AI_ASSISTANT_API_KEY', '')
+        'api_key': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+        'vision_base_url': current_app.config.get('AI_VISION_BASE_URL', ''),
+        'vision_model': current_app.config.get('AI_VISION_MODEL', ''),
+        'vision_api_key': current_app.config.get('AI_VISION_API_KEY', '')
     }
     
-    # Partially mask the API key for security
-    if runtime_config['api_key']:
-        key = runtime_config['api_key']
-        if len(key) > 8:
-            runtime_config['api_key'] = f"{key[:4]}...{key[-4:]}"
-        else:
-            runtime_config['api_key'] = "***"
+    runtime_config['api_key'] = _mask_secret(runtime_config['api_key'])
+    runtime_config['vision_api_key'] = _mask_secret(runtime_config['vision_api_key'])
 
     return success_response(data=runtime_config, message='AI configuration fetched')
+
+
+@api_bp.route('/api-test/ai/config', methods=['POST'])
+@jwt_required()
+def save_ai_config():
+    data = request.get_json() or {}
+    payload = {}
+    for field_name, env_key in AI_CONFIG_ENV_MAP.items():
+        if field_name in data:
+            payload[env_key] = _sanitize_env_value(data.get(field_name))
+
+    required_fields = ['AI_ASSISTANT_BASE_URL', 'AI_ASSISTANT_MODEL', 'AI_ASSISTANT_API_KEY']
+    for required_field in required_fields:
+        value = payload.get(required_field) or current_app.config.get(required_field, '')
+        if not str(value).strip():
+            return error_response(400, f'{required_field} is required')
+
+    vision_defaults = {
+        'AI_VISION_BASE_URL': payload.get('AI_ASSISTANT_BASE_URL') or current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+        'AI_VISION_MODEL': payload.get('AI_ASSISTANT_MODEL') or current_app.config.get('AI_ASSISTANT_MODEL', ''),
+        'AI_VISION_API_KEY': payload.get('AI_ASSISTANT_API_KEY') or current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+    }
+    for key, default_value in vision_defaults.items():
+        if key not in payload:
+            payload[key] = _sanitize_env_value(default_value)
+
+    env_path = _get_backend_env_path()
+    try:
+        _upsert_env_file(env_path, payload)
+        for key, value in payload.items():
+            os.environ[key] = value
+            current_app.config[key] = value
+    except Exception as exc:
+        logger.error('save ai config failed: %s', str(exc), exc_info=True)
+        return error_response(500, f'保存 AI 配置失败: {str(exc)}')
+
+    response_data = {
+        'base_url': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+        'model': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+        'api_key': _mask_secret(current_app.config.get('AI_ASSISTANT_API_KEY', '')),
+        'vision_base_url': current_app.config.get('AI_VISION_BASE_URL', ''),
+        'vision_model': current_app.config.get('AI_VISION_MODEL', ''),
+        'vision_api_key': _mask_secret(current_app.config.get('AI_VISION_API_KEY', '')),
+    }
+    return success_response(data=response_data, message='AI 配置已保存到 .env')
 
 
 @api_bp.route('/api-test/ai/plan', methods=['POST'])
@@ -126,6 +219,9 @@ def generate_ai_plan():
             'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
             'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
             'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
             'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
         }
 
@@ -136,6 +232,12 @@ def generate_ai_plan():
             runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
         if data.get('api_key'):
             runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+        if data.get('vision_base_url'):
+            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+        if data.get('vision_model'):
+            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+        if data.get('vision_api_key'):
+            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
         plan = generate_api_test_plan(
             prompt=prompt,
@@ -167,6 +269,9 @@ def synthesize_api_cases():
             'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
             'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
             'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
             'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
         }
 
@@ -176,6 +281,12 @@ def synthesize_api_cases():
             runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
         if data.get('api_key'):
             runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+        if data.get('vision_base_url'):
+            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+        if data.get('vision_model'):
+            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+        if data.get('vision_api_key'):
+            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
         cases = synthesize_test_cases(base_request, count, runtime_config)
         return success_response(data={'cases': cases}, message='AI 用例扩充成功')
@@ -219,6 +330,9 @@ def review_collection_cases():
             'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
             'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
             'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
             'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 60),
         }
 
@@ -228,6 +342,12 @@ def review_collection_cases():
             runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
         if data.get('api_key'):
             runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+        if data.get('vision_base_url'):
+            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+        if data.get('vision_model'):
+            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+        if data.get('vision_api_key'):
+            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
         result = review_api_collection(collection.name, case_list, runtime_config)
         return success_response(data=result, message='AI 评审完成')
