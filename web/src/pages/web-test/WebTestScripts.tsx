@@ -177,8 +177,8 @@ const WebTestScripts = () => {
     }
   }
 
-  const [aiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1')
-  const [aiModel] = useState(() => localStorage.getItem('api-test-ai-model') || 'gpt-4o-mini')
+  const [aiBaseUrl] = useState(() => localStorage.getItem('api-test-ai-base-url') || '')
+  const [aiModel] = useState(() => localStorage.getItem('api-test-ai-model') || '')
   const [aiApiKey] = useState(() => localStorage.getItem('api-test-ai-api-key') || '')
 
   const loadCollections = async () => {

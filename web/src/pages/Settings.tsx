@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, message, Divider, Typography, Row, Col, Alert, Space } from 'antd';
 import { RobotOutlined, SaveOutlined } from '@ant-design/icons';
+import api from '../services/api';
 
 const { Title, Text } = Typography;
 
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [globalAiConfig, setGlobalAiConfig] = useState<{base_url: string, model: string, api_key: string} | null>(null);
 
   useEffect(() => {
+    // Fetch global configuration
+    api.get('/api-test/ai/config')
+      .then((res: any) => {
+        if (res.code === 200 && res.data) {
+          setGlobalAiConfig(res.data);
+        }
+      })
+      .catch(err => console.error('Failed to load global AI config', err));
+
     // 从 localStorage 加载配置
-    const aiBaseUrl = localStorage.getItem('api-test-ai-base-url') || 'https://api.openai.com/v1';
-    const aiModel = localStorage.getItem('api-test-ai-model') || 'gpt-4o-mini';
+    const aiBaseUrl = localStorage.getItem('api-test-ai-base-url') || '';
+    const aiModel = localStorage.getItem('api-test-ai-model') || '';
     const aiApiKey = localStorage.getItem('api-test-ai-api-key') || '';
 
     form.setFieldsValue({
@@ -62,8 +73,9 @@ const Settings: React.FC = () => {
           layout="vertical"
           onFinish={handleSave}
           initialValues={{
-            aiBaseUrl: 'https://api.openai.com/v1',
-            aiModel: 'gpt-4o-mini'
+            aiBaseUrl: '',
+            aiModel: '',
+            aiApiKey: ''
           }}
         >
           <Row gutter={24}>
@@ -74,7 +86,7 @@ const Settings: React.FC = () => {
                 rules={[{ required: true, message: '请输入 Base URL' }]}
                 tooltip="支持 OpenAI 兼容格式的 API 接口地址，例如 DeepSeek 或其他自建模型。"
               >
-                <Input placeholder="https://api.openai.com/v1" />
+                <Input placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -84,7 +96,7 @@ const Settings: React.FC = () => {
                 rules={[{ required: true, message: '请输入模型名称' }]}
                 tooltip="填写具体的模型名称，如 deepseek-chat, gpt-4o 等。"
               >
-                <Input placeholder="gpt-4o-mini" />
+                <Input placeholder={globalAiConfig?.model || "gpt-4o-mini"} />
               </Form.Item>
             </Col>
           </Row>
@@ -96,7 +108,7 @@ const Settings: React.FC = () => {
                 name="aiApiKey"
                 rules={[{ required: true, message: '请输入 API Key' }]}
               >
-                <Input.Password placeholder="sk-..." />
+                <Input.Password placeholder={globalAiConfig?.api_key || "sk-..."} />
               </Form.Item>
             </Col>
           </Row>

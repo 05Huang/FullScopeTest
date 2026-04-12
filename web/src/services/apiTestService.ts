@@ -141,6 +141,10 @@ export const runCollection = (collectionId: number, data?: { env_id?: number }):
 
 // ==================== AI Assistant ====================
 
+export const getAiConfig = (): Promise<ApiResponse<{ base_url: string, model: string, api_key: string }>> => {
+  return api.get('/api-test/ai/config') as Promise<ApiResponse<{ base_url: string, model: string, api_key: string }>>
+}
+
 export const generateAiPlan = (data: {
   prompt: string
   base_url?: string
@@ -187,6 +191,7 @@ export const apiTestService = {
   executeRequest,
   runCase,
   runCollection,
+  getAiConfig,
   generateAiPlan,
   synthesizeCasesAI,
   reviewCollectionAI,
