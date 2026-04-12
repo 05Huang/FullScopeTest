@@ -1462,6 +1462,13 @@ const ApiTestWorkspace = () => {
           const found = localCollections.find((c: any) => c.name === op.collection_name)
           if (found) return found.id
         }
+        
+        // Fallback: If we created a collection in this run, use the latest one
+        if (createdCollectionMap.size > 0) {
+           const ids = Array.from(createdCollectionMap.values())
+           return ids[ids.length - 1]
+        }
+
         return activeCollectionId
       }
 
@@ -1595,8 +1602,9 @@ const ApiTestWorkspace = () => {
             const envId = resolveEnvironmentId(op)
             const runRes = await apiTestService.runCase(caseId, envId)
             if (runRes.code !== 200) throw new Error(runRes.message || 'run case failed')
-            const passedText = runRes.data?.passed ? 'passed' : 'failed'
-            appendAiLog('success', `${opTitle} done: ${passedText}`)
+            const isPassed = runRes.data?.passed
+            const passedText = isPassed ? 'passed' : 'failed'
+            appendAiLog(isPassed ? 'success' : 'error', `${opTitle} done: ${passedText}`)
             continue
           }
 
