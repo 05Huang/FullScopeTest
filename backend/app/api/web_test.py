@@ -206,11 +206,15 @@ def explore_web_app_stream():
 
     def generate():
         log_queue: Queue = Queue()
+        progress_queue: Queue = Queue()
         state = {'report': None, 'error': None}
         done_event = threading.Event()
 
         def push_log(line: str):
             log_queue.put(line)
+
+        def push_progress(payload: dict):
+            progress_queue.put(payload)
 
         def worker():
             try:
@@ -220,6 +224,7 @@ def explore_web_app_stream():
                     objective=objective,
                     config=runtime_config,
                     log_callback=push_log,
+                    progress_callback=push_progress,
                 )
             except Exception as exc:
                 state['error'] = str(exc)
@@ -233,12 +238,18 @@ def explore_web_app_stream():
         yield _format_sse('log', {'line': f'探索目标: {objective}'})
         yield _format_sse('log', {'line': f'最大步数: {max_steps}'})
 
-        while not done_event.is_set() or not log_queue.empty():
+        while not done_event.is_set() or not log_queue.empty() or not progress_queue.empty():
             try:
                 line = log_queue.get(timeout=0.2)
                 yield _format_sse('log', {'line': str(line)})
             except Empty:
-                continue
+                pass
+            try:
+                progress_payload = progress_queue.get_nowait()
+                if isinstance(progress_payload, dict):
+                    yield _format_sse('progress', progress_payload)
+            except Empty:
+                pass
 
         if state['error']:
             yield _format_sse('error', {'message': state['error']})

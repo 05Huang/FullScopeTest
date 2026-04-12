@@ -108,6 +108,7 @@ def run_exploration_task(
     objective: str,
     config: Dict[str, Any],
     log_callback: Optional[Callable[[str], None]] = None,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     """
     Run an autonomous web exploration task.
@@ -121,6 +122,13 @@ def run_exploration_task(
                 log_callback(message)
             except Exception:
                 logger.exception("Failed to emit exploration log callback")
+
+    def _emit_progress(payload: Dict[str, Any]) -> None:
+        if progress_callback:
+            try:
+                progress_callback(payload)
+            except Exception:
+                logger.exception("Failed to emit exploration progress callback")
 
     base_url = str(os.environ.get("AI_ASSISTANT_BASE_URL") or config.get("AI_ASSISTANT_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
     model = str(os.environ.get("AI_ASSISTANT_MODEL") or config.get("AI_ASSISTANT_MODEL") or "gpt-4o-mini")
@@ -146,6 +154,14 @@ def run_exploration_task(
         "actions_taken": [],
         "status": "completed"
     }
+
+    def _capture_preview_data_url(target_page: Any) -> str:
+        try:
+            screenshot_bytes = target_page.screenshot(type="jpeg", quality=55, full_page=False)
+            screenshot_base64 = base64.b64encode(screenshot_bytes).decode("utf-8")
+            return f"data:image/jpeg;base64,{screenshot_base64}"
+        except Exception:
+            return ""
 
     try:
         with sync_playwright() as p:
@@ -210,11 +226,29 @@ def run_exploration_task(
             page.goto(start_url, wait_until="networkidle")
             report["visited_urls"].append(page.url)
             _emit_log(f"已进入页面: {page.url}")
+            _emit_progress({
+                "phase": "started",
+                "step": 0,
+                "max_steps": max_steps,
+                "current_url": page.url,
+                "action": "goto",
+                "status": "running",
+                "screenshot": _capture_preview_data_url(page),
+            })
 
             for step in range(max_steps):
                 report["total_steps_executed"] += 1
                 current_url = page.url
                 _emit_log(f"执行步骤 {step + 1}/{max_steps}，当前页面: {current_url}")
+                _emit_progress({
+                    "phase": "step_start",
+                    "step": step + 1,
+                    "max_steps": max_steps,
+                    "current_url": current_url,
+                    "action": "analyze",
+                    "status": "running",
+                    "screenshot": _capture_preview_data_url(page),
+                })
                 
                 # 提取页面交互元素简化版 (提取带 a, button, input 标签)
                 elements: List[Dict[str, Any]] = []
@@ -413,6 +447,17 @@ def run_exploration_task(
                     if page.url not in report["visited_urls"]:
                         report["visited_urls"].append(page.url)
                     _emit_log(f"步骤 {step + 1} 动作执行完成，当前页面: {page.url}")
+                    _emit_progress({
+                        "phase": "step_done",
+                        "step": step + 1,
+                        "max_steps": max_steps,
+                        "current_url": page.url,
+                        "action": act_type,
+                        "target_id": target_id,
+                        "reason": action.get("reason", ""),
+                        "status": "running",
+                        "screenshot": _capture_preview_data_url(page),
+                    })
                     if "wappass.baidu.com/static/captcha" in str(page.url):
                         action_record["warning"] = "captcha_blocked"
                         _emit_log("检测到验证码挑战页，提前结束探索以避免无效循环")
@@ -424,6 +469,17 @@ def run_exploration_task(
                     logger.warning(f"Failed to execute action {act_type} on {target_id}: {e}")
                     action_record["error"] = str(e)
                     _emit_log(f"步骤 {step + 1} 动作执行失败: {str(e)}")
+                    _emit_progress({
+                        "phase": "step_error",
+                        "step": step + 1,
+                        "max_steps": max_steps,
+                        "current_url": page.url,
+                        "action": act_type,
+                        "target_id": target_id,
+                        "status": "running",
+                        "error": str(e),
+                        "screenshot": _capture_preview_data_url(page),
+                    })
                 
                 if action_record not in report["actions_taken"]:
                     report["actions_taken"].append(action_record)
@@ -439,6 +495,13 @@ def run_exploration_task(
 
     report["has_critical_errors"] = report.get("error_summary", {}).get("critical", 0) > 0
     _emit_log(f"探索任务完成，状态: {report.get('status')}, 执行步数: {report.get('total_steps_executed')}, 错误数: {len(report.get('errors_found', []))}")
+    _emit_progress({
+        "phase": "completed",
+        "step": report.get("total_steps_executed", 0),
+        "max_steps": max_steps,
+        "current_url": report.get("visited_urls", [])[-1] if report.get("visited_urls") else start_url,
+        "status": report.get("status"),
+    })
 
     return report
 
