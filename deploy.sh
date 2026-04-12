@@ -36,7 +36,24 @@ docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-sl
   sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=postgresql://fullscopetest:fullscopetest123@127.0.0.1:5432/fullscopetest_test pytest -q tests"
 
 # Deploy services.
-docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build
+set +e
+deploy_output=$(
+  docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build 2>&1
+)
+deploy_status=$?
+set -e
+echo "$deploy_output"
+if [ "$deploy_status" -ne 0 ]; then
+  if echo "$deploy_output" | grep -q 'exists but doesn'"'"'t match configuration in compose file'; then
+    volume_names=$(echo "$deploy_output" | sed -nE 's/.*Volume "([^"]+)".*/\1/p' | sort -u)
+    for volume_name in $volume_names; do
+      docker volume rm -f "$volume_name" || true
+    done
+    docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" up -d --build
+  else
+    exit "$deploy_status"
+  fi
+fi
 
 # Run DB migrations inside backend container (idempotent).
 if [ "${SKIP_DB_MIGRATE:-0}" != "1" ]; then
@@ -71,6 +88,8 @@ if [ "${SKIP_DB_MIGRATE:-0}" != "1" ]; then
     echo "Database migration retry ($i/10) ..."
     sleep 3
     if [ "$i" -eq 10 ]; then
+      docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" ps
+      docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" --env-file "$APP_DIR/.env" logs --tail=200 backend
       echo "Database migration failed"
       exit 1
     fi
