@@ -8,6 +8,19 @@ import os
 from datetime import timedelta
 
 
+def _env_int(key: str, default: int) -> int:
+    raw = os.environ.get(key)
+    if raw is None:
+        return default
+    value = str(raw).strip()
+    if not value:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 class BaseConfig:
     """基础配置"""
 
@@ -34,12 +47,12 @@ class BaseConfig:
 
     # Performance test limits
     PERF_TEST_LIMITS = {
-        'min_users': int(os.environ.get('PERF_TEST_MIN_USERS', '1')),
-        'max_users': int(os.environ.get('PERF_TEST_MAX_USERS', '2000')),
-        'min_spawn_rate': int(os.environ.get('PERF_TEST_MIN_SPAWN_RATE', '1')),
-        'max_spawn_rate': int(os.environ.get('PERF_TEST_MAX_SPAWN_RATE', '50')),
-        'min_duration': int(os.environ.get('PERF_TEST_MIN_DURATION', '10')),
-        'max_duration': int(os.environ.get('PERF_TEST_MAX_DURATION', '3600')),
+        'min_users': _env_int('PERF_TEST_MIN_USERS', 1),
+        'max_users': _env_int('PERF_TEST_MAX_USERS', 2000),
+        'min_spawn_rate': _env_int('PERF_TEST_MIN_SPAWN_RATE', 1),
+        'max_spawn_rate': _env_int('PERF_TEST_MAX_SPAWN_RATE', 50),
+        'min_duration': _env_int('PERF_TEST_MIN_DURATION', 10),
+        'max_duration': _env_int('PERF_TEST_MAX_DURATION', 3600),
     }
 
     # Celery 配置（优先读取显式 Celery 配置，其次回退到 REDIS_URL）
@@ -58,19 +71,19 @@ class BaseConfig:
     AI_ASSISTANT_BASE_URL = os.environ.get('AI_ASSISTANT_BASE_URL', 'https://api.openai.com/v1')
     AI_ASSISTANT_API_KEY = os.environ.get('AI_ASSISTANT_API_KEY', '')
     AI_ASSISTANT_MODEL = os.environ.get('AI_ASSISTANT_MODEL', 'gpt-4o-mini')
-    AI_ASSISTANT_TIMEOUT = int(os.environ.get('AI_ASSISTANT_TIMEOUT', '30'))
+    AI_ASSISTANT_TIMEOUT = _env_int('AI_ASSISTANT_TIMEOUT', 30)
     AI_VISION_BASE_URL = os.environ.get('AI_VISION_BASE_URL', AI_ASSISTANT_BASE_URL)
     AI_VISION_API_KEY = os.environ.get('AI_VISION_API_KEY', AI_ASSISTANT_API_KEY)
     AI_VISION_MODEL = os.environ.get('AI_VISION_MODEL', 'gpt-4o-mini')
     AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL = os.environ.get('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL', '')
     AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN = os.environ.get('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN', '')
-    AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT = int(os.environ.get('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT', '15'))
+    AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT = _env_int('AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT', 15)
     AI_EXPLORE_LIVE_VIEW_INTERNAL_URL_TEMPLATE = os.environ.get('AI_EXPLORE_LIVE_VIEW_INTERNAL_URL_TEMPLATE', '')
     AI_EXPLORE_LIVE_VIEW_URL_TEMPLATE = os.environ.get('AI_EXPLORE_LIVE_VIEW_URL_TEMPLATE', '')
     AI_EXPLORE_LIVE_VIEW_RELEASE_URL = os.environ.get('AI_EXPLORE_LIVE_VIEW_RELEASE_URL', '')
-    AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT = int(os.environ.get('AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT', '6'))
+    AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT = _env_int('AI_EXPLORE_LIVE_VIEW_RELEASE_TIMEOUT', 6)
     AI_EXPLORE_BROWSER_HEADLESS = os.environ.get('AI_EXPLORE_BROWSER_HEADLESS', 'true')
-    AI_EXPLORE_BROWSER_SLOW_MO = int(os.environ.get('AI_EXPLORE_BROWSER_SLOW_MO', '0'))
+    AI_EXPLORE_BROWSER_SLOW_MO = _env_int('AI_EXPLORE_BROWSER_SLOW_MO', 0)
 
     # Aliyun OSS configuration
     OSS_ENDPOINT = os.environ.get('OSS_ENDPOINT', '')
