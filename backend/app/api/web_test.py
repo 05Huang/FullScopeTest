@@ -3,7 +3,7 @@ Web 自动化测试模块 - API
 实现基于 Playwright 的 Web 自动化测试功能
 """
 
-from flask import request, current_app, send_from_directory
+from flask import request, current_app, send_from_directory, Response, stream_with_context
 import os
 from flask_jwt_extended import jwt_required
 from . import api_bp
@@ -20,11 +20,45 @@ from ..utils.ai_web_explorer import run_exploration_task
 import subprocess
 import sys
 import time
+import json
+import threading
+from queue import Queue, Empty
 from datetime import datetime
 
 
 # 存储录制进程（录制功能仍使用进程方式）
 recording_processes = {}
+
+
+def _build_runtime_ai_config(data: dict) -> dict:
+    runtime_config = {
+        'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+        'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+        'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+        'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+        'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+        'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+        'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
+    }
+
+    if data.get('base_url'):
+        runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+    if data.get('model'):
+        runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+    if data.get('api_key'):
+        runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+    if data.get('vision_base_url'):
+        runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+    if data.get('vision_model'):
+        runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+    if data.get('vision_api_key'):
+        runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+
+    return runtime_config
+
+
+def _format_sse(event: str, payload: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
 def _get_collection_or_404(collection_id: int, user_id: int):
@@ -148,36 +182,79 @@ def explore_web_app():
         return error_response(400, 'start_url is required')
         
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-        }
+        runtime_config = _build_runtime_ai_config(data)
 
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
-
-        # 注意：这里直接同步执行，实际生产环境中应该使用 Celery 异步任务
-        # 为了演示和快速反馈，暂时使用同步调用，或者可以限制 max_steps 较小
         report = run_exploration_task(start_url, max_steps, objective, runtime_config)
         
         return success_response(data=report, message='AI 探索测试完成')
     except Exception as exc:
         return error_response(500, f'AI 探索测试失败: {str(exc)}')
+
+
+@api_bp.route('/web-test/ai/explore/stream', methods=['POST'])
+@jwt_required()
+def explore_web_app_stream():
+    data = request.get_json() or {}
+    start_url = data.get('start_url')
+    objective = data.get('objective', '尽可能多地点击不同页面并寻找报错')
+    max_steps = int(data.get('max_steps', 10))
+
+    if not start_url:
+        return error_response(400, 'start_url is required')
+
+    runtime_config = _build_runtime_ai_config(data)
+
+    def generate():
+        log_queue: Queue = Queue()
+        state = {'report': None, 'error': None}
+        done_event = threading.Event()
+
+        def push_log(line: str):
+            log_queue.put(line)
+
+        def worker():
+            try:
+                state['report'] = run_exploration_task(
+                    start_url=start_url,
+                    max_steps=max_steps,
+                    objective=objective,
+                    config=runtime_config,
+                    log_callback=push_log,
+                )
+            except Exception as exc:
+                state['error'] = str(exc)
+            finally:
+                done_event.set()
+
+        thread = threading.Thread(target=worker, daemon=True)
+        thread.start()
+
+        yield _format_sse('log', {'line': f'探索任务已创建，目标 URL: {start_url}'})
+        yield _format_sse('log', {'line': f'探索目标: {objective}'})
+        yield _format_sse('log', {'line': f'最大步数: {max_steps}'})
+
+        while not done_event.is_set() or not log_queue.empty():
+            try:
+                line = log_queue.get(timeout=0.2)
+                yield _format_sse('log', {'line': str(line)})
+            except Empty:
+                continue
+
+        if state['error']:
+            yield _format_sse('error', {'message': state['error']})
+        else:
+            yield _format_sse('report', state['report'] or {})
+        yield _format_sse('done', {'ok': state['error'] is None})
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        }
+    )
 
 # ==================== 用例集管理 ====================
 
@@ -664,4 +741,3 @@ def recording_status():
         'pid': process.pid,
         'python_path': sys.executable
     })
-
