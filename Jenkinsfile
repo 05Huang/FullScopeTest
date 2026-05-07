@@ -3,8 +3,8 @@ pipeline {
   options { timestamps() }
 
   environment {
-    DEPLOY_HOST = "REDACTED_SERVER_IP"
-    DEPLOY_USER = "root"
+    DEPLOY_HOST = "${DEPLOY_HOST}"
+    DEPLOY_USER = "${DEPLOY_USER}"
     DEPLOY_PATH = "/opt/fullscopetest/repo/AutoTestingPlatform"
     FRONTEND_SITE_PATH = "/opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index"
     SSH_CREDENTIALS_ID = "fullscopetest-ssh"

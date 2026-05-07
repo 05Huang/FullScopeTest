@@ -11,9 +11,9 @@ services:
     container_name: fullscopetest_postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=fullscopetest
-      - POSTGRES_PASSWORD=REDACTED_DB_PASSWORD
-      - POSTGRES_DB=fullscopetest_dev
+      - POSTGRES_USER=${POSTGRES_USER:-fullscopetest}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?请设置 POSTGRES_PASSWORD 环境变量}
+      - POSTGRES_DB=${POSTGRES_DB:-fullscopetest_dev}
     ports:
       - "5432:5432"
     volumes:
@@ -51,10 +51,10 @@ services:
       - "5000:5000"
     environment:
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://fullscopetest:REDACTED_DB_PASSWORD@postgres:5432/fullscopetest_dev
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-fullscopetest}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fullscopetest_dev}
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=REDACTED_SECRET
-      - JWT_SECRET_KEY=REDACTED_JWT_SECRET
+      - SECRET_KEY=${SECRET_KEY:?请设置 SECRET_KEY 环境变量}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?请设置 JWT_SECRET_KEY 环境变量}
       - AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL=${AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL:-}
       - AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN=${AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN:-}
       - AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT=${AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TIMEOUT:-15}
@@ -84,7 +84,7 @@ services:
     restart: unless-stopped
     environment:
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://fullscopetest:REDACTED_DB_PASSWORD@postgres:5432/fullscopetest_dev
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-fullscopetest}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fullscopetest_dev}
       - REDIS_URL=redis://redis:6379/0
       - AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL=${AI_EXPLORE_LIVE_VIEW_ALLOCATOR_URL:-}
       - AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN=${AI_EXPLORE_LIVE_VIEW_ALLOCATOR_TOKEN:-}

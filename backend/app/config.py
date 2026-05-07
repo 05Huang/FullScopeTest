@@ -32,7 +32,7 @@ class BaseConfig:
     SQLALCHEMY_ECHO = False
 
     # JWT 配置
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'CHANGE_ME_IN_PRODUCTION')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_TOKEN_LOCATION = ['headers', 'query_string']
@@ -100,7 +100,7 @@ class DevelopmentConfig(BaseConfig):
     # 使用 PostgreSQL 数据库
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
-        'postgresql://admin:REDACTED_PASSWORD@localhost:5432/fullscopetest_dev'
+        'postgresql://localhost:5432/fullscopetest_dev'
     )
     SQLALCHEMY_ECHO = True  # 开发时打印 SQL
 
@@ -111,7 +111,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',
-        'postgresql://admin:REDACTED_PASSWORD@localhost:5432/fullscopetest_test'
+        'postgresql://localhost:5432/fullscopetest_test'
     )
 
 

@@ -2,14 +2,14 @@
 
 This guide covers the full end-to-end flow:
 - Local development pushes code to GitHub.
-- Jenkins (Windows) pulls the repo and SSH deploys to the server.
+- Jenkins (or other CI) pulls the repo and SSH deploys to the server.
 - The server runs FullScopeTest via Docker and serves through 1Panel (OpenResty).
 
 Assumptions:
-- Server IP: REDACTED_SERVER_IP
-- Domain: REDACTED_DOMAIN (A record + www already bound)
-- Repo: https://github.com/Asukadaisiki/AutoTestingPlatform.git
-- Deployment layout: /opt/apps/fullscopetest/{repo,data,logs}
+- Server IP: `<your-server-ip>`
+- Domain: `<your-domain>` (A record + www already bound)
+- Repo: `<your-repo-url>`
+- Deployment layout: `/opt/apps/fullscopetest/{repo,data,logs}`
 - Jenkins runs on Windows
 
 ---
@@ -17,7 +17,7 @@ Assumptions:
 ## 1) Server Initialization (Ubuntu)
 
 ```bash
-ssh root@REDACTED_SERVER_IP
+ssh root@<your-server-ip>
 
 apt update && apt upgrade -y
 apt install -y git curl ufw
@@ -59,7 +59,7 @@ Use the default account printed by the installer, then change the password.
 ```bash
 mkdir -p /opt/apps/fullscopetest/{repo,data,logs}
 cd /opt/apps/fullscopetest/repo
-git clone https://github.com/Asukadaisiki/AutoTestingPlatform.git .
+git clone <your-repo-url> .
 ```
 
 ---
@@ -67,21 +67,17 @@ git clone https://github.com/Asukadaisiki/AutoTestingPlatform.git .
 ## 5) Create .env
 
 ```bash
-cat > /opt/apps/fullscopetest/repo/AutoTestingPlatform/.env << 'EOF'
-DATABASE_URL=postgresql://fullscopetest:REDACTED_DB_PASSWORD@host.docker.internal:5432/fullscopetest_prod
-REDIS_URL=redis://redis:6379/0
-
-SECRET_KEY=REDACTED_SECRET-for-testing
-JWT_SECRET_KEY=REDACTED_JWT_SECRET-for-testing
-EOF
+cp .env.example .env
+# Then edit .env with your actual production values
+vi .env
 ```
 
+**Important**: Never commit `.env` to the repository. It contains production secrets.
+
 Notes:
-- This is the production `.env` at `/opt/apps/fullscopetest/repo/.env` (root `.env` does not exist in the repo).
 - Redis in `docker-compose.prod.yml` has no password, so `REDIS_URL` must NOT include a password.
 - Nginx is managed by 1Panel on the host; there is no nginx container in production.
 - This deployment uses a shared PostgreSQL instance on the host (see step 5.1 below).
-- Do NOT install Redis/PostgreSQL from 1Panel App Store to avoid duplicate services; use Docker as defined in this guide.
 
 ---
 
@@ -91,8 +87,8 @@ Run a single PostgreSQL container (shared by multiple projects) on the host:
 
 ```bash
 docker run -d --name postgres-shared \
-  -e POSTGRES_USER=fullscopetest \
-  -e POSTGRES_PASSWORD=REDACTED_DB_PASSWORD \
+  -e POSTGRES_USER=<your-db-user> \
+  -e POSTGRES_PASSWORD=<your-db-password> \
   -p 127.0.0.1:5432:5432 \
   -v /opt/apps/postgres/data:/var/lib/postgresql/data \
   postgres:15-alpine
@@ -101,13 +97,13 @@ docker run -d --name postgres-shared \
 Create a database for this project:
 
 ```bash
-docker exec -it postgres-shared psql -U fullscopetest -c "CREATE DATABASE fullscopetest_prod;"
+docker exec -it postgres-shared psql -U <your-db-user> -c "CREATE DATABASE fullscopetest_prod;"
 ```
 
 Create a separate database for tests (used by pytest in deploy.sh):
 
 ```bash
-docker exec -it postgres-shared psql -U fullscopetest -c "CREATE DATABASE fullscopetest_test;"
+docker exec -it postgres-shared psql -U <your-db-user> -c "CREATE DATABASE fullscopetest_test;"
 ```
 
 ---
@@ -115,7 +111,7 @@ docker exec -it postgres-shared psql -U fullscopetest -c "CREATE DATABASE fullsc
 ## 6) Deploy Once on the Server (Manual)
 
 ```bash
-cd /opt/apps/fullscopetest/repo/AutoTestingPlatform
+cd /opt/apps/fullscopetest/repo
 chmod +x deploy.sh
 ./deploy.sh
 ```
@@ -131,15 +127,15 @@ docker compose -p fullscopetest -f docker-compose.prod.yml ps
 
 In 1Panel:
 1. Create a **Static Website**
-2. Domains: `REDACTED_DOMAIN` and `www.REDACTED_DOMAIN`
-3. Root path: `/opt/apps/fullscopetest/repo/AutoTestingPlatform/web/dist`
+2. Domains: `<your-domain>` and `www.<your-domain>`
+3. Root path: `/opt/apps/fullscopetest/repo/web/dist`
 4. Add reverse proxy rule:
    - Path: `/api/`
    - Target: `127.0.0.1:5211`
 
 Notes:
 - 1Panel OpenResty runs in a container and does not see host paths. The deploy script syncs `web/dist` into
-  `/opt/1panel/apps/openresty/openresty/www/sites/easy/index/` after each build.
+  `/opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index/` after each build.
 - Ensure "Force HTTPS" is disabled in 1Panel if you haven't enabled SSL yet.
 
 ---
@@ -149,28 +145,24 @@ Notes:
 ### 8.1 Create Credentials
 - **GitHub access**: Username + PAT
 - **Server deploy**: SSH Username with private key
-  - Username: `root` (or your deploy user)
+  - Username: `<deploy-user>`
   - ID: `fullscopetest-ssh` (example)
 
 ### 8.2 Create Pipeline Job
 - New Item → **Pipeline**
 - Definition: **Pipeline script from SCM**
   - SCM: Git
-  - Repository URL: https://github.com/Asukadaisiki/AutoTestingPlatform.git
+  - Repository URL: `<your-repo-url>`
   - Credentials: GitHub credential
   - Script Path: `Jenkinsfile`
 
 ### 8.3 Jenkinsfile (verify values)
 
-```groovy
-environment {
-  DEPLOY_HOST = "REDACTED_SERVER_IP"
-  DEPLOY_USER = "root"
-  DEPLOY_PATH = "/opt/apps/fullscopetest/repo"
-  SSH_CREDENTIALS_ID = "fullscopetest-ssh"
-  DEPLOY_BRANCH = "main"
-}
-```
+Configure these as Jenkins environment variables or credentials:
+- `DEPLOY_HOST` - your server IP
+- `DEPLOY_USER` - SSH user
+- `DEPLOY_PATH` - deployment path on server
+- `SSH_CREDENTIALS_ID` - Jenkins credential ID
 
 Commit and push Jenkinsfile after updating `SSH_CREDENTIALS_ID`.
 
@@ -200,8 +192,8 @@ GitHub hook trigger for GITScm polling
 ## 10) Validation
 
 ```bash
-curl -I http://REDACTED_DOMAIN
-curl -I http://REDACTED_DOMAIN/api/v1/api-test/health
+curl -I http://<your-domain>
+curl -I http://<your-domain>/api/v1/api-test/health
 ```
 
 ---
