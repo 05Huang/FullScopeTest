@@ -54,6 +54,23 @@ jobs:
     needs: [ci]
     runs-on: ubuntu-latest
     steps:
+      - name: Check required secrets
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SSH_KEY }}" ]; then
+            echo "::error::SSH_KEY secret is not set. Please add it in Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "::error::SSH_HOST secret is not set. Please add it in Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_USER }}" ]; then
+            echo "::error::SSH_USER secret is not set. Please add it in Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          echo "All required secrets are configured."
+
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
@@ -63,29 +80,61 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-          cat > ~/.ssh/config <<EOF
-          Host deploy-target
-            HostName ${{ secrets.SSH_HOST }}
-            User ${{ secrets.SSH_USER }}
-            IdentityFile ~/.ssh/id_ed25519
-            ConnectTimeout 15
-            ServerAliveInterval 30
-            ServerAliveCountMax 6
-            TCPKeepAlive yes
-            BatchMode yes
-            StrictHostKeyChecking yes
-          EOF
+          # 保存 SSH 私钥（自动检测格式）
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          # 修复可能的 Windows 换行符
+          sed -i 's/\r$//' ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # 验证密钥格式
+          echo "=== SSH Key Info ==="
+          head -1 ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key || echo "WARNING: Key format check failed"
+
+          # 获取服务器主机密钥
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+          # 写入 SSH 配置（直接写入避免 heredoc 缩进问题）
+          {
+            echo "Host deploy-target"
+            echo "  HostName ${{ secrets.SSH_HOST }}"
+            echo "  User ${{ secrets.SSH_USER }}"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  ConnectTimeout 15"
+            echo "  ServerAliveInterval 30"
+            echo "  ServerAliveCountMax 6"
+            echo "  TCPKeepAlive yes"
+            echo "  BatchMode yes"
+            echo "  StrictHostKeyChecking yes"
+          } > ~/.ssh/config
           chmod 600 ~/.ssh/config
+
+          echo "=== SSH Config ==="
+          cat ~/.ssh/config
+
+      - name: Test SSH connection
+        shell: bash
+        run: |
+          echo "Testing SSH connection to ${{ secrets.SSH_HOST }}..."
+          ssh -v deploy-target "echo 'SSH connection successful'; whoami; uname -a" || {
+            echo "::error::SSH connection failed. Please verify:"
+            echo "1. SSH_KEY secret contains a valid private key (OpenSSH format)"
+            echo "2. SSH_HOST secret contains the correct server IP/hostname"
+            echo "3. SSH_USER secret contains the correct username"
+            echo "4. The public key is added to ~/.ssh/authorized_keys on the server"
+            exit 1
+          }
 
       - name: Upload dist to server
         shell: bash
         run: |
           for i in 1 2 3; do
             scp dist.tgz deploy-target:/tmp/fullscopetest-dist.tgz && break
-            if [ "$i" -eq 3 ]; then exit 1; fi
+            echo "Attempt $i failed, retrying..."
+            if [ "$i" -eq 3 ]; then
+              echo "::error::Failed to upload dist.tgz after 3 attempts"
+              exit 1
+            fi
             sleep 5
           done
 
@@ -93,12 +142,12 @@ jobs:
         shell: bash
         run: |
           for i in 1 2 3; do
-            ssh deploy-target "\
-            set -e; \
-            cd '${{ secrets.DEPLOY_DIR }}'; \
-            SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh \
-            " && break
-            if [ "$i" -eq 3 ]; then exit 1; fi
+            echo "Deploy attempt $i..."
+            ssh deploy-target "set -e; cd '${{ secrets.DEPLOY_DIR }}' && SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh" && break
+            if [ "$i" -eq 3 ]; then
+              echo "::error::Backend deployment failed after 3 attempts"
+              exit 1
+            fi
             sleep 5
           done
 
@@ -106,17 +155,19 @@ jobs:
         shell: bash
         run: |
           for i in 1 2 3; do
-            ssh deploy-target "\
-            set -e; \
-            SITE_DIR='${{ secrets.SITE_DIR }}'; \
-            TMP_DIR=\"\$(mktemp -d)\"; \
-            tar -xzf /tmp/fullscopetest-dist.tgz -C \"\$TMP_DIR\" --no-same-owner --no-same-permissions -m; \
-            mkdir -p \"\$SITE_DIR\"; \
-            find \"\$SITE_DIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
-            cp -R \"\$TMP_DIR\"/. \"\$SITE_DIR\"/; \
-            rm -rf \"\$TMP_DIR\"; \
-            " && break
-            if [ "$i" -eq 3 ]; then exit 1; fi
+            echo "Publish attempt $i..."
+            ssh deploy-target "set -e; \
+              SITE_DIR='${{ secrets.SITE_DIR }}'; \
+              TMP_DIR=\$(mktemp -d); \
+              tar -xzf /tmp/fullscopetest-dist.tgz -C \$TMP_DIR --no-same-owner --no-same-permissions -m; \
+              mkdir -p \$SITE_DIR; \
+              find \$SITE_DIR -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
+              cp -R \$TMP_DIR/. \$SITE_DIR/; \
+              rm -rf \$TMP_DIR" && break
+            if [ "$i" -eq 3 ]; then
+              echo "::error::Frontend publish failed after 3 attempts"
+              exit 1
+            fi
             sleep 5
           done
 
@@ -124,9 +175,11 @@ jobs:
         shell: bash
         run: |
           for i in 1 2 3; do
-            ssh deploy-target "\
-            curl -fsS http://127.0.0.1:5211/api/v1/api-test/health >/dev/null \
-            " && break
-            if [ "$i" -eq 3 ]; then exit 1; fi
+            echo "Health check attempt $i..."
+            ssh deploy-target "curl -fsS http://127.0.0.1:5211/api/v1/api-test/health >/dev/null" && break
+            if [ "$i" -eq 3 ]; then
+              echo "::error::Health check failed after 3 attempts"
+              exit 1
+            fi
             sleep 5
           done
