@@ -203,6 +203,61 @@ const WebTestRecorder = () => {
   
   const generateScriptFromSteps = (steps: RecordedStep[], url: string) => {
     // 根据录制的步骤生成 Playwright 脚本
+    const generateStepCode = (step: RecordedStep, index: number): string => {
+      const indent = '        '
+      const comment = `# 步骤 ${index + 1}: `
+
+      switch (step.action) {
+        case 'navigate':
+          return `${comment}导航到页面\n${indent}page.goto("${step.target}")`
+
+        case 'click':
+          return `${comment}点击元素\n${indent}page.click("${step.target}")`
+
+        case 'dblclick':
+          return `${comment}双击元素\n${indent}page.dblclick("${step.target}")`
+
+        case 'rightclick':
+          return `${comment}右键点击\n${indent}page.click("${step.target}", button="right")`
+
+        case 'input':
+          return `${comment}输入文本\n${indent}page.fill("${step.target}", "${step.value || ''}")`
+
+        case 'hover':
+          return `${comment}悬停元素\n${indent}page.hover("${step.target}")`
+
+        case 'select':
+          return `${comment}选择下拉框\n${indent}page.select_option("${step.target}", "${step.value || ''}")`
+
+        case 'check':
+          return `${comment}勾选复选框\n${indent}page.check("${step.target}")`
+
+        case 'uncheck':
+          return `${comment}取消勾选\n${indent}page.uncheck("${step.target}")`
+
+        case 'scroll':
+          return `${comment}滚动页面\n${indent}page.evaluate("window.scrollBy(0, ${step.value || 300})")`
+
+        case 'press':
+          return `${comment}按键\n${indent}page.press("${step.target}", "${step.value || 'Enter'}")`
+
+        case 'upload':
+          return `${comment}上传文件\n${indent}page.set_input_files("${step.target}", "${step.value || 'file_path'}")`
+
+        case 'wait':
+          return `${comment}等待\n${indent}page.wait_for_timeout(${step.value || 1000})`
+
+        case 'focus':
+          return `${comment}聚焦元素\n${indent}page.focus("${step.target}")`
+
+        case 'blur':
+          return `${comment}失焦元素\n${indent}page.evaluate("document.querySelector('${step.target}').blur()")`
+
+        default:
+          return `${comment}${step.action}\${indent}# TODO: 实现 ${step.action} 操作`
+      }
+    }
+
     return `"""
 自动录制的 Playwright 测试脚本
 录制时间: ${new Date().toLocaleString('zh-CN')}
@@ -214,23 +269,13 @@ def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        
+
         # 录制的步骤
-${steps.map((step, index) => {
-  if (step.action === 'navigate') {
-    return `        # 步骤 ${index + 1}: 导航到页面\n        page.goto("${step.target}")`
-  } else if (step.action === 'click') {
-    return `        # 步骤 ${index + 1}: 点击元素\n        page.click("${step.target}")`
-  } else if (step.action === 'input') {
-    return `        # 步骤 ${index + 1}: 输入文本\n        page.fill("${step.target}", "${step.value || ''}")`
-  } else {
-    return `        # 步骤 ${index + 1}: ${step.action}\n        # TODO: 实现 ${step.action} 操作`
-  }
-}).join('\n        \n')}
-        
+${steps.map((step, index) => `        ${generateStepCode(step, index)}`).join('\n        \n')}
+
         # 截图
         page.screenshot(path="test_result.png")
-        
+
         browser.close()
         return {"status": "success"}
 
@@ -248,11 +293,20 @@ if __name__ == "__main__":
   const getActionColor = (action: string) => {
     const colors: Record<string, string> = {
       click: 'blue',
+      dblclick: 'blue',
+      rightclick: 'blue',
       input: 'green',
       navigate: 'purple',
       scroll: 'orange',
       hover: 'cyan',
       select: 'magenta',
+      check: 'lime',
+      uncheck: 'volcano',
+      press: 'geekblue',
+      upload: 'gold',
+      wait: 'default',
+      focus: 'purple',
+      blur: 'purple',
     }
     return colors[action] || 'default'
   }

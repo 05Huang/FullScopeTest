@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Avatar, Dropdown, Button, theme, Tour, ConfigProvider, Popover, Typography } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Button, theme, Tour, ConfigProvider, Popover, Typography, Select } from 'antd'
 import type { TourProps } from 'antd'
 import {
   HomeOutlined,
   ApiOutlined,
   GlobalOutlined,
+  MobileOutlined,
   ThunderboltOutlined,
   BarChartOutlined,
   FileTextOutlined,
@@ -17,9 +18,11 @@ import {
   PhoneOutlined,
   MailOutlined,
   CustomerServiceOutlined,
+  FolderOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '@/stores/authStore'
+import { useProjectStore } from '@/stores/projectStore'
 import GlobalCopilot from '../components/GlobalCopilot'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
@@ -125,6 +128,14 @@ const menuItems: MenuProps['items'] = [
     ],
   },
   {
+    key: '/app-test',
+    icon: <MobileOutlined />,
+    label: 'APP测试',
+    children: [
+      { key: '/app-test/scripts', label: '脚本管理' },
+    ],
+  },
+  {
     key: '/perf-test',
     icon: <ThunderboltOutlined />,
     label: '性能测试',
@@ -161,6 +172,7 @@ const MainLayout = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
   const { token: themeToken } = theme.useToken()
   const rawEnvNotice = (import.meta as any).env?.VITE_ENV_NOTICE as string | undefined
   const envMode = (import.meta as any).env?.MODE as string | undefined
@@ -207,6 +219,11 @@ const MainLayout = () => {
       navigate('/profile')
     }
   }
+
+  // 加载项目列表
+  useEffect(() => {
+    fetchProjects()
+  }, [fetchProjects])
 
   // 获取当前选中的菜单项
   const getSelectedKeys = () => {
@@ -307,6 +324,17 @@ const MainLayout = () => {
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
               style={{ fontSize: 16, width: 48, height: 48 }}
+            />
+            <Select
+              showSearch
+              placeholder="选择项目"
+              optionFilterProp="label"
+              value={currentProjectId}
+              onChange={setCurrentProject}
+              options={projects.map(p => ({ value: p.id, label: p.name }))}
+              style={{ width: 200 }}
+              prefix={<FolderOutlined />}
+              allowClear
             />
             <div id="tour-step-search">
               <GlobalSearch />

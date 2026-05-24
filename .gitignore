@@ -66,6 +66,9 @@ coverage/
 *.sqlite3
 test_cases.db
 
+# ===== 运行时数据 =====
+backend/data/
+
 # Redis
 dump.rdb
 *.rdb

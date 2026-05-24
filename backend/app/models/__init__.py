@@ -8,6 +8,8 @@ from .environment import Environment
 from .api_test_case import ApiTestCase, ApiTestCollection
 from .web_test_collection import WebTestCollection
 from .web_test_script import WebTestScript
+from .app_test_collection import AppTestCollection
+from .app_test_script import AppTestScript
 from .perf_test_scenario import PerfTestScenario
 from .test_run import TestRun
 from .test_document import TestDocument
@@ -17,12 +19,14 @@ from .scheduled_task import ScheduledTask
 
 __all__ = [
     'User',
-    'Project', 
+    'Project',
     'Environment',
     'ApiTestCase',
     'ApiTestCollection',
     'WebTestCollection',
     'WebTestScript',
+    'AppTestCollection',
+    'AppTestScript',
     'PerfTestScenario',
     'TestRun',
     'TestDocument',

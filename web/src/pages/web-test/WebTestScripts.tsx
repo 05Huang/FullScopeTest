@@ -800,6 +800,37 @@ const WebTestScripts = () => {
     setSelectedRowKeys([])
   }
 
+  // 导出脚本
+  const handleExport = () => {
+    if (selectedRowKeys.length === 0) return
+
+    const selectedScripts = scripts.filter(s => selectedRowKeys.includes(s.id))
+    const exportData = {
+      version: '1.0',
+      export_time: new Date().toISOString(),
+      scripts: selectedScripts.map(s => ({
+        name: s.name,
+        description: s.description,
+        target_url: s.target_url,
+        browser: s.browser,
+        script_content: s.script_content,
+        collection_id: s.collection_id,
+      }))
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `web-test-scripts-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    message.success(`已导出 ${selectedScripts.length} 个脚本`)
+  }
+
   const handleRunCollection = async () => {
     if (!selectedCollectionId) {
       message.warning('请先选择用例集')
@@ -1111,7 +1142,7 @@ const WebTestScripts = () => {
                 } else if (key === 'run') {
                   handleBatchRun()
                 } else if (key === 'export') {
-                  message.info('导出功能开发中')
+                  handleExport()
                 }
               }
             }}

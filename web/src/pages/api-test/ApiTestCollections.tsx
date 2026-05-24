@@ -30,6 +30,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { apiTestService } from '@/services'
+import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
 
@@ -63,6 +64,7 @@ const methodColors: Record<string, string> = {
 }
 
 const ApiTestCollections = () => {
+  const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(false)
   const [cases, setCases] = useState<TestCase[]>([])
   const [collections, setCollections] = useState<Collection[]>([])
@@ -86,7 +88,7 @@ const ApiTestCollections = () => {
       }
 
       // 加载集合列表
-      const collectionsRes = await apiTestService.getCollections()
+      const collectionsRes = await apiTestService.getCollections(currentProjectId)
       if (collectionsRes.code === 200) {
         setCollections(collectionsRes.data || [])
       }
@@ -174,7 +176,7 @@ const ApiTestCollections = () => {
 
   const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) return
-    
+
     try {
       for (const id of selectedRowKeys) {
         await apiTestService.deleteCase(id as number)
@@ -185,6 +187,72 @@ const ApiTestCollections = () => {
     } catch (error) {
       message.error('删除失败')
     }
+  }
+
+  // 批量执行用例
+  const handleBatchRun = async () => {
+    if (selectedRowKeys.length === 0) return
+
+    const total = selectedRowKeys.length
+    let successCount = 0
+    let failCount = 0
+
+    message.loading(`正在执行 ${total} 个用例...`)
+
+    for (const id of selectedRowKeys) {
+      try {
+        const res = await apiTestService.runCase(id as number)
+        if (res.code === 200) {
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch {
+        failCount++
+      }
+    }
+
+    message.destroy()
+    if (failCount === 0) {
+      message.success(`批量执行完成，${successCount} 个用例全部成功`)
+    } else {
+      message.warning(`批量执行完成，成功 ${successCount} 个，失败 ${failCount} 个`)
+    }
+    loadData()
+  }
+
+  // 导出用例
+  const handleExport = () => {
+    if (selectedRowKeys.length === 0) return
+
+    const selectedCases = cases.filter(c => selectedRowKeys.includes(c.id))
+    const exportData = {
+      version: '1.0',
+      export_time: new Date().toISOString(),
+      cases: selectedCases.map(c => ({
+        name: c.name,
+        method: c.method,
+        url: c.url,
+        description: c.description,
+        headers: c.headers,
+        params: c.params,
+        body: c.body,
+        assertions: c.assertions,
+        collection_id: c.collection_id,
+      }))
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `api-test-cases-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    message.success(`已导出 ${selectedCases.length} 个用例`)
   }
 
   const handleRun = async (id: number) => {
@@ -355,9 +423,9 @@ const ApiTestCollections = () => {
               if (key === 'delete') {
                 handleBatchDelete()
               } else if (key === 'run') {
-                message.info('批量执行功能开发中')
+                handleBatchRun()
               } else if (key === 'export') {
-                message.info('导出功能开发中')
+                handleExport()
               }
             }
           }} disabled={selectedRowKeys.length === 0}>

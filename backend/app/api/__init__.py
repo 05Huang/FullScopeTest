@@ -16,6 +16,7 @@ from . import projects
 from . import environments
 from . import api_test
 from . import web_test
+from . import app_test
 from . import perf_test
 from . import reports
 from . import docs

@@ -347,6 +347,45 @@ const PerfTestScenarios = () => {
     }
   }
 
+  // 导出场景配置
+  const handleExport = () => {
+    if (selectedRowKeys.length === 0) return
+
+    const selectedScenarios = scenarios.filter(s => selectedRowKeys.includes(s.id))
+    const exportData = {
+      version: '1.0',
+      export_time: new Date().toISOString(),
+      scenarios: selectedScenarios.map(s => ({
+        name: s.name,
+        description: s.description,
+        target_url: s.target_url,
+        method: s.method,
+        headers: s.headers,
+        body: s.body,
+        user_count: s.user_count,
+        spawn_rate: s.spawn_rate,
+        duration: s.duration,
+        ramp_up: s.ramp_up,
+        step_load_enabled: s.step_load_enabled,
+        step_users: s.step_users,
+        step_duration: s.step_duration,
+        script_content: s.script_content,
+      }))
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `perf-test-scenarios-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    message.success(`已导出 ${selectedScenarios.length} 个场景配置`)
+  }
+
   // 删除场景
   const handleDelete = async (id: number) => {
     try {
@@ -708,7 +747,7 @@ const PerfTestScenarios = () => {
                 } else if (key === 'run') {
                   handleBatchRun()
                 } else if (key === 'export') {
-                  message.info('导出功能开发中')
+                  handleExport()
                 }
               }
             }}

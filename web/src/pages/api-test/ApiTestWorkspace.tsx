@@ -49,6 +49,7 @@ import MonacoEditor from '@monaco-editor/react'
 import { apiTestService } from '@/services/apiTestService'
 import type { AiPlanOperation } from '@/services/apiTestService'
 import { environmentService } from '@/services/environmentService'
+import { useProjectStore } from '@/stores/projectStore'
 import CollectionManager from './CollectionManager'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
 
@@ -210,6 +211,7 @@ interface AiExecutionLog {
 }
 
 const ApiTestWorkspace = () => {
+  const { currentProjectId } = useProjectStore()
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
   const [requestName, setRequestName] = useState('')  // 自定义请求名称
@@ -302,11 +304,9 @@ const ApiTestWorkspace = () => {
   const [reviewSuggestedCases, setReviewSuggestedCases] = useState<any[]>([])
 
   // 获取当前项目选择的环境存储键（按项目分别持久化）
-  // TODO: 从路由参数或上下文获取当前项目 ID
   const getEnvStorageKey = (projectId?: number) => {
     return projectId ? `api-test-project-${projectId}-selected-env-id` : 'api-test-selected-env-id'
   }
-  const currentProjectId = undefined // 待实现：从 URL 或上下文获取
   const [contextMenuState, setContextMenuState] = useState<{
     visible: boolean
     x: number
@@ -505,9 +505,9 @@ const ApiTestWorkspace = () => {
   const loadData = async () => {
     try {
       const [collectionsRes, casesRes, environmentsRes] = await Promise.all([
-        apiTestService.getCollections(),
+        apiTestService.getCollections(currentProjectId),
         apiTestService.getCases({}),
-        environmentService.getEnvironments()
+        environmentService.getEnvironments(currentProjectId)
       ])
       
       if (collectionsRes.code === 200) {

@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { environmentService } from '@/services'
+import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -39,6 +40,7 @@ interface Environment {
 }
 
 const ApiTestEnvironments = () => {
+  const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(false)
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -53,7 +55,7 @@ const ApiTestEnvironments = () => {
   const loadData = async () => {
     setLoading(true)
     try {
-      const res = await environmentService.getEnvironments()
+      const res = await environmentService.getEnvironments(currentProjectId)
       if (res.code === 200) {
         setEnvironments(res.data || [])
       }
