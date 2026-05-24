@@ -209,6 +209,8 @@ def delete_app_script(script_id):
 @jwt_required()
 def run_app_script(script_id):
     """执行单个脚本"""
+    from flask import current_app
+
     user_id = get_current_user_id()
     script = AppTestScript.query.filter_by(id=script_id, user_id=user_id).first()
 
@@ -218,12 +220,72 @@ def run_app_script(script_id):
     if script.status == 'running':
         return error_response(400, '脚本正在执行中')
 
-    # TODO: 接入 Celery 异步任务执行 Appium 脚本
-    # 暂时返回成功，标记为 running
-    script.status = 'running'
-    db.session.commit()
+    # 检查 Celery 是否启用
+    if current_app.config.get('CELERY_ENABLE', False):
+        from ..tasks import run_app_test_task
+        task = run_app_test_task.apply_async(args=[script_id, user_id])
+        return success_response(
+            data={'script_id': script.id, 'task_id': task.id, 'status': 'running'},
+            message='脚本已提交执行'
+        )
+    else:
+        # Celery 未启用时，同步执行
+        script.status = 'running'
+        script.last_run_at = datetime.utcnow()
+        db.session.commit()
 
-    return success_response(
-        data={'script_id': script.id, 'status': 'running'},
-        message='脚本已提交执行'
-    )
+        try:
+            import subprocess
+            import sys
+            import tempfile
+            import os
+
+            work_dir = os.path.join(os.path.dirname(current_app.root_path), 'data', 'app_tests', str(script_id))
+            os.makedirs(work_dir, exist_ok=True)
+
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8', dir=work_dir) as f:
+                f.write(script.script_content)
+                temp_file = f.name
+
+            try:
+                start_time = __import__('time').time()
+                result = subprocess.run(
+                    [sys.executable, temp_file],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,
+                    cwd=work_dir,
+                )
+                duration = __import__('time').time() - start_time
+                success = result.returncode == 0
+
+                script.status = 'passed' if success else 'failed'
+                script.last_result = {
+                    'success': success,
+                    'duration': duration,
+                    'stdout': result.stdout,
+                    'stderr': result.stderr,
+                    'return_code': result.returncode,
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+                db.session.commit()
+
+                return success_response(
+                    data={'script_id': script.id, 'status': script.status, 'result': script.last_result},
+                    message='脚本执行完成'
+                )
+            finally:
+                try:
+                    os.unlink(temp_file)
+                except Exception:
+                    pass
+
+        except Exception as e:
+            script.status = 'failed'
+            script.last_result = {
+                'success': False,
+                'error': str(e),
+                'timestamp': datetime.utcnow().isoformat(),
+            }
+            db.session.commit()
+            return error_response(500, f'执行失败: {str(e)}')

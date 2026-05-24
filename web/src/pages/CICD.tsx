@@ -26,14 +26,13 @@ import { cicdService, WebhookToken, ScheduledTask } from '@/services/cicdService
 import * as apiTestService from '@/services/apiTestService'
 import * as webTestService from '@/services/webTestService'
 import { perfTestService } from '@/services/perfTestService'
+import { useProjectStore } from '@/stores/projectStore'
 
 const { Paragraph } = Typography
 
 const CICD: React.FC = () => {
   const [activeTab, setActiveTab] = useState('webhooks')
-  
-  // 暂时使用全局固定的 project_id 或从 url 获取
-  const currentProjectId = 1
+  const { currentProjectId } = useProjectStore()
   
   const [webhooks, setWebhooks] = useState<WebhookToken[]>([])
   const [schedules, setSchedules] = useState<ScheduledTask[]>([])

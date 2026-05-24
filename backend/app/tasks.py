@@ -729,3 +729,96 @@ def cleanup_old_results_task():
                 'success': False,
                 'error': str(e)
             }
+
+
+@celery.task(bind=True, name='tasks.run_app_test')
+def run_app_test_task(self, script_id, user_id):
+    """异步执行 APP 测试脚本（Appium）"""
+    with _get_flask_app().app_context():
+        from app.models.app_test_script import AppTestScript
+
+        script = None
+        try:
+            script = AppTestScript.query.filter_by(id=script_id, user_id=user_id).first()
+            if not script:
+                return {'success': False, 'error': 'Script not found'}
+
+            script.status = 'running'
+            script.last_run_at = datetime.utcnow()
+            db.session.commit()
+
+            self.update_state(state='PROGRESS', meta={'status': 'Running Appium test...'})
+
+            # 准备工作目录
+            work_dir = os.path.join(os.path.dirname(_get_flask_app().root_path), 'data', 'app_tests', str(script_id))
+            os.makedirs(work_dir, exist_ok=True)
+
+            # 写入临时脚本文件
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8', dir=work_dir) as f:
+                f.write(script.script_content)
+                temp_file = f.name
+
+            try:
+                start_time = time.time()
+                env = os.environ.copy()
+                env['PYTHONPATH'] = os.path.dirname(_get_flask_app().root_path) + os.pathsep + env.get('PYTHONPATH', '')
+
+                # 执行 Appium 脚本
+                result = subprocess.run(
+                    [sys.executable, temp_file],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 分钟超时
+                    cwd=work_dir,
+                    env=env
+                )
+                duration = time.time() - start_time
+                success = result.returncode == 0
+
+                # 更新脚本状态
+                script.status = 'passed' if success else 'failed'
+                script.last_result = {
+                    'success': success,
+                    'duration': duration,
+                    'stdout': result.stdout,
+                    'stderr': result.stderr,
+                    'return_code': result.returncode,
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+                db.session.commit()
+
+                return {
+                    'success': success,
+                    'script_id': script_id,
+                    'duration': duration,
+                    'stdout': result.stdout,
+                    'stderr': result.stderr,
+                    'return_code': result.returncode,
+                }
+            finally:
+                try:
+                    os.unlink(temp_file)
+                except Exception:
+                    pass
+
+        except subprocess.TimeoutExpired:
+            if script:
+                script.status = 'failed'
+                script.last_result = {
+                    'success': False,
+                    'error': 'Execution timeout (5 minutes)',
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+                db.session.commit()
+            return {'success': False, 'error': 'Execution timeout'}
+
+        except Exception as e:
+            if script:
+                script.status = 'failed'
+                script.last_result = {
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+                db.session.commit()
+            return {'success': False, 'error': str(e)}

@@ -91,25 +91,32 @@ const Reports = () => {
   })
   const [dailyTrend, setDailyTrend] = useState<Array<{ date: string; passed: number; failed: number }>>([])
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
-  const [filters, setFilters] = useState({ keyword: '', test_type: '' })
+  const [filters, setFilters] = useState({ keyword: '', test_type: '', date_range: null as [string, string] | null })
 
   useEffect(() => {
     fetchData()
-  }, [pagination.current, pagination.pageSize, filters.keyword, filters.test_type])
+  }, [pagination.current, pagination.pageSize, filters.keyword, filters.test_type, filters.date_range])
 
   const fetchData = async () => {
     try {
       setLoading(true)
+      const dateParams = filters.date_range ? {
+        start_date: filters.date_range[0],
+        end_date: filters.date_range[1],
+      } : {}
+
       const [runsRes, reportsRes, statsRes] = await Promise.all([
         reportService.getTestRuns({
           page: pagination.current,
           per_page: pagination.pageSize,
           test_type: filters.test_type || undefined,
+          ...dateParams,
         }),
         reportService.getTestReports({
           page: pagination.current,
           per_page: pagination.pageSize,
           test_type: filters.test_type || undefined,
+          ...dateParams,
         }),
         reportService.getReportStatistics({ days: 7 }),
       ])
@@ -448,7 +455,19 @@ const Reports = () => {
         title="执行记录"
         extra={
           <Space>
-            <RangePicker size="small" />
+            <RangePicker
+              size="small"
+              onChange={(dates) => {
+                if (dates) {
+                  setFilters((prev) => ({
+                    ...prev,
+                    date_range: [dates[0]!.format('YYYY-MM-DD'), dates[1]!.format('YYYY-MM-DD')]
+                  }))
+                } else {
+                  setFilters((prev) => ({ ...prev, date_range: null }))
+                }
+              }}
+            />
             <Select
               placeholder="类型"
               size="small"
