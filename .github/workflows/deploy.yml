@@ -152,8 +152,18 @@ jobs:
         env:
           DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
         run: |
-          # 先写脚本到远程服务器
-          ssh deploy-target "printf '%s\n' '#!/bin/bash' 'set -e' 'git config --global --add safe.directory \"$DEPLOY_DIR\"' 'cd \"$DEPLOY_DIR\"' 'SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh' > /tmp/run-deploy.sh && chmod +x /tmp/run-deploy.sh"
+          # 使用 base64 编码传递脚本，避免所有 shell 转义问题
+          SCRIPT=$(cat <<'SCRIPT_END'
+          #!/bin/bash
+          set -e
+          git config --global --add safe.directory "DEPLOY_DIR_PLACEHOLDER"
+          cd "DEPLOY_DIR_PLACEHOLDER"
+          SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh
+          SCRIPT_END
+          )
+          SCRIPT="${SCRIPT//DEPLOY_DIR_PLACEHOLDER/$DEPLOY_DIR}"
+          ENCODED=$(echo "$SCRIPT" | base64 -w0)
+          ssh deploy-target "echo '$ENCODED' | base64 -d > /tmp/run-deploy.sh && chmod +x /tmp/run-deploy.sh"
           for i in 1 2 3; do
             echo "Deploy attempt $i..."
             ssh deploy-target "bash /tmp/run-deploy.sh" && break
@@ -169,8 +179,21 @@ jobs:
         env:
           SITE_DIR: ${{ secrets.SITE_DIR }}
         run: |
-          # 先写脚本到远程服务器
-          ssh deploy-target "printf '%s\n' '#!/bin/bash' 'set -e' 'TMP_DIR=\$(mktemp -d)' 'tar -xzf /tmp/fullscopetest-dist.tgz -C \$TMP_DIR --no-same-owner --no-same-permissions -m' 'mkdir -p \"$SITE_DIR\"' 'find \"$SITE_DIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +' 'cp -R \$TMP_DIR/. \"$SITE_DIR\"/' 'rm -rf \$TMP_DIR' > /tmp/run-frontend.sh && chmod +x /tmp/run-frontend.sh"
+          # 使用 base64 编码传递脚本，避免所有 shell 转义问题
+          SCRIPT=$(cat <<'SCRIPT_END'
+          #!/bin/bash
+          set -e
+          TMP_DIR=$(mktemp -d)
+          tar -xzf /tmp/fullscopetest-dist.tgz -C "$TMP_DIR" --no-same-owner --no-same-permissions -m
+          mkdir -p "SITE_DIR_PLACEHOLDER"
+          find "SITE_DIR_PLACEHOLDER" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          cp -R "$TMP_DIR"/. "SITE_DIR_PLACEHOLDER"/
+          rm -rf "$TMP_DIR"
+          SCRIPT_END
+          )
+          SCRIPT="${SCRIPT//SITE_DIR_PLACEHOLDER/$SITE_DIR}"
+          ENCODED=$(echo "$SCRIPT" | base64 -w0)
+          ssh deploy-target "echo '$ENCODED' | base64 -d > /tmp/run-frontend.sh && chmod +x /tmp/run-frontend.sh"
           for i in 1 2 3; do
             echo "Publish attempt $i..."
             ssh deploy-target "bash /tmp/run-frontend.sh" && break
