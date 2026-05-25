@@ -222,8 +222,8 @@ const Login = () => {
 
     if (!isRegister && !autoFilled.current) {
       loginForm.setFieldsValue({
-        username: 'huangxuan',
-        password: 'hxREDACTED_PASSWORD'
+        username: 'admin',
+        password: 'admin123'
       })
       
       message.open({
