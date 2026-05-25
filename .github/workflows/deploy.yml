@@ -56,16 +56,20 @@ jobs:
     steps:
       - name: Check required secrets
         shell: bash
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          if [ -z "${{ secrets.SSH_KEY }}" ]; then
+          if [ -z "$SSH_KEY" ]; then
             echo "::error::SSH_KEY secret is not set. Please add it in Settings > Secrets and variables > Actions"
             exit 1
           fi
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+          if [ -z "$SSH_HOST" ]; then
             echo "::error::SSH_HOST secret is not set. Please add it in Settings > Secrets and variables > Actions"
             exit 1
           fi
-          if [ -z "${{ secrets.SSH_USER }}" ]; then
+          if [ -z "$SSH_USER" ]; then
             echo "::error::SSH_USER secret is not set. Please add it in Settings > Secrets and variables > Actions"
             exit 1
           fi
@@ -78,11 +82,14 @@ jobs:
 
       - name: Setup SSH
         shell: bash
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           mkdir -p ~/.ssh
-          # 保存 SSH 私钥（自动检测格式）
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
-          # 修复可能的 Windows 换行符
+          # 保存 SSH 私钥
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
           sed -i 's/\r$//' ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
@@ -92,13 +99,13 @@ jobs:
           ssh-keygen -l -f ~/.ssh/deploy_key || echo "WARNING: Key format check failed"
 
           # 获取服务器主机密钥
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-          # 写入 SSH 配置（直接写入避免 heredoc 缩进问题）
+          # 写入 SSH 配置
           {
             echo "Host deploy-target"
-            echo "  HostName ${{ secrets.SSH_HOST }}"
-            echo "  User ${{ secrets.SSH_USER }}"
+            echo "  HostName $SSH_HOST"
+            echo "  User $SSH_USER"
             echo "  IdentityFile ~/.ssh/deploy_key"
             echo "  ConnectTimeout 15"
             echo "  ServerAliveInterval 30"
@@ -114,8 +121,10 @@ jobs:
 
       - name: Test SSH connection
         shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          echo "Testing SSH connection to ${{ secrets.SSH_HOST }}..."
+          echo "Testing SSH connection to $SSH_HOST..."
           ssh -v deploy-target "echo 'SSH connection successful'; whoami; uname -a" || {
             echo "::error::SSH connection failed. Please verify:"
             echo "1. SSH_KEY secret contains a valid private key (OpenSSH format)"
@@ -140,13 +149,12 @@ jobs:
 
       - name: Deploy backend on server (run deploy.sh)
         shell: bash
+        env:
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
         run: |
           for i in 1 2 3; do
             echo "Deploy attempt $i..."
-            ssh deploy-target "set -e; \
-              git config --global --add safe.directory '${{ secrets.DEPLOY_DIR }}'; \
-              cd '${{ secrets.DEPLOY_DIR }}' && \
-              SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh" && break
+            ssh deploy-target "set -e; git config --global --add safe.directory '$DEPLOY_DIR'; cd '$DEPLOY_DIR' && SKIP_WEB_BUILD=1 BRANCH=main ./deploy.sh" && break
             if [ "$i" -eq 3 ]; then
               echo "::error::Backend deployment failed after 3 attempts"
               exit 1
@@ -156,17 +164,12 @@ jobs:
 
       - name: Publish frontend to 1Panel site dir
         shell: bash
+        env:
+          SITE_DIR: ${{ secrets.SITE_DIR }}
         run: |
           for i in 1 2 3; do
             echo "Publish attempt $i..."
-            ssh deploy-target "set -e; \
-              SITE_DIR='${{ secrets.SITE_DIR }}'; \
-              TMP_DIR=\$(mktemp -d); \
-              tar -xzf /tmp/fullscopetest-dist.tgz -C \$TMP_DIR --no-same-owner --no-same-permissions -m; \
-              mkdir -p \$SITE_DIR; \
-              find \$SITE_DIR -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
-              cp -R \$TMP_DIR/. \$SITE_DIR/; \
-              rm -rf \$TMP_DIR" && break
+            ssh deploy-target "set -e; TMP_DIR=\$(mktemp -d); tar -xzf /tmp/fullscopetest-dist.tgz -C \$TMP_DIR --no-same-owner --no-same-permissions -m; mkdir -p '$SITE_DIR'; find '$SITE_DIR' -mindepth 1 -maxdepth 1 -exec rm -rf {} +; cp -R \$TMP_DIR/. '$SITE_DIR'/; rm -rf \$TMP_DIR" && break
             if [ "$i" -eq 3 ]; then
               echo "::error::Frontend publish failed after 3 attempts"
               exit 1
