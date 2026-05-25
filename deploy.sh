@@ -9,6 +9,10 @@ PROJECT_NAME="${PROJECT_NAME:-fullscopetest}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
 cd "$APP_DIR"
+
+# 修复 Git 安全目录问题（CI/CD 环境中仓库所有者与当前用户不同）
+git config --global --add safe.directory "$APP_DIR"
+
 git fetch --all
 git reset --hard "origin/${BRANCH}"
 
