@@ -36,8 +36,14 @@ fi
 
 # Run pytest using a Python container (no host Python required).
 # Use host network so tests can reach the shared Postgres on localhost.
-docker run --rm --network host -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
-  sh -c "pip install -r requirements.txt -r requirements-test.txt && TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://fullscopetest:\${POSTGRES_PASSWORD}@127.0.0.1:5432/fullscopetest_test} pytest -q tests"
+# Load TEST_DATABASE_URL from .env file
+if [ -f "$APP_DIR/.env" ]; then
+  set -a
+  source "$APP_DIR/.env"
+  set +a
+fi
+docker run --rm --network host -e "TEST_DATABASE_URL=${TEST_DATABASE_URL}" -v "$APP_DIR/backend:/app" -w /app python:3.11-slim \
+  sh -c "pip install -r requirements.txt -r requirements-test.txt && pytest -q tests"
 
 # Deploy services.
 set +e
