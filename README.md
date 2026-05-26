@@ -10,8 +10,7 @@
   <br />
   AI 编排 · API 测试 · Web 自动化 · APP 测试 · 性能压测 · 智能报告
 
-  [![English](https://img.shields.io/badge/lang-English-blue)](README_EN.md)
-  [![中文](https://img.shields.io/badge/lang-中文-blue)](README.md)
+  <a href="README.md">中文</a> | <a href="README_EN.md">English</a>
 
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Python](https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
