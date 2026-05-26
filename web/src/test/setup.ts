@@ -26,7 +26,7 @@ window.getComputedStyle = () =>
 // These use antd's internal static function API which isn't available in jsdom
 vi.mock('antd', async (importOriginal) => {
   const antd = await importOriginal<typeof import('antd')>()
-  const noop = vi.fn()
+  const noop: any = vi.fn()
   noop.success = vi.fn()
   noop.error = vi.fn()
   noop.warning = vi.fn()
