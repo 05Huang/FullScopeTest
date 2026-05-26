@@ -118,6 +118,10 @@
   <img src=”https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png” alt=”Web 自动化测试” width=”80%” />
 </div>
 
+#### APP 自动化测试 (Appium)
+
+基于 Appium 的移动端测试，支持 Android / iOS 真机与模拟器。在线管理测试脚本，配置设备连接参数，通过 Celery 异步执行并回传结果。支持 UI 元素定位、手势操作、断言验证等移动端测试场景。
+
 #### 性能测试 (Locust)
 
 基于 Locust 的分布式压测，支持并发用户数配置与阶梯加压（Step load）。实时采集并可视化响应时间、吞吐量 (RPS)、错误率等核心指标。
@@ -125,6 +129,28 @@
 <div align=”center”>
   <img src=”https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png” alt=”性能测试看板” width=”80%” />
 </div>
+
+### 平台能力 (Platform)
+
+#### 测试报告中心
+
+聚合各模块测试执行结果，生成结构化报告。支持按项目、测试类型、时间范围筛选，展示通过率趋势、失败用例详情、执行耗时分布等关键指标。
+
+#### 环境管理
+
+按项目隔离管理多套测试环境（开发 / 测试 / 预发 / 生产），支持全局变量与环境级变量的分层配置。请求中通过 `{variable_name}` 语法自动替换，切换环境即可一键切换所有变量。
+
+#### 测试文档
+
+内置 Markdown 文档编辑器，支持创建和管理测试计划、用例说明、操作手册等项目文档，与测试用例关联，形成完整的测试知识库。
+
+#### CI/CD 集成与定时任务
+
+提供 Webhook 触发器，支持通过 CI/CD 流水线（GitHub Actions、Jenkins 等）远程调用执行测试。内置定时调度器（APScheduler），支持 Cron 表达式配置周期性自动测试。
+
+#### 仪表盘
+
+项目级总览面板，汇总展示测试用例数、执行成功率、最近运行记录、报告趋势等核心指标，快速掌握项目测试全貌。
 
 ---
 
@@ -151,7 +177,7 @@ graph LR
     end
 
     subgraph Async Workers
-        Celery["Celery Worker<br/>(Web / Perf 测试)"]
+        Celery["Celery Worker<br/>(Web / APP / Perf 测试)"]
         Scheduler["APScheduler<br/>(定时任务)"]
     end
 
