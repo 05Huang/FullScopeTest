@@ -10,9 +10,14 @@ from ..extensions import db
 
 class ApiTestCollection(db.Model):
     """接口测试集合表"""
-    
+
     __tablename__ = 'api_test_collections'
-    
+    __table_args__ = (
+        db.Index('idx_api_test_collections_project_id', 'project_id'),
+        db.Index('idx_api_test_collections_user_id', 'user_id'),
+        db.Index('idx_api_test_collections_parent_id', 'parent_id'),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, comment='项目 ID')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='用户 ID')
@@ -56,9 +61,15 @@ class ApiTestCollection(db.Model):
 
 class ApiTestCase(db.Model):
     """接口测试用例表"""
-    
+
     __tablename__ = 'api_test_cases'
-    
+    __table_args__ = (
+        db.Index('idx_api_test_cases_collection_id', 'collection_id'),
+        db.Index('idx_api_test_cases_project_id', 'project_id'),
+        db.Index('idx_api_test_cases_user_id', 'user_id'),
+        db.Index('idx_api_test_cases_method', 'method'),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     collection_id = db.Column(db.Integer, db.ForeignKey('api_test_collections.id'), nullable=True, comment='集合 ID')
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, comment='项目 ID')

@@ -34,9 +34,18 @@ jobs:
         working-directory: web
         run: npx tsc --noEmit
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: web
-        run: npm run test
+        run: npm run test:coverage
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: web/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: false
 
   # ===== 后端检查 =====
   backend-check:
@@ -60,20 +69,89 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-test.txt
+          pip install pytest-cov
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: backend
         env:
           FLASK_ENV: testing
           CELERY_ENABLE: "false"
           TEST_DATABASE_URL: "sqlite:////tmp/fullscopetest_test.db"
         run: |
-          pytest -q tests --tb=short
+          pytest -q tests --tb=short --cov=app --cov-report=xml --cov-report=html
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage-report
+          path: backend/htmlcov/
+          retention-days: 7
+
+  # ===== 安全扫描 =====
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          languages: javascript, python
+
+      - name: Run Bandit (Python Security)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: bandit-results.sarif
+
+  # ===== 依赖检查 =====
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Audit npm dependencies
+        working-directory: web
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Audit pip dependencies
+        working-directory: backend
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+        continue-on-error: true
 
   # ===== 构建（仅 main 分支） =====
   build:
     name: Build
-    needs: [frontend-check, backend-check]
+    needs: [frontend-check, backend-check, security-scan]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -103,3 +181,26 @@ jobs:
           name: web-dist
           path: dist.tgz
           retention-days: 7
+
+  # ===== Docker 构建（仅 main 分支） =====
+  docker-build:
+    name: Docker Build
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: false
+          tags: fullscopetest:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

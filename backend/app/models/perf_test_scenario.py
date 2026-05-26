@@ -10,9 +10,14 @@ from ..extensions import db
 
 class PerfTestScenario(db.Model):
     """性能测试场景表"""
-    
+
     __tablename__ = 'perf_test_scenarios'
-    
+    __table_args__ = (
+        db.Index('idx_perf_test_scenarios_project_id', 'project_id'),
+        db.Index('idx_perf_test_scenarios_user_id', 'user_id'),
+        db.Index('idx_perf_test_scenarios_status', 'status'),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, comment='项目 ID')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='用户 ID')

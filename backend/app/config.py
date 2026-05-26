@@ -103,6 +103,9 @@ class BaseConfig:
     OSS_BUCKET_NAME = os.environ.get('OSS_BUCKET_NAME', '')
     OSS_DOMAIN = os.environ.get('OSS_DOMAIN', '')  # Custom domain if available
 
+    # Webhook 安全配置
+    WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '')  # HMAC 签名密钥，为空则不验证
+
 
 class DevelopmentConfig(BaseConfig):
     """开发环境配置"""

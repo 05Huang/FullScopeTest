@@ -1,0 +1,25 @@
+{
+  "name": "fullscopetest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FullScopeTest - AI 驱动的自动化测试平台",
+  "scripts": {
+    "prepare": "husky install",
+    "lint:staged": "lint-staged"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "web/*.{ts,tsx}": [
+      "npx eslint --config web/.eslintrc.cjs --fix",
+      "npx prettier --config web/.prettierrc --write"
+    ],
+    "web/*.{css,json,md}": [
+      "npx prettier --config web/.prettierrc --write"
+    ]
+  }
+}
