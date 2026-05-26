@@ -119,6 +119,11 @@ web/dist/
 *.pyo
 *.pyd
 
+# ===== 杂项 =====
+images/
+Jenkinsfile
+package-lock.json
+
 # ===== 系统文件 =====
 .DS_Store
 Thumbs.db
