@@ -118,10 +118,6 @@
   <img src=”https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png” alt=”Web 自动化测试” width=”80%” />
 </div>
 
-#### APP 自动化测试 (Appium)
-
-基于 Appium 的移动端测试，支持 Android / iOS 真机与模拟器。在线管理测试脚本，配置设备连接参数，通过 Celery 异步执行并回传结果。支持 UI 元素定位、手势操作、断言验证等移动端测试场景。
-
 #### 性能测试 (Locust)
 
 基于 Locust 的分布式压测，支持并发用户数配置与阶梯加压（Step load）。实时采集并可视化响应时间、吞吐量 (RPS)、错误率等核心指标。
@@ -130,27 +126,29 @@
   <img src=”https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png” alt=”性能测试看板” width=”80%” />
 </div>
 
-### 平台能力 (Platform)
+#### APP 移动端测试 (Appium)
+
+基于 Appium 的移动应用自动化测试，支持 Android / iOS 双平台。通过配置 package/activity（Android）或 bundle_id（iOS）连接真机或模拟器，在线编写 Appium Python 脚本并通过 Celery 异步执行。
 
 #### 测试报告中心
 
-聚合各模块测试执行结果，生成结构化报告。支持按项目、测试类型、时间范围筛选，展示通过率趋势、失败用例详情、执行耗时分布等关键指标。
+聚合 API、Web、APP、性能四类测试的执行结果，提供按类型统计、每日趋势、成功率等可视化指标。支持 HTML 和 JSON 格式导出，Dashboard 首页展示全局测试概览。
 
-#### 环境管理
+#### 环境变量管理
 
-按项目隔离管理多套测试环境（开发 / 测试 / 预发 / 生产），支持全局变量与环境级变量的分层配置。请求中通过 `{variable_name}` 语法自动替换，切换环境即可一键切换所有变量。
+独立的环境管理模块，支持创建多套环境（开发/测试/预发/生产），每套环境包含自定义变量与请求头。API 测试中通过 `{variable}` 语法自动替换，支持设置默认环境。
 
-#### 测试文档
+#### 测试文档管理
 
-内置 Markdown 文档编辑器，支持创建和管理测试计划、用例说明、操作手册等项目文档，与测试用例关联，形成完整的测试知识库。
+内置测试文档管理，支持 Markdown 编辑、分类检索与关键词搜索。提供测试计划、测试用例、API 文档等内置模板，支持导出为 Markdown / HTML。
 
-#### CI/CD 集成与定时任务
+#### Mock Server
 
-提供 Webhook 触发器，支持通过 CI/CD 流水线（GitHub Actions、Jenkins 等）远程调用执行测试。内置定时调度器（APScheduler），支持 Cron 表达式配置周期性自动测试。
+API 用例级别 Mock，启用后直接返回预设响应（状态码、响应体、响应头、延迟时间），无需依赖真实后端服务，便于前端并行开发与联调。
 
-#### 仪表盘
+#### Webhook 触发器与定时任务
 
-项目级总览面板，汇总展示测试用例数、执行成功率、最近运行记录、报告趋势等核心指标，快速掌握项目测试全貌。
+支持创建 Webhook 触发器（HMAC-SHA256 签名验证），通过 HTTP 请求触发测试集合执行。定时任务支持 Cron 表达式调度，基于 APScheduler 实现，文件锁保证多进程安全。
 
 ---
 
@@ -177,7 +175,7 @@ graph LR
     end
 
     subgraph Async Workers
-        Celery["Celery Worker<br/>(Web / APP / Perf 测试)"]
+        Celery["Celery Worker<br/>(Web / Perf 测试)"]
         Scheduler["APScheduler<br/>(定时任务)"]
     end
 
