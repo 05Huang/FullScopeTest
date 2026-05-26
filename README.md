@@ -6,23 +6,31 @@
 
   <br />
 
-  **AI 驱动的下一代全链路自动化测试平台**
+  **AI-Native 全链路自动化测试平台**
   <br />
-  AI 自动编排 · API 接口测试 · Web 自动化 · 性能测试 · 报告中心
+  AI 编排 · API 测试 · Web 自动化 · APP 测试 · 性能压测 · 智能报告
 
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-  [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-  [![React](https://img.shields.io/badge/react-18.3-blue.svg)](https://reactjs.org/)
-  [![Flask](https://img.shields.io/badge/flask-3.0-green.svg)](https://flask.palletsprojects.com/)
-  [![Playwright](https://img.shields.io/badge/playwright-ready-2EAD33?style=flat&logo=playwright)](https://playwright.dev/)
-  [![Locust](https://img.shields.io/badge/locust-ready-43B02A?style=flat)](https://locust.io/)
+  [![Python](https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+  [![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![React](https://img.shields.io/badge/react-18-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
+  [![Vite](https://img.shields.io/badge/vite-6-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+  [![Flask](https://img.shields.io/badge/flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+  [![SQLAlchemy](https://img.shields.io/badge/sqlalchemy-ORM-D71F00?style=flat&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
+  [![Ant Design](https://img.shields.io/badge/ant--design-5-0170FE?style=flat&logo=antdesign&logoColor=white)](https://ant.design/)
+  [![Playwright](https://img.shields.io/badge/playwright-e2e-2EAD33?style=flat&logo=playwright)](https://playwright.dev/)
+  [![Celery](https://img.shields.io/badge/celery-task--queue-37814A?style=flat&logo=celery&logoColor=white)](https://docs.celeryq.dev/)
+  [![Redis](https://img.shields.io/badge/redis-broker-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io/)
+  [![PostgreSQL](https://img.shields.io/badge/postgresql-15-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![Docker](https://img.shields.io/badge/docker-compose-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+  [![Vitest](https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev/)
 
   <h2>🔥 在线演示地址: <a href="http://test.huangxuan.chat">test.huangxuan.chat</a> 🔥</h2>
 </div>
 
 ## 📖 项目简介
 
-**FullScopeTest** 是一款面向个人开发者与小团队的现代化自动化测试平台，覆盖了接口测试、Web 自动化、性能测试与报告中心。我们致力于通过**AI 赋能**，让测试工作变得更智能、更高效，为您提供可落地执行的 AI 自动编排能力。
+**FullScopeTest** 是一个 AI 驱动的全链路自动化测试平台，覆盖 API 接口测试、Web UI 自动化、APP 移动端测试和性能压测四大领域。平台以 **AI-Native** 为核心设计理念，提供自然语言编排、脚本自动生成、智能错误分析与自愈等能力，降低测试编写与维护门槛。
 
 <div align="center">
   <img src="https://res.huangxuan.chat/thrivex/album/69c01107e4b01ee6a7b76b3a.png" alt="Dashboard 预览" width="80%" />
@@ -32,107 +40,90 @@
 
 ---
 
-## ✨ 核心特性与 AI 赋能
+## ✨ 核心特性
 
-###  纯正的 AI 驱动能力 (AI-Native Features)
+### AI 能力 (AI-Native)
 
-#### 1. 🤖 AI 自动编排 (AI Auto-Orchestration)
-自然语言即代码！只需输入测试目标，AI 将自动为您生成结构化操作步骤（Plan），并**复用既有平台 API 自动落地执行**。
-- **自然语言生成计划**：输入目标后，AI 理解意图并规划执行路径。
-- **自动落地执行**：按计划调用平台 API 自动创建/更新环境、集合、用例并直接运行。
-- **运行时模型配置**：前端面板支持动态设置 `base_url` / `model` / `api_key`，无缝对接各类大语言模型。
+#### 1. AI 自动编排
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3b.png" alt="AI 自动编排输入" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3c.png" alt="" width="45%" />
-  <p><em>AI 自动生成测试计划并自动执行</em></p>
+输入自然语言测试目标，AI 自动解析意图并生成结构化执行计划（Plan），随后调用平台 API 自动创建环境、集合、用例并执行。前端面板支持运行时动态配置 `base_url` / `model` / `api_key`，兼容 OpenAI、DeepSeek 等主流 LLM。
+
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3b.png” alt=”AI 自动编排 — 输入测试目标” width=”45%” />
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3c.png” alt=”AI 自动编排 — 自动生成并执行” width=”45%” />
+  <p><em>自然语言 → 结构化计划 → 自动执行</em></p>
 </div>
 
-#### 2. 🪄 AI 测试脚本自动生成 (NL2Script)
-- **场景**：编写 Web UI 测试（如 Playwright/Selenium）或性能测试（如 k6/Locust）脚本往往需要一定的代码门槛，编写过程繁琐。
-- **功能**：用户只需输入自然语言，例如：“登录系统，进入控制台，点击新增用户，填写随机生成的用户名，验证是否出现成功提示”。 AI Agent 会自动将其转换为完整的、可执行的 Web 测试脚本或性能测试脚本。
-- **落地方式**：结合现有的 `WebTestScripts` 和 `PerfTestScenarios`，在前端增加“AI 辅助生成脚本”按钮，后端调用大模型生成代码，并在前端代码编辑器中高亮显示供用户审查和调整。
+#### 2. NL2Script — 自然语言生成测试脚本
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b41.png" alt="AI 生成测试脚本" width="80%" />
+输入自然语言描述（如”登录系统，进入控制台，创建用户，验证成功提示”），AI Agent 将其转换为可执行的 Playwright Web 测试脚本或 Locust 性能测试脚本。生成结果在 Monaco Editor 中高亮展示，支持在线编辑与审查。
+
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b41.png” alt=”NL2Script — 自然语言生成测试脚本” width=”80%” />
 </div>
 
+#### 3. 智能错误分析与自愈
 
-#### 3. 🕵️‍♂️ 智能错误分析与自愈 (Self-Healing Tests)
-- **场景**：自动化测试最大的痛点是维护成本高。前端稍微改了 UI，或者 API 字段变了，测试用例就会大面积失败，排查原因很耗时。
-- **功能**：当测试任务失败时，触发 AI 诊断 Agent。它会自动分析错误日志、API 响应体或报错时的 Web DOM 结构，用大白话解释失败原因（例如：“登录按钮的 selector 从 `#btn-login` 变成了 `.login-submit`，导致元素找不到”）。
-- **进阶（测试自愈）**：AI 可以直接提供一个“一键修复”按钮，自动修改测试脚本中的断言或选择器，保存并重新运行。
+测试失败时自动触发 AI 诊断：分析错误日志、API 响应体或 DOM 结构，定位根因（如选择器变更、字段缺失）。支持一键修复 — AI 自动修正断言或选择器后重新执行，降低用例维护成本。
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b42.png" alt="" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b43.png" alt="" width="45%" />
-  <p><em>AI 智能错误分析与自愈</em></p>
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b42.png” alt=”智能错误分析” width=”45%” />
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b43.png” alt=”一键自愈修复” width=”45%” />
+  <p><em>错误定位 → AI 诊断 → 一键修复</em></p>
 </div>
 
+#### 4. 智能测试数据生成与用例裂变
 
-#### 4. 🎲 智能测试数据生成与用例裂变 (AI Data Synthesizer)
-- **场景**：API 测试往往需要构造大量边界情况或符合业务逻辑的复杂 JSON 报文。
-- **功能**：基于 API 的定义或已有的基本用例，AI Agent 自动推断字段含义，并生成一套完整的测试数据集。
-- **落地方式**：可以在 `ApiTestWorkspace` 中加入“AI 扩充用例”功能，用户给出一个正常的 API 请求，AI 自动裂变出包含“边界值、非法注入、空值”等数十个异常测试用例，极大提升测试覆盖率。
+基于 API 定义或已有用例，AI 自动推断字段语义，批量生成边界值、空值、注入攻击等异常测试数据，将单条用例裂变为覆盖多种场景的测试集，提升测试覆盖率。
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b44.png" alt="" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b45.png" alt="" width="45%" />
-  <p><em>AI 智能测试数据生成与用例裂变 </em></p>
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b44.png” alt=”AI 数据生成” width=”45%” />
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b45.png” alt=”用例裂变” width=”45%” />
+  <p><em>单条用例 → AI 裂变 → 多场景覆盖</em></p>
 </div>
 
+#### 5. 探索性测试 Agent
 
-#### 5. 🕷️ 探索性测试 Agent (Autonomous Web Explorer)
-- **场景**：传统的测试需要人去预先定义每一步的断言，有没有可能让 AI 自己去探索系统并发现问题？
-- **功能**：给 AI Agent 提供一个起始 URL 和简单的系统目标（比如“尽可能多地点击不同页面并寻找报错”）。Agent 利用 DOM 解析甚至视觉模型（Vision），自主决定点击哪些按钮、填写什么表单，像真实的“猴子测试（Monkey Test）”一样在网站里探索。
-- **落地方式**：最终生成一份《AI 探索测试报告》，列出它发现的 JS 报错、404 死链或潜在的安全问题。这是一个非常纯粹的 Agent 行为。
+给定起始 URL 和测试目标，AI Agent 自主遍历页面 — 解析 DOM、点击按钮、填写表单、记录异常。结合 Vision 模型进行视觉验证，最终输出探索测试报告（JS 错误、404 死链、安全风险）。
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b46.png" alt="探索性测试 Agent" width="80%" />
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b46.png” alt=”探索性测试 Agent” width=”80%” />
 </div>
 
+#### 6. 全局 Copilot
 
-#### 6. 💬 平台级全局 Copilot (AI 助手面板)
-- **场景**：将现有的离散 AI 功能整合为一个统一的对话入口。
-- **功能**：在前端 React 界面（如 `MainLayout`）右下角增加一个悬浮的 AI Copilot 聊天窗口。
-- **落地方式**：用户可以直接通过对话下发指令：“帮我建一个名为 '电商下单' 的性能测试场景，并发 100，持续 5 分钟”、“查一下昨天失败的 Web 测试有哪些？” 后端 Agent 通过 Function Calling (工具调用) 解析意图并直接操作数据库或调度执行任务。
+统一的 AI 对话入口，支持通过自然语言指令操作平台：”创建性能测试场景，并发 100 持续 5 分钟”、”查询昨日失败的 Web 测试”。后端通过 Function Calling 解析意图，直接调用平台 API 执行操作。
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b47.png" alt="平台级全局 Copilot" width="80%" />
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b47.png” alt=”全局 Copilot” width=”80%” />
 </div>
-
 
 ---
 
-### �️ 强大的基础测试工作台 (Core Testing Workspace)
+### 测试工作台 (Core Workspace)
 
-#### 1. 🔌 API 接口测试工作台
-媲美 Postman 的丝滑体验，支持完整的 HTTP/REST API 测试生命周期。
-- **环境变量与请求头**：支持 `{variable}` 变量替换与默认全局/局部请求头。
-- **前置/后置脚本**：强大的脚本引擎，支持变量提取与复杂断言。
-- **一键 cURL 导入导出**：方便与其他系统无缝集成。
+#### API 接口测试
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c011b3e4b01ee6a7b76b3d.png" alt="API 测试工作台" width="80%" />
+完整的 HTTP/REST API 测试工作台，支持环境变量 `{variable}` 替换、前置/后置脚本引擎、变量提取与断言、一键 cURL 导入导出。
+
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c011b3e4b01ee6a7b76b3d.png” alt=”API 接口测试工作台” width=”80%” />
 </div>
 
-#### 2. 🌐 Web 自动化测试 (Playwright)
-内置强大的 Playwright 引擎，轻松搞定 UI 自动化测试。
-- **脚本管理与编辑器**：支持在线创建、编辑、保存 Playwright Python 脚本。
-- **本地化录制支持**：一键唤起 `playwright codegen` 自动录制脚本（需本机环境支持）。
-- **异步后台执行**：通过 Celery 队列在后台静默运行，支持实时状态跟踪与错误定位。
+#### Web 自动化测试 (Playwright)
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png" alt="Web 自动化" width="80%" />
+内置 Playwright 引擎，支持在线编写、编辑、执行 Python 测试脚本。可通过 `playwright codegen` 录制交互操作自动生成脚本。任务通过 Celery 异步执行，支持实时状态跟踪与错误定位。
+
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png” alt=”Web 自动化测试” width=”80%” />
 </div>
 
-#### 3. ⚡ 性能测试 (Locust)
-基于 Locust 的分布式压测能力，直观掌握系统性能瓶颈。
-- **并发模拟**：灵活配置并发用户数与阶梯加压模式（Step load）。
-- **实时监控与报告**：动态绘制响应时间、吞吐量 (RPS)、错误率等核心性能指标。
+#### 性能测试 (Locust)
 
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png" alt="性能测试看板" width="80%" />
+基于 Locust 的分布式压测，支持并发用户数配置与阶梯加压（Step load）。实时采集并可视化响应时间、吞吐量 (RPS)、错误率等核心指标。
+
+<div align=”center”>
+  <img src=”https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png” alt=”性能测试看板” width=”80%” />
 </div>
 
 ---
