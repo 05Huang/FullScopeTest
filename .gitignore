@@ -122,6 +122,7 @@ web/dist/
 # ===== 杂项 =====
 images/
 Jenkinsfile
+DEPLOY.md
 package-lock.json
 
 # ===== 系统文件 =====
