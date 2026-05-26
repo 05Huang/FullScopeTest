@@ -34,6 +34,7 @@ venv.bak/
 .vscode/
 .idea/
 .claude/
+CLAUDE.md
 *.swp
 *.swo
 *~
@@ -105,9 +106,8 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
-# Frontend build artifacts (commit web/dist)
-!web/dist/
-!web/dist/**
+# Frontend build artifacts
+web/dist/
 
 # ===== 编译输出 =====
 *.pyc

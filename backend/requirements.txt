@@ -36,6 +36,10 @@ markdown==3.5.1
 Flask-APScheduler==1.13.1
 APScheduler==3.10.4
 
+# 安全
+Flask-Limiter==3.5.0
+Flask-WTF==1.2.1
+
 # 代码质量
 black==23.12.0
 flake8==6.1.0

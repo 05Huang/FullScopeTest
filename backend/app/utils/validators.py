@@ -76,6 +76,37 @@ def is_valid_url(url):
     return bool(re.match(pattern, url, re.IGNORECASE))
 
 
+def validate_password_strength(password):
+    """
+    验证密码强度
+
+    要求：
+    - 至少 8 位
+    - 包含大小写字母
+    - 包含数字
+    - 包含特殊字符
+
+    Returns:
+        tuple: (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, '密码长度至少 8 位'
+
+    if not re.search(r'[a-z]', password):
+        return False, '密码必须包含小写字母'
+
+    if not re.search(r'[A-Z]', password):
+        return False, '密码必须包含大写字母'
+
+    if not re.search(r'\d', password):
+        return False, '密码必须包含数字'
+
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, '密码必须包含特殊字符'
+
+    return True, None
+
+
 def is_valid_http_method(method):
     """验证 HTTP 方法"""
     valid_methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']

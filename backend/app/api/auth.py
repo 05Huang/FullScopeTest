@@ -16,39 +16,42 @@ from . import api_bp
 from ..extensions import db
 from ..models.user import User
 from ..utils.response import success_response, error_response
-from ..utils.validators import validate_json, is_valid_email
+from ..utils.validators import validate_json, is_valid_email, validate_password_strength
+from .. import limiter
 from ..utils import get_current_user_id
 from ..utils.oss_upload import upload_to_oss
 
 
 @api_bp.route('/auth/register', methods=['POST'])
+@limiter.limit("5/minute")
 @validate_json('username', 'email', 'password')
 def register():
     """
     用户注册
-    
+
     请求体:
         username: 用户名 (3-50字符)
         email: 邮箱地址
-        password: 密码 (至少6位)
+        password: 密码 (至少8位，包含大小写字母、数字、特殊字符)
     """
     data = request.get_json()
-    
+
     username = data['username'].strip()
     email = data['email'].strip().lower()
     password = data['password']
-    
+
     # 验证用户名长度
     if len(username) < 3 or len(username) > 50:
         return error_response(400, '用户名长度应为 3-50 个字符')
-    
+
     # 验证邮箱格式
     if not is_valid_email(email):
         return error_response(400, '邮箱格式不正确')
-    
-    # 验证密码长度
-    if len(password) < 6:
-        return error_response(400, '密码长度至少 6 位')
+
+    # 验证密码强度
+    is_valid, error_msg = validate_password_strength(password)
+    if not is_valid:
+        return error_response(400, error_msg)
     
     # 检查用户名是否已存在
     if User.query.filter_by(username=username).first():
@@ -76,11 +79,12 @@ def register():
 
 
 @api_bp.route('/auth/login', methods=['POST'])
+@limiter.limit("5/minute")
 @validate_json('username', 'password')
 def login():
     """
     用户登录
-    
+
     请求体:
         username: 用户名或邮箱
         password: 密码
@@ -223,9 +227,10 @@ def change_password():
     if not check_password_hash(user.password_hash, old_password):
         return error_response(400, '原密码错误')
     
-    # 验证新密码长度
-    if len(new_password) < 6:
-        return error_response(400, '新密码长度至少 6 位')
+    # 验证新密码强度
+    is_valid, error_msg = validate_password_strength(new_password)
+    if not is_valid:
+        return error_response(400, error_msg)
     
     # 更新密码
     user.password_hash = generate_password_hash(new_password)

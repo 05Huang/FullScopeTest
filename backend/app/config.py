@@ -27,6 +27,17 @@ class BaseConfig:
     # 密钥配置
     SECRET_KEY = os.environ.get('SECRET_KEY', 'CHANGE_ME_IN_PRODUCTION')
 
+    # CORS 配置 - 允许的源列表（逗号分隔）
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:8080').split(',')
+
+    # 限流配置
+    RATELIMIT_DEFAULT = "200/minute"
+    RATELIMIT_STORAGE_URI = os.environ.get('REDIS_URL', 'memory://')
+
+    # CSRF 配置
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = 3600  # 1小时
+
     # 数据库配置
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
@@ -117,13 +128,16 @@ class TestingConfig(BaseConfig):
 
 class ProductionConfig(BaseConfig):
     """生产环境配置"""
-    
+
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    
+
     # 生产环境必须设置密钥
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+
+    # 生产环境限流更严格
+    RATELIMIT_DEFAULT = "100/minute"
 
 
 # 配置映射
