@@ -465,7 +465,7 @@ def create_case():
 
     error = validate_required(data, ['name', 'method', 'url'])
     if error:
-        return error_response(message=error)
+        return error_response(400, error)
 
     case = ApiTestCase(
         name=data['name'],

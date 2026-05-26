@@ -49,8 +49,8 @@ class TestProjectCRUD:
         }, headers=auth_headers)
 
         data = response.get_json()
-        assert response.status_code == 200
-        assert data['code'] == 200
+        assert response.status_code == 201
+        assert data['code'] == 201
         assert data['data']['name'] == 'My Project'
         assert data['data']['description'] == 'Project Description'
 
@@ -68,8 +68,8 @@ class TestProjectCRUD:
 
         data = response.get_json()
         assert response.status_code == 200
-        assert isinstance(data['data'], list)
-        assert len(data['data']) > 0
+        assert isinstance(data['data']['items'], list)
+        assert len(data['data']['items']) > 0
 
     def test_get_project_by_id(self, client, auth_headers, sample_project):
         """测试通过 ID 获取项目"""
@@ -133,4 +133,4 @@ class TestProjectAuthorization:
         response = client.get('/api/v1/projects', headers=other_headers)
         data = response.get_json()
         assert response.status_code == 200
-        assert len(data['data']) == 0
+        assert len(data['data']['items']) == 0

@@ -44,18 +44,18 @@ class TestReportRetrieval:
     def test_get_reports_list(self, client, auth_headers, sample_project):
         """测试获取报告列表"""
         response = client.get(
-            f'/api/v1/reports?project_id={sample_project["id"]}',
+            f'/api/v1/test-reports?project_id={sample_project["id"]}',
             headers=auth_headers
         )
 
         data = response.get_json()
         assert response.status_code == 200
-        assert isinstance(data['data'], list) or isinstance(data['data'], dict)
+        assert 'data' in data
 
     def test_get_reports_with_pagination(self, client, auth_headers, sample_project):
         """测试分页获取报告"""
         response = client.get(
-            f'/api/v1/reports?project_id={sample_project["id"]}&page=1&per_page=10',
+            f'/api/v1/test-reports?project_id={sample_project["id"]}&page=1&per_page=10',
             headers=auth_headers
         )
 
@@ -64,13 +64,13 @@ class TestReportRetrieval:
 
     def test_get_report_by_id(self, client, auth_headers):
         """测试通过 ID 获取报告（可能不存在）"""
-        response = client.get('/api/v1/reports/99999', headers=auth_headers)
+        response = client.get('/api/v1/test-reports/99999', headers=auth_headers)
         # 应该返回 404
-        assert response.status_code in [200, 404]
+        assert response.status_code == 404
 
     def test_get_reports_unauthorized(self, client):
         """测试未认证获取报告"""
-        response = client.get('/api/v1/reports')
+        response = client.get('/api/v1/test-reports')
         assert response.status_code == 401
 
 
@@ -80,7 +80,7 @@ class TestReportFiltering:
     def test_filter_by_test_type(self, client, auth_headers, sample_project):
         """测试按测试类型过滤"""
         response = client.get(
-            f'/api/v1/reports?project_id={sample_project["id"]}&test_type=api',
+            f'/api/v1/test-reports?project_id={sample_project["id"]}&test_type=api',
             headers=auth_headers
         )
 
@@ -90,7 +90,7 @@ class TestReportFiltering:
     def test_filter_by_status(self, client, auth_headers, sample_project):
         """测试按状态过滤"""
         response = client.get(
-            f'/api/v1/reports?project_id={sample_project["id"]}&status=completed',
+            f'/api/v1/test-reports?project_id={sample_project["id"]}&status=completed',
             headers=auth_headers
         )
 

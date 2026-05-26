@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import Login from '../Login'
 
@@ -9,9 +9,14 @@ vi.mock('antd', async () => {
   return {
     ...actual,
     message: {
+      open: vi.fn(),
       success: vi.fn(),
       error: vi.fn(),
+      warning: vi.fn(),
+      info: vi.fn(),
       loading: vi.fn(),
+      config: vi.fn(),
+      destroy: vi.fn(),
     },
   }
 })
@@ -36,22 +41,24 @@ describe('Login Page Smoke Tests', () => {
   it('should render login form', () => {
     renderWithRouter(<Login />)
 
-    // 检查是否有用户名和密码输入框
-    expect(screen.getByPlaceholderText(/用户名/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/密码/i)).toBeInTheDocument()
+    // 使用 aria-label 限定在登录表单内查找
+    const loginForm = screen.getByLabelText('登录表单')
+    expect(within(loginForm).getByPlaceholderText(/用户名/i)).toBeInTheDocument()
+    expect(within(loginForm).getByPlaceholderText(/密码/i)).toBeInTheDocument()
   })
 
   it('should render login button', () => {
     renderWithRouter(<Login />)
 
-    // 检查是否有登录按钮
-    expect(screen.getByRole('button', { name: /登录/i })).toBeInTheDocument()
+    // 登录按钮使用 aria-label="登录表单" 区域内查找
+    const loginForm = screen.getByLabelText('登录表单')
+    expect(within(loginForm).getByText(/登\s*录/)).toBeInTheDocument()
   })
 
   it('should render register link', () => {
     renderWithRouter(<Login />)
 
-    // 检查是否有注册链接
-    expect(screen.getByText(/注册/i)).toBeInTheDocument()
+    // 查找"立即注册"链接（使用精确文本避免匹配多个元素）
+    expect(screen.getByText('立即注册')).toBeInTheDocument()
   })
 })

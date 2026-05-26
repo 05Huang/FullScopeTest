@@ -267,7 +267,7 @@ class TestMockServer:
         # 访问 Mock 端点
         resp = client.get(f"/api/v1/api-test/mock/{case['id']}")
         assert resp.status_code == 201
-        assert resp.get_data(as_text) == '{"mock": true}'
+        assert resp.get_data(as_text=True) == '{"mock": true}'
         assert resp.headers.get("X-Custom") == "test"
 
     def test_mock_endpoint_disabled(self, client):

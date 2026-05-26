@@ -121,12 +121,15 @@ class DevelopmentConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     """测试环境配置"""
-    
+
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',
         'postgresql://localhost:5432/fullscopetest_test'
     )
+    # 测试环境禁用限流和 CSRF
+    RATELIMIT_ENABLED = False
+    WTF_CSRF_ENABLED = False
 
 
 class ProductionConfig(BaseConfig):

@@ -55,6 +55,8 @@ def test_run_web_test_task_creates_run_and_report_on_success(app, monkeypatch):
             stderr='',
         ),
     )
+    # Mock update_state for Celery task
+    monkeypatch.setattr('app.tasks.run_web_test_task.update_state', lambda *args, **kwargs: None)
 
     result = run_web_test_task.run(script_id, user_id)
 
@@ -95,6 +97,7 @@ def test_run_web_test_task_creates_failed_report_on_nonzero_exit(app, monkeypatc
             stderr='boom',
         ),
     )
+    monkeypatch.setattr('app.tasks.run_web_test_task.update_state', lambda *args, **kwargs: None)
 
     result = run_web_test_task.run(script_id, user_id)
 
@@ -132,6 +135,7 @@ def test_run_web_test_task_without_project_does_not_create_report_records(app, m
             stderr='',
         ),
     )
+    monkeypatch.setattr('app.tasks.run_web_test_task.update_state', lambda *args, **kwargs: None)
 
     result = run_web_test_task.run(script_id, user_id)
 
