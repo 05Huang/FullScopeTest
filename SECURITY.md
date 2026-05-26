@@ -35,11 +35,12 @@
 
 ### 部署安全
 
-1. **修改默认密码** - 部署后立即修改默认管理员密码
-2. **使用强密钥** - 生成随机的 `SECRET_KEY` 和 `JWT_SECRET_KEY`
-3. **启用 HTTPS** - 生产环境必须使用 HTTPS
-4. **配置 CORS** - 仅允许受信任的域名
-5. **限制访问** - 使用防火墙限制不必要的端口访问
+1. **修改默认密码** — 部署后立即修改默认管理员密码（默认 `admin / admin123`）
+2. **使用强密钥** — 生成随机的 `SECRET_KEY` 和 `JWT_SECRET_KEY`，禁止使用默认值
+3. **启用 HTTPS** — 生产环境必须使用 HTTPS
+4. **配置 CORS** — 仅允许受信任的域名
+5. **限制访问** — 使用防火墙限制不必要的端口访问
+6. **数据库** — 生产环境使用 PostgreSQL，禁止使用 SQLite
 
 ### 密钥生成
 
@@ -53,16 +54,24 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ### 环境变量安全
 
-- 永远不要将 `.env` 文件提交到版本控制系统
-- 使用 `.env.example` 作为模板
+- 永远不要将 `.env` 文件提交到版本控制系统（已在 `.gitignore` 中排除）
+- 使用 `backend/.env.example` 作为模板
 - 定期轮换 API 密钥和数据库密码
-- 使用密钥管理服务（如 AWS Secrets Manager、HashiCorp Vault）管理生产环境密钥
+- 生产环境建议使用密钥管理服务（如 AWS Secrets Manager、HashiCorp Vault）
+
+### CI/CD 安全
+
+项目已配置 GitHub Actions 安全扫描：
+- **CodeQL** — 自动检测 OWASP Top 10 漏洞（SQL 注入、XSS、路径遍历等）
+- **依赖审计** — 自动检测已知漏洞的依赖包
+- 所有 PR 合并前需通过 CI 检查
 
 ## 已知安全限制
 
-1. **Webhook 端点** - Webhook 触发端点使用 Token 认证，建议配合 IP 白名单使用
-2. **文件上传** - 支持最大 16MB 文件上传，建议配置反向代理限制
-3. **AI API 密钥** - AI 助手功能需要配置第三方 API 密钥，请确保密钥权限最小化
+1. **Webhook 端点** — Webhook 触发端点 (`/api/v1/triggers/<token>`) 使用 HMAC-SHA256 签名验证，建议配合 IP 白名单使用
+2. **子进程执行** — Web 测试和 APP 测试通过 `subprocess.run()` 执行用户提交的脚本，确保仅授权用户可提交脚本
+3. **AI API 密钥** — AI 助手功能需要配置第三方 LLM API 密钥，请确保密钥权限最小化，建议使用只读权限的 API Key
+4. **Celery 任务** — 异步任务执行环境与 Web 服务共享数据库，建议生产环境对 Celery Worker 进行资源限制
 
 ## 安全更新
 
