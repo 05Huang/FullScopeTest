@@ -164,11 +164,11 @@ graph LR
 
     subgraph Nginx / OpenResty
         Static["Static Assets<br/>(React SPA)"]
-        Proxy["Reverse Proxy<br/>/api → :5211"]
+        Proxy["Reverse Proxy<br/>/api → :5000(Dev)<br/>/api → :8000(Prod)"]
         WS["WebSocket<br/>(Live View)"]
     end
 
-    subgraph Flask Backend :5211
+    subgraph Flask Backend :5000(Dev) / :8000(Prod)
         API["API Blueprint Layer<br/>12 Modules"]
         Auth["JWT Auth<br/>+ RBAC"]
         ORM["SQLAlchemy ORM<br/>15 Models"]
@@ -627,7 +627,12 @@ python create_admin.py
 python app.py
 ```
 
-> Backend runs at: `http://127.0.0.1:5211/api/v1`
+> Backend runs at: `http://127.0.0.1:5211/api/v1` (manual dev mode)
+>
+> **Port Summary**:
+> - **Manual dev**: Backend on port `5211`, Vite proxy configured
+> - **Docker Compose dev**: Backend on port `5000`
+> - **Docker Compose prod**: Backend on port `8000`
 >
 > **Note**: `app.py` auto-sets `CELERY_ENABLE=true`, so Redis must be running first. To disable async tasks, set `CELERY_ENABLE=false` in `.env`.
 
@@ -666,6 +671,14 @@ docker-compose logs -f backend
 
 > Docker Compose backend runs at `http://localhost:5000` (different from manual setup's 5211).
 > Frontend still needs manual start: `cd web && npm install && npm run dev`, or build and serve via Nginx.
+>
+> **Port Summary**:
+>
+> | Deployment | Backend Port | Notes |
+> |-----------|-------------|-------|
+> | Manual dev | `5211` | `python app.py`, Vite proxy configured |
+> | Docker dev | `5000` | `docker-compose up -d` |
+> | Docker prod | `8000` | `docker-compose -f docker-compose.prod.yml up -d` |
 
 ---
 
@@ -679,7 +692,7 @@ npm install
 npm run build
 ```
 
-Build output is in `web/dist`, served by Nginx/OpenResty with reverse proxy to `http://127.0.0.1:5211`. See `nginx/` for config examples.
+Build output is in `web/dist`, served by Nginx/OpenResty with reverse proxy to `http://127.0.0.1:8000`. See `nginx/` for config examples.
 
 ### Production Deployment
 
@@ -698,7 +711,7 @@ cd web && npm install && npm run build
 # 2. Deploy backend (use Gunicorn instead of Flask dev server)
 cd ../backend
 pip install -r requirements.txt
-gunicorn -w 4 -b 0.0.0.0:5211 "app:create_app('production')"
+gunicorn -w 4 -b 0.0.0.0:8000 "app:create_app('production')"
 
 # 3. Start Celery Worker
 celery -A app.extensions:celery worker --loglevel=info
@@ -818,10 +831,11 @@ python init_db.py
 <details>
 <summary><strong>Blank page / API 404 after frontend startup?</strong></summary>
 
-1. Confirm backend is running at `http://127.0.0.1:5211`
+1. Confirm backend is running at `http://127.0.0.1:5211` (manual mode) or `http://localhost:5000` (Docker dev)
 2. Confirm frontend dev server is at `http://localhost:3000` (Vite auto-proxies `/api`)
 3. If using Docker Compose, backend port is **5000** not 5211 — update proxy target in `web/vite.config.ts`
-4. Try clearing browser cache with hard refresh (`Ctrl + Shift + R`)
+4. If using Docker Compose production, backend port is **8000** — configure Nginx reverse proxy
+5. Try clearing browser cache with hard refresh (`Ctrl + Shift + R`)
 </details>
 
 <details>

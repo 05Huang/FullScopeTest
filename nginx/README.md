@@ -50,7 +50,10 @@ cd D:\nginx
 | 端口 | 服务 | 说明 |
 |------|------|------|
 | **8080** | Nginx | 前端静态文件 + 后端 API 代理 |
-| 5211 | Flask | 后端 API 服务 |
+| 5211 | Flask (手动部署) | 后端 API 服务（本地开发） |
+| 8000 | Flask (Docker 生产) | 后端 API 服务（Docker Compose 生产环境） |
+
+> **注意**：`nginx.conf` 中 upstream 默认指向 `8000`（Docker 生产）。如使用手动部署（Flask 运行在 `5211`），请修改 `nginx.conf` 中的 `server 127.0.0.1:8000` 为 `server 127.0.0.1:5211`。
 
 ## 使用方式
 
@@ -89,9 +92,12 @@ netstat -ano | findstr :8080
 
 ### 2. 无法访问后端 API
 
-确认 Flask 已启动且端口正确：
+确认 Flask 已启动且端口正确（手动部署使用 5211，Docker 生产使用 8000）：
 ```powershell
+# 手动部署
 curl http://localhost:5211/api/health
+# Docker 生产
+curl http://localhost:8000/api/health
 ```
 
 ### 3. Nginx 启动失败

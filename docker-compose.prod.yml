@@ -23,7 +23,7 @@ services:
       dockerfile: docker/Dockerfile.backend
     restart: always
     ports:
-      - "127.0.0.1:5211:5000"
+      - "127.0.0.1:8000:8000"
       - "127.0.0.1:6080:6080"
     environment:
       - FLASK_ENV=production
@@ -68,7 +68,7 @@ services:
       fluxbox >/tmp/fluxbox.log 2>&1 &
       x11vnc -display :99 -rfbport 5900 -forever -shared -nopw >/tmp/x11vnc.log 2>&1 &
       websockify --web=/usr/share/novnc/ 0.0.0.0:6080 localhost:5900 >/tmp/websockify.log 2>&1 &
-      exec gunicorn --bind 0.0.0.0:5000 --workers 4 --threads 2 wsgi:app
+      exec gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 2 wsgi:app
       "
     extra_hosts:
       - "host.docker.internal:host-gateway"

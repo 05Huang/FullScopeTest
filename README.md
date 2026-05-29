@@ -166,11 +166,11 @@ graph LR
 
     subgraph Nginx / OpenResty
         Static["静态资源<br/>(React SPA)"]
-        Proxy["反向代理<br/>/api → :5211"]
+        Proxy["反向代理<br/>/api → :5000(Dev)<br/>/api → :8000(Prod)"]
         WS["WebSocket<br/>(Live View)"]
     end
 
-    subgraph Flask Backend :5211
+    subgraph Flask Backend :5000(Dev) / :8000(Prod)
         API["API 蓝图层<br/>12 个模块"]
         Auth["JWT 认证<br/>+ RBAC 权限"]
         ORM["SQLAlchemy ORM<br/>15 个数据模型"]
@@ -629,7 +629,12 @@ python create_admin.py
 python app.py
 ```
 
-> 后端默认运行地址：`http://127.0.0.1:5211/api/v1`
+> 后端默认运行地址：`http://127.0.0.1:5211/api/v1`（手动开发模式）
+>
+> **端口说明**：
+> - **手动开发**：后端运行在 `5211` 端口，Vite 代理配置已对接
+> - **Docker Compose 开发**：后端运行在 `5000` 端口
+> - **Docker Compose 生产**：后端运行在 `8000` 端口
 >
 > **注意**：`app.py` 会自动设置 `CELERY_ENABLE=true`，因此必须先确保 Redis 已启动，否则启动时会报连接错误。如果不需要异步任务功能，可在 `.env` 中设置 `CELERY_ENABLE=false`。
 
@@ -668,6 +673,14 @@ docker-compose logs -f backend
 
 > Docker Compose 启动的后端运行在 `http://localhost:5000`（与手动启动的 5211 端口不同）。
 > 前端仍需手动启动：`cd web && npm install && npm run dev`，或构建后由 Nginx 托管。
+>
+> **端口汇总**：
+>
+> | 部署方式 | 后端端口 | 说明 |
+> |---------|---------|------|
+> | 手动开发 | `5211` | `python app.py`，Vite 代理已对接 |
+> | Docker 开发 | `5000` | `docker-compose up -d` |
+> | Docker 生产 | `8000` | `docker-compose -f docker-compose.prod.yml up -d` |
 
 ---
 
@@ -681,7 +694,7 @@ npm install
 npm run build
 ```
 
-前端构建产物位于 `web/dist`，可由 Nginx/OpenResty 托管，并反向代理后端到 `http://127.0.0.1:5211`。配置示例可参考 `nginx/` 目录。
+前端构建产物位于 `web/dist`，可由 Nginx/OpenResty 托管，并反向代理后端到 `http://127.0.0.1:8000`。配置示例可参考 `nginx/` 目录。
 
 ### 生产环境部署
 
@@ -701,7 +714,7 @@ cd web && npm install && npm run build
 # 2. 部署后端（使用 Gunicorn 替代 Flask 开发服务器）
 cd ../backend
 pip install -r requirements.txt
-gunicorn -w 4 -b 0.0.0.0:5211 "app:create_app('production')"
+gunicorn -w 4 -b 0.0.0.0:8000 "app:create_app('production')"
 
 # 3. 启动 Celery Worker
 celery -A app.extensions:celery worker --loglevel=info
@@ -826,10 +839,11 @@ python init_db.py
 <details>
 <summary><strong>前端启动后页面空白 / API 请求 404？</strong></summary>
 
-1. 确认后端已启动并运行在 `http://127.0.0.1:5211`
+1. 确认后端已启动并运行在 `http://127.0.0.1:5211`（手动模式）或 `http://localhost:5000`（Docker 开发）
 2. 确认前端开发服务器运行在 `http://localhost:3000`（Vite 会自动代理 `/api` 到后端）
 3. 如果使用 Docker Compose，后端端口是 **5000** 而非 5211，需修改 `web/vite.config.ts` 中的代理目标
-4. 尝试清除浏览器缓存后硬刷新（`Ctrl + Shift + R`）
+4. 如果使用 Docker Compose 生产模式，后端端口是 **8000**，需配置 Nginx 反向代理
+5. 尝试清除浏览器缓存后硬刷新（`Ctrl + Shift + R`）
 </details>
 
 <details>

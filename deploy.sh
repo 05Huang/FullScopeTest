@@ -108,7 +108,7 @@ fi
 
 # Health checks (backend only; OpenResty proxies externally).
 for i in {1..10}; do
-  if curl -fsS "http://127.0.0.1:5211/api/v1/api-test/health" > /dev/null; then
+  if curl -fsS "http://127.0.0.1:8000/api/v1/api-test/health" > /dev/null; then
     echo "Health check OK"
     break
   fi
