@@ -37,7 +37,9 @@ import {
   BugOutlined,
   CheckCircleOutlined,
   GlobalOutlined,
+  EyeOutlined,
 } from '@ant-design/icons'
+import VisualDiffViewer from '@/components/VisualDiffViewer'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
@@ -74,6 +76,10 @@ interface WebTestScript {
       mismatch_ratio: number
       mismatch_pixels: number
       total_pixels: number
+      baseline_id?: number
+      baseline_image_path?: string
+      current_image_path?: string
+      diff_image_path?: string
     }>
   }
 }
@@ -190,6 +196,10 @@ const WebTestScripts = () => {
   const [exploreLiveStep, setExploreLiveStep] = useState(0)
   const [exploreLiveMaxSteps, setExploreLiveMaxSteps] = useState(0)
   const exploreAbortRef = useRef<AbortController | null>(null)
+
+  // Visual Diff State
+  const [isVisualDiffModalOpen, setIsVisualDiffModalOpen] = useState(false)
+  const [selectedVisualDiff, setSelectedVisualDiff] = useState<any>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -1830,6 +1840,25 @@ const WebTestScripts = () => {
                       {vr.status !== 'new' && (
                         <Text type="secondary">差异率: {(vr.mismatch_ratio * 100).toFixed(2)}% ({vr.mismatch_pixels} pixels)</Text>
                       )}
+                      {vr.status === 'failed' && (
+                        <Button
+                          size="small"
+                          icon={<EyeOutlined />}
+                          onClick={() => {
+                            setSelectedVisualDiff({
+                              testCaseId: currentScript.id,
+                              baselineId: vr.baseline_id,
+                              baselineImagePath: vr.baseline_image_path,
+                              currentImagePath: vr.current_image_path,
+                              diffPercentage: vr.mismatch_ratio * 100,
+                              status: vr.status,
+                            })
+                            setIsVisualDiffModalOpen(true)
+                          }}
+                        >
+                          查看对比
+                        </Button>
+                      )}
                     </div>
                     {vr.status === 'failed' && (
                       <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
@@ -1912,6 +1941,37 @@ const WebTestScripts = () => {
           </div>
         ) : (
           <Text type="secondary">该脚本尚未执行</Text>
+        )}
+      </Modal>
+
+      {/* Visual Diff Viewer Modal */}
+      <Modal
+        title="视觉对比查看器"
+        open={isVisualDiffModalOpen}
+        onCancel={() => {
+          setIsVisualDiffModalOpen(false)
+          setSelectedVisualDiff(null)
+        }}
+        footer={null}
+        width={1200}
+      >
+        {selectedVisualDiff && (
+          <VisualDiffViewer
+            baselineId={selectedVisualDiff.baselineId}
+            baselineImagePath={selectedVisualDiff.baselineImagePath}
+            currentImagePath={selectedVisualDiff.currentImagePath}
+            diffPercentage={selectedVisualDiff.diffPercentage}
+            status={selectedVisualDiff.status}
+            onClose={() => {
+              setIsVisualDiffModalOpen(false)
+              setSelectedVisualDiff(null)
+            }}
+            onApprove={() => {
+              setIsVisualDiffModalOpen(false)
+              setSelectedVisualDiff(null)
+              loadScripts()
+            }}
+          />
         )}
       </Modal>
     </div>

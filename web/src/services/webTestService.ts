@@ -253,6 +253,32 @@ export const exploreWebAppAIStream = async (
   }
 }
 
+// ==================== Visual Regression ====================
+
+export const getBaselines = (testCaseId: number, params?: {
+  test_type?: string
+  step_index?: number
+}): Promise<ApiResponse> => {
+  return api.get(`/visual/baselines/${testCaseId}`, { params }) as Promise<ApiResponse>
+}
+
+export const approveBaseline = (baselineId: number): Promise<ApiResponse> => {
+  return api.post(`/visual/baselines/${baselineId}/approve`) as Promise<ApiResponse>
+}
+
+export const getVisualDiffs = (testRunId: number, params?: {
+  test_case_id?: number
+  status?: string
+  page?: number
+  per_page?: number
+}): Promise<ApiResponse> => {
+  return api.get(`/visual/diffs/${testRunId}`, { params }) as Promise<ApiResponse>
+}
+
+export const deleteBaseline = (baselineId: number): Promise<ApiResponse> => {
+  return api.delete(`/visual/baselines/${baselineId}`) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const webTestService = {
   getScripts,
@@ -273,4 +299,8 @@ export const webTestService = {
   analyzeErrorAI,
   exploreWebAppAI,
   exploreWebAppAIStream,
+  getBaselines,
+  approveBaseline,
+  getVisualDiffs,
+  deleteBaseline,
 }
