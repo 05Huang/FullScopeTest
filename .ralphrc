@@ -15,7 +15,9 @@ CB_OUTPUT_DECLINE_THRESHOLD=70    # 输出量下降 70% 后熔断
 CB_PERMISSION_DENIAL_THRESHOLD=2  # 2 次权限拒绝后熔断
 
 # 允许 Claude Code 使用的工具
-ALLOWED_TOOLS="Edit,Bash(git *),Bash(pytest *),Bash(npm *),Bash(npx *),Bash(pip *),Bash(python *),Bash(python3 *),Bash(alembic *),Bash(docker compose *),Bash(ruff *),Bash(mkdir *),Bash(cp *),Bash(mv *),Bash(cat *),Bash(echo *),Bash(ls *),Bash(find *),Bash(grep *)"
+# Write/Read: 文件读写必需
+# Bash: 允许所有 shell 命令（复合命令如 cd && git 无法匹配 Bash(git *) 模式）
+ALLOWED_TOOLS="Write,Read,Edit,Bash,Bash(git *),Bash(pytest *),Bash(npm *),Bash(npx *),Bash(pip *),Bash(python *),Bash(python3 *),Bash(alembic *),Bash(docker compose *),Bash(ruff *),Bash(mkdir *),Bash(cp *),Bash(mv *),Bash(cat *),Bash(echo *),Bash(ls *),Bash(find *),Bash(grep *)"
 
 # 输出格式（json 更精确）
 OUTPUT_FORMAT=json

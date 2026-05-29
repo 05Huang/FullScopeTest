@@ -23,12 +23,15 @@
 - **每次循环只完成 fix_plan.md 中的一个未完成任务**，不要贪多
 - **每次循环结束必须**：
   1. 运行测试确保没有破坏现有功能（`pytest backend/tests/ -x -q` 或 `npm test --passWithNoTests`）
-  2. `git add -A && git commit -m "feat/fix: [描述]"`
+  2. `git add -A && git commit -m "类型(模块): 中文描述"`，提交信息**必须使用中文**，
+     类型从以下选择：功能 / 修复 / 重构 / 测试 / 文档 / 配置
+     示例：`git commit -m "功能(后端): 添加结构化日志 trace_id 注入"`
   3. 更新 `.ralph/fix_plan.md`，将完成的任务标记为 `[x]`
   4. 输出 RALPH_STATUS block
 - **永远不要修改** `.ralph/` 目录下的任何文件（除了 fix_plan.md 的 checkbox 更新）
 - **永远不要删除** 已有的测试用例，只能增加
 - 如果遇到无法解决的环境问题（缺少 API key、外部服务不可达），跳过该项并在 RALPH_STATUS 中说明，继续下一个任务
+- **所有 git commit 信息必须使用中文**，禁止使用英文 feat/fix/chore 等前缀
 
 ---
 
