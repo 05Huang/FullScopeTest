@@ -20,6 +20,7 @@ import json
 import threading
 import queue
 from datetime import datetime
+from typing import Optional, Dict, Any, List
 
 logger = get_logger(__name__)
 
@@ -251,6 +252,103 @@ def _finalize_web_test_run(script, test_run, success, duration, result_payload):
     return test_run_id, report_id
 
 
+def _process_visual_diffs(
+    test_run_id: int,
+    test_case_id: int,
+    vision_results: Dict[str, Any],
+    screenshot_base_path: str,
+    visual_threshold: float = 5.0,
+) -> List[Dict[str, Any]]:
+    """
+    处理视觉回归测试结果：将截图与基准对比，写入 VisualDiff 表。
+
+    即使视觉差异超过阈值也 **不中断** 测试执行，仅标记该步骤为视觉失败。
+
+    Args:
+        test_run_id: 测试执行记录 ID
+        test_case_id: 测试用例 ID（即 script_id）
+        vision_results: vision_results.json 的内容
+        screenshot_base_path: 截图存储根目录
+        visual_threshold: 差异阈值 (%)
+
+    Returns:
+        list[dict]: 每个步骤的视觉对比摘要
+    """
+    if not vision_results:
+        return []
+
+    from app.services.visual_diff_service import VisualDiffService
+
+    diff_service = VisualDiffService(diff_storage_path=screenshot_base_path)
+    steps = vision_results.get('steps') or []
+    summaries = []
+
+    for idx, step in enumerate(steps):
+        screenshot_path = step.get('screenshot_path') or step.get('path')
+        step_name = step.get('name') or step.get('description') or f'step_{idx}'
+
+        if not screenshot_path:
+            continue
+
+        # 读取当前截图
+        full_screenshot_path = os.path.join(screenshot_base_path, screenshot_path)
+        if not os.path.exists(full_screenshot_path):
+            logger.warning("截图文件不存在，跳过视觉对比", path=full_screenshot_path)
+            continue
+
+        try:
+            with open(full_screenshot_path, 'rb') as f:
+                current_image_data = f.read()
+        except Exception as e:
+            logger.error("读取截图文件失败", path=full_screenshot_path, error=str(e))
+            continue
+
+        # 调用视觉差异服务进行对比并记录
+        try:
+            visual_diff = diff_service.compare_and_record(
+                test_run_id=test_run_id,
+                test_case_id=test_case_id,
+                test_type='web',
+                step_index=idx,
+                current_image_data=current_image_data,
+                threshold=visual_threshold,
+            )
+
+            summary = {
+                'step_index': idx,
+                'step_name': step_name,
+                'screenshot_path': screenshot_path,
+                'status': 'skipped',
+            }
+
+            if visual_diff:
+                summary.update({
+                    'diff_percentage': visual_diff.diff_percentage,
+                    'status': visual_diff.status,
+                    'visual_diff_id': visual_diff.id,
+                })
+                if visual_diff.status == 'visual_fail':
+                    logger.warning(
+                        "步骤视觉差异超标",
+                        step_index=idx,
+                        diff_percentage=visual_diff.diff_percentage,
+                        threshold=visual_threshold,
+                    )
+
+            summaries.append(summary)
+        except Exception as e:
+            logger.error("视觉对比处理失败", step_index=idx, error=str(e))
+            summaries.append({
+                'step_index': idx,
+                'step_name': step_name,
+                'screenshot_path': screenshot_path,
+                'status': 'error',
+                'error': str(e),
+            })
+
+    return summaries
+
+
 @celery.task(
     bind=True,
     name='tasks.run_web_test',
@@ -336,6 +434,19 @@ def run_web_test_task(self, script_id, user_id):
                     except Exception:
                         pass
 
+                # 视觉回归测试：处理截图对比
+                visual_diff_summaries = []
+                if vision_data and test_run:
+                    try:
+                        visual_diff_summaries = _process_visual_diffs(
+                            test_run_id=test_run.id,
+                            test_case_id=script.id,
+                            vision_results=vision_data,
+                            screenshot_base_path=work_dir,
+                        )
+                    except Exception as ve:
+                        logger.error("视觉回归处理失败", error=str(ve))
+
                 run_payload = {
                     'success': success,
                     'duration': duration,
@@ -343,6 +454,7 @@ def run_web_test_task(self, script_id, user_id):
                     'stderr': result.stderr,
                     'return_code': result.returncode,
                     'vision_results': vision_data,
+                    'visual_diff_summaries': visual_diff_summaries,
                     'timestamp': datetime.utcnow().isoformat(),
                 }
                 test_run_id, report_id = _finalize_web_test_run(
