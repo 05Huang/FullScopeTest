@@ -25,7 +25,7 @@
 
 ### 2A：视觉回归测试（Visual Regression Testing）
 
-- [ ] **P2A-01** 设计并创建视觉回归测试数据模型：`VisualBaseline`（基准截图记录）、`VisualDiff`（差异记录）SQLAlchemy 模型；创建 Alembic 迁移；字段包括 `test_case_id`、`step_index`、`baseline_image_path`、`diff_image_path`、`diff_percentage`、`status`
+- [x] **P2A-01** 设计并创建视觉回归测试数据模型：`VisualBaseline`（基准截图记录）、`VisualDiff`（差异记录）SQLAlchemy 模型；创建 Alembic 迁移；字段包括 `test_case_id`、`step_index`、`baseline_image_path`、`diff_image_path`、`diff_percentage`、`status`
 - [ ] **P2A-02** 实现截图存储服务（`backend/app/services/screenshot_service.py`）：截图以 `{project_id}/{test_run_id}/{step}.png` 路径存储到本地 volume（支持后续接入 S3）；实现基准截图的「首次运行自动设为基准」逻辑
 - [ ] **P2A-03** 实现图像差异比较服务（`backend/app/services/visual_diff_service.py`）：使用 `Pillow` + `imagehash` 计算感知哈希差异；使用像素级对比生成红色高亮差异图；输出 `diff_percentage`（差异百分比）和 `diff_image`（标注了差异区域的对比图）
 - [ ] **P2A-04** 修改现有 Playwright 执行器（Celery task）：每个步骤执行后自动截图；将截图传入视觉差异服务；若差异超过阈值（默认 5%）将该步骤标记为视觉失败，但不中断测试执行；将视觉结果写入 `VisualDiff` 表
@@ -104,7 +104,7 @@
 
 ## 状态汇总
 
-完成进度：7 / 48 个任务
+完成进度：8 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
