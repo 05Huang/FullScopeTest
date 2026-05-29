@@ -135,6 +135,10 @@ def register_blueprints(app):
     from .api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api/v1')
 
+    # 健康检查端点（无需认证）
+    from .core.health import health_bp
+    app.register_blueprint(health_bp)
+
     # 豁免 API 蓝图的 CSRF 保护（使用 JWT 认证）
     if app.config.get('WTF_CSRF_ENABLED', False):
         csrf.exempt(api_bp)
