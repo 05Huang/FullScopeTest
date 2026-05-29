@@ -13,7 +13,7 @@
 - [x] **P1-01** 安装并配置 structlog，将所有现有 `print()` 和 `app.logger` 替换为结构化 JSON 日志，每条日志包含 `timestamp`、`level`、`module`、`trace_id` 字段；在 Flask app factory 中生成 `trace_id` 并注入 request context
 - [x] **P1-02** 为 Celery 任务添加死信队列（Dead Letter Queue）：配置 `task_routes`、`task_acks_late=True`、`task_reject_on_worker_lost=True`；创建 `dead_letter` 队列；为所有现有 task 添加 `max_retries=3`、`retry_backoff=True`、失败时发送告警日志
 - [x] **P1-03** 安装 `prometheus-flask-exporter`，暴露 `/metrics` 端点；添加自定义 metrics：`api_requests_total`（按路由、方法、状态码）、`task_execution_duration_seconds`（按任务类型）、`active_websocket_connections`；在 docker-compose 中添加 Prometheus + Grafana 服务
-- [ ] **P1-04** 创建 Grafana Dashboard JSON（`infra/monitoring/dashboards/fullscopetest.json`），包含：API 请求率、错误率、P95/P99 响应时间、Celery 任务队列深度、活跃 WebSocket 连接数 5 个面板
+- [x] **P1-04** 创建 Grafana Dashboard JSON（`infra/monitoring/dashboards/fullscopetest.json`），包含：API 请求率、错误率、P95/P99 响应时间、Celery 任务队列深度、活跃 WebSocket 连接数 5 个面板
 - [ ] **P1-05** 统一 Docker Compose 端口：开发环境后端统一用 `5000`，生产环境用 `8000`；修复 `docker-compose.yml` 和 `docker-compose.prod.yml` 中的端口不一致问题；更新 `.env.example` 和 README 中的相关说明
 - [ ] **P1-06** 为 Celery Beat 调度器添加文件锁检查测试（`backend/tests/test_scheduler.py`）：验证多进程启动时只有一个实例获得锁；补充现有调度任务的单元测试，总覆盖率提升到与现有 112 个用例并列
 - [ ] **P1-07** 创建 `backend/app/core/health.py`：实现 `/health`（基础存活）和 `/health/ready`（数据库 + Redis + Celery 连通性检查）端点；在 docker-compose 中配置 `healthcheck`；添加对应测试用例
@@ -104,10 +104,10 @@
 
 ## 状态汇总
 
-完成进度：3 / 48 个任务
+完成进度：4 / 48 个任务
 
 **阶段进度：**
-- Phase 1（基础设施）：3/7
+- Phase 1（基础设施）：4/7
 - Phase 2A（视觉回归）：0/7
 - Phase 2B（性能增强）：0/5
 - Phase 2C（AI 工程化）：0/6
