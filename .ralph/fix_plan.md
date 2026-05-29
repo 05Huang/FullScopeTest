@@ -30,7 +30,7 @@
 - [x] **P2A-03** 实现图像差异比较服务（`backend/app/services/visual_diff_service.py`）：使用 `Pillow` + `imagehash` 计算感知哈希差异；使用像素级对比生成红色高亮差异图；输出 `diff_percentage`（差异百分比）和 `diff_image`（标注了差异区域的对比图）
 - [x] **P2A-04** 修改现有 Playwright 执行器（Celery task）：每个步骤执行后自动截图；将截图传入视觉差异服务；若差异超过阈值（默认 5%）将该步骤标记为视觉失败，但不中断测试执行；将视觉结果写入 `VisualDiff` 表
 - [x] **P2A-05** 创建视觉回归 API 路由（`backend/app/api/visual.py`）：`GET /api/visual/baselines/{test_case_id}`、`POST /api/visual/baselines/{test_case_id}/approve`（批准新截图为基准）、`GET /api/visual/diffs/{test_run_id}`、`DELETE /api/visual/baselines/{baseline_id}`
-- [ ] **P2A-06** 实现前端视觉对比组件（`frontend/src/components/VisualDiffViewer.tsx`）：左右分屏展示基准图和当前图；高亮展示差异区域（使用 canvas 叠加红色 mask）；差异百分比显示；「批准为新基准」按钮；集成到测试报告详情页
+- [x] **P2A-06** 实现前端视觉对比组件（`frontend/src/components/VisualDiffViewer.tsx`）：左右分屏展示基准图和当前图；高亮展示差异区域（使用 canvas 叠加红色 mask）；差异百分比显示；「批准为新基准」按钮；集成到测试报告详情页
 - [ ] **P2A-07** 实现视觉回归历史趋势（`frontend/src/pages/VisualRegressionHistory.tsx`）：展示某个测试用例的视觉变化时间线；每个版本的截图缩略图；差异百分比折线图
 
 ### 2B：性能测试深度增强
@@ -104,11 +104,11 @@
 
 ## 状态汇总
 
-完成进度：12 / 48 个任务
+完成进度：13 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
-- Phase 2A（视觉回归）：5/7
+- Phase 2A（视觉回归）：6/7
 - Phase 2B（性能增强）：0/5
 - Phase 2C（AI 工程化）：0/6
 - Phase 3（CI/CD 集成）：0/7
