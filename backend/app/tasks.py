@@ -250,7 +250,15 @@ def _finalize_web_test_run(script, test_run, success, duration, result_payload):
     return test_run_id, report_id
 
 
-@celery.task(bind=True, name='tasks.run_web_test')
+@celery.task(
+    bind=True,
+    name='tasks.run_web_test',
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    autoretry_for=(IOError, OSError, TimeoutError),
+)
 def run_web_test_task(self, script_id, user_id):
     """Run a web script asynchronously and persist unified reporting records."""
     with _get_flask_app().app_context():
@@ -430,7 +438,15 @@ def run_web_test_task(self, script_id, user_id):
             }
 
 
-@celery.task(bind=True, name='tasks.run_perf_test')
+@celery.task(
+    bind=True,
+    name='tasks.run_perf_test',
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    autoretry_for=(IOError, OSError, TimeoutError),
+)
 def run_perf_test_task(
     self,
     scenario_id,
@@ -690,7 +706,14 @@ def _parse_locust_results(csv_prefix):
     return results
 
 
-@celery.task(name='tasks.cleanup_old_results')
+@celery.task(
+    name='tasks.cleanup_old_results',
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    autoretry_for=(IOError, OSError),
+)
 def cleanup_old_results_task():
     """
     清理旧的测试结果（定时任务）
@@ -734,7 +757,15 @@ def cleanup_old_results_task():
             }
 
 
-@celery.task(bind=True, name='tasks.run_app_test')
+@celery.task(
+    bind=True,
+    name='tasks.run_app_test',
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    autoretry_for=(IOError, OSError, TimeoutError),
+)
 def run_app_test_task(self, script_id, user_id):
     """异步执行 APP 测试脚本（Appium）"""
     with _get_flask_app().app_context():

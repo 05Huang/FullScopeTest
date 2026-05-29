@@ -77,6 +77,15 @@ class BaseConfig:
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_ENABLE = os.environ.get('CELERY_ENABLE', 'false').strip().lower() == 'true'  # strip() 去除空格
 
+    # Celery 可靠性：死信队列 + 任务重试
+    CELERY_TASK_ACKS_LATE = True
+    CELERY_TASK_REJECT_ON_WORKER_LOST = True
+    CELERY_TASK_ROUTES = {
+        'tasks.*': {'queue': 'default'},
+    }
+    CELERY_TASK_DEFAULT_RETRY_DELAY = 60  # 重试间隔 60 秒
+    CELERY_TASK_MAX_RETRIES = 3
+
     # AI Assistant (API test workspace)
     AI_ASSISTANT_ENABLED = os.environ.get('AI_ASSISTANT_ENABLED', 'true').strip().lower() == 'true'
     AI_ASSISTANT_BASE_URL = os.environ.get('AI_ASSISTANT_BASE_URL', 'https://api.openai.com/v1')

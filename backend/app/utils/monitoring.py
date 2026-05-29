@@ -162,7 +162,7 @@ def init_monitoring(app):
         except ImportError:
             logger.warning("sentry-sdk not installed, skipping Sentry initialization")
         except Exception as e:
-            logger.error(f"Failed to initialize Sentry: {str(e)}")
+            logger.error("Failed to initialize Sentry", error=str(e))
 
     # 注册请求钩子
     @app.before_request
