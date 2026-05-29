@@ -4,12 +4,12 @@ Generates boundary cases, invalid inputs, and security payloads based on a base 
 """
 
 import json
-import logging
 import os
 import requests
 from typing import Dict, Any, List
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def synthesize_test_cases(
     base_request: Dict[str, Any],

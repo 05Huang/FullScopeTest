@@ -17,6 +17,7 @@ from ..tasks import run_web_test_task
 from ..utils.ai_script_generator import generate_test_script
 from ..utils.ai_script_healer import analyze_test_error
 from ..utils.ai_web_explorer import run_exploration_task
+from ..core.logging import get_logger
 import requests
 import subprocess
 import sys
@@ -27,6 +28,8 @@ from queue import Queue, Empty
 from datetime import datetime
 from urllib.parse import quote_plus
 import uuid
+
+logger = get_logger(__name__)
 
 
 # 存储录制进程（录制功能仍使用进程方式）
@@ -177,7 +180,7 @@ def _allocate_live_view_session(data: dict, start_url: str, objective: str, max_
             'release_url': body.get('release_url'),
         }
     except Exception as exc:
-        current_app.logger.warning('allocate live view session failed: %s', str(exc))
+        logger.warning("allocate live view session failed", error=str(exc))
         fallback_url = _resolve_live_view_url(data, start_url)
         return {'url': fallback_url, 'source': 'template'} if fallback_url else {}
 
@@ -204,7 +207,7 @@ def _release_live_view_session(session: dict):
         if response.status_code >= 400:
             requests.post(release_url, timeout=timeout_seconds)
     except Exception as exc:
-        current_app.logger.warning('release live view session failed: %s', str(exc))
+        logger.warning("release live view session failed", error=str(exc))
 
 
 def _get_collection_or_404(collection_id: int, user_id: int):

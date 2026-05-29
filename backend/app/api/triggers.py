@@ -5,7 +5,6 @@
 """
 
 import uuid
-import logging
 from flask import request, current_app, Blueprint
 from flask_jwt_extended import jwt_required
 from . import api_bp
@@ -17,8 +16,9 @@ from ..utils.response import success_response, error_response
 from ..utils import get_current_user_id
 from ..utils.security import verify_hmac_signature, sanitize_log_message
 import requests
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # ==================== Webhook 触发器 ====================
 
@@ -78,7 +78,7 @@ def trigger_webhook(token):
     """通过 Webhook Token 触发执行"""
     webhook = WebhookToken.query.filter_by(token=token).first()
     if not webhook:
-        logger.warning(f"Webhook 触发失败: 无效的 Token")
+        logger.warning("Webhook 触发失败: 无效的 Token")
         return error_response(404, '无效的 Token')
 
     # 验证 HMAC 签名 (如果配置了密钥)
@@ -86,12 +86,12 @@ def trigger_webhook(token):
     if webhook_secret and request.method == 'POST':
         signature = request.headers.get('X-Hub-Signature-256') or request.headers.get('X-Signature-256')
         if not signature:
-            logger.warning(f"Webhook 触发失败: 缺少签名头")
+            logger.warning("Webhook 触发失败: 缺少签名头")
             return error_response(401, '缺少签名头')
 
         payload = request.get_data()
         if not verify_hmac_signature(payload, signature, webhook_secret):
-            logger.warning(sanitize_log_message(f"Webhook 触发失败: 签名验证失败"))
+            logger.warning("Webhook 触发失败: 签名验证失败")
             return error_response(401, '签名验证失败')
 
     # 根据 target_type 调用相应的执行逻辑
@@ -108,10 +108,10 @@ def trigger_webhook(token):
         else:
             return error_response(400, '不支持的 target_type')
 
-        logger.info(f"Webhook 触发成功: {webhook.name} -> 任务 {task.id if task else None}")
+        logger.info("Webhook 触发成功", webhook_name=webhook.name, task_id=task.id if task else None)
         return success_response(data={'task_id': task.id if task else None}, message='任务已触发')
     except Exception as e:
-        logger.error(sanitize_log_message(f"Webhook 触发异常: {str(e)}"))
+        logger.error("Webhook 触发异常", error=str(e))
         return error_response(500, f'触发失败: {str(e)}')
 
 

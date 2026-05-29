@@ -3,11 +3,11 @@ AI script generator for Web UI and Performance tests.
 """
 
 import json
-import logging
 import requests
 from typing import Dict, Any
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def generate_test_script(
     prompt: str,

@@ -3,15 +3,15 @@ Global AI Copilot using Function Calling to interact with the platform.
 """
 
 import json
-import logging
 import os
 import requests
 from typing import Dict, Any, List
 from ..extensions import db
 from ..models.perf_test_scenario import PerfTestScenario
 from ..models.web_test_script import WebTestScript
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # 定义可供大模型调用的工具库
 TOOLS = [
@@ -70,7 +70,7 @@ def execute_tool_call(tool_call: Dict[str, Any], user_id: int) -> str:
     except json.JSONDecodeError:
         arguments = {}
 
-    logger.info(f"Copilot executing tool: {function_name} with args {arguments}")
+    logger.info("Copilot executing tool", function_name=function_name, arguments=arguments)
 
     if function_name == "create_performance_test":
         try:

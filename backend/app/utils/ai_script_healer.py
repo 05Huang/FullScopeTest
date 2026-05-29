@@ -3,12 +3,12 @@ AI error analyzer and healer for test scripts.
 """
 
 import json
-import logging
 import os
 import requests
 from typing import Dict, Any, Optional, Tuple
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def analyze_test_error(
     script_content: str,

@@ -27,16 +27,16 @@ from ..utils.script_context import (
     apply_env_changes,
     calculate_case_passed
 )
+from ..core.logging import get_logger
 import requests
 import json
-import logging
 import os
 import re
 import time
 from datetime import datetime
 
 # 配置日志
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 AI_CONFIG_ENV_MAP = {
@@ -143,7 +143,7 @@ def save_ai_config():
             os.environ[key] = value
             current_app.config[key] = value
     except Exception as exc:
-        logger.error('save ai config failed: %s', str(exc), exc_info=True)
+        logger.error("save ai config failed", error=str(exc), exc_info=True)
         return error_response(500, f'保存 AI 配置失败: {str(exc)}')
 
     response_data = {
@@ -248,7 +248,7 @@ def generate_ai_plan():
     except ValueError as exc:
         return error_response(400, str(exc))
     except Exception as exc:
-        logger.error('AI plan generation failed: %s', str(exc), exc_info=True)
+        logger.error("AI plan generation failed", error=str(exc), exc_info=True)
         return error_response(500, f'AI plan generation failed: {str(exc)}')
 
 
@@ -685,7 +685,7 @@ def execute_request():
             env_vars = apply_env_changes(env_vars, pre_result)
 
         except Exception as e:
-            logger.error(f"前置脚本执行异常: {str(e)}")
+            logger.error("前置脚本执行异常", error=str(e))
             return success_response(data={
                 'success': False,
                 'error': f'前置脚本执行异常: {str(e)}',
@@ -813,7 +813,7 @@ def execute_request():
                 script_execution['post_script'] = post_result
 
             except Exception as e:
-                logger.error(f"后置断言执行异常: {str(e)}")
+                logger.error("后置断言执行异常", error=str(e))
                 script_execution['post_script'] = {
                     'executed': True,
                     'passed': False,
@@ -938,7 +938,7 @@ def run_case(case_id):
             env_vars = apply_env_changes(env_vars, pre_result)
 
         except Exception as e:
-            logger.error(f"前置脚本执行异常: {str(e)}")
+            logger.error("前置脚本执行异常", error=str(e))
             case.last_run_at = datetime.utcnow()
             case.last_status = 'failed'
             db.session.commit()
@@ -1035,7 +1035,7 @@ def run_case(case_id):
                 script_execution['post_script'] = post_result
 
             except Exception as e:
-                logger.error(f"后置断言执行异常: {str(e)}")
+                logger.error("后置断言执行异常", error=str(e))
                 script_execution['post_script'] = {
                     'executed': True,
                     'passed': False,
@@ -1228,7 +1228,7 @@ def run_collection(collection_id):
                     effective_env_name = case_env.name
                     effective_env_variables = dict(case_env.variables or {})
 
-            logger.info(f"执行用例 {case.id}: {case.name} - {case.method} {url} [环境: {effective_env_name or '无'}]")
+            logger.info("执行用例", case_id=case.id, case_name=case.name, method=case.method, url=url, environment=effective_env_name or '无')
 
             # ========== 前置脚本执行 ==========
             if case.pre_script and case.pre_script.strip():
@@ -1256,7 +1256,7 @@ def run_collection(collection_id):
                         case.last_status = 'failed'
                         db.session.commit()
 
-                        logger.warning(f"用例 {case.name} 前置脚本执行失败，跳过")
+                        logger.warning("用例前置脚本执行失败，跳过", case_name=case.name)
 
                         results.append({
                             'case_id': case.id,
@@ -1290,7 +1290,7 @@ def run_collection(collection_id):
                     effective_env_variables = apply_env_changes(effective_env_variables, pre_result)
 
                 except Exception as e:
-                    logger.error(f"前置脚本执行异常: {str(e)}")
+                    logger.error("前置脚本执行异常", error=str(e))
                     elapsed_time = (time.time() - case_start_time) * 1000
                     total_failed += 1
                     case.last_run_at = datetime.utcnow()
@@ -1328,16 +1328,16 @@ def run_collection(collection_id):
                         body = replace_variables_in_dict(body, effective_env_variables)
                     elif isinstance(body, str):
                         body = replace_variables(body, effective_env_variables)
-                    logger.debug(f"环境变量替换后 URL: {url}")
+                    logger.debug("环境变量替换后 URL", url=url)
                 except Exception as e:
-                    logger.error(f"环境变量替换失败: {str(e)}")
+                    logger.error("环境变量替换失败", error=str(e))
 
             # 合并环境的公共请求头
             if effective_env_id:
                 try:
                     headers = merge_headers_with_env(headers, effective_env_id, db)
                 except Exception as e:
-                    logger.error(f"合并请求头失败: {str(e)}")
+                    logger.error("合并请求头失败", error=str(e))
 
             request_kwargs = {
                 'method': case.method,
@@ -1381,7 +1381,7 @@ def run_collection(collection_id):
                     script_execution['post_script'] = post_result
 
                 except Exception as e:
-                    logger.error(f"后置断言执行异常: {str(e)}")
+                    logger.error("后置断言执行异常", error=str(e))
                     script_execution['post_script'] = {
                         'executed': True,
                         'passed': False,
@@ -1443,10 +1443,10 @@ def run_collection(collection_id):
 
             if passed:
                 total_passed += 1
-                logger.info(f"用例 {case.name} 执行成功 - {response.status_code}")
+                logger.info("用例执行成功", case_name=case.name, status_code=response.status_code)
             else:
                 total_failed += 1
-                logger.warning(f"用例 {case.name} 执行失败")
+                logger.warning("用例执行失败", case_name=case.name)
 
             results.append({
                 'case_id': case.id,
@@ -1472,7 +1472,7 @@ def run_collection(collection_id):
         except Exception as e:
             elapsed_time = (time.time() - case_start_time) * 1000
             total_failed += 1
-            logger.error(f"执行用例 {case.id} ({case.name}) 失败: {str(e)}", exc_info=True)
+            logger.error("执行用例失败", case_id=case.id, case_name=case.name, error=str(e), exc_info=True)
 
             case.last_run_at = datetime.utcnow()
             case.last_status = 'failed'

@@ -5,15 +5,15 @@ Uses Playwright to navigate a web application and LLM to decide actions.
 
 import base64
 import json
-import logging
 import os
 import subprocess
 import sys
 import time
 from typing import Dict, Any, List, Optional, Callable
 from urllib.parse import urljoin, urlparse
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _install_playwright_chromium() -> None:

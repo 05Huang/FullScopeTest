@@ -1,0 +1,30 @@
+# .ralphrc — Ralph Configuration for FullScopeTest
+# 复制此文件到项目根目录并命名为 .ralphrc
+
+# 每次 Claude Code 调用的超时时间（分钟）
+# 设置较长，因为测试执行和代码生成任务比较耗时
+CLAUDE_TIMEOUT=60
+
+# 每小时最大 API 调用次数
+MAX_CALLS_PER_HOUR=80
+
+# 熔断器配置
+CB_NO_PROGRESS_THRESHOLD=4        # 4 次无进展后熔断
+CB_SAME_ERROR_THRESHOLD=5         # 5 次相同错误后熔断
+CB_OUTPUT_DECLINE_THRESHOLD=70    # 输出量下降 70% 后熔断
+CB_PERMISSION_DENIAL_THRESHOLD=2  # 2 次权限拒绝后熔断
+
+# 允许 Claude Code 使用的工具
+ALLOWED_TOOLS="Edit,Bash(git *),Bash(pytest *),Bash(npm *),Bash(npx *),Bash(pip *),Bash(python *),Bash(python3 *),Bash(alembic *),Bash(docker compose *),Bash(ruff *),Bash(mkdir *),Bash(cp *),Bash(mv *),Bash(cat *),Bash(echo *),Bash(ls *),Bash(find *),Bash(grep *)"
+
+# 输出格式（json 更精确）
+OUTPUT_FORMAT=json
+
+# 会话超时（小时）
+SESSION_TIMEOUT_HOURS=24
+
+# 项目名称（用于日志）
+PROJECT_NAME=FullScopeTest
+
+# 是否启用详细日志
+VERBOSE=false

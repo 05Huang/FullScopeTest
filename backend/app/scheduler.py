@@ -16,11 +16,12 @@ except ImportError:
 from flask_apscheduler import APScheduler
 from apscheduler.triggers.cron import CronTrigger
 import requests
-import logging
 import atexit
 
+from .core.logging import get_logger
+
 scheduler = APScheduler()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # 全局文件锁句柄
 _scheduler_lock = None
@@ -108,16 +109,16 @@ def add_or_update_job(task):
                 trigger=trigger,
                 replace_existing=True
             )
-        logger.info(f"成功加载定时任务: {job_id} - {task.name}")
+        logger.info("成功加载定时任务", job_id=job_id, name=task.name)
     except Exception as e:
-        logger.error(f"加载定时任务失败 {job_id}: {str(e)}")
+        logger.error("加载定时任务失败", job_id=job_id, error=str(e))
 
 def remove_job(task_id):
     """从调度器移除任务"""
     job_id = get_job_id(task_id)
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
-        logger.info(f"已移除定时任务: {job_id}")
+        logger.info("已移除定时任务", job_id=job_id)
 
 def execute_scheduled_task(task_id):
     """执行定时任务"""
@@ -131,8 +132,8 @@ def execute_scheduled_task(task_id):
         if not task or not task.is_active:
             return
             
-        logger.info(f"开始执行定时任务: {task.name} (ID: {task.id})")
-        
+        logger.info("开始执行定时任务", task_name=task.name, task_id=task.id)
+
         try:
             celery_task = None
             if task.target_type == 'api_collection':
@@ -142,13 +143,13 @@ def execute_scheduled_task(task_id):
             elif task.target_type == 'perf_scenario':
                 celery_task = run_perf_scenario_task.delay(task.target_id)
             else:
-                logger.error(f"未知的任务目标类型: {task.target_type}")
+                logger.error("未知的任务目标类型", target_type=task.target_type)
                 return
-                
+
             # 发送通知
             send_notification(task, "started", celery_task.id if celery_task else None)
         except Exception as e:
-            logger.error(f"定时任务执行失败: {str(e)}")
+            logger.error("定时任务执行失败", error=str(e))
             send_notification(task, "failed", error=str(e))
 
 def send_notification(task, status, task_id=None, error=None):
@@ -179,6 +180,6 @@ def send_notification(task, status, task_id=None, error=None):
         
         headers = {'Content-Type': 'application/json'}
         response = requests.post(task.notify_webhook, json=payload, headers=headers, timeout=5)
-        logger.info(f"通知发送结果: {response.status_code}")
+        logger.info("通知发送结果", status_code=response.status_code)
     except Exception as e:
-        logger.error(f"发送通知失败: {str(e)}")
+        logger.error("发送通知失败", error=str(e))

@@ -8,10 +8,10 @@ JavaScript 脚本执行器
 import subprocess
 import json
 import time
-import logging
 from typing import Dict, Any, Optional, List
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Postman 风格的 JavaScript 沙箱代码（内嵌在执行器中）
@@ -270,7 +270,7 @@ console.log(JSON.stringify({{
             # 检查执行是否成功
             if result.returncode != 0:
                 error_msg = result.stderr or result.stdout or '未知错误'
-                logger.warning(f"前置脚本执行失败: {error_msg}")
+                logger.warning("前置脚本执行失败", error_msg=error_msg)
                 return {
                     'executed': True,
                     'passed': False,
@@ -300,7 +300,7 @@ console.log(JSON.stringify({{
 
         except subprocess.TimeoutExpired:
             duration = (time.time() - start_time) * 1000
-            logger.warning(f"前置脚本执行超时（{self.timeout}秒）")
+            logger.warning("前置脚本执行超时", timeout_seconds=self.timeout)
             return {
                 'executed': True,
                 'passed': False,
@@ -309,7 +309,7 @@ console.log(JSON.stringify({{
             }
         except Exception as e:
             duration = (time.time() - start_time) * 1000
-            logger.error(f"前置脚本执行异常: {str(e)}")
+            logger.error("前置脚本执行异常", error=str(e))
             return {
                 'executed': True,
                 'passed': False,
@@ -364,7 +364,7 @@ console.log(JSON.stringify({{
             # 检查执行是否成功
             if result.returncode != 0:
                 error_msg = result.stderr or result.stdout or '未知错误'
-                logger.warning(f"后置断言执行失败: {error_msg}")
+                logger.warning("后置断言执行失败", error_msg=error_msg)
                 return {
                     'executed': True,
                     'passed': False,
@@ -403,7 +403,7 @@ console.log(JSON.stringify({{
 
         except subprocess.TimeoutExpired:
             duration = (time.time() - start_time) * 1000
-            logger.warning(f"后置断言执行超时（{self.timeout}秒）")
+            logger.warning("后置断言执行超时", timeout_seconds=self.timeout)
             return {
                 'executed': True,
                 'passed': False,
@@ -413,7 +413,7 @@ console.log(JSON.stringify({{
             }
         except Exception as e:
             duration = (time.time() - start_time) * 1000
-            logger.error(f"后置断言执行异常: {str(e)}")
+            logger.error("后置断言执行异常", error=str(e))
             return {
                 'executed': True,
                 'passed': False,
@@ -436,7 +436,7 @@ console.log(JSON.stringify({{
             # 查找结果标记
             marker = "__RESULT_OUTPUT__"
             if marker not in stdout:
-                logger.warning(f"脚本输出未找到结果标记")
+                logger.warning("脚本输出未找到结果标记")
                 return None
 
             # 提取 JSON 部分
@@ -448,10 +448,10 @@ console.log(JSON.stringify({{
             return json.loads(json_str)
 
         except json.JSONDecodeError as e:
-            logger.warning(f"解析脚本输出失败: {e}")
+            logger.warning("解析脚本输出失败", error=str(e))
             return None
         except Exception as e:
-            logger.error(f"解析输出异常: {e}")
+            logger.error("解析输出异常", error=str(e))
             return None
 
     def _extract_error_message(self, error_output: str) -> str:

@@ -8,14 +8,15 @@ to existing backend APIs/functions by the caller to keep behavior consistent.
 from __future__ import annotations
 
 import json
-import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import requests
 
-logger = logging.getLogger(__name__)
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 ALLOWED_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
 ALLOWED_OPERATION_TYPES = {

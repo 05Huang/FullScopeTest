@@ -24,12 +24,16 @@ from .extensions import db, migrate, jwt, celery
 from .config import config
 from .celery_app import init_celery
 from .scheduler import init_scheduler
+from .core.logging import configure_structlog, set_trace_id, clear_trace_id, get_logger
 
 # 初始化限流器
 limiter = Limiter(key_func=get_remote_address)
 
 # 初始化 CSRF 保护
 csrf = CSRFProtect()
+
+# 全局 logger
+logger = get_logger(__name__)
 
 
 def create_app(config_name='development'):
@@ -51,6 +55,21 @@ def create_app(config_name='development'):
     if config_name == 'production':
         _validate_production_secrets(app)
 
+    # 初始化结构化日志
+    log_level = os.environ.get('LOG_LEVEL', 'INFO')
+    json_format = config_name in ('production', 'staging')
+    configure_structlog(log_level=log_level, json_format=json_format)
+
+    # 注入 trace_id 到每个请求上下文
+    @app.before_request
+    def _inject_trace_id():
+        from flask import g
+        g.trace_id = set_trace_id()
+
+    @app.teardown_appcontext
+    def _clear_trace_id(exc=None):
+        clear_trace_id()
+
     # 初始化扩展
     init_extensions(app)
 
@@ -58,11 +77,11 @@ def create_app(config_name='development'):
     if app.config.get('CELERY_ENABLE', False):
         try:
             init_celery(celery, app)
-            app.logger.info('Celery initialized successfully')
+            logger.info('Celery initialized successfully')
         except Exception as e:
-            app.logger.warning(f'Celery initialization failed: {e}. Running without async tasks.')
+            logger.warning('Celery initialization failed, running without async tasks', error=str(e))
     else:
-        app.logger.info('Celery is disabled. Running without async tasks.')
+        logger.info('Celery is disabled. Running without async tasks.')
 
     # 注册蓝图
     register_blueprints(app)

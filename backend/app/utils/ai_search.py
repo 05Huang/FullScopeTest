@@ -4,7 +4,6 @@ Extracts intent from natural language query and searches the database.
 """
 
 import json
-import logging
 import os
 import requests
 from typing import Dict, Any, List
@@ -13,8 +12,9 @@ from ..models.api_test_case import ApiTestCase
 from ..models.web_test_script import WebTestScript
 from ..models.perf_test_scenario import PerfTestScenario
 from ..models.environment import Environment
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def execute_global_search(
     query: str,

@@ -9,6 +9,7 @@ from app.models.web_test_script import WebTestScript
 from app.models.perf_test_scenario import PerfTestScenario
 from app.models.test_run import TestRun
 from app.models.test_report import TestReport
+from app.core.logging import get_logger
 import subprocess
 import tempfile
 import sys
@@ -18,6 +19,8 @@ import json
 import threading
 import queue
 from datetime import datetime
+
+logger = get_logger(__name__)
 
 
 def _get_flask_app():
@@ -549,7 +552,7 @@ def run_perf_test_task(
                                 }
                                 db.session.commit()
                     except Exception as e:
-                        print(f"更新实时数据失败: {e}")
+                        logger.error("更新实时数据失败", error=str(e), scenario_id=scenario_id)
 
             monitor_thread = threading.Thread(target=monitor_realtime, daemon=True)
             monitor_thread.start()

@@ -4,12 +4,12 @@ Reviews existing API test cases and suggests missing boundary, exception, or sec
 """
 
 import json
-import logging
 import os
 import requests
 from typing import Dict, Any, List
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def review_api_collection(
     collection_name: str,

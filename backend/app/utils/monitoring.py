@@ -9,8 +9,9 @@ import logging
 import functools
 from typing import Optional, Callable, Any
 from flask import request, g, current_app
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PerformanceMonitor:
@@ -25,18 +26,18 @@ class PerformanceMonitor:
             try:
                 result = func(*args, **kwargs)
                 duration = time.time() - start_time
-                logger.info(f"{func.__name__} executed in {duration:.3f}s")
+                logger.info("函数执行完成", function=func.__name__, duration=round(duration, 3))
                 return result
             except Exception as e:
                 duration = time.time() - start_time
-                logger.error(f"{func.__name__} failed after {duration:.3f}s: {str(e)}")
+                logger.error("函数执行失败", function=func.__name__, duration=round(duration, 3), error=str(e))
                 raise
         return wrapper
 
     @staticmethod
     def track_api_call(endpoint: str, method: str = 'GET'):
         """记录 API 调用指标"""
-        logger.info(f"API Call: {method} {endpoint}")
+        logger.info("API Call", method=method, endpoint=endpoint)
 
 
 class ErrorTracker:
@@ -64,7 +65,7 @@ class ErrorTracker:
         if hasattr(g, 'current_user_id'):
             error_info['user_id'] = g.current_user_id
 
-        logger.error(f"Exception captured: {error_info}", exc_info=True)
+        logger.error("Exception captured", error_type=error_info.get('error_type'), error_message=error_info.get('error_message'), exc_info=True)
 
         # 如果配置了 Sentry，发送到 Sentry
         try:
@@ -77,7 +78,7 @@ class ErrorTracker:
         except ImportError:
             pass  # Sentry 未安装
         except Exception as e:
-            logger.warning(f"Failed to send error to Sentry: {str(e)}")
+            logger.warning("Failed to send error to Sentry", error=str(e))
 
     @staticmethod
     def capture_message(message: str, level: str = 'info', context: Optional[dict] = None):
@@ -180,7 +181,7 @@ def init_monitoring(app):
 
             # 记录慢请求
             if duration > 1.0:
-                logger.warning(f"Slow request: {request.method} {request.path} took {duration:.3f}s")
+                logger.warning("Slow request", method=request.method, path=request.path, duration=round(duration, 3))
 
         return response
 
