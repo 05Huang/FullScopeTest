@@ -16,6 +16,8 @@ from .test_document import TestDocument
 from .test_report import TestReport
 from .webhook_token import WebhookToken
 from .scheduled_task import ScheduledTask
+from .visual_baseline import VisualBaseline
+from .visual_diff import VisualDiff
 
 __all__ = [
     'User',
@@ -32,5 +34,7 @@ __all__ = [
     'TestDocument',
     'TestReport',
     'WebhookToken',
-    'ScheduledTask'
+    'ScheduledTask',
+    'VisualBaseline',
+    'VisualDiff'
 ]
