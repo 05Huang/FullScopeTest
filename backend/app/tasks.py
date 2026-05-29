@@ -10,6 +10,7 @@ from app.models.perf_test_scenario import PerfTestScenario
 from app.models.test_run import TestRun
 from app.models.test_report import TestReport
 from app.core.logging import get_logger
+from app.core.metrics import record_task_success, record_task_failure
 import subprocess
 import tempfile
 import sys
@@ -261,6 +262,7 @@ def _finalize_web_test_run(script, test_run, success, duration, result_payload):
 )
 def run_web_test_task(self, script_id, user_id):
     """Run a web script asynchronously and persist unified reporting records."""
+    task_start_time = time.time()
     with _get_flask_app().app_context():
         script = None
         test_run = None
@@ -269,6 +271,7 @@ def run_web_test_task(self, script_id, user_id):
         try:
             script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
             if not script:
+                record_task_failure('run_web_test', time.time() - task_start_time)
                 return {
                     'success': False,
                     'error': 'Script not found',
@@ -350,6 +353,11 @@ def run_web_test_task(self, script_id, user_id):
                     result_payload=run_payload,
                 )
 
+                if success:
+                    record_task_success('run_web_test', time.time() - task_start_time)
+                else:
+                    record_task_failure('run_web_test', time.time() - task_start_time)
+
                 return {
                     'success': success,
                     'script_id': script_id,
@@ -395,6 +403,7 @@ def run_web_test_task(self, script_id, user_id):
             else:
                 test_run_id, report_id = None, None
 
+            record_task_failure('run_web_test', time.time() - task_start_time)
             return {
                 'success': False,
                 'error': 'Execution timeout',
@@ -430,6 +439,7 @@ def run_web_test_task(self, script_id, user_id):
             else:
                 test_run_id, report_id = None, None
 
+            record_task_failure('run_web_test', time.time() - task_start_time)
             return {
                 'success': False,
                 'error': str(e),
@@ -458,6 +468,7 @@ def run_perf_test_task(
     step_duration=None
 ):
     """异步执行性能测试：改为子进程运行 Locust，避免 Celery/greenlet 冲突"""
+    task_start_time = time.time()
     with _get_flask_app().app_context():
         from app.api.perf_test import _parse_target_url
 
@@ -636,6 +647,11 @@ def run_perf_test_task(
             }
             db.session.commit()
 
+            if proc.returncode == 0:
+                record_task_success('run_perf_test', time.time() - task_start_time)
+            else:
+                record_task_failure('run_perf_test', time.time() - task_start_time)
+
             return {
                 'success': proc.returncode == 0,
                 'scenario_id': scenario_id,
@@ -657,6 +673,7 @@ def run_perf_test_task(
                 }
                 db.session.commit()
 
+            record_task_failure('run_perf_test', time.time() - task_start_time)
             return {'success': False, 'error': str(e)}
 
         finally:
@@ -720,6 +737,7 @@ def cleanup_old_results_task():
 
     清理超过 30 天的测试结果
     """
+    task_start_time = time.time()
     # 使用 Flask 应用上下文
     with _get_flask_app().app_context():
         try:
@@ -744,6 +762,7 @@ def cleanup_old_results_task():
 
             db.session.commit()
 
+            record_task_success('cleanup_old_results', time.time() - task_start_time)
             return {
                 'success': True,
                 'cleaned_scripts': len(old_scripts),
@@ -751,6 +770,7 @@ def cleanup_old_results_task():
             }
 
         except Exception as e:
+            record_task_failure('cleanup_old_results', time.time() - task_start_time)
             return {
                 'success': False,
                 'error': str(e)
@@ -768,6 +788,7 @@ def cleanup_old_results_task():
 )
 def run_app_test_task(self, script_id, user_id):
     """异步执行 APP 测试脚本（Appium）"""
+    task_start_time = time.time()
     with _get_flask_app().app_context():
         from app.models.app_test_script import AppTestScript
 
@@ -775,6 +796,7 @@ def run_app_test_task(self, script_id, user_id):
         try:
             script = AppTestScript.query.filter_by(id=script_id, user_id=user_id).first()
             if not script:
+                record_task_failure('run_app_test', time.time() - task_start_time)
                 return {'success': False, 'error': 'Script not found'}
 
             script.status = 'running'
@@ -821,6 +843,11 @@ def run_app_test_task(self, script_id, user_id):
                 }
                 db.session.commit()
 
+                if success:
+                    record_task_success('run_app_test', time.time() - task_start_time)
+                else:
+                    record_task_failure('run_app_test', time.time() - task_start_time)
+
                 return {
                     'success': success,
                     'script_id': script_id,
@@ -844,6 +871,7 @@ def run_app_test_task(self, script_id, user_id):
                     'timestamp': datetime.utcnow().isoformat(),
                 }
                 db.session.commit()
+            record_task_failure('run_app_test', time.time() - task_start_time)
             return {'success': False, 'error': 'Execution timeout'}
 
         except Exception as e:
@@ -855,4 +883,5 @@ def run_app_test_task(self, script_id, user_id):
                     'timestamp': datetime.utcnow().isoformat(),
                 }
                 db.session.commit()
+            record_task_failure('run_app_test', time.time() - task_start_time)
             return {'success': False, 'error': str(e)}

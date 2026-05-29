@@ -44,6 +44,10 @@ Flask-WTF==1.2.1
 black==23.12.0
 flake8==6.1.0
 
+# 监控
+prometheus-flask-exporter==0.22.0
+prometheus-client==0.19.0
+
 # 生产服务器
 gunicorn==21.2.0
 

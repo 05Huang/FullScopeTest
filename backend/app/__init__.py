@@ -92,6 +92,14 @@ def create_app(config_name='development'):
     # 初始化定时任务
     init_scheduler(app)
 
+    # 初始化 Prometheus 指标采集
+    try:
+        from .core.metrics import init_metrics
+        init_metrics(app)
+        logger.info("Prometheus metrics initialized successfully")
+    except Exception as e:
+        logger.warning("Prometheus metrics initialization failed", error=str(e))
+
     return app
 
 
