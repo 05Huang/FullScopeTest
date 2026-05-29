@@ -23,3 +23,4 @@ from . import docs
 from . import ai_copilot
 from . import triggers
 from . import global_search
+from . import visual
