@@ -392,7 +392,7 @@ class TestPromptVersionAPI:
 
         # 创建
         resp = client.post('/api/v1/ai/prompt-versions', json={
-            'feature': _unique_feature('api_get'), 'name': 'v1', 'system_prompt': 'p',
+            'feature': 'copilot', 'name': 'v1', 'system_prompt': 'p',
         }, headers=headers)
         version_id = resp.get_json()['data']['id']
 
@@ -412,7 +412,7 @@ class TestPromptVersionAPI:
         headers = self._get_auth_header(app, client)
 
         resp = client.post('/api/v1/ai/prompt-versions', json={
-            'feature': _unique_feature('api_upd'), 'name': 'v1', 'system_prompt': 'old',
+            'feature': 'copilot', 'name': 'v1', 'system_prompt': 'old',
         }, headers=headers)
         version_id = resp.get_json()['data']['id']
 
@@ -428,7 +428,7 @@ class TestPromptVersionAPI:
         headers = self._get_auth_header(app, client)
 
         resp = client.post('/api/v1/ai/prompt-versions', json={
-            'feature': _unique_feature('api_deact'), 'name': 'v1', 'system_prompt': 'p',
+            'feature': 'copilot', 'name': 'v1', 'system_prompt': 'p',
         }, headers=headers)
         version_id = resp.get_json()['data']['id']
 
@@ -439,18 +439,17 @@ class TestPromptVersionAPI:
         """测试 A/B 测试选择"""
         headers = self._get_auth_header(app, client)
 
-        feature = _unique_feature('api_select')
         # 创建并激活
         client.post('/api/v1/ai/prompt-versions', json={
-            'feature': feature, 'name': 'v1', 'system_prompt': 'p',
+            'feature': 'copilot', 'name': 'v1', 'system_prompt': 'p',
             'is_active': True,
         }, headers=headers)
 
         resp = client.post('/api/v1/ai/prompt-versions/select', json={
-            'feature': feature,
+            'feature': 'copilot',
         }, headers=headers)
         assert resp.status_code == 200
-        assert resp.get_json()['data']['feature'] == feature
+        assert resp.get_json()['data']['feature'] == 'copilot'
 
     def test_select_prompt_version_none_active(self, app, client):
         """测试没有激活版本时的选择"""
