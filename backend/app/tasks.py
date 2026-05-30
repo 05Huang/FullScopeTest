@@ -666,9 +666,27 @@ def run_perf_test_task(
             with open(locustfile, 'w', encoding='utf-8') as f:
                 f.write(script_content)
 
-            # 监控线程：每2秒读取 CSV 并写库
+            # 创建性能测试结果记录
+            from app.models.perf_test_result import PerformanceTestResult, PerformanceMetricSample
+            perf_result = PerformanceTestResult(
+                scenario_id=scenario_id,
+                project_id=scenario.project_id,
+                user_count=user_count,
+                spawn_rate=spawn_rate,
+                duration=run_time,
+                target_url=scenario.target_url,
+                status='running',
+                started_at=datetime.utcnow(),
+            )
+            db.session.add(perf_result)
+            db.session.commit()
+            perf_result_id = perf_result.id
+            logger.info("已创建性能测试结果记录", perf_result_id=perf_result_id, scenario_id=scenario_id)
+
+            # 监控线程：每2秒读取 CSV 并写入时间序列数据
             def monitor_realtime():
                 app = _get_flask_app()
+                test_start = time.time()
                 while not stop_monitor.is_set():
                     time.sleep(2)
                     stats = _read_latest_stats(csv_prefix)
@@ -676,6 +694,26 @@ def run_perf_test_task(
                         continue
                     try:
                         with app.app_context():
+                            # 写入时间序列采样数据
+                            elapsed = int(time.time() - test_start)
+                            sample = PerformanceMetricSample(
+                                test_result_id=perf_result_id,
+                                timestamp=datetime.utcnow(),
+                                elapsed_seconds=elapsed,
+                                rps=stats['throughput'],
+                                active_users=user_count,
+                                avg_response_time=stats['avg_response_time_ms'],
+                                min_response_time=stats['min_response_time_ms'],
+                                max_response_time=stats['max_response_time_ms'],
+                                p95_response_time=stats['p95_response_time_ms'],
+                                request_count=stats['request_count'],
+                                failure_count=stats['failure_count'],
+                                error_rate=stats['error_rate'],
+                            )
+                            db.session.add(sample)
+                            db.session.commit()
+
+                            # 同时更新场景实时状态
                             s = PerfTestScenario.query.get(scenario_id)
                             if s and s.status == 'running':
                                 s.avg_response_time = stats['avg_response_time_ms']
@@ -737,6 +775,10 @@ def run_perf_test_task(
             avg_ms = _safe_float(agg.get('Average Response Time') or agg.get('Average') or agg.get('Avg') or 0)
             min_ms = _safe_float(agg.get('Min Response Time') or agg.get('Min') or 0)
             max_ms = _safe_float(agg.get('Max Response Time') or agg.get('Max') or 0)
+            p50_ms = _safe_float(agg.get('50%') or agg.get('50%ile') or 0)
+            p75_ms = _safe_float(agg.get('75%') or agg.get('75%ile') or 0)
+            p95_ms = _safe_float(agg.get('95%') or agg.get('95%ile') or 0)
+            p99_ms = _safe_float(agg.get('99%') or agg.get('99%ile') or 0)
             throughput = _safe_float(agg.get('Requests/s') or agg.get('RPS') or 0)
             error_rate = (total_fail / total_req * 100) if total_req else 0
 
@@ -758,6 +800,30 @@ def run_perf_test_task(
                 'timestamp': datetime.utcnow().isoformat() + 'Z'
             }
             db.session.commit()
+
+            # 更新性能测试结果记录
+            try:
+                from app.models.perf_test_result import PerformanceTestResult
+                perf_result = PerformanceTestResult.query.get(perf_result_id)
+                if perf_result:
+                    perf_result.status = 'completed' if proc.returncode == 0 else 'failed'
+                    perf_result.finished_at = datetime.utcnow()
+                    perf_result.total_requests = int(total_req)
+                    perf_result.total_failures = int(total_fail)
+                    perf_result.error_rate = error_rate
+                    perf_result.rps = throughput
+                    perf_result.avg_response_time = avg_ms
+                    perf_result.min_response_time = min_ms
+                    perf_result.max_response_time = max_ms
+                    perf_result.p50_response_time = p50_ms
+                    perf_result.p75_response_time = p75_ms
+                    perf_result.p95_response_time = p95_ms
+                    perf_result.p99_response_time = p99_ms
+                    perf_result.raw_result = results
+                    db.session.commit()
+                    logger.info("性能测试结果已更新", perf_result_id=perf_result_id)
+            except Exception as e:
+                logger.error("更新性能测试结果失败", error=str(e))
 
             if proc.returncode == 0:
                 record_task_success('run_perf_test', time.time() - task_start_time)
@@ -784,6 +850,18 @@ def run_perf_test_task(
                     'timestamp': datetime.utcnow().isoformat() + 'Z'
                 }
                 db.session.commit()
+
+            # 标记性能测试结果为失败
+            try:
+                from app.models.perf_test_result import PerformanceTestResult
+                if 'perf_result_id' in dir():
+                    perf_result = PerformanceTestResult.query.get(perf_result_id)
+                    if perf_result:
+                        perf_result.status = 'failed'
+                        perf_result.finished_at = datetime.utcnow()
+                        db.session.commit()
+            except Exception:
+                pass
 
             record_task_failure('run_perf_test', time.time() - task_start_time)
             return {'success': False, 'error': str(e)}
