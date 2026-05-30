@@ -72,6 +72,78 @@ def delete_webhook(webhook_id):
     return success_response(message='Webhook 删除成功')
 
 
+# ==================== 触发规则 ====================
+
+@api_bp.route('/trigger-rules', methods=['GET'])
+@jwt_required()
+def get_trigger_rules():
+    """获取项目的触发规则列表"""
+    project_id = request.args.get('project_id', type=int)
+    if not project_id:
+        return error_response(400, '缺少 project_id 参数')
+
+    from ..services.trigger_rule_service import get_rules_by_project
+    rules = get_rules_by_project(project_id)
+    return success_response(data=[r.to_dict() for r in rules])
+
+
+@api_bp.route('/trigger-rules', methods=['POST'])
+@jwt_required()
+def create_trigger_rule():
+    """创建触发规则"""
+    data = request.get_json()
+    user_id = get_current_user_id()
+
+    required_fields = ['project_id', 'name', 'trigger_event', 'target_type']
+    if not all(data.get(f) for f in required_fields):
+        return error_response(400, '参数不完整')
+
+    from ..services.trigger_rule_service import create_rule
+    rule = create_rule(
+        project_id=data.get('project_id'),
+        name=data.get('name'),
+        trigger_event=data.get('trigger_event'),
+        target_type=data.get('target_type'),
+        description=data.get('description'),
+        target_branches=data.get('target_branches'),
+        target_tags=data.get('target_tags'),
+        include_paths=data.get('include_paths'),
+        exclude_paths=data.get('exclude_paths'),
+        test_types=data.get('test_types'),
+        tags=data.get('tags'),
+        target_id=data.get('target_id'),
+        created_by=user_id,
+    )
+    return success_response(data=rule.to_dict(), message='触发规则创建成功')
+
+
+@api_bp.route('/trigger-rules/<int:rule_id>', methods=['PUT'])
+@jwt_required()
+def update_trigger_rule(rule_id):
+    """更新触发规则"""
+    from ..services.trigger_rule_service import update_rule
+    data = request.get_json()
+
+    rule = update_rule(rule_id, **data)
+    if not rule:
+        return error_response(404, '规则不存在')
+
+    return success_response(data=rule.to_dict(), message='触发规则更新成功')
+
+
+@api_bp.route('/trigger-rules/<int:rule_id>', methods=['DELETE'])
+@jwt_required()
+def delete_trigger_rule(rule_id):
+    """删除触发规则"""
+    from ..services.trigger_rule_service import delete_rule
+
+    success = delete_rule(rule_id)
+    if not success:
+        return error_response(404, '规则不存在')
+
+    return success_response(message='触发规则删除成功')
+
+
 # 公开执行端点，不需要认证
 @api_bp.route('/triggers/<string:token>', methods=['POST', 'GET'])
 def trigger_webhook(token):

@@ -23,6 +23,7 @@ from .perf_test_alert import PerformanceAlertRule, PerformanceAlertLog
 from .ai_invocation_log import AIInvocationLog
 from .prompt_version import PromptVersion
 from .github_integration import GitHubIntegration
+from .trigger_rule import TriggerRule
 
 __all__ = [
     'User',
@@ -49,4 +50,5 @@ __all__ = [
     'AIInvocationLog',
     'PromptVersion',
     'GitHubIntegration',
+    'TriggerRule',
 ]
