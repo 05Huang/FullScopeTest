@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from . import api_bp
 from ..extensions import db, celery
 from ..models.perf_test_scenario import PerfTestScenario
+from ..models.perf_test_result import PerformanceTestResult, PerformanceMetricSample
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required, is_valid_url, is_valid_http_method
 from ..utils import get_current_user_id
@@ -605,6 +606,96 @@ def get_scenario_status(scenario_id):
         'min_response_time': scenario.min_response_time,
         'throughput': scenario.throughput,
         'error_rate': scenario.error_rate,
+    })
+
+
+# ==================== 性能测试历史对比 ====================
+
+@api_bp.route('/perf-test/compare', methods=['GET'])
+@jwt_required()
+def compare_performance_runs():
+    """
+    性能测试历史对比 API
+
+    查询参数:
+        run_ids: 逗号分隔的测试结果 ID 列表（至少 2 个，最多 10 个）
+    返回: 多次测试运行的关键指标对比，包含性能劣化百分比（相对于基准运行）
+    """
+    run_ids_str = request.args.get('run_ids', '').strip()
+    if not run_ids_str:
+        return error_response(400, 'run_ids 参数不能为空')
+
+    try:
+        run_ids = [int(rid.strip()) for rid in run_ids_str.split(',') if rid.strip()]
+    except ValueError:
+        return error_response(400, 'run_ids 必须是逗号分隔的整数列表')
+
+    if len(run_ids) < 2:
+        return error_response(400, '至少需要 2 个测试运行 ID 进行对比')
+    if len(run_ids) > 10:
+        return error_response(400, '最多支持 10 个测试运行 ID')
+
+    # 查询所有匹配的结果
+    from app.models.perf_test_result import PerformanceTestResult
+    results = PerformanceTestResult.query.filter(
+        PerformanceTestResult.id.in_(run_ids)
+    ).all()
+
+    if len(results) == 0:
+        return error_response(404, '未找到匹配的性能测试结果')
+
+    if len(results) != len(run_ids):
+        found_ids = {r.id for r in results}
+        missing = [rid for rid in run_ids if rid not in found_ids]
+        return error_response(404, f'未找到测试结果 ID: {", ".join(str(m) for m in missing)}')
+
+    # 按创建时间排序，第一个作为基准
+    results_sorted = sorted(results, key=lambda r: r.created_at or datetime.min)
+    baseline = results_sorted[0]
+
+    def _calc_degradation(current_val, base_val):
+        """计算性能劣化百分比"""
+        if base_val is None or current_val is None or base_val == 0:
+            return None
+        return round(((current_val - base_val) / base_val) * 100, 2)
+
+    comparison_runs = []
+    for r in results_sorted:
+        comparison_runs.append({
+            'id': r.id,
+            'scenario_id': r.scenario_id,
+            'user_count': r.user_count,
+            'spawn_rate': r.spawn_rate,
+            'duration': r.duration,
+            'status': r.status,
+            'started_at': r.started_at.isoformat() + 'Z' if r.started_at else None,
+            'finished_at': r.finished_at.isoformat() + 'Z' if r.finished_at else None,
+            'metrics': {
+                'total_requests': r.total_requests,
+                'total_failures': r.total_failures,
+                'error_rate': r.error_rate,
+                'rps': r.rps,
+                'avg_response_time': r.avg_response_time,
+                'min_response_time': r.min_response_time,
+                'max_response_time': r.max_response_time,
+                'p50_response_time': r.p50_response_time,
+                'p75_response_time': r.p75_response_time,
+                'p95_response_time': r.p95_response_time,
+                'p99_response_time': r.p99_response_time,
+            },
+            'degradation': {
+                'rps': _calc_degradation(r.rps, baseline.rps),
+                'avg_response_time': _calc_degradation(r.avg_response_time, baseline.avg_response_time),
+                'p95_response_time': _calc_degradation(r.p95_response_time, baseline.p95_response_time),
+                'p99_response_time': _calc_degradation(r.p99_response_time, baseline.p99_response_time),
+                'error_rate': _calc_degradation(r.error_rate, baseline.error_rate),
+            } if r.id != baseline.id else None,
+        })
+
+    return success_response(data={
+        'runs': comparison_runs,
+        'baseline_id': baseline.id,
+        'comparison_count': len(comparison_runs),
     })
 
 
