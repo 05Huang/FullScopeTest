@@ -56,7 +56,7 @@
 > 目标：让开发者团队能把 FullScopeTest 嵌入日常开发流程
 
 - [x] **P3-01** 实现 GitHub App OAuth 集成：`GET /api/integrations/github/auth`（OAuth 授权入口）、callback 处理、token 存储（加密存储到数据库）；用户可绑定 GitHub 账号；创建 `GitHubIntegration` 数据模型
-- [ ] **P3-02** 实现 GitHub Webhook 接收器增强（`backend/app/api/webhooks/github.py`）：接收 `pull_request` 事件（opened/synchronize/closed）；接收 `push` 事件；HMAC 签名验证；根据触发规则（可配置）自动创建并启动测试计划
+- [x] **P3-02** 实现 GitHub Webhook 接收器增强（`backend/app/api/webhooks/github.py`）：接收 `pull_request` 事件（opened/synchronize/closed）；接收 `push` 事件；HMAC 签名验证；根据触发规则（可配置）自动创建并启动测试计划
 - [ ] **P3-03** 实现测试触发规则引擎（`backend/app/services/trigger_rule_service.py`）：可配置规则「当 PR 目标分支为 main 时，运行标签为 regression 的测试套件」；支持「文件路径变更匹配」（如 `/api/**` 变更时只运行接口测试）；规则配置 CRUD API
 - [ ] **P3-04** 实现 GitHub Check Run 回写（`backend/app/services/github_check_service.py`）：测试开始时创建 Check Run（状态 in_progress）；实时更新进度（通过 Check Run 的 output.summary）；测试结束时更新最终状态（success/failure）；附上测试报告链接和失败用例摘要
 - [ ] **P3-05** 实现 Quality Gate 功能：可配置质量门禁规则（通过率阈值、P95 响应时间上限、视觉差异上限）；`GET /api/quality-gates`、`POST /api/quality-gates`、`POST /api/quality-gates/{id}/evaluate`；Quality Gate 评估结果同步到 GitHub Check Run 状态
@@ -104,14 +104,14 @@
 
 ## 状态汇总
 
-完成进度：26 / 48 个任务
+完成进度：27 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
 - Phase 2A（视觉回归）：7/7
 - Phase 2B（性能增强）：5/5
 - Phase 2C（AI 工程化）：6/6
-- Phase 3（CI/CD 集成）：1/7
+- Phase 3（CI/CD 集成）：2/7
 - Phase 4（多租户安全）：0/7
 - Phase 5（FastAPI 迁移）：0/8
 - Phase 6（文档发布）：0/6
