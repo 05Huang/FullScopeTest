@@ -46,7 +46,7 @@
 - [x] **P2C-01** 设计 AI 功能的可观测性基础设施：创建 `AIInvocationLog` 模型（存储每次 AI 调用的 prompt、response、latency、success/fail、tokens_used、cost_estimate）；创建 `PromptVersion` 模型（Prompt 版本管理）；创建 Alembic 迁移
 - [x] **P2C-02** 创建 AI 服务基类（`backend/app/services/ai/base.py`）：统一的 LLM 调用接口；自动记录 `AIInvocationLog`；支持 retry with exponential backoff；超时处理；降级策略（AI 失败时返回 fallback 结果而不是 500）
 - [x] **P2C-03** 将现有 NL2Script 功能重构为使用 `PromptVersion` 管理：提取 Prompt 到数据库；支持 A/B 两个版本的 Prompt 同时运行；基于 `AIInvocationLog` 统计每个版本的成功率；实现 `GET /api/ai/prompt-versions` 和 `POST /api/ai/prompt-versions` 接口
-- [ ] **P2C-04** 实现基于 OpenAPI/Swagger 的智能用例生成服务（`backend/app/services/ai/swagger_case_generator.py`）：解析 Swagger JSON/YAML；AI 分析每个接口的业务语义；自动生成正常值、边界值、异常值测试用例；支持 `POST /api/ai/generate-cases-from-swagger`；生成的用例直接保存到现有用例管理模块
+- [x] **P2C-04** 实现基于 OpenAPI/Swagger 的智能用例生成服务（`backend/app/services/ai/swagger_case_generator.py`）：解析 Swagger JSON/YAML；AI 分析每个接口的业务语义；自动生成正常值、边界值、异常值测试用例；支持 `POST /api/ai/generate-cases-from-swagger`；生成的用例直接保存到现有用例管理模块
 - [ ] **P2C-05** 实现测试用例语义去重服务（`backend/app/services/ai/semantic_dedup_service.py`）：将用例描述和步骤向量化（使用 `sentence-transformers` 或调 embedding API）；余弦相似度计算；返回相似度 > 0.85 的用例对；提供 `POST /api/ai/find-duplicates` 接口；前端展示去重建议面板
 - [ ] **P2C-06** 实现 AI 能力统计看板（`frontend/src/pages/AIInsightsDashboard.tsx`）：AI 调用成功率折线图；各功能模块的 AI 调用量分布；Prompt 版本效果对比表格；平均响应时间趋势；token 消耗统计
 
@@ -104,13 +104,13 @@
 
 ## 状态汇总
 
-完成进度：22 / 48 个任务
+完成进度：23 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
 - Phase 2A（视觉回归）：7/7
 - Phase 2B（性能增强）：5/5
-- Phase 2C（AI 工程化）：3/6
+- Phase 2C（AI 工程化）：4/6
 - Phase 3（CI/CD 集成）：0/7
 - Phase 4（多租户安全）：0/7
 - Phase 5（FastAPI 迁移）：0/8
