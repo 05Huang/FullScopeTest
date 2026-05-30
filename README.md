@@ -948,6 +948,81 @@ cd web && npx tsc --noEmit
 
 ---
 
+## 🚀 GitHub Actions 集成
+
+FullScopeTest 提供官方 GitHub Action，可在 CI/CD 流程中自动运行测试。
+
+### 快速开始
+
+在你的项目中创建 `.github/workflows/test.yml`：
+
+```yaml
+name: FullScopeTest CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: FullScopeTest/fullscope-test/.github/actions/fullscope-test@main
+        with:
+          server-url: ${{ secrets.FULLSCOPETEST_URL }}
+          api-token: ${{ secrets.FULLSCOPETEST_TOKEN }}
+          test-type: api
+          environment: staging
+```
+
+### 参数说明
+
+| 参数 | 必填 | 默认值 | 说明 |
+|------|------|--------|------|
+| `server-url` | ✅ | - | FullScopeTest 服务器地址 |
+| `api-token` | ✅ | - | API Token（在 Settings → Tokens 创建） |
+| `test-suite-id` | ❌ | - | 指定测试套件 ID |
+| `quality-gate-id` | ❌ | - | Quality Gate ID，用于评估质量门禁 |
+| `environment` | ❌ | `staging` | 测试环境名称 |
+| `test-type` | ❌ | `api` | 测试类型：`api`、`web` 或 `all` |
+
+### 输出变量
+
+| 变量 | 说明 |
+|------|------|
+| `test_run_id` | 创建的测试运行 ID |
+| `test_status` | 最终状态：`success` / `failed` / `timeout` |
+| `quality_gate_passed` | Quality Gate 是否通过 |
+
+### 高级用法
+
+**带 Quality Gate 的 CI 流程：**
+
+```yaml
+name: FullScopeTest CI with Quality Gate
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: FullScopeTest/fullscope-test/.github/actions/fullscope-test@main
+        id: test
+        with:
+          server-url: ${{ secrets.FULLSCOPETEST_URL }}
+          api-token: ${{ secrets.FULLSCOPETEST_TOKEN }}
+          test-suite-id: ${{ secrets.TEST_SUITE_ID }}
+          quality-gate-id: ${{ secrets.QUALITY_GATE_ID }}
+          environment: production
+          test-type: all
+      - name: Report status
+        if: always()
+        run: |
+          echo "Test Status: ${{ steps.test.outputs.test_status }}"
+          echo "Quality Gate: ${{ steps.test.outputs.quality_gate_passed }}"
+```
+
+---
+
 ## 🤝 参与贡献
 
 我们非常欢迎您的参与！
