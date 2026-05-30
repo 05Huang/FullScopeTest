@@ -22,6 +22,7 @@ from .perf_test_result import PerformanceTestResult, PerformanceMetricSample
 from .perf_test_alert import PerformanceAlertRule, PerformanceAlertLog
 from .ai_invocation_log import AIInvocationLog
 from .prompt_version import PromptVersion
+from .github_integration import GitHubIntegration
 
 __all__ = [
     'User',
@@ -47,4 +48,5 @@ __all__ = [
     'PerformanceAlertLog',
     'AIInvocationLog',
     'PromptVersion',
+    'GitHubIntegration',
 ]

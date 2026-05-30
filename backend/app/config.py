@@ -121,6 +121,12 @@ class BaseConfig:
     # Webhook 安全配置
     WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '')  # HMAC 签名密钥，为空则不验证
 
+    # GitHub OAuth 配置
+    GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
+    GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '')
+    GITHUB_REDIRECT_URI = os.environ.get('GITHUB_REDIRECT_URI', 'http://localhost:5000/api/v1/integrations/github/callback')
+    GITHUB_WEBHOOK_SECRET = os.environ.get('GITHUB_WEBHOOK_SECRET', '')
+
 
 class DevelopmentConfig(BaseConfig):
     """开发环境配置"""
