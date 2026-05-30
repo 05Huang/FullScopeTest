@@ -32,3 +32,4 @@ from . import ai_stats
 from . import github_integration
 from . import github_checks
 from . import quality_gates
+from .webhooks import gitlab

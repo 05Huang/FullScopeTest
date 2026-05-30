@@ -1,0 +1,100 @@
+# FullScopeTest GitLab CI 集成模板
+#
+# 使用方法：
+# 1. 将此文件复制到你的项目根目录
+# 2. 修改 FULLSCOPETEST_URL 和 FULLSCOPETEST_TOKEN 为你的 FullScopeTest 服务器地址和 API Token
+# 3. 根据需要修改 test-suite-id 和 quality-gate-id
+
+stages:
+  - test
+  - quality-gate
+
+variables:
+  FULLSCOPETEST_URL: "https://test.example.com"
+  FULLSCOPETEST_TOKEN: "$FULLSCOPETEST_TOKEN"  # 在 GitLab CI/CD Variables 中配置
+  TEST_SUITE_ID: ""
+  QUALITY_GATE_ID: ""
+  TEST_ENVIRONMENT: "staging"
+
+# 接口测试
+test:api:
+  stage: test
+  image: curlimages/curl:latest
+  script:
+    - |
+      echo "Creating test run..."
+      RUN_RESPONSE=$(curl -s -X POST "${FULLSCOPETEST_URL}/api/v1/test-runs" \
+        -H "Authorization: Bearer ${FULLSCOPETEST_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{\"test_type\": \"api\", \"environment_name\": \"${TEST_ENVIRONMENT}\", \"triggered_by\": \"ci\"}")
+      
+      RUN_ID=$(echo "$RUN_RESPONSE" | jq -r '.data.id // empty')
+      if [ -z "$RUN_ID" ]; then
+        echo "Error: Failed to create test run"
+        echo "$RUN_RESPONSE"
+        exit 1
+      fi
+      echo "Test run ID: ${RUN_ID}"
+      
+      # Start test
+      START_RESPONSE=$(curl -s -X POST "${FULLSCOPETEST_URL}/api/v1/test-runs/${RUN_ID}/start" \
+        -H "Authorization: Bearer ${FULLSCOPETEST_TOKEN}" \
+        -H "Content-Type: application/json")
+      
+      # Poll status
+      MAX_ATTEMPTS=60
+      ATTEMPT=0
+      while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+        ATTEMPT=$((ATTEMPT + 1))
+        sleep 10
+        
+        STATUS_RESPONSE=$(curl -s "${FULLSCOPETEST_URL}/api/v1/test-runs/${RUN_ID}" \
+          -H "Authorization: Bearer ${FULLSCOPETEST_TOKEN}")
+        
+        STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.data.status // "unknown"')
+        echo "Attempt ${ATTEMPT}/${MAX_ATTEMPTS}: Status = ${STATUS}"
+        
+        case "$STATUS" in
+          success|completed)
+            echo "Test run completed successfully"
+            exit 0
+            ;;
+          failed|error)
+            echo "Test run failed"
+            exit 1
+            ;;
+          *)
+            continue
+            ;;
+        esac
+      done
+      
+      echo "Test run timed out"
+      exit 1
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Quality Gate
+quality-gate:
+  stage: quality-gate
+  image: curlimages/curl:latest
+  script:
+    - |
+      echo "Evaluating quality gate..."
+      EVAL_RESPONSE=$(curl -s -X POST "${FULLSCOPETEST_URL}/api/v1/quality-gates/${QUALITY_GATE_ID}/evaluate" \
+        -H "Authorization: Bearer ${FULLSCOPETEST_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{\"test_run_id\": ${CI_PIPELINE_ID}}")
+      
+      PASSED=$(echo "$EVAL_RESPONSE" | jq -r '.data.passed // false')
+      if [ "$PASSED" != "true" ]; then
+        echo "Quality gate failed"
+        exit 1
+      fi
+      echo "Quality gate passed"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: on_success
