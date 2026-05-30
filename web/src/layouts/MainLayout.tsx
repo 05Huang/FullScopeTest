@@ -143,6 +143,7 @@ const menuItems: MenuProps['items'] = [
       { key: '/perf-test/scenarios', label: '场景管理' },
       { key: '/perf-test/monitor', label: '实时监控' },
       { key: '/perf-test/results', label: '结果分析' },
+      { key: '/perf-test/dashboard', label: '性能大盘' },
     ],
   },
   {

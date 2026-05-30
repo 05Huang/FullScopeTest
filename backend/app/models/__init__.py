@@ -19,6 +19,7 @@ from .scheduled_task import ScheduledTask
 from .visual_baseline import VisualBaseline
 from .visual_diff import VisualDiff
 from .perf_test_result import PerformanceTestResult, PerformanceMetricSample
+from .perf_test_alert import PerformanceAlertRule, PerformanceAlertLog
 
 __all__ = [
     'User',
@@ -40,4 +41,6 @@ __all__ = [
     'VisualDiff',
     'PerformanceTestResult',
     'PerformanceMetricSample',
+    'PerformanceAlertRule',
+    'PerformanceAlertLog',
 ]

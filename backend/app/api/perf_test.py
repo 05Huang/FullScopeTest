@@ -701,6 +701,89 @@ def compare_performance_runs():
 
 # ==================== 快速测试 ====================
 
+# ==================== 历史测试结果 ====================
+
+@api_bp.route('/perf-test/results', methods=['GET'])
+@jwt_required()
+def get_performance_results():
+    """
+    获取性能测试历史结果列表（分页）
+
+    查询参数:
+        project_id: 按项目过滤
+        scenario_id: 按场景过滤
+        status: 按状态过滤（completed/failed/stopped）
+        page: 页码（默认 1）
+        per_page: 每页数量（默认 20）
+    """
+    user_id = get_current_user_id()
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    project_id = request.args.get('project_id', type=int)
+    scenario_id = request.args.get('scenario_id', type=int)
+    status = request.args.get('status', '').strip()
+
+    query = PerformanceTestResult.query.join(PerfTestScenario).filter(
+        PerfTestScenario.user_id == user_id
+    )
+
+    if project_id:
+        query = query.filter(PerformanceTestResult.project_id == project_id)
+    if scenario_id:
+        query = query.filter(PerformanceTestResult.scenario_id == scenario_id)
+    if status:
+        query = query.filter(PerformanceTestResult.status == status)
+
+    pagination = query.order_by(PerformanceTestResult.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    from ..utils.response import paginate_response
+    return paginate_response(
+        items=[r.to_dict() for r in pagination.items],
+        total=pagination.total,
+        page=page,
+        per_page=per_page,
+    )
+
+
+@api_bp.route('/perf-test/results/<int:result_id>/metrics', methods=['GET'])
+@jwt_required()
+def get_performance_result_metrics(result_id):
+    """
+    获取某个测试结果的时间序列指标采样数据
+
+    查询参数:
+        limit: 最多返回的采样点数（默认全部）
+    """
+    user_id = get_current_user_id()
+
+    result = PerformanceTestResult.query.join(PerfTestScenario).filter(
+        PerformanceTestResult.id == result_id,
+        PerfTestScenario.user_id == user_id,
+    ).first()
+
+    if not result:
+        return error_response(404, '测试结果不存在')
+
+    limit = request.args.get('limit', type=int)
+
+    query = PerformanceMetricSample.query.filter_by(
+        test_result_id=result_id
+    ).order_by(PerformanceMetricSample.elapsed_seconds.asc())
+
+    if limit:
+        query = query.limit(limit)
+
+    samples = query.all()
+
+    return success_response(data={
+        'result': result.to_dict(),
+        'metrics': [s.to_dict() for s in samples],
+        'total_samples': len(samples),
+    })
+
+
 @api_bp.route('/perf-test/running', methods=['GET'])
 @jwt_required()
 def get_running_tests():

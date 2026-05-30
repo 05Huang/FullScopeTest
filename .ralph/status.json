@@ -1,12 +1,12 @@
 {
-    "timestamp": "2026-05-30T03:18:08+00:00",
-    "loop_count": 24,
-    "calls_made_this_hour": 15,
+    "timestamp": "2026-05-30T04:08:11+00:00",
+    "loop_count": 52,
+    "calls_made_this_hour": 17,
     "max_calls_per_hour": 80,
-    "tokens_used_this_hour": 1480960,
+    "tokens_used_this_hour": 0,
     "max_tokens_per_hour": 0,
     "last_action": "failed",
     "status": "error",
     "exit_reason": "",
-    "next_reset": "12:18:08"
+    "next_reset": "13:08:11"
 }

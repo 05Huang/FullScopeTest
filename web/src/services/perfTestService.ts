@@ -76,6 +76,52 @@ export const getRunningTests = (): Promise<ApiResponse> => {
 
 // ==================== AI ====================
 
+// ==================== 历史测试结果 ====================
+
+export const getPerformanceResults = (params?: {
+  project_id?: number
+  scenario_id?: number
+  status?: string
+  page?: number
+  per_page?: number
+}): Promise<ApiResponse> => {
+  return api.get('/perf-test/results', { params }) as Promise<ApiResponse>
+}
+
+export const getPerformanceResultMetrics = (
+  resultId: number,
+  limit?: number
+): Promise<ApiResponse> => {
+  const params: Record<string, any> = {}
+  if (limit) params.limit = limit
+  return api.get(`/perf-test/results/${resultId}/metrics`, { params }) as Promise<ApiResponse>
+}
+
+export const comparePerformanceRuns = (runIds: number[]): Promise<ApiResponse> => {
+  return api.get('/perf-test/compare', {
+    params: { run_ids: runIds.join(',') },
+  }) as Promise<ApiResponse>
+}
+
+// ==================== 告警规则 ====================
+
+export const getAlertRules = (params?: {
+  scenario_id?: number
+}): Promise<ApiResponse> => {
+  return api.get('/perf-test/alert-rules', { params }) as Promise<ApiResponse>
+}
+
+export const getAlertLogs = (params?: {
+  page?: number
+  per_page?: number
+  rule_id?: number
+  severity?: string
+}): Promise<ApiResponse> => {
+  return api.get('/perf-test/alert-logs', { params }) as Promise<ApiResponse>
+}
+
+// ==================== AI ====================
+
 export const generateScriptAI = (data: {
   prompt: string
 }): Promise<ApiResponse> => {
@@ -93,5 +139,10 @@ export const perfTestService = {
   stopScenario,
   getScenarioStatus,
   getRunningTests,
+  getPerformanceResults,
+  getPerformanceResultMetrics,
+  comparePerformanceRuns,
+  getAlertRules,
+  getAlertLogs,
   generateScriptAI,
 }
