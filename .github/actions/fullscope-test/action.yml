@@ -1,0 +1,106 @@
+name: 'FullScopeTest Action'
+description: 'Run FullScopeTest test suites and report results'
+author: 'FullScopeTest'
+
+inputs:
+  server-url:
+    description: 'FullScopeTest server URL'
+    required: true
+  api-token:
+    description: 'FullScopeTest API token for authentication'
+    required: true
+  test-suite-id:
+    description: 'Test suite ID to run'
+    required: false
+    default: ''
+  quality-gate-id:
+    description: 'Quality Gate ID to evaluate'
+    required: false
+    default: ''
+  project-id:
+    description: 'Project ID'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run FullScopeTest
+      shell: bash
+      env:
+        FST_SERVER_URL: ${{ inputs.server-url }}
+        FST_API_TOKEN: ${{ inputs.api-token }}
+        FST_TEST_SUITE_ID: ${{ inputs.test-suite-id }}
+        FST_QUALITY_GATE_ID: ${{ inputs.quality-gate-id }}
+        FST_PROJECT_ID: ${{ inputs.project-id }}
+      run: |
+        echo "Starting FullScopeTest..."
+        echo "Server URL: $FST_SERVER_URL"
+        echo "Project ID: $FST_PROJECT_ID"
+        
+        # Create test run
+        RESPONSE=$(curl -s -X POST "$FST_SERVER_URL/api/v1/test-runs" \
+          -H "Authorization: Bearer $FST_API_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"project_id\": $FST_PROJECT_ID, \"triggered_by\": \"ci\"}")
+        
+        TEST_RUN_ID=$(echo "$RESPONSE" | python -c "import sys, json; print(json.load(sys.stdin)['data']['id'])" 2>/dev/null)
+        
+        if [ -z "$TEST_RUN_ID" ]; then
+          echo "Failed to create test run"
+          echo "$RESPONSE"
+          exit 1
+        fi
+        
+        echo "Test run created: $TEST_RUN_ID"
+        
+        # Poll for completion
+        while true; do
+          STATUS_RESPONSE=$(curl -s "$FST_SERVER_URL/api/v1/test-runs/$TEST_RUN_ID" \
+            -H "Authorization: Bearer $FST_API_TOKEN")
+          
+          STATUS=$(echo "$STATUS_RESPONSE" | python -c "import sys, json; print(json.load(sys.stdin)['data']['status'])" 2>/dev/null)
+          
+          echo "Status: $STATUS"
+          
+          if [ "$STATUS" = "success" ] || [ "$STATUS" = "failed" ] || [ "$STATUS" = "cancelled" ]; then
+            break
+          fi
+          
+          sleep 10
+        done
+        
+        # Get results
+        RESULTS=$(curl -s "$FST_SERVER_URL/api/v1/test-runs/$TEST_RUN_ID" \
+          -H "Authorization: Bearer $FST_API_TOKEN")
+        
+        echo "$RESULTS" | python -m json.tool
+        
+        PASS_RATE=$(echo "$RESULTS" | python -c "import sys, json; d=json.load(sys.stdin)['data']; print(d.get('pass_rate', 0))" 2>/dev/null)
+        FINAL_STATUS=$(echo "$RESULTS" | python -c "import sys, json; print(json.load(sys.stdin)['data']['status'])" 2>/dev/null)
+        
+        echo "Pass rate: $PASS_RATE%"
+        echo "Final status: $FINAL_STATUS"
+        
+        # Evaluate quality gate if provided
+        if [ -n "$FST_QUALITY_GATE_ID" ]; then
+          echo "Evaluating quality gate: $FST_QUALITY_GATE_ID"
+          GATE_RESPONSE=$(curl -s -X POST "$FST_SERVER_URL/api/v1/quality-gates/$FST_QUALITY_GATE_ID/evaluate" \
+            -H "Authorization: Bearer $FST_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"test_run_id\": $TEST_RUN_ID}")
+          echo "$GATE_RESPONSE" | python -m json.tool
+        fi
+        
+        # Exit with appropriate code
+        if [ "$FINAL_STATUS" = "failed" ] || [ "$FINAL_STATUS" = "cancelled" ]; then
+          exit 1
+        fi
+        exit 0
+
+outputs:
+  test-run-id:
+    description: 'The ID of the created test run'
+    value: ${{ steps.run.outputs.test_run_id }}
+  status:
+    description: 'Final status of the test run'
+    value: ${{ steps.run.outputs.status }}
