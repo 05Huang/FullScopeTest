@@ -18,6 +18,7 @@ from .webhook_token import WebhookToken
 from .scheduled_task import ScheduledTask
 from .visual_baseline import VisualBaseline
 from .visual_diff import VisualDiff
+from .perf_test_result import PerformanceTestResult, PerformanceMetricSample
 
 __all__ = [
     'User',
@@ -36,5 +37,7 @@ __all__ = [
     'WebhookToken',
     'ScheduledTask',
     'VisualBaseline',
-    'VisualDiff'
+    'VisualDiff',
+    'PerformanceTestResult',
+    'PerformanceMetricSample',
 ]

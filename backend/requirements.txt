@@ -20,6 +20,7 @@ httpx==0.25.2
 playwright==1.40.0
 pixelmatch==0.4.0
 Pillow==12.1.1
+imagehash==4.3.1
 
 # 性能测试
 locust==2.20.0

@@ -113,6 +113,60 @@ def get_diffs(test_run_id):
     )
 
 
+@api_bp.route('/visual/history/<int:test_case_id>', methods=['GET'])
+@jwt_required()
+def get_visual_history(test_case_id):
+    """
+    获取某个测试用例的视觉回归历史时间线
+
+    返回按时间排序的每一轮测试执行的视觉差异汇总，用于趋势折线图。
+    """
+    from sqlalchemy import func
+
+    # 按 test_run_id 分组，获取每轮执行的视觉差异摘要
+    rows = (
+        db.session.query(
+            VisualDiff.test_run_id,
+            func.min(VisualDiff.created_at).label('run_time'),
+            func.avg(VisualDiff.diff_percentage).label('avg_diff'),
+            func.max(VisualDiff.diff_percentage).label('max_diff'),
+            func.min(VisualDiff.diff_percentage).label('min_diff'),
+            func.count(VisualDiff.id).label('step_count'),
+            func.sum(db.case((VisualDiff.status == 'visual_fail', 1), else_=0)).label('fail_count'),
+            func.sum(db.case((VisualDiff.status == 'visual_pass', 1), else_=0)).label('pass_count'),
+        )
+        .filter(VisualDiff.test_case_id == test_case_id)
+        .group_by(VisualDiff.test_run_id)
+        .order_by(func.min(VisualDiff.created_at).desc())
+        .all()
+    )
+
+    history = []
+    for row in rows:
+        # 获取该轮执行中第一个 diff 的缩略图路径作为代表
+        sample = (
+            VisualDiff.query
+            .filter_by(test_run_id=row.test_run_id, test_case_id=test_case_id)
+            .order_by(VisualDiff.step_index.asc())
+            .first()
+        )
+        history.append({
+            'test_run_id': row.test_run_id,
+            'run_time': row.run_time.isoformat() if row.run_time else None,
+            'avg_diff_percentage': round(float(row.avg_diff or 0), 2),
+            'max_diff_percentage': round(float(row.max_diff or 0), 2),
+            'min_diff_percentage': round(float(row.min_diff or 0), 2),
+            'step_count': row.step_count,
+            'fail_count': row.fail_count or 0,
+            'pass_count': row.pass_count or 0,
+            'sample_diff_image': sample.diff_image_path if sample else None,
+            'sample_baseline_image': sample.baseline.baseline_image_path if sample and sample.baseline else None,
+            'sample_current_image': sample.current_image_path if sample else None,
+        })
+
+    return success_response(data=history)
+
+
 @api_bp.route('/visual/baselines/<int:baseline_id>', methods=['DELETE'])
 @jwt_required()
 def delete_baseline(baseline_id):

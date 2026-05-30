@@ -56,6 +56,12 @@ class BaseConfig:
     # 报告存储路径
     REPORT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'reports')
 
+    # 截图存储路径（视觉回归测试）
+    SCREENSHOT_STORAGE_PATH = os.environ.get(
+        'SCREENSHOT_STORAGE_PATH',
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'screenshots')
+    )
+
     # Performance test limits
     PERF_TEST_LIMITS = {
         'min_users': _env_int('PERF_TEST_MIN_USERS', 1),
