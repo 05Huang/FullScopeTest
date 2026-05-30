@@ -6,7 +6,7 @@
 CLAUDE_TIMEOUT=60
 
 # 每小时最大 API 调用次数
-MAX_CALLS_PER_HOUR=80
+MAX_CALLS_PER_HOUR=500
 
 # 熔断器配置
 CB_NO_PROGRESS_THRESHOLD=4        # 4 次无进展后熔断

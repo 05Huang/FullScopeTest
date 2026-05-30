@@ -22,6 +22,7 @@ const Documents = lazy(() => import('./pages/Documents'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Profile = lazy(() => import('./pages/Profile'))
 const VisualRegressionHistory = lazy(() => import('./pages/VisualRegressionHistory'))
+const AIInsightsDashboard = lazy(() => import('./pages/AIInsightsDashboard'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -176,6 +177,16 @@ function App() {
             }
           />
         </Route>
+
+        {/* AI 统计看板 */}
+        <Route
+          path="ai-insights"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <AIInsightsDashboard />
+            </Suspense>
+          }
+        />
 
         {/* 测试报告 */}
         <Route
