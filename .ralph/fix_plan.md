@@ -36,7 +36,7 @@
 ### 2B：性能测试深度增强
 
 - [x] **P2B-01** 重新设计性能测试结果数据模型（`PerformanceTestResult`、`PerformanceMetricSample`）：支持存储完整的时间序列数据（每秒的 RPS、响应时间、错误率、并发用户数）；创建 Alembic 迁移
-- [ ] **P2B-02** 修改 Locust 任务执行器：实时采集并每 5 秒写入一次 `PerformanceMetricSample`；任务结束后计算并存储统计摘要（P50/P75/P95/P99 响应时间、最大 RPS、错误率）
+- [x] **P2B-02** 修改 Locust 任务执行器：实时采集并每 5 秒写入一次 `PerformanceMetricSample`；任务结束后计算并存储统计摘要（P50/P75/P95/P99 响应时间、最大 RPS、错误率）
 - [ ] **P2B-03** 实现性能测试历史对比 API（`GET /api/performance/compare?run_ids=id1,id2,id3`）：返回多次测试运行的关键指标对比；计算性能劣化百分比（相对于基准运行）
 - [ ] **P2B-04** 实现性能告警规则引擎（`backend/app/services/performance_alert_service.py`）：可配置告警规则（如「P99 响应时间 > 2000ms 触发告警」）；支持「相比上次运行劣化超过 X%」的相对告警；告警通过 WebSocket 实时推送到前端
 - [ ] **P2B-05** 实现前端性能测试实时大盘（`frontend/src/pages/PerformanceDashboard.tsx`）：Recharts 折线图展示实时 RPS、响应时间、错误率；历史对比视图（多条曲线叠加）；P95/P99 分位数高亮显示
@@ -104,12 +104,12 @@
 
 ## 状态汇总
 
-完成进度：15 / 48 个任务
+完成进度：16 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
 - Phase 2A（视觉回归）：7/7
-- Phase 2B（性能增强）：1/5
+- Phase 2B（性能增强）：2/5
 - Phase 2C（AI 工程化）：0/6
 - Phase 3（CI/CD 集成）：0/7
 - Phase 4（多租户安全）：0/7
