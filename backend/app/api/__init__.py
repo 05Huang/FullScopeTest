@@ -27,3 +27,4 @@ from . import visual
 from . import alert_rules
 from . import prompt_versions
 from . import swagger_gen
+from . import semantic_dedup

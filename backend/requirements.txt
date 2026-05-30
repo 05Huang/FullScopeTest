@@ -55,3 +55,6 @@ gunicorn==21.2.0
 # 云存储
 oss2==2.18.4
 cffi==1.17.1
+
+# AI/ML 语义分析
+scikit-learn>=1.3.0

@@ -6,5 +6,6 @@ AI 服务模块
 
 from .base import AIServiceBase
 from .script_generator import ScriptGeneratorService, ensure_default_prompt_versions
+from .semantic_dedup_service import find_duplicates
 
-__all__ = ['AIServiceBase', 'ScriptGeneratorService', 'ensure_default_prompt_versions']
+__all__ = ['AIServiceBase', 'ScriptGeneratorService', 'ensure_default_prompt_versions', 'find_duplicates']
