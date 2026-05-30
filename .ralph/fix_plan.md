@@ -43,7 +43,7 @@
 
 ### 2C：AI 能力工程化
 
-- [ ] **P2C-01** 设计 AI 功能的可观测性基础设施：创建 `AIInvocationLog` 模型（存储每次 AI 调用的 prompt、response、latency、success/fail、tokens_used、cost_estimate）；创建 `PromptVersion` 模型（Prompt 版本管理）；创建 Alembic 迁移
+- [x] **P2C-01** 设计 AI 功能的可观测性基础设施：创建 `AIInvocationLog` 模型（存储每次 AI 调用的 prompt、response、latency、success/fail、tokens_used、cost_estimate）；创建 `PromptVersion` 模型（Prompt 版本管理）；创建 Alembic 迁移
 - [ ] **P2C-02** 创建 AI 服务基类（`backend/app/services/ai/base.py`）：统一的 LLM 调用接口；自动记录 `AIInvocationLog`；支持 retry with exponential backoff；超时处理；降级策略（AI 失败时返回 fallback 结果而不是 500）
 - [ ] **P2C-03** 将现有 NL2Script 功能重构为使用 `PromptVersion` 管理：提取 Prompt 到数据库；支持 A/B 两个版本的 Prompt 同时运行；基于 `AIInvocationLog` 统计每个版本的成功率；实现 `GET /api/ai/prompt-versions` 和 `POST /api/ai/prompt-versions` 接口
 - [ ] **P2C-04** 实现基于 OpenAPI/Swagger 的智能用例生成服务（`backend/app/services/ai/swagger_case_generator.py`）：解析 Swagger JSON/YAML；AI 分析每个接口的业务语义；自动生成正常值、边界值、异常值测试用例；支持 `POST /api/ai/generate-cases-from-swagger`；生成的用例直接保存到现有用例管理模块
@@ -104,13 +104,13 @@
 
 ## 状态汇总
 
-完成进度：19 / 48 个任务
+完成进度：20 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
 - Phase 2A（视觉回归）：7/7
 - Phase 2B（性能增强）：5/5
-- Phase 2C（AI 工程化）：0/6
+- Phase 2C（AI 工程化）：1/6
 - Phase 3（CI/CD 集成）：0/7
 - Phase 4（多租户安全）：0/7
 - Phase 5（FastAPI 迁移）：0/8

@@ -20,6 +20,8 @@ from .visual_baseline import VisualBaseline
 from .visual_diff import VisualDiff
 from .perf_test_result import PerformanceTestResult, PerformanceMetricSample
 from .perf_test_alert import PerformanceAlertRule, PerformanceAlertLog
+from .ai_invocation_log import AIInvocationLog
+from .prompt_version import PromptVersion
 
 __all__ = [
     'User',
@@ -43,4 +45,6 @@ __all__ = [
     'PerformanceMetricSample',
     'PerformanceAlertRule',
     'PerformanceAlertLog',
+    'AIInvocationLog',
+    'PromptVersion',
 ]
