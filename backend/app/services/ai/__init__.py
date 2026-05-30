@@ -5,5 +5,6 @@ AI 服务模块
 """
 
 from .base import AIServiceBase
+from .script_generator import ScriptGeneratorService, ensure_default_prompt_versions
 
-__all__ = ['AIServiceBase']
+__all__ = ['AIServiceBase', 'ScriptGeneratorService', 'ensure_default_prompt_versions']

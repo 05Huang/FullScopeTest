@@ -92,6 +92,9 @@ def create_app(config_name='development'):
     # 初始化定时任务
     init_scheduler(app)
 
+    # 初始化默认 Prompt 版本（如果数据库中没有）
+    _seed_default_prompt_versions(app)
+
     # 初始化 Prometheus 指标采集
     try:
         from .core.metrics import init_metrics
@@ -109,6 +112,45 @@ def _validate_production_secrets(app):
     missing = [key for key in required_secrets if not app.config.get(key) or app.config[key] == 'CHANGE_ME_IN_PRODUCTION']
     if missing:
         raise RuntimeError(f"生产环境缺少必需配置: {', '.join(missing)}。请在环境变量中设置这些值。")
+
+
+def _seed_default_prompt_versions(app):
+    """在应用启动时确保默认 PromptVersion 存在"""
+    try:
+        with app.app_context():
+            from .extensions import db
+            from .models.prompt_version import PromptVersion
+            from .services.ai.script_generator import (
+                DEFAULT_WEB_SYSTEM_PROMPT,
+                DEFAULT_PERF_SYSTEM_PROMPT,
+            )
+
+            defaults = [
+                ('script_gen_web', 'baseline', DEFAULT_WEB_SYSTEM_PROMPT),
+                ('script_gen_perf', 'baseline', DEFAULT_PERF_SYSTEM_PROMPT),
+            ]
+
+            for feature, name, system_prompt in defaults:
+                existing = PromptVersion.query.filter_by(
+                    feature=feature, version=1
+                ).first()
+                if not existing:
+                    pv = PromptVersion(
+                        feature=feature,
+                        name=name,
+                        version=1,
+                        is_active=True,
+                        system_prompt=system_prompt,
+                        temperature=0.2,
+                        traffic_weight=1.0,
+                        change_notes='Initial baseline prompt',
+                    )
+                    db.session.add(pv)
+                    logger.info('Seeded default PromptVersion', feature=feature)
+
+            db.session.commit()
+    except Exception as exc:
+        logger.warning('Failed to seed default PromptVersions', error=str(exc))
 
 
 def init_extensions(app):

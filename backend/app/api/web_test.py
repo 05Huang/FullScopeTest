@@ -259,7 +259,8 @@ def generate_web_script():
         if data.get('vision_api_key'):
             runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
 
-        script_content = generate_test_script(prompt, "web", runtime_config)
+        user_id = get_current_user_id()
+        script_content = generate_test_script(prompt, "web", runtime_config, user_id=user_id)
         return success_response(data={'script_content': script_content}, message='AI 脚本生成成功')
     except Exception as exc:
         return error_response(500, f'AI 脚本生成失败: {str(exc)}')
