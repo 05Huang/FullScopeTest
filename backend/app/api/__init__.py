@@ -30,3 +30,5 @@ from . import swagger_gen
 from . import semantic_dedup
 from . import ai_stats
 from . import github_integration
+from . import github_checks
+from . import quality_gates

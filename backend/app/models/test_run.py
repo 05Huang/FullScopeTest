@@ -64,6 +64,10 @@ class TestRun(db.Model):
     # 错误信息
     error_message = db.Column(db.Text, comment='错误信息')
 
+    # GitHub Check Run 回写
+    check_run_id = db.Column(db.Integer, comment='GitHub Check Run ID')
+    check_run_repo = db.Column(db.String(200), comment='GitHub 仓库全名 (owner/repo)')
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     
     def to_dict(self):
@@ -91,6 +95,8 @@ class TestRun(db.Model):
             'triggered_by': self.triggered_by,
             'triggered_user_id': self.triggered_user_id,
             'error_message': self.error_message,
+            'check_run_id': self.check_run_id,
+            'check_run_repo': self.check_run_repo,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
     

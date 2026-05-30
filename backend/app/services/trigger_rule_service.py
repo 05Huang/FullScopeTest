@@ -22,6 +22,7 @@ def evaluate_push_event(
     changed_files: List[str],
     commit_message: str,
     repository: str,
+    project_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     评估 push 事件是否应该触发测试
@@ -31,6 +32,7 @@ def evaluate_push_event(
         changed_files: 变更的文件列表
         commit_message: 提交信息
         repository: 仓库全名
+        project_id: 可选的项目 ID，用于过滤规则
 
     Returns:
         dict: 包含 should_trigger, test_type, target_id, matched_rules 等信息
@@ -39,10 +41,14 @@ def evaluate_push_event(
     branch = ref.replace('refs/heads/', '') if ref.startswith('refs/heads/') else ref
 
     # 获取所有激活的 push 规则
-    rules = TriggerRule.query.filter_by(
+    query = TriggerRule.query.filter_by(
         trigger_event='push',
         is_active=True,
-    ).all()
+    )
+    if project_id:
+        query = query.filter_by(project_id=project_id)
+
+    rules = query.all()
 
     matched_rules = []
 
