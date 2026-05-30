@@ -103,6 +103,10 @@ def create_app(config_name='development'):
     except Exception as e:
         logger.warning("Prometheus metrics initialization failed", error=str(e))
 
+    # 初始化租户中间件
+    from .middleware.tenant import setup_tenant_hooks
+    setup_tenant_hooks(app)
+
     return app
 
 
