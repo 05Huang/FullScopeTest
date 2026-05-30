@@ -60,7 +60,7 @@
 - [x] **P3-03** 实现测试触发规则引擎（`backend/app/services/trigger_rule_service.py`）：可配置规则「当 PR 目标分支为 main 时，运行标签为 regression 的测试套件」；支持「文件路径变更匹配」（如 `/api/**` 变更时只运行接口测试）；规则配置 CRUD API
 - [x] **P3-04** 实现 GitHub Check Run 回写（`backend/app/services/github_check_service.py`）：测试开始时创建 Check Run（状态 in_progress）；实时更新进度（通过 Check Run 的 output.summary）；测试结束时更新最终状态（success/failure）；附上测试报告链接和失败用例摘要
 - [x] **P3-05** 实现 Quality Gate 功能：可配置质量门禁规则（通过率阈值、P95 响应时间上限、视觉差异上限）；`GET /api/quality-gates`、`POST /api/quality-gates`、`POST /api/quality-gates/{id}/evaluate`；Quality Gate 评估结果同步到 GitHub Check Run 状态
-- [ ] **P3-06** 发布官方 GitHub Action（`.github/actions/fullscope-test/action.yml`）：支持 `with` 参数：`server-url`、`api-token`、`test-suite-id`、`quality-gate-id`；Action 触发测试、轮询状态、输出结果；在 `README.md` 中提供完整的 Action 使用示例
+- [x] **P3-06** 发布官方 GitHub Action（`.github/actions/fullscope-test/action.yml`）：支持 `with` 参数：`server-url`、`api-token`、`test-suite-id`、`quality-gate-id`；Action 触发测试、轮询状态、输出结果；在 `README.md` 中提供完整的 Action 使用示例
 - [ ] **P3-07** 实现 GitLab CI 集成（`backend/app/api/webhooks/gitlab.py`）：接收 GitLab merge request 和 push webhook；逻辑与 GitHub 一致；生成 GitLab Pipeline 状态回写（通过 GitLab API 提交 commit status）；提供 GitLab CI YAML 模板示例
 
 ---
@@ -104,14 +104,14 @@
 
 ## 状态汇总
 
-完成进度：30 / 48 个任务
+完成进度：31 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
 - Phase 2A（视觉回归）：7/7
 - Phase 2B（性能增强）：5/5
 - Phase 2C（AI 工程化）：6/6
-- Phase 3（CI/CD 集成）：4/7
+- Phase 3（CI/CD 集成）：5/7
 - Phase 4（多租户安全）：0/7
 - Phase 5（FastAPI 迁移）：0/8
 - Phase 6（文档发布）：0/6
