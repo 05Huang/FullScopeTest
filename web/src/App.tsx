@@ -20,6 +20,7 @@ const CICD = lazy(() => import('./pages/CICD'))
 const Documents = lazy(() => import('./pages/Documents'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Profile = lazy(() => import('./pages/Profile'))
+const VisualRegressionHistory = lazy(() => import('./pages/VisualRegressionHistory'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -115,6 +116,14 @@ function App() {
             }
           />
           <Route path="recorder" element={<Navigate to="/web-test/scripts" replace />} />
+          <Route
+            path="visual-history/:test_case_id"
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <VisualRegressionHistory />
+              </Suspense>
+            }
+          />
         </Route>
 
         {/* APP 自动化测试 */}
