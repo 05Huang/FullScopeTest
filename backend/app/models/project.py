@@ -17,6 +17,7 @@ class Project(db.Model):
     name = db.Column(db.String(100), nullable=False, comment='项目名称')
     description = db.Column(db.Text, comment='项目描述')
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='所有者 ID')
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=True, comment='组织 ID')
     settings = db.Column(db.JSON, default=dict, comment='项目设置')
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')

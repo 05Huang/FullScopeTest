@@ -25,6 +25,7 @@ from .prompt_version import PromptVersion
 from .github_integration import GitHubIntegration
 from .trigger_rule import TriggerRule
 from .quality_gate import QualityGate, QualityGateEvaluation
+from .organization import Organization, OrganizationMember
 
 __all__ = [
     'User',
@@ -54,4 +55,6 @@ __all__ = [
     'TriggerRule',
     'QualityGate',
     'QualityGateEvaluation',
+    'Organization',
+    'OrganizationMember',
 ]
