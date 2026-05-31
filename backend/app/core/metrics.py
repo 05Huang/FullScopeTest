@@ -7,10 +7,14 @@ Prometheus Metrics 配置模块
 - active_websocket_connections: 当前活跃的 WebSocket 连接数
 """
 
+import os
 from prometheus_client import Counter, Histogram, Gauge
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+# /metrics 端点访问令牌（生产环境应设置此环境变量）
+METRICS_TOKEN = os.environ.get('METRICS_TOKEN', '')
 
 # ──────────────────────────────────────────────
 # API 请求指标
@@ -81,17 +85,31 @@ def record_task_failure(task_name: str, duration: float) -> None:
 def init_metrics(app):
     """
     初始化 Prometheus metrics 集成到 Flask 应用
-    
+
     - 注册 before_request / after_request hook 来自动采集 API 指标
     - 暴露 /metrics 端点（prometheus-flask-exporter 自动完成）
+    - 生产环境下 /metrics 端点需要 METRICS_TOKEN 认证
     """
     from prometheus_flask_exporter import PrometheusMetrics
+
+    # /metrics 端点认证中间件
+    @app.before_request
+    def _protect_metrics():
+        from flask import request
+        if request.path == '/metrics' and METRICS_TOKEN:
+            auth_header = request.headers.get('Authorization', '')
+            token = request.args.get('token', '')
+            if auth_header == f'Bearer {METRICS_TOKEN}' or token == METRICS_TOKEN:
+                return None
+            from flask import jsonify
+            return jsonify({'error': 'Unauthorized', 'message': 'Invalid or missing metrics token'}), 401
 
     metrics = PrometheusMetrics(app, group_by="url_rule")
 
     # 额外暴露应用级常量标签
     metrics.info("app_info", "FullScopeTest application info", version="1.0.0")
 
-    logger.info("Prometheus metrics initialized", endpoint="/metrics")
+    logger.info("Prometheus metrics initialized", endpoint="/metrics",
+                authenticated=bool(METRICS_TOKEN))
 
     return metrics
