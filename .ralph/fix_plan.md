@@ -97,14 +97,14 @@
 - [x] **P6-02** 编写 API 文档（`docs/api-reference.md`）：所有 v1 + v2 接口的请求/响应示例；认证说明（JWT + API Token 两种方式）；错误码一览表；WebSocket 协议说明
 - [x] **P6-03** 编写 GitHub Actions 集成指南（`docs/github-actions-integration.md`）：完整的从零到一集成步骤；3 个真实场景的 YAML 示例（PR 自动触发、定时回归、手动触发）；Quality Gate 配置示例
 - [x] **P6-04** 创建第一个正式 Release（v1.0.0-rc1）：更新 `CHANGELOG.md`（按模块列出所有新功能）；创建 `docker-compose.release.yml`（固定所有镜像版本）；写 GitHub Release Notes；更新 README 的功能特性列表，突出与 MeterSphere V3 的差异化
-- [ ] **P6-05** 编写与 MeterSphere 的功能对比文档（`docs/vs-metersphere.md`）：功能矩阵对比表（FullScopeTest vs MeterSphere V3 vs MeterSphere V2）；性能基准对比；架构差异说明；从 MeterSphere 迁移指南（数据导出/导入工具或格式说明）
+- [x] **P6-05** 编写与 MeterSphere 的功能对比文档（`docs/vs-metersphere.md`）：功能矩阵对比表（FullScopeTest vs MeterSphere V3 vs MeterSphere V2）；性能基准对比；架构差异说明；从 MeterSphere 迁移指南（数据导出/导入工具或格式说明）
 - [ ] **P6-06** 完善前端国际化（i18n）：使用 `react-i18next`；实现中英文切换；至少完成以下页面的英文翻译：登录、测试用例列表、测试执行详情、仪表盘、AI 功能页；语言偏好存储在 localStorage
 
 ---
 
 ## 状态汇总
 
-完成进度：51 / 53 个任务
+完成进度：52 / 53 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
@@ -114,6 +114,6 @@
 - Phase 3（CI/CD 集成）：6/7
 - Phase 4（多租户安全）：6/7
 - Phase 5（FastAPI 迁移）：8/8
-- Phase 6（文档发布）：4/6
+- Phase 6（文档发布）：5/6
 
 > **Ralph 提示**：每次循环完成一个任务后，在任务前的 `[ ]` 改为 `[x]`，并更新上方的「完成进度」计数。
