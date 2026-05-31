@@ -17,6 +17,7 @@ import {
   Statistic,
   Modal,
   Form,
+  Popconfirm,
 } from 'antd'
 import {
   PlayCircleOutlined,
@@ -484,15 +485,21 @@ if __name__ == "__main__":
                   <Tooltip title="查看详情" key="view">
                     <Button type="text" size="small" icon={<EyeOutlined />} />
                   </Tooltip>,
-                  <Tooltip title="删除" key="delete">
-                    <Button
-                      type="text"
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDeleteStep(step.id)}
-                    />
-                  </Tooltip>,
+                  <Popconfirm
+                    title="确认删除此步骤？"
+                    onConfirm={() => handleDeleteStep(step.id)}
+                    okText="确认"
+                    cancelText="取消"
+                  >
+                    <Tooltip title="删除" key="delete">
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                      />
+                    </Tooltip>
+                  </Popconfirm>,
                 ]}
               >
                 <List.Item.Meta
