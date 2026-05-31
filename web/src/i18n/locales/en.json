@@ -74,7 +74,7 @@
       "emailInvalid": "Please enter a valid email address",
       "usernameMin": "Username must be at least 3 characters",
       "usernameMax": "Username must be at most 20 characters",
-      "passwordMin": "Password must be at least 6 characters",
+      "passwordMin": "Password must be at least 8 characters with uppercase, lowercase, number, and special character",
       "confirmRequired": "Please confirm your password",
       "passwordMismatch": "Passwords do not match"
     },

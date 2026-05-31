@@ -74,7 +74,7 @@
       "emailInvalid": "请输入有效的邮箱地址",
       "usernameMin": "用户名至少3个字符",
       "usernameMax": "用户名最多20个字符",
-      "passwordMin": "密码至少6个字符",
+      "passwordMin": "密码至少8位，需包含大小写字母、数字和特殊字符",
       "confirmRequired": "请确认密码",
       "passwordMismatch": "两次输入的密码不一致"
     },

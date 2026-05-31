@@ -455,7 +455,7 @@ const Login = () => {
                   name="password"
                   rules={[
                     { required: true, message: t('login.validation.passwordRequired') },
-                    { min: 6, message: t('login.validation.passwordMin') },
+                    { min: 8, message: t('login.validation.passwordMin') },
                   ]}
                 >
                   <Input
