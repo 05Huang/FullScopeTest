@@ -107,6 +107,10 @@ def create_app(config_name='development'):
     from .middleware.tenant import setup_tenant_hooks
     setup_tenant_hooks(app)
 
+    # 初始化限流中间件
+    from .middleware.rate_limit import rate_limit_middleware
+    rate_limit_middleware(app)
+
     return app
 
 

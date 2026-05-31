@@ -34,3 +34,4 @@ from . import github_checks
 from . import quality_gates
 from .webhooks import gitlab
 from . import organizations
+from . import tokens

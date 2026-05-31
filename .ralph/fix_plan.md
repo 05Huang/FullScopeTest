@@ -70,8 +70,8 @@
 - [x] **P4-01** 设计多租户数据模型：创建 `Organization`（组织）、`OrganizationMember`（成员关系）模型；所有现有的 `Project`、`TestCase`、`TestPlan`、`TestResult` 模型添加 `organization_id` 外键；创建 Alembic 迁移（带数据迁移：将现有数据归入默认组织）
 - [x] **P4-02** 实现组织级数据隔离中间件（`backend/app/middleware/tenant.py`）：所有查询自动注入 `organization_id` 过滤条件；防止越权访问（A 组织用户访问 B 组织数据返回 404 而不是 403，避免泄露存在性）；为所有 Service 层方法添加 tenant 参数
 - [x] **P4-03** 实现组织管理 API：`POST /api/organizations`（创建组织）、`GET /api/organizations/me`（当前用户的组织列表）、`POST /api/organizations/{id}/members`（邀请成员）、`DELETE /api/organizations/{id}/members/{user_id}`、`PATCH /api/organizations/{id}/members/{user_id}/role`（修改角色）
-- [ ] **P4-04** 实现 API 限流（Rate Limiting）：使用 Redis 实现滑动窗口限流；默认规则：普通用户 100 req/min，API token 1000 req/min；可按组织配置不同限额；触发限流返回 `429` 并附 `Retry-After` header；在 Prometheus 中记录限流触发次数
-- [ ] **P4-05** 安全加固——输入验证专项：审查所有接受用户输入的端点；测试用例脚本内容存储时进行沙箱化处理（禁止存储可执行的服务端代码）；Playwright 脚本执行在独立容器中运行（Docker-in-Docker 或隔离 network）；文件上传增加内容类型验证（不仅依赖扩展名）
+- [x] **P4-04** 实现 API 限流（Rate Limiting）：使用 Redis 实现滑动窗口限流；默认规则：普通用户 100 req/min，API token 1000 req/min；可按组织配置不同限额；触发限流返回 `429` 并附 `Retry-After` header；在 Prometheus 中记录限流触发次数
+- [x] **P4-05** 安全加固——输入验证专项：审查所有接受用户输入的端点；测试用例脚本内容存储时进行沙箱化处理（禁止存储可执行的服务端代码）；Playwright 脚本执行在独立容器中运行（Docker-in-Docker 或隔离 network）；文件上传增加内容类型验证（不仅依赖扩展名）
 - [ ] **P4-06** 实现 API Token 管理系统：用户可创建多个 API Token（用于 CI/CD 集成）；Token 有效期、权限范围（read-only/read-write）、最后使用时间记录；Token 值只在创建时展示一次（存储 bcrypt hash）；`GET /api/tokens`、`POST /api/tokens`、`DELETE /api/tokens/{id}`
 - [ ] **P4-07** 实现审计日志（Audit Log）：记录所有写操作（创建/修改/删除测试用例、执行测试、修改配置、成员变更）；`AuditLog` 模型包含 `user_id`、`organization_id`、`action`、`resource_type`、`resource_id`、`changes`（JSON diff）、`ip_address`、`timestamp`；`GET /api/audit-logs` 支持按时间、用户、资源类型过滤
 
@@ -104,7 +104,7 @@
 
 ## 状态汇总
 
-完成进度：35 / 48 个任务
+完成进度：36 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
@@ -112,7 +112,7 @@
 - Phase 2B（性能增强）：5/5
 - Phase 2C（AI 工程化）：6/6
 - Phase 3（CI/CD 集成）：6/7
-- Phase 4（多租户安全）：3/7
+- Phase 4（多租户安全）：4/7
 - Phase 5（FastAPI 迁移）：0/8
 - Phase 6（文档发布）：0/6
 

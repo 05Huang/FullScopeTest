@@ -55,6 +55,16 @@ active_websocket_connections = Gauge(
     "Number of currently active WebSocket connections",
 )
 
+# ──────────────────────────────────────────────
+# 限流指标
+# ──────────────────────────────────────────────
+
+rate_limit_counter = Counter(
+    "rate_limit_exceeded_total",
+    "Total number of rate limit violations",
+    ["user_type", "endpoint"],
+)
+
 
 def record_task_success(task_name: str, duration: float) -> None:
     """记录成功的 Celery 任务执行"""
