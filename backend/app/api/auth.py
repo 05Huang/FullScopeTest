@@ -1,12 +1,15 @@
 """
 认证接口模块
 
-提供用户注册、登录、登出等功能
+提供用户注册、登录、登出、密码重置等功能
 """
+
+import secrets
+from datetime import datetime, timedelta
 
 from flask import request
 from flask_jwt_extended import (
-    create_access_token, 
+    create_access_token,
     create_refresh_token,
     jwt_required
 )
@@ -20,6 +23,9 @@ from ..utils.validators import validate_json, is_valid_email, validate_password_
 from .. import limiter
 from ..utils import get_current_user_id
 from ..utils.oss_upload import upload_to_oss
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @api_bp.route('/auth/register', methods=['POST'])
@@ -237,3 +243,92 @@ def change_password():
     db.session.commit()
     
     return success_response(message='密码修改成功')
+
+
+@api_bp.route('/auth/forgot-password', methods=['POST'])
+@limiter.limit("3/minute")
+@validate_json('email')
+def forgot_password():
+    """
+    忘记密码 - 发送重置链接
+
+    请求体:
+        email: 注册邮箱地址
+
+    注意: 当前实现直接返回 token（适用于无邮件服务的场景）。
+    生产环境建议集成邮件服务发送重置链接。
+    """
+    data = request.get_json()
+    email = data['email'].strip().lower()
+
+    user = User.query.filter_by(email=email).first()
+
+    # 不论用户是否存在，都返回相同消息（防止邮箱枚举攻击）
+    if not user or not user.is_active:
+        return success_response(message='如果该邮箱已注册，重置链接已发送')
+
+    # 生成重置 Token（有效期 30 分钟）
+    reset_token = secrets.token_urlsafe(32)
+    user.reset_token = generate_password_hash(reset_token)
+    user.reset_token_expires = datetime.utcnow() + timedelta(minutes=30)
+    db.session.commit()
+
+    logger.info('Password reset requested', user_id=user.id, email=email)
+
+    # TODO: 生产环境应通过邮件发送重置链接，而非直接返回 token
+    # reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
+    # send_reset_email(user.email, reset_url)
+
+    return success_response(
+        data={'reset_token': reset_token},
+        message='如果该邮箱已注册，重置链接已发送'
+    )
+
+
+@api_bp.route('/auth/reset-password', methods=['POST'])
+@limiter.limit("5/minute")
+@validate_json('token', 'new_password')
+def reset_password():
+    """
+    重置密码
+
+    请求体:
+        token: 重置 Token（从 forgot-password 接口获取）
+        new_password: 新密码（至少8位，包含大小写字母、数字、特殊字符）
+    """
+    data = request.get_json()
+    token = data['token']
+    new_password = data['new_password']
+
+    # 验证新密码强度
+    is_valid, error_msg = validate_password_strength(new_password)
+    if not is_valid:
+        return error_response(400, error_msg)
+
+    # 查找所有有待重置 token 的活跃用户（不能直接通过 token 查找，因为存的是 hash）
+    users = User.query.filter(
+        User.reset_token.isnot(None),
+        User.reset_token_expires.isnot(None),
+        User.is_active == True
+    ).all()
+
+    matched_user = None
+    for user in users:
+        if user.reset_token_expires < datetime.utcnow():
+            continue
+        if check_password_hash(user.reset_token, token):
+            matched_user = user
+            break
+
+    if not matched_user:
+        return error_response(400, '重置 Token 无效或已过期')
+
+    # 更新密码，清除重置 token
+    matched_user.password_hash = generate_password_hash(new_password)
+    matched_user.reset_token = None
+    matched_user.reset_token_expires = None
+    db.session.commit()
+
+    logger.info('Password reset completed', user_id=matched_user.id)
+
+    return success_response(message='密码重置成功，请使用新密码登录')

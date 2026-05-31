@@ -77,7 +77,36 @@
       "passwordMin": "Password must be at least 6 characters",
       "confirmRequired": "Please confirm your password",
       "passwordMismatch": "Passwords do not match"
-    }
+    },
+    "forgotPassword": "Forgot password?"
+  },
+  "forgotPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your registered email and we'll send a password reset link",
+    "emailPlaceholder": "Enter your email",
+    "submitBtn": "Send Reset Link",
+    "success": "Reset link has been sent to your email",
+    "failed": "Failed to send. Please try again later.",
+    "sentTitle": "Email Sent",
+    "sentMessage": "Please check your email and click the link to reset your password. If you don't see it, check your spam folder.",
+    "tokenHint": "Development mode: your reset token is shown below (in production, it will be sent via email):",
+    "goReset": "Reset Password Now",
+    "rememberPassword": "Remember your password?"
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "subtitle": "Enter your reset token and new password",
+    "tokenPlaceholder": "Reset Token",
+    "tokenRequired": "Please enter the reset token",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "submitBtn": "Reset Password",
+    "success": "Password reset successfully!",
+    "failed": "Reset failed. Please check if the token is correct or has expired.",
+    "successTitle": "Password Reset Successful",
+    "successMessage": "Your password has been reset. Please log in with your new password.",
+    "goLogin": "Log In Now",
+    "passwordMin": "Password must be at least 8 characters"
   },
   "dashboard": {
     "title": "Dashboard",

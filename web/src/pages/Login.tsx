@@ -363,6 +363,12 @@ const Login = () => {
                   </div>
                 ) : null}
 
+                <div style={{ textAlign: 'right', marginBottom: 14 }}>
+                  <Link to="/forgot-password" className="fst-auth-link" style={{ fontSize: 13 }}>
+                    {t('login.forgotPassword')}
+                  </Link>
+                </div>
+
                 <Form.Item style={{ marginBottom: 14 }}>
                   <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
                     {t('login.loginBtn')}

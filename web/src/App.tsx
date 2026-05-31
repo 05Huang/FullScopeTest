@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Spin } from 'antd'
 import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import { useAuthStore } from './stores/authStore'
 
 // 懒加载页面组件
@@ -57,6 +59,8 @@ function App() {
         <Route path="/login" element={<></>} />
         <Route path="/register" element={<></>} />
       </Route>
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* 受保护的路由 */}
       <Route

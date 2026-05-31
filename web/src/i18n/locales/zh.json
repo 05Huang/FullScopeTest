@@ -77,7 +77,36 @@
       "passwordMin": "密码至少6个字符",
       "confirmRequired": "请确认密码",
       "passwordMismatch": "两次输入的密码不一致"
-    }
+    },
+    "forgotPassword": "忘记密码？"
+  },
+  "forgotPassword": {
+    "title": "忘记密码",
+    "subtitle": "输入您的注册邮箱，我们将发送密码重置链接",
+    "emailPlaceholder": "请输入注册邮箱",
+    "submitBtn": "发送重置链接",
+    "success": "重置链接已发送到您的邮箱",
+    "failed": "发送失败，请稍后重试",
+    "sentTitle": "邮件已发送",
+    "sentMessage": "请检查您的邮箱，点击链接重置密码。如果未收到邮件，请检查垃圾邮件文件夹。",
+    "tokenHint": "当前为开发模式，重置 Token 如下（生产环境将通过邮件发送）：",
+    "goReset": "立即重置密码",
+    "rememberPassword": "想起密码了？"
+  },
+  "resetPassword": {
+    "title": "重置密码",
+    "subtitle": "请输入您的重置 Token 和新密码",
+    "tokenPlaceholder": "重置 Token",
+    "tokenRequired": "请输入重置 Token",
+    "newPassword": "新密码",
+    "confirmPassword": "确认新密码",
+    "submitBtn": "重置密码",
+    "success": "密码重置成功！",
+    "failed": "重置失败，请检查 Token 是否正确或已过期",
+    "successTitle": "密码重置成功",
+    "successMessage": "您的密码已成功重置，请使用新密码登录。",
+    "goLogin": "立即登录",
+    "passwordMin": "密码至少8个字符"
   },
   "dashboard": {
     "title": "工作台",

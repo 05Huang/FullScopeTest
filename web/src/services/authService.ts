@@ -58,6 +58,16 @@ export const changePassword = (oldPassword: string, newPassword: string): Promis
   return api.put('/auth/password', { old_password: oldPassword, new_password: newPassword }) as Promise<ApiResponse>
 }
 
+// 忘记密码 - 发送重置链接
+export const forgotPassword = (email: string): Promise<ApiResponse<{ reset_token: string }>> => {
+  return api.post('/auth/forgot-password', { email }) as Promise<ApiResponse<{ reset_token: string }>>
+}
+
+// 重置密码
+export const resetPassword = (token: string, newPassword: string): Promise<ApiResponse> => {
+  return api.post('/auth/reset-password', { token, new_password: newPassword }) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const authService = {
   login,
@@ -66,4 +76,6 @@ export const authService = {
   updateProfile,
   uploadAvatar,
   changePassword,
+  forgotPassword,
+  resetPassword,
 }
