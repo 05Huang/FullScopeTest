@@ -9,12 +9,26 @@ from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db
 from ..models.quality_gate import QualityGate
+from ..models.project import Project
 from ..models.test_run import TestRun
 from ..utils.response import success_response, error_response
 from ..utils import get_current_user_id
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _get_gate_with_permission(gate_id, user_id):
+    """获取质量门禁并验证用户权限（通过 Project.owner_id）"""
+    gate = QualityGate.query.get(gate_id)
+    if not gate:
+        return None, error_response(404, '质量门禁不存在')
+    project = Project.query.get(gate.project_id)
+    if not project or project.owner_id != user_id:
+        logger.warning('IDOR attempt blocked on quality_gate',
+                       user_id=user_id, gate_id=gate_id)
+        return None, error_response(404, '质量门禁不存在')
+    return gate, None
 
 
 @api_bp.route('/quality-gates', methods=['GET'])
@@ -64,9 +78,10 @@ def create_quality_gate():
 @jwt_required()
 def get_quality_gate(gate_id):
     """获取质量门禁详情"""
-    gate = QualityGate.query.get(gate_id)
-    if not gate:
-        return error_response(404, '质量门禁不存在')
+    user_id = get_current_user_id()
+    gate, err = _get_gate_with_permission(gate_id, user_id)
+    if err:
+        return err
     return success_response(data=gate.to_dict())
 
 
@@ -74,9 +89,10 @@ def get_quality_gate(gate_id):
 @jwt_required()
 def update_quality_gate(gate_id):
     """更新质量门禁规则"""
-    gate = QualityGate.query.get(gate_id)
-    if not gate:
-        return error_response(404, '质量门禁不存在')
+    user_id = get_current_user_id()
+    gate, err = _get_gate_with_permission(gate_id, user_id)
+    if err:
+        return err
 
     data = request.get_json() or {}
 
@@ -93,9 +109,10 @@ def update_quality_gate(gate_id):
 @jwt_required()
 def delete_quality_gate(gate_id):
     """删除质量门禁规则"""
-    gate = QualityGate.query.get(gate_id)
-    if not gate:
-        return error_response(404, '质量门禁不存在')
+    user_id = get_current_user_id()
+    gate, err = _get_gate_with_permission(gate_id, user_id)
+    if err:
+        return err
 
     db.session.delete(gate)
     db.session.commit()
@@ -106,9 +123,10 @@ def delete_quality_gate(gate_id):
 @jwt_required()
 def evaluate_quality_gate(gate_id):
     """评估质量门禁"""
-    gate = QualityGate.query.get(gate_id)
-    if not gate:
-        return error_response(404, '质量门禁不存在')
+    user_id = get_current_user_id()
+    gate, err = _get_gate_with_permission(gate_id, user_id)
+    if err:
+        return err
 
     data = request.get_json() or {}
     test_run_id = data.get('test_run_id')
@@ -212,9 +230,10 @@ def evaluate_quality_gate(gate_id):
 @jwt_required()
 def get_quality_gate_evaluations(gate_id):
     """获取质量门禁评估历史"""
-    gate = QualityGate.query.get(gate_id)
-    if not gate:
-        return error_response(404, '质量门禁不存在')
+    user_id = get_current_user_id()
+    gate, err = _get_gate_with_permission(gate_id, user_id)
+    if err:
+        return err
 
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
