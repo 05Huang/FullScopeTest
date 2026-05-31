@@ -38,6 +38,14 @@ export const useAuthStore = create<AuthState>()(
       },
       
       logout: () => {
+        // 通知后端注销 Token（异步，不阻塞本地清理）
+        const token = useAuthStore.getState().token
+        if (token) {
+          fetch('/api/v1/auth/logout', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {})
+        }
         set({
           token: null,
           refreshToken: null,

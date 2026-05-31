@@ -210,11 +210,35 @@ def refresh_token():
     """刷新 Access Token"""
     user_id = get_current_user_id()
     access_token = create_access_token(identity=str(user_id))
-    
+
     return success_response(
         data={'access_token': access_token},
         message='Token 刷新成功'
     )
+
+
+@api_bp.route('/auth/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    """
+    登出 - 注销当前 Token
+
+    将当前 Access Token 加入黑名单，使其立即失效。
+    """
+    from flask_jwt_extended import get_jwt
+    from ..services.token_blacklist import blacklist_token
+
+    jwt_data = get_jwt()
+    jti = jwt_data.get('jti')
+    exp_timestamp = jwt_data.get('exp')
+
+    if jti and exp_timestamp:
+        from datetime import datetime
+        expires_at = datetime.utcfromtimestamp(exp_timestamp)
+        blacklist_token(jti, expires_at)
+
+    logger.info('User logged out', user_id=get_current_user_id())
+    return success_response(message='已成功登出')
 
 
 @api_bp.route('/auth/password', methods=['PUT'])

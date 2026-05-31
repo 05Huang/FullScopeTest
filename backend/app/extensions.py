@@ -18,6 +18,18 @@ migrate = Migrate()
 # JWT 认证
 jwt = JWTManager()
 
+
+# JWT Token 黑名单检查
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    """检查 JWT Token 是否已被注销"""
+    from .services.token_blacklist import is_token_blacklisted
+    jti = jwt_payload.get('jti')
+    if not jti:
+        return False
+    return is_token_blacklisted(jti)
+
+
 # Celery 实例 - 配置稍后从 Flask 配置加载
 celery = Celery(
     __name__,
