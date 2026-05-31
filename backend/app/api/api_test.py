@@ -780,7 +780,7 @@ def execute_request():
         # 尝试解析 JSON 响应
         try:
             response_body = response.json()
-        except:
+        except (json.JSONDecodeError, ValueError):
             response_body = response.text
 
         # 计算响应大小
