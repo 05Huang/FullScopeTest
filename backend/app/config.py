@@ -170,6 +170,15 @@ class ProductionConfig(BaseConfig):
     # 生产环境限流更严格
     RATELIMIT_DEFAULT = "100/minute"
 
+    # SQLAlchemy 连接池优化
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': _env_int('DB_POOL_SIZE', 10),        # 连接池大小
+        'max_overflow': _env_int('DB_MAX_OVERFLOW', 20),   # 超出池大小后最多额外创建的连接数
+        'pool_timeout': _env_int('DB_POOL_TIMEOUT', 30),   # 获取连接超时（秒）
+        'pool_recycle': _env_int('DB_POOL_RECYCLE', 1800), # 连接回收时间（秒），防止 MySQL 断连
+        'pool_pre_ping': True,                              # 使用前检测连接是否有效
+    }
+
 
 # 配置映射
 config = {
