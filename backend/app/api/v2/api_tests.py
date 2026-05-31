@@ -902,10 +902,31 @@ async def get_test_run_results_v2(
 # ==================== WebSocket 端点 ====================
 
 
+async def _authenticate_websocket(websocket: WebSocket) -> Optional[int]:
+    """从 WebSocket 连接中验证 JWT Token"""
+    from fastapi.security import HTTPAuthorizationCredentials
+    token = websocket.query_params.get('token')
+    if not token:
+        # 也检查 Authorization header
+        auth_header = websocket.headers.get('authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+    if not token:
+        return None
+    try:
+        from flask_jwt_extended import decode_token
+        decoded = decode_token(token)
+        return int(decoded.get('sub', 0))
+    except Exception:
+        return None
+
+
 @router.websocket("/ws/api-test-logs/{run_id}")
 async def websocket_api_test_logs(websocket: WebSocket, run_id: int):
     """
     WebSocket 端点：实时推送接口测试日志
+
+    认证方式：连接时通过 ?token=<jwt> 或 Authorization: Bearer <jwt> 传递
 
     消息类型：
     - run_started: 测试开始
@@ -913,6 +934,13 @@ async def websocket_api_test_logs(websocket: WebSocket, run_id: int):
     - case_completed: 用例执行完成
     - run_completed: 测试执行完成
     """
+    user_id = await _authenticate_websocket(websocket)
+    if not user_id:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "message": "Authentication required"})
+        await websocket.close(code=4001)
+        return
+
     await manager.connect(websocket, run_id)
     try:
         while True:

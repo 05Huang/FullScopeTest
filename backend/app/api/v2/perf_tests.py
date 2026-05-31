@@ -453,11 +453,35 @@ async def get_alert_logs(
     return {"items": [l.to_dict() for l in items], "total": total, "page": page, "per_page": per_page}
 
 
+async def _authenticate_websocket(websocket: WebSocket) -> Optional[int]:
+    """从 WebSocket 连接中验证 JWT Token"""
+    token = websocket.query_params.get('token')
+    if not token:
+        auth_header = websocket.headers.get('authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+    if not token:
+        return None
+    try:
+        from flask_jwt_extended import decode_token
+        decoded = decode_token(token)
+        return int(decoded.get('sub', 0))
+    except Exception:
+        return None
+
+
 @router.websocket("/ws/perf-test-logs/{scenario_id}")
 async def websocket_perf_test_logs(websocket: WebSocket, scenario_id: int):
+    user_id = await _authenticate_websocket(websocket)
+    if not user_id:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "message": "Authentication required"})
+        await websocket.close(code=4001)
+        return
+
     await websocket.accept()
     scenario = PerfTestScenario.query.get(scenario_id)
-    if not scenario:
+    if not scenario or scenario.user_id != user_id:
         await websocket.send_json({"type": "error", "message": "场景不存在"})
         await websocket.close()
         return
