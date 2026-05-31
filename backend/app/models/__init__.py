@@ -27,6 +27,7 @@ from .trigger_rule import TriggerRule
 from .quality_gate import QualityGate, QualityGateEvaluation
 from .organization import Organization, OrganizationMember
 from .api_token import ApiToken
+from .audit_log import AuditLog
 
 __all__ = [
     'User',
@@ -59,4 +60,5 @@ __all__ = [
     'Organization',
     'OrganizationMember',
     'ApiToken',
+    'AuditLog',
 ]
