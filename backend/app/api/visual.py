@@ -11,11 +11,21 @@ from . import api_bp
 from ..extensions import db
 from ..models.visual_baseline import VisualBaseline
 from ..models.visual_diff import VisualDiff
+from ..models.project import Project
 from ..utils.response import success_response, error_response
 from ..utils import get_current_user_id
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _verify_visual_permission(visual_obj, user_id):
+    """验证视觉资源的用户权限（通过 Project.owner_id）"""
+    project_id = getattr(visual_obj, 'project_id', None)
+    if not project_id:
+        return False
+    project = Project.query.get(project_id)
+    return project and project.owner_id == user_id
 
 
 @api_bp.route('/visual/baselines/<int:test_case_id>', methods=['GET'])
@@ -57,6 +67,11 @@ def approve_baseline(baseline_id):
     if not baseline:
         return error_response(404, '基准截图不存在')
 
+    if not _verify_visual_permission(baseline, user_id):
+        logger.warning('IDOR attempt blocked on visual baseline',
+                       user_id=user_id, baseline_id=baseline_id)
+        return error_response(404, '基准截图不存在')
+
     baseline.approved_by = user_id
     from datetime import datetime
     baseline.approved_at = datetime.utcnow()
@@ -88,6 +103,18 @@ def get_diffs(test_run_id):
         page: 页码 (默认 1)
         per_page: 每页数量 (默认 20)
     """
+    user_id = get_current_user_id()
+    # 验证 test_run 所属项目的 owner
+    from ..models.test_run import TestRun
+    from ..models.project import Project as _Project
+    test_run = TestRun.query.get(test_run_id)
+    if test_run:
+        project = _Project.query.get(test_run.project_id)
+        if not project or project.owner_id != user_id:
+            logger.warning('IDOR attempt blocked on visual diffs',
+                           user_id=user_id, test_run_id=test_run_id)
+            return error_response(404, '测试运行记录不存在')
+
     test_case_id = request.args.get('test_case_id', type=int)
     status = request.args.get('status', '').strip()
     page = request.args.get('page', 1, type=int)
@@ -175,9 +202,15 @@ def delete_baseline(baseline_id):
 
     同时删除物理文件
     """
+    user_id = get_current_user_id()
     baseline = VisualBaseline.query.get(baseline_id)
 
     if not baseline:
+        return error_response(404, '基准截图不存在')
+
+    if not _verify_visual_permission(baseline, user_id):
+        logger.warning('IDOR attempt blocked on visual baseline delete',
+                       user_id=user_id, baseline_id=baseline_id)
         return error_response(404, '基准截图不存在')
 
     # 删除物理文件
