@@ -114,8 +114,9 @@ def register_v2_routes(app: FastAPI):
         """就绪检查端点"""
         return {"status": "ok", "version": "2.0.0"}
 
-    # 认证路由 - 在 P5-02 中实现
-    # @app.include_router(auth_router, prefix="/api/v2/auth", tags=["auth"])
+    # 认证路由 - P5-02
+    from .api.v2.auth import router as auth_router
+    app.include_router(auth_router, prefix="/api/v2/auth")
 
     # 测试用例路由 - 在 P5-03 中实现
     # @app.include_router(test_cases_router, prefix="/api/v2/test-cases", tags=["test-cases"])

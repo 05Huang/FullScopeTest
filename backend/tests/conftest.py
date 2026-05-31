@@ -50,3 +50,26 @@ def app():
 @pytest.fixture()
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture()
+def v2_client(app):
+    """Create FastAPI test client that shares the same DB as Flask app context"""
+    from fastapi.testclient import TestClient
+    from app.fastapi_app import create_fastapi_app
+
+    fastapi_app = create_fastapi_app("testing")
+
+    # We need to run inside Flask's app context for DB operations
+    with app.app_context():
+        from app.extensions import db as flask_db
+
+        # Ensure tables exist in the shared DB
+        flask_db.create_all()
+
+        # Create FastAPI test client
+        client = TestClient(fastapi_app)
+
+        # Store the app context for use in tests
+        client.flask_app = app
+        yield client
