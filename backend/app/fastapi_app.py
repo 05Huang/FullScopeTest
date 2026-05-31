@@ -118,8 +118,9 @@ def register_v2_routes(app: FastAPI):
     from .api.v2.auth import router as auth_router
     app.include_router(auth_router, prefix="/api/v2/auth")
 
-    # 测试用例路由 - 在 P5-03 中实现
-    # @app.include_router(test_cases_router, prefix="/api/v2/test-cases", tags=["test-cases"])
+    # 测试用例路由 - P5-03
+    from .api.v2.test_cases import router as test_cases_router
+    app.include_router(test_cases_router, prefix="/api/v2/test-cases")
 
     # 接口测试路由 - 在 P5-04 中实现
     # @app.include_router(api_tests_router, prefix="/api/v2/api-tests", tags=["api-tests"])
