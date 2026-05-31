@@ -171,8 +171,9 @@ def register_v2_routes(app: FastAPI):
     from .api.v2.ui_tests import router as ui_tests_router
     app.include_router(ui_tests_router, prefix="/api/v2/ui-tests")
 
-    # 性能测试路由 - 在 P5-06 中实现
-    # @app.include_router(perf_tests_router, prefix="/api/v2/perf-tests", tags=["perf-tests"])
+    # 性能测试路由 - P5-06
+    from .api.v2.perf_tests import router as perf_tests_router
+    app.include_router(perf_tests_router, prefix="/api/v2/perf-tests")
 
 
 def get_database_url():
