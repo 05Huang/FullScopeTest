@@ -80,7 +80,7 @@
 ## 阶段五：FastAPI 迁移与性能优化（Phase 5 — FastAPI Migration & Performance）
 > 目标：将 Flask 逐步迁移到 FastAPI，保持 API 完全向后兼容
 
-- [ ] **P5-01** 搭建 FastAPI 应用骨架（与 Flask 并行运行）：创建 `backend/app/fastapi_app.py`；配置 CORS、中间件、异常处理器、自动 OpenAPI 文档；通过 Nginx 路由：新接口走 FastAPI（`/api/v2/`），旧接口继续走 Flask（`/api/`）；确保两套应用共享同一个数据库连接池
+- [x] **P5-01** 搭建 FastAPI 应用骨架（与 Flask 并行运行）：创建 `backend/app/fastapi_app.py`；配置 CORS、中间件、异常处理器、自动 OpenAPI 文档；通过 Nginx 路由：新接口走 FastAPI（`/api/v2/`），旧接口继续走 Flask（`/api/`）；确保两套应用共享同一个数据库连接池
 - [ ] **P5-02** 迁移认证模块到 FastAPI：将 JWT 验证逻辑重写为 FastAPI `Depends`；实现 `get_current_user`、`get_current_organization` 依赖；Pydantic v2 schema 定义 token payload；在 FastAPI 应用上启用 `/api/v2/auth/` 路由
 - [ ] **P5-03** 迁移测试用例管理到 FastAPI（`backend/app/api/v2/test_cases.py`）：完整的 CRUD 路由；Pydantic v2 request/response schema；SQLAlchemy 异步查询（`AsyncSession`）；分页参数（`limit`、`offset`、`total`）；保持与 v1 完全相同的响应结构
 - [ ] **P5-04** 迁移接口测试执行模块到 FastAPI：`POST /api/v2/api-tests/run`、`GET /api/v2/api-tests/results/{run_id}`、WebSocket `/api/v2/ws/api-test-logs/{run_id}`；异步 WebSocket 日志推送（替换 Flask-SocketIO）
@@ -104,7 +104,7 @@
 
 ## 状态汇总
 
-完成进度：38 / 48 个任务
+完成进度：39 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
@@ -113,7 +113,7 @@
 - Phase 2C（AI 工程化）：6/6
 - Phase 3（CI/CD 集成）：6/7
 - Phase 4（多租户安全）：6/7
-- Phase 5（FastAPI 迁移）：0/8
+- Phase 5（FastAPI 迁移）：1/8
 - Phase 6（文档发布）：0/6
 
 > **Ralph 提示**：每次循环完成一个任务后，在任务前的 `[ ]` 改为 `[x]`，并更新上方的「完成进度」计数。

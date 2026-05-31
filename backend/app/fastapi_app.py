@@ -1,0 +1,138 @@
+"""
+FastAPI 应用骨架
+
+与 Flask 并行运行，通过 Nginx 路由：
+- /api/v2/* -> FastAPI
+- /api/* -> Flask (保持兼容)
+"""
+
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from .core.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    logger.info("FastAPI application starting...")
+    yield
+    logger.info("FastAPI application shutting down...")
+
+
+def create_fastapi_app(config_name: str = "development") -> FastAPI:
+    """
+    创建 FastAPI 应用实例
+
+    与 Flask 应用共享同一个数据库连接池，
+    通过 Nginx 路由将新接口导向 FastAPI (/api/v2/)。
+
+    Args:
+        config_name: 配置环境名称
+
+    Returns:
+        FastAPI: 配置好的 FastAPI 应用实例
+    """
+    app = FastAPI(
+        title="FullScopeTest API v2",
+        description="FullScopeTest 自动化测试平台 API v2 - FastAPI 版本",
+        version="2.0.0",
+        docs_url="/api/v2/docs",
+        redoc_url="/api/v2/redoc",
+        openapi_url="/api/v2/openapi.json",
+        lifespan=lifespan,
+    )
+
+    # 配置 CORS
+    cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:8080').split(',')
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # 注册异常处理器
+    register_exception_handlers(app)
+
+    # 注册路由
+    register_v2_routes(app)
+
+    logger.info("FastAPI application created", config=config_name)
+    return app
+
+
+def register_exception_handlers(app: FastAPI):
+    """注册全局异常处理器"""
+
+    @app.exception_handler(400)
+    async def bad_request(request: Request, exc):
+        return JSONResponse(
+            status_code=400,
+            content={"code": 400, "message": "请求参数错误", "data": None},
+        )
+
+    @app.exception_handler(401)
+    async def unauthorized(request: Request, exc):
+        return JSONResponse(
+            status_code=401,
+            content={"code": 401, "message": "未授权访问", "data": None},
+        )
+
+    @app.exception_handler(404)
+    async def not_found(request: Request, exc):
+        return JSONResponse(
+            status_code=404,
+            content={"code": 404, "message": "资源不存在", "data": None},
+        )
+
+    @app.exception_handler(500)
+    async def internal_error(request: Request, exc):
+        logger.error("Internal server error", error=str(exc))
+        return JSONResponse(
+            status_code=500,
+            content={"code": 500, "message": "服务器内部错误", "data": None},
+        )
+
+
+def register_v2_routes(app: FastAPI):
+    """注册 v2 API 路由"""
+
+    @app.get("/api/v2/health")
+    async def health_check():
+        """健康检查端点"""
+        return {"status": "ok", "version": "2.0.0"}
+
+    @app.get("/api/v2/health/ready")
+    async def readiness_check():
+        """就绪检查端点"""
+        return {"status": "ok", "version": "2.0.0"}
+
+    # 认证路由 - 在 P5-02 中实现
+    # @app.include_router(auth_router, prefix="/api/v2/auth", tags=["auth"])
+
+    # 测试用例路由 - 在 P5-03 中实现
+    # @app.include_router(test_cases_router, prefix="/api/v2/test-cases", tags=["test-cases"])
+
+    # 接口测试路由 - 在 P5-04 中实现
+    # @app.include_router(api_tests_router, prefix="/api/v2/api-tests", tags=["api-tests"])
+
+    # Web 测试路由 - 在 P5-05 中实现
+    # @app.include_router(ui_tests_router, prefix="/api/v2/ui-tests", tags=["ui-tests"])
+
+    # 性能测试路由 - 在 P5-06 中实现
+    # @app.include_router(perf_tests_router, prefix="/api/v2/perf-tests", tags=["perf-tests"])
+
+
+def get_database_url():
+    """获取数据库 URL（与 Flask 共享）"""
+    return os.environ.get(
+        'DATABASE_URL',
+        'postgresql://localhost:5432/fullscopetest_dev'
+    )
