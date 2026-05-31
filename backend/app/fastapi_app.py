@@ -175,6 +175,10 @@ def register_v2_routes(app: FastAPI):
     from .api.v2.perf_tests import router as perf_tests_router
     app.include_router(perf_tests_router, prefix="/api/v2/perf-tests")
 
+    # OpenAPI 文档增强路由 - P5-07
+    from .api.v2.openapi_docs import router as openapi_router
+    app.include_router(openapi_router, prefix="/api/v2")
+
 
 def get_database_url():
     """获取数据库 URL（与 Flask 共享）"""
