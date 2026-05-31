@@ -8,6 +8,7 @@ from flask import request
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..models.test_run import TestRun
+from ..models.project import Project
 from ..models.github_integration import GitHubIntegration
 from ..utils.response import success_response, error_response
 from ..utils import get_current_user_id
@@ -16,6 +17,19 @@ from ..core.logging import get_logger
 from ..services.github_check_service import create_check_service
 
 logger = get_logger(__name__)
+
+
+def _get_test_run_owned_by_user(test_run_id, user_id):
+    """获取 TestRun 并验证项目所有者"""
+    test_run = TestRun.query.filter_by(id=test_run_id).first()
+    if not test_run:
+        return None, error_response(404, '测试运行记录不存在')
+    project = Project.query.get(test_run.project_id)
+    if not project or project.owner_id != user_id:
+        logger.warning('IDOR attempt blocked on github_checks',
+                       user_id=user_id, test_run_id=test_run_id)
+        return None, error_response(404, '测试运行记录不存在')
+    return test_run, None
 
 
 @api_bp.route('/github-checks/<int:test_run_id>/create', methods=['POST'])
@@ -37,10 +51,10 @@ def create_check_run(test_run_id):
     if not repo_full_name or not head_sha:
         return error_response(400, '缺少 repo_full_name 或 head_sha 参数')
 
-    # 获取测试运行记录
-    test_run = TestRun.query.filter_by(id=test_run_id).first()
-    if not test_run:
-        return error_response(404, '测试运行记录不存在')
+    # 获取测试运行记录（验证所有权）
+    test_run, err = _get_test_run_owned_by_user(test_run_id, user_id)
+    if err:
+        return err
 
     # 获取 GitHub 集成信息
     integration = GitHubIntegration.query.filter_by(
@@ -77,9 +91,9 @@ def update_check_run(test_run_id):
     user_id = get_current_user_id()
     data = request.get_json() or {}
 
-    test_run = TestRun.query.filter_by(id=test_run_id).first()
-    if not test_run:
-        return error_response(404, '测试运行记录不存在')
+    test_run, err = _get_test_run_owned_by_user(test_run_id, user_id)
+    if err:
+        return err
 
     if not test_run.check_run_id or not test_run.check_run_repo:
         return error_response(400, '此测试运行没有关联的 Check Run')
@@ -117,9 +131,9 @@ def complete_check_run(test_run_id):
     user_id = get_current_user_id()
     data = request.get_json() or {}
 
-    test_run = TestRun.query.filter_by(id=test_run_id).first()
-    if not test_run:
-        return error_response(404, '测试运行记录不存在')
+    test_run, err = _get_test_run_owned_by_user(test_run_id, user_id)
+    if err:
+        return err
 
     if not test_run.check_run_id or not test_run.check_run_repo:
         return error_response(400, '此测试运行没有关联的 Check Run')
