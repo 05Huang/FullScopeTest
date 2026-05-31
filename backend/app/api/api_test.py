@@ -1083,12 +1083,19 @@ def run_collection(collection_id):
     """批量执行集合中的所有用例，并生成测试报告"""
     user_id = get_current_user_id()
     collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
-    
+
     if not collection:
         return error_response(message='集合不存在', code=404)
-    
+
+    # 防御性校验：确认集合确实属于当前用户（已在上方校验，此处双重保险）
+    if collection.user_id != user_id:
+        logger.warning('IDOR attempt blocked',
+                       user_id=user_id, collection_id=collection_id,
+                       actual_owner=collection.user_id)
+        return error_response(403, '无权限执行该集合')
+
     cases = ApiTestCase.query.filter_by(collection_id=collection_id, is_enabled=True).all()
-    
+
     if not cases:
         return error_response(message='集合中没有可执行的用例')
     
