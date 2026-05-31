@@ -6,11 +6,11 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    command: redis-server --save "" --appendonly no
+    command: redis-server --requirepass ${REDIS_PASSWORD:?请设置 REDIS_PASSWORD 环境变量} --save "" --appendonly no
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,10 +29,10 @@ services:
       - FLASK_ENV=production
       - DISPLAY=:99
       - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_ENABLE=true
-      - CELERY_BROKER_URL=${REDIS_URL}
-      - CELERY_RESULT_BACKEND=${REDIS_URL}
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - OSS_ENDPOINT=${OSS_ENDPOINT}
@@ -65,8 +65,8 @@ services:
     command: >
       bash -lc "
       Xvfb :99 -screen 0 1366x768x24 -ac +extension RANDR >/tmp/xvfb.log 2>&1 &
-      fluxbox >/tmp/fluxbox.log 2>&1 &
-      x11vnc -display :99 -rfbport 5900 -forever -shared -nopw >/tmp/x11vnc.log 2>&1 &
+      fluxbox >/tmp/fluxbox.log 2>&1 &&
+      echo '${VNC_PASSWORD:-fullscopetest}' | x11vnc -display :99 -rfbport 5900 -forever -shared -stdin >/tmp/x11vnc.log 2>&1 &
       websockify --web=/usr/share/novnc/ 0.0.0.0:6080 localhost:5900 >/tmp/websockify.log 2>&1 &
       exec gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 2 wsgi:app
       "
@@ -83,10 +83,10 @@ services:
     environment:
       - FLASK_ENV=production
       - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_ENABLE=true
-      - CELERY_BROKER_URL=${REDIS_URL}
-      - CELERY_RESULT_BACKEND=${REDIS_URL}
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
       - OSS_ENDPOINT=${OSS_ENDPOINT}
       - OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}
       - OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}
