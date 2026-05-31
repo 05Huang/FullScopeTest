@@ -1,0 +1,38 @@
+# FullScopeTest 日志聚合配置
+# 使用方法: docker-compose -f docker-compose.prod.yml -f docker-compose.logging.yml up -d
+
+version: '3.8'
+
+services:
+  # Loki 日志存储
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: fullscopetest_loki
+    restart: always
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - loki_data:/loki
+      - ./infra/logging/loki-config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - fullscopetest_network
+
+  # Promtail 日志采集
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: fullscopetest_promtail
+    restart: always
+    volumes:
+      - /var/log:/var/log:ro
+      - backend_logs:/var/log/app:ro
+      - ./infra/logging/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - fullscopetest_network
+
+volumes:
+  loki_data:
+  backend_logs:

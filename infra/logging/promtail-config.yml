@@ -1,0 +1,48 @@
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # 应用日志（structlog JSON 格式）
+  - job_name: fullscopetest-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: fullscopetest
+          __path__: /var/log/app/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            timestamp: timestamp
+            module: module
+      - labels:
+          level:
+          module:
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+  # Nginx 访问日志
+  - job_name: nginx-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<remote_addr>[\w\.]+) .* \[(?P<time_local>.*)\] "(?P<method>\w+) (?P<request_uri>\S+) .* (?P<status>\d{3}) (?P<body_bytes_sent>\d+)'
+      - labels:
+          method:
+          status:
+      - timestamp:
+          source: time_local
+          format: "02/Jan/2006:15:04:05 -0700"
