@@ -13,12 +13,12 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["openapi-docs"])
 
 OPENAPI_TAGS = [
-    {"name": "auth", "description": "用户认证与授权模块。"},
-    {"name": "test-cases", "description": "测试用例管理模块。"},
-    {"name": "api-tests", "description": "接口测试执行模块。"},
-    {"name": "ui-tests", "description": "Web UI 自动化测试模块。"},
-    {"name": "perf-tests", "description": "性能测试模块。"},
-    {"name": "openapi-docs", "description": "OpenAPI 文档管理模块。"},
+    {"name": "auth", "description": "用户认证与授权\n\n提供用户注册、登录、Token 刷新等认证相关接口。\n所有需要认证的接口必须在 Header 中携带 `Authorization: Bearer <token>`。"},
+    {"name": "test-cases", "description": "接口测试用例管理\n\n管理 API 测试用例和测试集合的 CRUD 操作。\n支持按项目和集合分组管理测试用例。"},
+    {"name": "api-tests", "description": "接口测试执行\n\n执行 HTTP 接口测试，支持单个用例执行和批量集合执行。\n通过 WebSocket 实时推送执行日志。"},
+    {"name": "ui-tests", "description": "Web UI 自动化测试\n\n基于 Playwright 的 Web UI 测试执行与结果查询。\n支持视觉回归测试（截图对比）。"},
+    {"name": "perf-tests", "description": "性能测试\n\n基于 Locust 的性能测试管理，支持场景配置、执行、实时指标流、历史对比和告警规则。\n通过 WebSocket 实时推送性能指标。"},
+    {"name": "openapi-docs", "description": "OpenAPI 文档工具\n\n提供 API 文档导出功能，支持 Postman Collection 和 MeterSphere 格式导入。"},
 ]
 
 def _build_postman_request(method, path, summary, description="", body_example=None, headers=None):
@@ -53,7 +53,29 @@ def _generate_postman_collection(openapi_schema):
                 if properties:
                     body_example = {k: "<" + v.get("type", "string") + ">" for k, v in properties.items()}
                 req = _build_postman_request(method.upper(), path, summary, description, body_example)
-                item = {"name": summary or path, "request": req, "response": []}
+                # Add response examples based on OpenAPI responses
+                responses = details.get("responses", {})
+                response_list = []
+                for status_code, resp_def in responses.items():
+                    resp_example = {
+                        "name": resp_def.get("description", f"Response {status_code}"),
+                        "status": int(status_code) if status_code.isdigit() else 200,
+                        "_postman_previewlanguage": "json",
+                    }
+                    resp_content = resp_def.get("content", {})
+                    resp_json = resp_content.get("application/json", {})
+                    resp_schema = resp_json.get("schema", {})
+                    if resp_schema:
+                        if "$ref" in resp_schema:
+                            ref_name = resp_schema["$ref"].split("/")[-1]
+                            all_schemas = openapi_schema.get("components", {}).get("schemas", {})
+                            if ref_name in all_schemas:
+                                resp_schema = all_schemas[ref_name]
+                        resp_properties = resp_schema.get("properties", {})
+                        if resp_properties:
+                            resp_example["body"] = json.dumps({k: "<" + v.get("type", "string") + ">" for k, v in resp_properties.items()}, indent=2)
+                    response_list.append(resp_example)
+                item = {"name": summary or path, "request": req, "response": response_list}
                 items.append({"name": tag_name, "item": [item]})
     grouped = {}
     for item in items:
@@ -62,7 +84,7 @@ def _generate_postman_collection(openapi_schema):
             grouped[tag] = []
         grouped[tag].extend(item["item"])
     grouped_items = [{"name": tag, "item": tag_items} for tag, tag_items in sorted(grouped.items())]
-    return {"info": {"name": "FullScopeTest API v2", "description": openapi_schema.get("info", {}).get("description", ""), "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json", "_exporter_id": "fullscopetest"}, "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}", "type": "string"}]}, "variable": [{"key": "base_url", "value": "http://localhost:8000", "type": "string"}, {"key": "access_token", "value": "", "type": "string"}], "item": grouped_items}
+    return {"info": {"name": "FullScopeTest API v2", "description": openapi_schema.get("info", {}).get("description", "") + "\n\n## Authentication\nAll endpoints require Bearer token authentication except for login and register.", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json", "_exporter_id": "fullscopetest"}, "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}", "type": "string"}]}, "variable": [{"key": "base_url", "value": "http://localhost:8000", "type": "string"}, {"key": "access_token", "value": "", "type": "string"}], "item": grouped_items}
 
 def _generate_metersphere_format(openapi_schema):
     paths = openapi_schema.get("paths", {})
@@ -96,8 +118,19 @@ def _generate_metersphere_format(openapi_schema):
                     resp_content = resp_def.get("content", {})
                     resp_json = resp_content.get("application/json", {})
                     resp_schema = resp_json.get("schema", {})
-                    responses[status_code] = {"description": resp_def.get("description", ""), "schema": resp_schema}
-                api_def = {"id": f"{method}_{path.replace(chr(47), chr(95)).strip(chr(95))}", "name": summary or f"{method.upper()} {path}", "description": description, "method": method.upper(), "path": path, "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{token}}"}], "parameters": parameters, "body": request_body_schema, "responses": responses, "tags": tags, "sort_order": 0}
+                    resp_desc = resp_def.get("description", "")
+                    # Add common response descriptions
+                    status_desc_map = {"200": "请求成功", "201": "创建成功", "400": "请求参数错误", "401": "未授权访问", "403": "禁止访问", "404": "资源不存在", "500": "服务器内部错误"}
+                    if not resp_desc and status_code in status_desc_map:
+                        resp_desc = status_desc_map[status_code]
+                    responses[status_code] = {"description": resp_desc, "schema": resp_schema}
+                # Add default assertions for common status codes
+                assertions = []
+                if "200" in details.get("responses", {}):
+                    assertions.append({"type": "status", "expression": "", "comparison": "equals", "value": "200", "description": "验证返回状态码为 200"})
+                elif "201" in details.get("responses", {}):
+                    assertions.append({"type": "status", "expression": "", "comparison": "equals", "value": "201", "description": "验证返回状态码为 201"})
+                api_def = {"id": f"{method}_{path.replace(chr(47), chr(95)).strip(chr(95))}", "name": summary or f"{method.upper()} {path}", "description": description, "method": method.upper(), "path": path, "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{token}}"}], "parameters": parameters, "body": request_body_schema, "responses": responses, "assertions": assertions, "tags": tags, "sort_order": 0}
                 modules.append({"name": tag_name, "apis": [api_def]})
     merged = {}
     for mod in modules:
