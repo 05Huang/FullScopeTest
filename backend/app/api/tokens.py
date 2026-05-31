@@ -6,7 +6,7 @@ API Token 管理接口
 
 import secrets
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -84,7 +84,7 @@ def create_token():
     # 计算过期时间
     expires_at = None
     if expires_in_days:
-        expires_at = datetime.utcnow() + __import__('datetime').timedelta(days=expires_in_days)
+        expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
 
     api_token = ApiToken(
         user_id=user_id,

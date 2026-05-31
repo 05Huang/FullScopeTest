@@ -70,7 +70,7 @@
 - **组织管理 API**：`POST /api/organizations`、`GET /api/organizations/me`、`POST /api/organizations/{id}/members`、`DELETE`、`PATCH` 角色修改
 - **API 限流**：Redis 滑动窗口限流；普通用户 100 req/min，API Token 1000 req/min；可按组织配置；429 + `Retry-After` header
 - **安全加固**：输入验证专项审计；Playwright 脚本沙箱化执行（Docker-in-Docker 隔离）；文件上传内容类型验证
-- **API Token 管理**：用户可创建多个 Token（用于 CI/CD）；有效期、权限范围、最后使用时间记录；值仅创建时展示（bcrypt hash 存储）
+- **API Token 管理**：用户可创建多个 Token（用于 CI/CD）；有效期、权限范围、最后使用时间记录；值仅创建时展示（SHA-256 hash 存储）
 - **审计日志**：记录所有写操作的 `user_id`、`organization_id`、`action`、`resource_type`、`resource_id`、`changes`（JSON diff）、`ip_address`、`timestamp`；支持按时间/用户/资源类型过滤
 
 ### ⚡ Phase 5 — FastAPI 迁移与性能优化
