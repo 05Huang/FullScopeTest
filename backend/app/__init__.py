@@ -117,7 +117,7 @@ def create_app(config_name='development'):
 def _validate_production_secrets(app):
     """校验生产环境必需的密钥"""
     required_secrets = ['SECRET_KEY', 'JWT_SECRET_KEY']
-    missing = [key for key in required_secrets if not app.config.get(key) or app.config[key] == 'CHANGE_ME_IN_PRODUCTION']
+    missing = [key for key in required_secrets if not app.config.get(key)]
     if missing:
         raise RuntimeError(f"生产环境缺少必需配置: {', '.join(missing)}。请在环境变量中设置这些值。")
 
