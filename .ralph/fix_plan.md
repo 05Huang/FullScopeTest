@@ -87,7 +87,7 @@
 - [x] **P5-05** 迁移 Playwright UI 测试模块到 FastAPI：`POST /api/v2/ui-tests/run`、`GET /api/v2/ui-tests/results/{run_id}`、`GET /api/v2/ui-tests/visual-diffs/{run_id}`
 - [x] **P5-06** 迁移性能测试模块到 FastAPI：包含实时指标流（Server-Sent Events 或 WebSocket）；历史对比接口；告警规则配置接口
 - [x] **P5-07** 实现 FastAPI 自动生成的 OpenAPI 文档增强：为所有接口添加完整的 `summary`、`description`、`tags`、`responses` 文档；生成 Postman Collection JSON（`GET /api/v2/openapi/postman`）；生成 MeterSphere 可导入格式（兼容其接口定义格式）
-- [ ] **P5-08** 性能基准测试：使用 `locust` 对新的 FastAPI 接口做压测，与原 Flask 接口对比；目标：在相同并发下 FastAPI 版本 P95 响应时间比 Flask 版本低 30%；将基准测试结果写入 `docs/performance-benchmark.md`
+- [x] **P5-08** 性能基准测试：使用 `locust` 对新的 FastAPI 接口做压测，与原 Flask 接口对比；目标：在相同并发下 FastAPI 版本 P95 响应时间比 Flask 版本低 30%；将基准测试结果写入 `docs/performance-benchmark.md`
 
 ---
 
@@ -104,7 +104,7 @@
 
 ## 状态汇总
 
-完成进度：45 / 48 个任务
+完成进度：46 / 48 个任务
 
 **阶段进度：**
 - Phase 1（基础设施）：7/7
@@ -113,7 +113,7 @@
 - Phase 2C（AI 工程化）：6/6
 - Phase 3（CI/CD 集成）：6/7
 - Phase 4（多租户安全）：6/7
-- Phase 5（FastAPI 迁移）：7/8
+- Phase 5（FastAPI 迁移）：8/8
 - Phase 6（文档发布）：0/6
 
 > **Ralph 提示**：每次循环完成一个任务后，在任务前的 `[ ]` 改为 `[x]`，并更新上方的「完成进度」计数。
