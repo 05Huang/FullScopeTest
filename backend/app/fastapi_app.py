@@ -8,6 +8,8 @@ FastAPI 应用骨架
 
 import os
 from contextlib import asynccontextmanager
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,6 +17,39 @@ from fastapi.responses import JSONResponse
 from .core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+class FlaskContextMiddleware(BaseHTTPMiddleware):
+    """
+    ASGI 中间件：在每个请求前后 push/pop Flask app context。
+
+    FastAPI 路由使用 Flask-SQLAlchemy 模型（如 User.query），
+    这些模型需要 Flask app context 才能正常工作。
+    此中间件确保每次 FastAPI 请求都在 Flask app context 中执行。
+    """
+
+    def __init__(self, app: ASGIApp, flask_app=None):
+        super().__init__(app)
+        self._flask_app = flask_app
+
+    async def dispatch(self, request: Request, call_next):
+        flask_app = self._flask_app
+        if flask_app is None:
+            try:
+                from . import create_app
+                flask_app = create_app(os.environ.get("FLASK_ENV", "development"))
+            except Exception:
+                return await call_next(request)
+
+        # If an app context is already active (e.g. from test fixture),
+        # reuse it to share the same DB session scope.
+        from flask import has_app_context
+        if has_app_context():
+            return await call_next(request)
+
+        with flask_app.app_context():
+            response = await call_next(request)
+            return response
 
 
 @asynccontextmanager
@@ -25,7 +60,7 @@ async def lifespan(app: FastAPI):
     logger.info("FastAPI application shutting down...")
 
 
-def create_fastapi_app(config_name: str = "development") -> FastAPI:
+def create_fastapi_app(config_name: str = "development", flask_app=None) -> FastAPI:
     """
     创建 FastAPI 应用实例
 
@@ -34,6 +69,7 @@ def create_fastapi_app(config_name: str = "development") -> FastAPI:
 
     Args:
         config_name: 配置环境名称
+        flask_app: Flask 应用实例（用于共享 app context）
 
     Returns:
         FastAPI: 配置好的 FastAPI 应用实例
@@ -47,6 +83,11 @@ def create_fastapi_app(config_name: str = "development") -> FastAPI:
         openapi_url="/api/v2/openapi.json",
         lifespan=lifespan,
     )
+
+    # 添加 Flask Context 中间件（确保 Flask-SQLAlchemy 模型可用）
+    # 注意：中间件按 LIFO 顺序执行，所以 FlaskContext 要先加
+    if flask_app is not None:
+        app.add_middleware(FlaskContextMiddleware, flask_app=flask_app)
 
     # 配置 CORS
     cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:8080').split(',')
@@ -122,8 +163,9 @@ def register_v2_routes(app: FastAPI):
     from .api.v2.test_cases import router as test_cases_router
     app.include_router(test_cases_router, prefix="/api/v2/test-cases")
 
-    # 接口测试路由 - 在 P5-04 中实现
-    # @app.include_router(api_tests_router, prefix="/api/v2/api-tests", tags=["api-tests"])
+    # 接口测试路由 - P5-04
+    from .api.v2.api_tests import router as api_tests_router
+    app.include_router(api_tests_router, prefix="/api/v2/api-tests")
 
     # Web 测试路由 - 在 P5-05 中实现
     # @app.include_router(ui_tests_router, prefix="/api/v2/ui-tests", tags=["ui-tests"])

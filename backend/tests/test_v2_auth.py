@@ -8,15 +8,8 @@ from app.fastapi_app import create_fastapi_app
 @pytest.fixture()
 def v2_client(app):
     """Create FastAPI test client that shares the same DB as Flask"""
-    from app.extensions import db
-
     # Create FastAPI app and share Flask's database session
-    fastapi_app = create_fastapi_app("testing")
-
-    # Override SQLAlchemy session to use Flask's session
-    @fastapi_app.on_event("startup")
-    async def init_db():
-        pass
+    fastapi_app = create_fastapi_app("testing", flask_app=app)
 
     client = TestClient(fastapi_app)
     return client

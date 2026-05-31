@@ -58,7 +58,7 @@ def v2_client(app):
     from fastapi.testclient import TestClient
     from app.fastapi_app import create_fastapi_app
 
-    fastapi_app = create_fastapi_app("testing")
+    fastapi_app = create_fastapi_app("testing", flask_app=app)
 
     # We need to run inside Flask's app context for DB operations
     with app.app_context():
