@@ -163,6 +163,10 @@ class ProductionConfig(BaseConfig):
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 
+    # 生产环境 CORS 必须显式配置，不允许默认 localhost
+    _cors_raw = os.environ.get('CORS_ORIGINS', '')
+    CORS_ORIGINS = [o.strip() for o in _cors_raw.split(',') if o.strip()] if _cors_raw else []
+
     # 生产环境限流更严格
     RATELIMIT_DEFAULT = "100/minute"
 
