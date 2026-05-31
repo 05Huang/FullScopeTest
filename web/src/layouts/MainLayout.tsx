@@ -19,8 +19,10 @@ import {
   MailOutlined,
   CustomerServiceOutlined,
   FolderOutlined,
+  TranslationOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { useProjectStore } from '@/stores/projectStore'
 import GlobalCopilot from '../components/GlobalCopilot'
@@ -102,73 +104,74 @@ const FooterGithubIcon = ({ className, style }: { className?: string; style?: Re
   </svg>
 )
 
-// 侧边栏菜单配置
-const menuItems: MenuProps['items'] = [
+// 侧边栏菜单配置（使用翻译）
+const getMenuItems = (t: (key: string) => string): MenuProps['items'] => [
   {
     key: '/dashboard',
     icon: <HomeOutlined />,
-    label: '首页',
+    label: t('sidebar.dashboard'),
   },
   {
     key: '/api-test',
     icon: <ApiOutlined />,
-    label: '接口测试',
+    label: t('sidebar.apiTest'),
     children: [
-      { key: '/api-test/workspace', label: '工作台' },
-      { key: '/api-test/collections', label: '用例管理' },
-      { key: '/api-test/environments', label: '环境配置' },
+      { key: '/api-test/workspace', label: t('sidebar.workspace') },
+      { key: '/api-test/collections', label: t('sidebar.collections') },
+      { key: '/api-test/environments', label: t('sidebar.environments') },
     ],
   },
   {
     key: '/web-test',
     icon: <GlobalOutlined />,
-    label: 'Web测试',
+    label: t('sidebar.webTest'),
     children: [
-      { key: '/web-test/scripts', label: '脚本管理' },
+      { key: '/web-test/scripts', label: t('sidebar.scripts') },
     ],
   },
   {
     key: '/app-test',
     icon: <MobileOutlined />,
-    label: 'APP测试',
+    label: t('sidebar.appTest'),
     children: [
-      { key: '/app-test/scripts', label: '脚本管理' },
+      { key: '/app-test/scripts', label: t('sidebar.scripts') },
     ],
   },
   {
     key: '/perf-test',
     icon: <ThunderboltOutlined />,
-    label: '性能测试',
+    label: t('sidebar.perfTest'),
     children: [
-      { key: '/perf-test/scenarios', label: '场景管理' },
-      { key: '/perf-test/monitor', label: '实时监控' },
-      { key: '/perf-test/results', label: '结果分析' },
-      { key: '/perf-test/dashboard', label: '性能大盘' },
+      { key: '/perf-test/scenarios', label: t('sidebar.scenarios') },
+      { key: '/perf-test/monitor', label: t('sidebar.monitor') },
+      { key: '/perf-test/results', label: t('sidebar.results') },
+      { key: '/perf-test/dashboard', label: t('sidebar.perfDashboard') },
     ],
   },
   {
     key: '/reports',
     icon: <BarChartOutlined />,
-    label: '测试报告',
+    label: t('sidebar.reports'),
   },
   {
     key: '/ci-cd',
     icon: <ApiOutlined />,
-    label: 'CI/CD与定时任务',
+    label: t('sidebar.cicd'),
   },
   {
     key: '/docs',
     icon: <FileTextOutlined />,
-    label: '测试文档',
+    label: t('sidebar.documents'),
   },
   {
     key: '/settings',
     icon: <SettingOutlined />,
-    label: '系统设置',
+    label: t('sidebar.settings'),
   },
 ]
 
 const MainLayout = () => {
+  const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -190,18 +193,18 @@ const MainLayout = () => {
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: '个人设置',
+      label: t('header.profile'),
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: '系统设置',
+      label: t('header.settings'),
     },
     { type: 'divider' },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '退出登录',
+      label: t('header.logout'),
       danger: true,
     },
   ]
@@ -263,23 +266,23 @@ const MainLayout = () => {
 
   const tourSteps: TourProps['steps'] = [
     {
-      title: '欢迎来到 FullScopeTest',
+      title: t('sidebar.dashboard'),
       description: '这是一个简单高效的自动化测试平台。让我们花半分钟了解一下基本功能布局。',
       target: () => document.querySelector('.fst-app-logo') as HTMLElement,
     },
     {
-      title: '工作台概览',
+      title: t('sidebar.dashboard'),
       description: '在这里，您可以直观地查看各类型测试（API/Web/性能）的用例数量与通过率，实时掌握质量状况。',
       target: () => document.getElementById('tour-step-dashboard-api') as HTMLElement,
     },
     {
-      title: '功能导航',
+      title: t('sidebar.apiTest'),
       description: '通过左侧菜单，您可以随时切换进入接口测试、Web自动化、性能压测等核心模块。',
       target: () => document.querySelector('.fst-app-menu') as HTMLElement,
       placement: 'right',
     },
     {
-      title: '全局搜索',
+      title: t('sidebar.aiInsights'),
       description: '想要快速找东西？点击这里或使用快捷键 (Ctrl+K / ⌘+K) 即可唤起全局搜索。',
       target: () => document.getElementById('tour-step-search') as HTMLElement,
     },
@@ -306,7 +309,7 @@ const MainLayout = () => {
           mode="inline"
           selectedKeys={getSelectedKeys()}
           defaultOpenKeys={getOpenKeys()}
-          items={menuItems}
+          items={getMenuItems(t)}
           onClick={handleMenuClick}
           className="fst-app-menu"
         />
@@ -443,6 +446,39 @@ const MainLayout = () => {
             </a>
 
             <NotificationPopover />
+
+            {/* 语言切换 */}
+            <Dropdown
+              menu={{
+                items: [
+                  { key: 'zh', label: '中文' },
+                  { key: 'en', label: 'English' },
+                ],
+                onClick: ({ key }) => {
+                  i18n.changeLanguage(key)
+                  localStorage.setItem('fst-language', key)
+                },
+              }}
+              trigger={['click']}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#4b5563',
+                  transition: 'color 0.3s',
+                  width: 24,
+                  height: 24,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#3D6E66')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#4b5563')}
+                aria-label={t('header.language')}
+              >
+                <TranslationOutlined style={{ fontSize: 18 }} />
+              </div>
+            </Dropdown>
 
             <Dropdown
               menu={{ items: userMenuItems, onClick: handleUserMenuClick }}

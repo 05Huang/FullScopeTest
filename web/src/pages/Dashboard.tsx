@@ -10,6 +10,7 @@ import {
   ClockCircleOutlined,
   RiseOutlined,
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import ReactECharts from 'echarts-for-react'
 import { reportService } from '@/services'
 
@@ -23,6 +24,7 @@ interface DashboardStats {
 }
 
 const Dashboard = () => {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats>({
     api_tests: { total: 0, passed: 0, failed: 0 },
@@ -51,7 +53,7 @@ const Dashboard = () => {
         setDailyTrend(statsRes.data.daily_trend || [])
       }
     } catch (error) {
-      message.error('获取数据失败')
+      message.error(t('dashboard.fetchFailed'))
     } finally {
       setLoading(false)
     }
@@ -68,7 +70,7 @@ const Dashboard = () => {
       trigger: 'axis',
     },
     legend: {
-      data: ['通过', '失败'],
+      data: [t('common.passed'), t('common.failed')],
       bottom: 0,
     },
     grid: {
@@ -80,8 +82,8 @@ const Dashboard = () => {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: dailyTrend.length > 0 
-        ? dailyTrend.map(d => d.date) 
+      data: dailyTrend.length > 0
+        ? dailyTrend.map(d => d.date)
         : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
     },
     yAxis: {
@@ -89,22 +91,22 @@ const Dashboard = () => {
     },
     series: [
       {
-        name: '通过',
+        name: t('common.passed'),
         type: 'line',
         smooth: true,
         areaStyle: { opacity: 0.3 },
-        data: dailyTrend.length > 0 
-          ? dailyTrend.map(d => d.passed) 
+        data: dailyTrend.length > 0
+          ? dailyTrend.map(d => d.passed)
           : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#52c41a' },
       },
       {
-        name: '失败',
+        name: t('common.failed'),
         type: 'line',
         smooth: true,
         areaStyle: { opacity: 0.3 },
-        data: dailyTrend.length > 0 
-          ? dailyTrend.map(d => d.failed) 
+        data: dailyTrend.length > 0
+          ? dailyTrend.map(d => d.failed)
           : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#ff4d4f' },
       },
@@ -133,9 +135,9 @@ const Dashboard = () => {
           show: false,
         },
         data: [
-          { value: stats.api_tests.total || 0, name: 'API测试', itemStyle: { color: '#3D6E66' } },
-          { value: stats.web_tests.total || 0, name: 'Web测试', itemStyle: { color: '#5FA59B' } },
-          { value: stats.perf_tests.total || 0, name: '性能测试', itemStyle: { color: '#D7B56D' } },
+          { value: stats.api_tests.total || 0, name: t('dashboard.apiTest'), itemStyle: { color: '#3D6E66' } },
+          { value: stats.web_tests.total || 0, name: t('dashboard.webTest'), itemStyle: { color: '#5FA59B' } },
+          { value: stats.perf_tests.total || 0, name: t('dashboard.perfTest'), itemStyle: { color: '#D7B56D' } },
         ],
       },
     ],
@@ -144,11 +146,11 @@ const Dashboard = () => {
   // 状态标签
   const StatusTag = ({ status }: { status: string }) => {
     const config: Record<string, { color: string; icon: React.ReactNode; text: string }> = {
-      success: { color: 'success', icon: <CheckCircleOutlined />, text: '成功' },
-      passed: { color: 'success', icon: <CheckCircleOutlined />, text: '通过' },
-      failed: { color: 'error', icon: <CloseCircleOutlined />, text: '失败' },
-      running: { color: 'processing', icon: <ClockCircleOutlined />, text: '执行中' },
-      pending: { color: 'default', icon: <ClockCircleOutlined />, text: '等待中' },
+      success: { color: 'success', icon: <CheckCircleOutlined />, text: t('common.success') },
+      passed: { color: 'success', icon: <CheckCircleOutlined />, text: t('common.passed') },
+      failed: { color: 'error', icon: <CloseCircleOutlined />, text: t('common.failed') },
+      running: { color: 'processing', icon: <ClockCircleOutlined />, text: t('common.running') },
+      pending: { color: 'default', icon: <ClockCircleOutlined />, text: t('common.pending') },
     }
     const { color, icon, text } = config[status] || { color: 'default', icon: null, text: status }
     return (
@@ -163,8 +165,8 @@ const Dashboard = () => {
     const config: Record<string, { color: string; text: string }> = {
       api: { color: '#3D6E66', text: 'API' },
       web: { color: '#5FA59B', text: 'Web' },
-      performance: { color: '#D7B56D', text: '性能' },
-      perf: { color: '#D7B56D', text: '性能' },
+      performance: { color: '#D7B56D', text: t('dashboard.perfTest') },
+      perf: { color: '#D7B56D', text: t('dashboard.perfTest') },
     }
     const { color, text } = config[type] || { color: 'default', text: type }
     return <Tag color={color}>{text}</Tag>
@@ -179,18 +181,18 @@ const Dashboard = () => {
     const minutes = Math.floor(diff / 60000)
     const hours = Math.floor(diff / 3600000)
     const days = Math.floor(diff / 86400000)
-    
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes}分钟前`
-    if (hours < 24) return `${hours}小时前`
-    if (days < 7) return `${days}天前`
+
+    if (minutes < 1) return t('dashboard.time.justNow')
+    if (minutes < 60) return t('dashboard.time.minutesAgo', { minutes })
+    if (hours < 24) return t('dashboard.time.hoursAgo', { hours })
+    if (days < 7) return t('dashboard.time.daysAgo', { days })
     return date.toLocaleDateString()
   }
 
   return (
     <div>
       <Title level={4} style={{ marginBottom: 24 }}>
-        工作台
+        {t('dashboard.title')}
       </Title>
 
       <div id="tour-step-dashboard-api">
@@ -202,7 +204,7 @@ const Dashboard = () => {
               title={
                 <span>
                   <ApiOutlined style={{ marginRight: 8, color: '#3D6E66' }} />
-                  API测试用例
+                  {t('dashboard.apiTestCases')}
                 </span>
               }
               value={stats.api_tests.total}
@@ -220,7 +222,7 @@ const Dashboard = () => {
               style={{ marginTop: 8 }}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              通过 {stats.api_tests.passed} / 失败 {stats.api_tests.failed}
+              {t('dashboard.passRate', { passed: stats.api_tests.passed, failed: stats.api_tests.failed })}
             </Text>
           </Card>
         </Col>
@@ -231,7 +233,7 @@ const Dashboard = () => {
               title={
                 <span>
                   <GlobalOutlined style={{ marginRight: 8, color: '#5FA59B' }} />
-                  Web测试脚本
+                  {t('dashboard.webTestScripts')}
                 </span>
               }
               value={stats.web_tests.total}
@@ -249,7 +251,7 @@ const Dashboard = () => {
               style={{ marginTop: 8 }}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              通过 {stats.web_tests.passed} / 失败 {stats.web_tests.failed}
+              {t('dashboard.passRate', { passed: stats.web_tests.passed, failed: stats.web_tests.failed })}
             </Text>
           </Card>
         </Col>
@@ -260,14 +262,14 @@ const Dashboard = () => {
               title={
                 <span>
                   <ThunderboltOutlined style={{ marginRight: 8, color: '#D7B56D' }} />
-                  性能测试场景
+                  {t('dashboard.perfTestScenarios')}
                 </span>
               }
               value={stats.perf_tests.total}
               valueStyle={{ color: '#D7B56D' }}
             />
             <div style={{ marginTop: 8 }}>
-              <Tag color="processing">{stats.perf_tests.running} 个执行中</Tag>
+              <Tag color="processing">{t('dashboard.runningCount', { count: stats.perf_tests.running })}</Tag>
             </div>
           </Card>
         </Col>
@@ -278,7 +280,7 @@ const Dashboard = () => {
               title={
                 <span>
                   <FileTextOutlined style={{ marginRight: 8, color: '#10B981' }} />
-                  最近测试
+                  {t('dashboard.recentTests')}
                 </span>
               }
               value={stats.recent_runs.length}
@@ -286,7 +288,7 @@ const Dashboard = () => {
             />
             <div style={{ marginTop: 8 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                最近执行记录
+                {t('dashboard.recentRuns')}
               </Text>
             </div>
           </Card>
@@ -297,20 +299,20 @@ const Dashboard = () => {
       {/* 图表区域 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
-          <Card title="测试执行趋势" loading={loading}>
+          <Card title={t('dashboard.testTrend')} loading={loading}>
             <ReactECharts option={trendOption} style={{ height: 300 }} />
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card title="测试类型分布" loading={loading}>
+          <Card title={t('dashboard.testDistribution')} loading={loading}>
             <ReactECharts option={distributionOption} style={{ height: 300 }} />
           </Card>
         </Col>
       </Row>
 
       {/* 最近测试 */}
-      <Card title="最近测试执行" loading={loading}>
+      <Card title={t('dashboard.recentExecutions')} loading={loading}>
         {stats.recent_runs.length > 0 ? (
           <List
             dataSource={stats.recent_runs}
@@ -326,7 +328,7 @@ const Dashboard = () => {
                   title={
                     <span>
                       <TypeTag type={item.test_type} />
-                      <span style={{ marginLeft: 8 }}>{item.test_object_name || `测试 #${item.id}`}</span>
+                      <span style={{ marginLeft: 8 }}>{item.test_object_name || `Test #${item.id}`}</span>
                     </span>
                   }
                 />
@@ -335,7 +337,7 @@ const Dashboard = () => {
             )}
           />
         ) : (
-          <Empty description="暂无测试记录" />
+          <Empty description={t('dashboard.noRecords')} />
         )}
       </Card>
     </div>

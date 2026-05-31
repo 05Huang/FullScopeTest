@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Typography, message } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -184,6 +185,7 @@ const FooterGithubIcon = ({ className }: { className?: string }) => (
 )
 
 const Login = () => {
+  const { t } = useTranslation()
   const [loginLoading, setLoginLoading] = useState(false)
   const [registerLoading, setRegisterLoading] = useState(false)
   const navigate = useNavigate()
@@ -210,7 +212,7 @@ const Login = () => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     if (isMobile) {
       message.warning({
-        content: <span style={{ color: '#3D6E66', fontWeight: 500 }}>建议使用PC端，以获得更佳体验</span>,
+        content: <span style={{ color: '#3D6E66', fontWeight: 500 }}>{t('login.mobileHint')}</span>,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18, marginRight: 8, verticalAlign: '-4px', color: '#D7B56D' }} aria-hidden="true">
             <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z" fill="currentColor" />
@@ -225,9 +227,9 @@ const Login = () => {
         username: 'admin',
         password: 'admin123'
       })
-      
+
       message.open({
-        content: <span style={{ color: '#3D6E66', fontWeight: 500 }}>已自动填充游客账户密码，您可直接点击登录进入系统</span>,
+        content: <span style={{ color: '#3D6E66', fontWeight: 500 }}>{t('login.autoFillHint')}</span>,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18, marginRight: 8, verticalAlign: '-4px', color: '#5FA59B' }} aria-hidden="true">
             <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -249,14 +251,14 @@ const Login = () => {
     try {
       const response = await authService.login(values.username, values.password)
       if (response.code !== 200) {
-        throw new Error(response.message || '用户名或密码错误')
+        throw new Error(response.message || t('login.loginFailed'))
       }
       const { user, access_token, refresh_token } = response.data
       setAuth(access_token, refresh_token, user || { id: 0, username: values.username, email: '' })
-      message.success('登录成功！')
+      message.success(t('login.loginSuccess'))
       navigate('/dashboard')
     } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || '登录失败，请检查用户名和密码'
+      const msg = error?.response?.data?.message || error?.message || t('login.loginFailed')
       loginForm.setFields([{ name: 'password', errors: [msg] }])
       setLoginError(msg)
       message.error(msg)
@@ -275,10 +277,10 @@ const Login = () => {
     ])
     try {
       await authService.register(values.username, values.email, values.password)
-      message.success('注册成功！请登录')
+      message.success(t('login.register.registerSuccess'))
       navigate('/login')
     } catch (error: any) {
-      message.error(error.response?.data?.message || '注册失败，请稍后重试')
+      message.error(error.response?.data?.message || t('login.register.registerFailed'))
     } finally {
       setRegisterLoading(false)
     }
@@ -301,9 +303,9 @@ const Login = () => {
                 <BrandMark />
                 <div className="fst-auth-heading">
                   <Title level={3} className="fst-auth-title">
-                    欢迎使用 FullScopeTest
+                    {t('login.title')}
                   </Title>
-                  <Text className="fst-auth-subtitle">简单高效的自动化测试平台</Text>
+                  <Text className="fst-auth-subtitle">{t('login.subtitle')}</Text>
                 </div>
               </div>
 
@@ -320,18 +322,18 @@ const Login = () => {
                 size="large"
                 layout="vertical"
               >
-                <Form.Item name="username" rules={[{ required: true, message: '请输入用户名' }]}>
+                <Form.Item name="username" rules={[{ required: true, message: t('login.validation.usernameRequired') }]}>
                   <Input
                     className="fst-auth-input"
                     prefix={<IconUser className="fst-auth-icon" />}
-                    placeholder="用户名"
-                    aria-label="用户名"
+                    placeholder={t('login.username')}
+                    aria-label={t('login.username')}
                   />
                 </Form.Item>
 
                 <Form.Item
                   name="password"
-                  rules={[{ required: true, message: '请输入密码' }]}
+                  rules={[{ required: true, message: t('login.validation.passwordRequired') }]}
                   validateStatus={loginError ? 'error' : undefined}
                   help={loginError || undefined}
                 >
@@ -339,8 +341,8 @@ const Login = () => {
                     className="fst-auth-input"
                     prefix={<IconLock className="fst-auth-icon" />}
                     type={loginPwdVisible ? 'text' : 'password'}
-                    placeholder="密码"
-                    aria-label="密码"
+                    placeholder={t('login.password')}
+                    aria-label={t('login.password')}
                     suffix={
                       <button
                         type="button"
@@ -363,28 +365,28 @@ const Login = () => {
 
                 <Form.Item style={{ marginBottom: 14 }}>
                   <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
-                    登录
+                    {t('login.loginBtn')}
                   </Button>
                 </Form.Item>
               </Form>
 
               <div className="fst-auth-meta" aria-label="登录提示">
                 <div className="fst-auth-slogan">
-                  <div className="fst-auth-slogan-line">把测试覆盖看得见，把风险收得住</div>
-                  <div className="fst-auth-slogan-line">一套平台，连接接口 / Web / 性能全链路</div>
+                  <div className="fst-auth-slogan-line">{t('login.slogan1')}</div>
+                  <div className="fst-auth-slogan-line">{t('login.slogan2')}</div>
                 </div>
-                <div className="fst-auth-slogan-sub">更清晰的质量视野，更稳定的交付节奏</div>
+                <div className="fst-auth-slogan-sub">{t('login.sloganSub')}</div>
                 <div className="fst-auth-chips" aria-label="平台特性">
-                  <span className="fst-auth-chip">低延迟会话</span>
-                  <span className="fst-auth-chip">细粒度权限</span>
-                  <span className="fst-auth-chip">可追溯审计</span>
+                  <span className="fst-auth-chip">{t('login.chip1')}</span>
+                  <span className="fst-auth-chip">{t('login.chip2')}</span>
+                  <span className="fst-auth-chip">{t('login.chip3')}</span>
                 </div>
               </div>
 
               <div className="fst-auth-footer">
-                <span className="fst-auth-footer-muted">还没有账号？</span>
+                <span className="fst-auth-footer-muted">{t('login.noAccount')}</span>
                 <Link to="/register" className="fst-auth-link">
-                  立即注册
+                  {t('login.registerNow')}
                 </Link>
               </div>
             </section>
@@ -394,9 +396,9 @@ const Login = () => {
                 <BrandMark />
                 <div className="fst-auth-heading">
                   <Title level={3} className="fst-auth-title">
-                    创建账户
+                    {t('login.register.title')}
                   </Title>
-                  <Text className="fst-auth-subtitle">开启你的自动化测试之旅</Text>
+                  <Text className="fst-auth-subtitle">{t('login.register.subtitle')}</Text>
                 </div>
               </div>
 
@@ -415,47 +417,47 @@ const Login = () => {
                 <Form.Item
                   name="username"
                   rules={[
-                    { required: true, message: '请输入用户名' },
-                    { min: 3, message: '用户名至少3个字符' },
-                    { max: 20, message: '用户名最多20个字符' },
+                    { required: true, message: t('login.validation.usernameRequired') },
+                    { min: 3, message: t('login.validation.usernameMin') },
+                    { max: 20, message: t('login.validation.usernameMax') },
                   ]}
                 >
                   <Input
                     className="fst-auth-input"
                     prefix={<IconUser className="fst-auth-icon" />}
-                    placeholder="用户名"
-                    aria-label="用户名"
+                    placeholder={t('login.username')}
+                    aria-label={t('login.username')}
                   />
                 </Form.Item>
 
                 <Form.Item
                   name="email"
                   rules={[
-                    { required: true, message: '请输入邮箱' },
-                    { type: 'email', message: '请输入有效的邮箱地址' },
+                    { required: true, message: t('login.validation.emailRequired') },
+                    { type: 'email', message: t('login.validation.emailInvalid') },
                   ]}
                 >
                   <Input
                     className="fst-auth-input"
                     prefix={<IconMail className="fst-auth-icon" />}
-                    placeholder="邮箱"
-                    aria-label="邮箱"
+                    placeholder={t('login.register.email')}
+                    aria-label={t('login.register.email')}
                   />
                 </Form.Item>
 
                 <Form.Item
                   name="password"
                   rules={[
-                    { required: true, message: '请输入密码' },
-                    { min: 6, message: '密码至少6个字符' },
+                    { required: true, message: t('login.validation.passwordRequired') },
+                    { min: 6, message: t('login.validation.passwordMin') },
                   ]}
                 >
                   <Input
                     className="fst-auth-input"
                     prefix={<IconLock className="fst-auth-icon" />}
                     type={registerPwdVisible ? 'text' : 'password'}
-                    placeholder="密码"
-                    aria-label="密码"
+                    placeholder={t('login.password')}
+                    aria-label={t('login.password')}
                     suffix={
                       <button
                         type="button"
@@ -474,11 +476,11 @@ const Login = () => {
                   name="confirmPassword"
                   dependencies={['password']}
                   rules={[
-                    { required: true, message: '请确认密码' },
+                    { required: true, message: t('login.validation.confirmRequired') },
                     ({ getFieldValue }) => ({
                       validator(_, value) {
                         if (!value || getFieldValue('password') === value) return Promise.resolve()
-                        return Promise.reject(new Error('两次输入的密码不一致'))
+                        return Promise.reject(new Error(t('login.validation.passwordMismatch')))
                       },
                     }),
                   ]}
@@ -487,8 +489,8 @@ const Login = () => {
                     className="fst-auth-input"
                     prefix={<IconLock className="fst-auth-icon" />}
                     type={registerConfirmPwdVisible ? 'text' : 'password'}
-                    placeholder="确认密码"
-                    aria-label="确认密码"
+                    placeholder={t('login.register.confirmPassword')}
+                    aria-label={t('login.register.confirmPassword')}
                     suffix={
                       <button
                         type="button"
@@ -505,28 +507,28 @@ const Login = () => {
 
                 <Form.Item style={{ marginBottom: 14 }}>
                   <Button htmlType="submit" loading={registerLoading} block className="fst-auth-submit">
-                    注册
+                    {t('login.registerBtn')}
                   </Button>
                 </Form.Item>
               </Form>
 
               <div className="fst-auth-meta" aria-label="注册提示">
                 <div className="fst-auth-meta-line">
-                  <span className="fst-auth-meta-text">注册后可创建项目并管理用例</span>
+                  <span className="fst-auth-meta-text">{t('login.register.meta1')}</span>
                   <span className="fst-auth-dot" />
-                  <span className="fst-auth-meta-text">支持团队协作</span>
+                  <span className="fst-auth-meta-text">{t('login.register.meta2')}</span>
                 </div>
                 <div className="fst-auth-chips" aria-label="平台特性">
-                  <span className="fst-auth-chip">统一鉴权</span>
-                  <span className="fst-auth-chip">自动化工作流</span>
-                  <span className="fst-auth-chip">安全合规</span>
+                  <span className="fst-auth-chip">{t('login.register.chip1')}</span>
+                  <span className="fst-auth-chip">{t('login.register.chip2')}</span>
+                  <span className="fst-auth-chip">{t('login.register.chip3')}</span>
                 </div>
               </div>
 
               <div className="fst-auth-footer">
-                <span className="fst-auth-footer-muted">已有账号？</span>
+                <span className="fst-auth-footer-muted">{t('login.hasAccount')}</span>
                 <Link to="/login" className="fst-auth-link">
-                  去登录
+                  {t('login.goLogin')}
                 </Link>
               </div>
             </section>
