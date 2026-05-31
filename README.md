@@ -154,6 +154,61 @@ API 用例级别 Mock，启用后直接返回预设响应（状态码、响应�
 
 ---
 
+## 🏆 为什么选择 FullScopeTest？— 与 MeterSphere V3 对比
+
+FullScopeTest 专为需要**全方位测试覆盖**的团队打造。我们不仅实现了传统测试平台的所有核心功能，更在以下关键维度**超越 MeterSphere V3**：
+
+| 维度 | MeterSphere V3 | FullScopeTest | 说明 |
+|------|---------------|---------------|------|
+| **UI 自动化** | ❌ 已移除 | ✅ Playwright + 视觉回归 | MeterSphere V3 主动放弃了 UI 自动化，我们做得更深更好 |
+| **性能测试** | ⚠️ 基础支持 | ✅ Locust + 实时大盘 + 告警 | 时间序列数据、分位数统计、历史对比、告警引擎 |
+| **AI 能力** | ⚠️ 简单 Prompt 包装 | ✅ 可观测/可版本化/语义分析 | AI 调用日志、Prompt A/B 测试、智能去重 |
+| **CI/CD 集成** | ⚠️ 基础 Webhook | ✅ GitHub Action + Quality Gate + 变更感知 | PR 自动触发、质量门禁、Check Run 回写 |
+| **多租户** | ✅ 支持 | ✅ 支持 + 审计日志 | 组织级数据隔离、操作审计 |
+| **部署方式** | Docker Compose | Docker Compose + K8s | 同时支持两种部署方式 |
+| **后端性能** | Java (Spring Boot) | FastAPI (比 Flask 快 30%+) | Python 生态 + 异步高性能 |
+| **视觉回归** | ❌ 不支持 | ✅ 自动截图 + 像素级对比 | 独家功能，自动检测 UI 视觉变化 |
+| **AI 用例生成** | ❌ 不支持 | ✅ Swagger → 语义分析 → 自动生成 | 智能理解接口业务含义 |
+| **语义去重** | ❌ 不支持 | ✅ 向量化 + 余弦相似度 | 自动发现重复测试用例 |
+
+### 核心差异化优势
+
+#### 1. UI 自动化 — MeterSphere V3 主动放弃的领域
+
+MeterSphere V3 在 2024 年正式移除了 Web 自动化测试模块（原基于 Selenium），转而推荐使用外部工具。FullScopeTest 选择 **Playwright** 作为自动化引擎，带来：
+
+- **更快的执行速度**：Playwright 基于 Chromium 内核，比 Selenium 快 2-3 倍
+- **更强的稳定性**：自动等待机制、网络拦截、多标签页支持
+- **视觉回归测试**：每步自动截图 → 智能对比 → 差异高亮 → 一键批准
+- **实时预览**：通过 VNC Live View 实时观察测试执行过程
+
+#### 2. AI 能力真正工程化 — 不是 Prompt 包装
+
+| 特性 | 常见 AI 测试工具 | FullScopeTest |
+|------|-----------------|---------------|
+| AI 调用监控 | ❌ 黑盒 | ✅ 每次调用记录 prompt/response/latency/tokens/cost |
+| Prompt 管理 | ❌ 硬编码 | ✅ 数据库版本化 + A/B 测试 |
+| 失败处理 | ❌ 直接报错 | ✅ 降级策略 + fallback 结果 |
+| 语义分析 | ❌ 关键词匹配 | ✅ sentence-transformers 向量化 |
+
+#### 3. CI/CD 集成 — 开发者优先
+
+```yaml
+# 一行集成到 GitHub Actions
+- uses: FullScopeTest/fullscope-test/.github/actions/fullscope-test@main
+  with:
+    server-url: ${{ secrets.FULLSCOPETEST_URL }}
+    api-token: ${{ secrets.FULLSCOPETEST_TOKEN }}
+    test-suite-id: ${{ secrets.TEST_SUITE_ID }}
+    quality-gate-id: ${{ secrets.QUALITY_GATE_ID }}
+```
+
+- **变更感知触发**：`/api/**` 路径变更时只运行接口测试，节省 CI 资源
+- **Quality Gate**：可配置通过率阈值、P95 响应时间上限、视觉差异上限
+- **Check Run 回写**：实时更新测试状态到 PR，失败用例一目了然
+
+---
+
 ## 🏛 系统架构概览
 
 ### 整体架构
@@ -558,6 +613,19 @@ graph TD
 ---
 
 ## 📚 文档导读
+
+### 完整文档（docs/ 目录）
+
+| 文档 | 说明 |
+|------|------|
+| [部署文档](docs/deployment.md) | Docker Compose 部署（开发/生产）、环境变量说明、Troubleshooting |
+| [API 参考文档](docs/api-reference.md) | 所有 v1 + v2 接口请求/响应示例、认证说明、错误码一览 |
+| [GitHub Actions 集成指南](docs/github-actions-integration.md) | 从零到一集成步骤、PR 自动触发、定时回归、手动触发 |
+| [GitLab CI 模板](docs/gitlab-ci-template.yml) | GitLab CI/CD YAML 模板示例 |
+| [性能基准测试](docs/performance-benchmark.md) | FastAPI vs Flask 压测对比、P95 响应时间分析 |
+| [v1.0.0-rc1 发布说明](releases/v1.0.0-rc1.md) | 首个正式发布候选版本完整 Release Notes |
+
+### 快速文档入口
 
 - 统一入口：`document/overview.md`
 - 启动指南：`document/STARTUP.md`

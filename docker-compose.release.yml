@@ -1,0 +1,196 @@
+# FullScopeTest v1.0.0-rc1 Release Docker Compose
+# 固定版本号的生产部署配置
+# 启动命令: docker-compose -f docker-compose.release.yml up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15.4-alpine
+    container_name: fullscopetest_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-fullscopetest}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?请设置 POSTGRES_PASSWORD 环境变量}
+      - POSTGRES_DB=${POSTGRES_DB:-fullscopetest}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fullscopetest} -d ${POSTGRES_DB:-fullscopetest}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - fullscopetest_network
+
+  # Redis 缓存/消息队列
+  redis:
+    image: redis:7.2-alpine
+    container_name: fullscopetest_redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fullscopetest_network
+
+  # Flask 后端（生产环境）
+  backend:
+    image: fullscopetest/backend:1.0.0-rc1
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: fullscopetest_backend
+    restart: always
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-fullscopetest}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fullscopetest}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:?请设置 SECRET_KEY 环境变量}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?请设置 JWT_SECRET_KEY 环境变量}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - AI_ASSISTANT_ENABLED=${AI_ASSISTANT_ENABLED:-false}
+      - AI_ASSISTANT_BASE_URL=${AI_ASSISTANT_BASE_URL:-}
+      - AI_ASSISTANT_MODEL=${AI_ASSISTANT_MODEL:-}
+      - AI_ASSISTANT_API_KEY=${AI_ASSISTANT_API_KEY:-}
+      - AI_VISION_BASE_URL=${AI_VISION_BASE_URL:-}
+      - AI_VISION_MODEL=${AI_VISION_MODEL:-}
+      - AI_VISION_API_KEY=${AI_VISION_API_KEY:-}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID:-}
+      - OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET:-}
+      - OSS_BUCKET_NAME=${OSS_BUCKET_NAME:-}
+      - OSS_DOMAIN=${OSS_DOMAIN:-}
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - fullscopetest_network
+
+  # Celery Worker（异步任务执行）
+  celery:
+    image: fullscopetest/celery:1.0.0-rc1
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: fullscopetest_celery
+    restart: always
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-fullscopetest}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fullscopetest}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - AI_ASSISTANT_ENABLED=${AI_ASSISTANT_ENABLED:-false}
+      - AI_ASSISTANT_BASE_URL=${AI_ASSISTANT_BASE_URL:-}
+      - AI_ASSISTANT_MODEL=${AI_ASSISTANT_MODEL:-}
+      - AI_ASSISTANT_API_KEY=${AI_ASSISTANT_API_KEY:-}
+    volumes:
+      - backend_reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.tasks worker --loglevel=warning --concurrency=4
+    networks:
+      - fullscopetest_network
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: fullscopetest_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx:/etc/nginx/conf.d:ro
+      - nginx_certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    networks:
+      - fullscopetest_network
+
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: fullscopetest_prometheus
+    restart: always
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - backend
+    networks:
+      - fullscopetest_network
+
+  # Grafana 可视化
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: fullscopetest_grafana
+    restart: always
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?请设置 GRAFANA_ADMIN_PASSWORD 环境变量}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/monitoring/dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - fullscopetest_network
+
+networks:
+  fullscopetest_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_uploads:
+    driver: local
+  backend_reports:
+    driver: local
+  nginx_certs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
