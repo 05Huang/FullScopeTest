@@ -2033,8 +2033,10 @@ const ApiTestWorkspace = () => {
       <Sider
         width={320}
         style={{
-          background: '#fff',
-          borderRadius: 8,
+          background: 'var(--fst-surface-card)',
+          borderRadius: 'var(--fst-radius-xl)',
+          border: '1px solid var(--fst-glass-border)',
+          boxShadow: 'var(--fst-shadow-sm)',
           marginRight: 16,
           overflow: 'hidden',
         }}

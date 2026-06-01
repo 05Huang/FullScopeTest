@@ -79,25 +79,38 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={4}>系统设置</Title>
-        <Text type="secondary">管理平台的基础配置和第三方服务接入参数</Text>
+    <div className="fst-page" style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <div className="fst-page-header fst-animate-in">
+        <div>
+          <h1 className="fst-page-title">系统设置</h1>
+          <div className="fst-ios-card-subtitle">管理平台的基础配置和第三方服务接入参数</div>
+        </div>
       </div>
 
-      <Card title={
-        <Space>
-          <RobotOutlined style={{ color: '#3D6E66' }} />
-          <span>AI 助手配置 (全局)</span>
-        </Space>
-      }>
-        <Alert
-          message="配置说明"
-          description="在此处配置的大模型参数将全局生效，包括：AI 接口生成、Web 测试探索引擎、性能测试场景生成以及全局悬浮 Copilot。"
-          type="info"
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-ios-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="fst-stat-icon fst-stat-icon--primary"><RobotOutlined style={{ fontSize: 18 }} /></div>
+            <div>
+              <div className="fst-ios-card-title">AI 助手配置 (全局)</div>
+              <div className="fst-ios-card-subtitle">配置大模型参数，全局生效</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          padding: '12px 16px',
+          borderRadius: 'var(--fst-radius-lg)',
+          background: 'rgba(45, 106, 100, 0.06)',
+          border: '1px solid rgba(45, 106, 100, 0.12)',
+          fontSize: 13,
+          color: 'var(--fst-on-surface-variant)',
+          marginBottom: 24,
+          lineHeight: 1.6,
+        }}>
+          💡 在此处配置的大模型参数将全局生效，包括：AI 接口生成、Web 测试探索引擎、性能测试场景生成以及全局悬浮 Copilot。
+        </div>
+
         <Form
           form={form}
           layout="vertical"
@@ -114,20 +127,20 @@ const Settings: React.FC = () => {
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
-                label="Base URL"
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>Base URL</span>}
                 name="aiBaseUrl"
                 rules={[{ required: true, message: '请输入 Base URL' }]}
-                tooltip="支持 OpenAI 兼容格式的 API 接口地址，例如 DeepSeek 或其他自建模型。"
+                tooltip="支持 OpenAI 兼容格式的 API 接口地址"
               >
                 <Input placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                label="模型名称 (Model)"
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>模型名称 (Model)</span>}
                 name="aiModel"
                 rules={[{ required: true, message: '请输入模型名称' }]}
-                tooltip="填写具体的模型名称，如 deepseek-chat, gpt-4o 等。"
+                tooltip="如 deepseek-chat, gpt-4o 等"
               >
                 <Input placeholder={globalAiConfig?.model || "gpt-4o-mini"} />
               </Form.Item>
@@ -137,7 +150,7 @@ const Settings: React.FC = () => {
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
-                label="API Key"
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>API Key</span>}
                 name="aiApiKey"
                 rules={[{ required: true, message: '请输入 API Key' }]}
               >
@@ -149,7 +162,7 @@ const Settings: React.FC = () => {
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
-                label="视觉模型 Base URL"
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>视觉模型 Base URL</span>}
                 name="aiVisionBaseUrl"
                 rules={[{ required: true, message: '请输入视觉模型 Base URL' }]}
               >
@@ -158,7 +171,7 @@ const Settings: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                label="视觉模型名称 (Vision Model)"
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>视觉模型名称</span>}
                 name="aiVisionModel"
                 rules={[{ required: true, message: '请输入视觉模型名称' }]}
               >
@@ -170,7 +183,7 @@ const Settings: React.FC = () => {
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
-                label="视觉模型 API Key"
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>视觉模型 API Key</span>}
                 name="aiVisionApiKey"
                 rules={[{ required: true, message: '请输入视觉模型 API Key' }]}
               >
@@ -179,15 +192,15 @@ const Settings: React.FC = () => {
             </Col>
           </Row>
 
-          <Divider />
-          
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
-              保存设置
-            </Button>
-          </Form.Item>
+          <div style={{ borderTop: '1px solid var(--fst-outline-soft)', paddingTop: 20, marginTop: 8 }}>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
+                保存设置
+              </Button>
+            </Form.Item>
+          </div>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 };

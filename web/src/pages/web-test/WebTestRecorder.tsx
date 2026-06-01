@@ -319,11 +319,13 @@ if __name__ == "__main__":
   }
 
   return (
-    <div>
-      <Title level={4} style={{ marginBottom: 24 }}>
-        <VideoCameraOutlined style={{ marginRight: 8 }} />
-        录制器
-      </Title>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="fst-stat-icon fst-stat-icon--secondary"><VideoCameraOutlined style={{ fontSize: 18 }} /></div>
+          <h1 className="fst-page-title">录制器</h1>
+        </div>
+      </div>
 
       <Alert
         message="功能说明"

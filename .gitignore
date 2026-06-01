@@ -143,13 +143,21 @@ lpt1-9
 backend/.deps/
 
 # Ralph runtime files
-.ralph/logs/
-  .ralph/status.json
-  .ralph/progress.json
-  .ralph/.ralph_session
-  .ralph/.ralph_session_history
-  .ralph/.call_count
-  .ralph/.token_count
-  .ralph/.last_reset
-  .ralph/live.log
-  .ralph/.claude_session_id
+.ralph/
+!/.ralph/
+
+# 本地部署文档
+LOCAL_DEPLOYMENT.md
+QUICK_START.md
+COMPLETE_DEPLOYMENT.md
+DEPLOYMENT_STATUS.md
+FIX_LOG.md
+FIX_I18N.md
+FIX_DUPLICATE_DOCS.md
+FIX_HELP_MODAL.md
+FIX_HELP_POPOVER.md
+grafana_setup.md
+
+# 临时脚本
+_gen_doc.py
+grafana-custom.ini

@@ -615,32 +615,24 @@ const PerformanceDashboard = () => {
      ================================================================ */
 
   return (
-    <div>
+    <div className="fst-page">
       {/* 标题栏 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>
-          <DashboardOutlined style={{ marginRight: 8 }} />
-          性能测试大盘
-        </Title>
-        <Space>
-          <Button
-            type={compareMode ? 'primary' : 'default'}
-            icon={<SwapOutlined />}
-            onClick={toggleCompareMode}
-          >
-            {compareMode ? '退出对比' : '历史对比'}
-          </Button>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              fetchResults(currentPage)
-              if (selectedResultId && !compareMode) fetchMetrics(selectedResultId)
-            }}
-            loading={resultsLoading || metricsLoading}
-          >
-            刷新
-          </Button>
-        </Space>
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="fst-stat-icon fst-stat-icon--tertiary"><DashboardOutlined style={{ fontSize: 18 }} /></div>
+          <h1 className="fst-page-title">性能测试大盘</h1>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className={`fst-btn fst-btn--sm ${compareMode ? 'fst-btn--primary' : 'fst-btn--ghost'}`} onClick={toggleCompareMode}>
+            <SwapOutlined /> {compareMode ? '退出对比' : '历史对比'}
+          </button>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => {
+            fetchResults(currentPage)
+            if (selectedResultId && !compareMode) fetchMetrics(selectedResultId)
+          }}>
+            <ReloadOutlined /> 刷新
+          </button>
+        </div>
       </div>
 
       {/* 筛选栏 */}

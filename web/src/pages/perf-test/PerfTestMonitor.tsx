@@ -295,26 +295,13 @@ const PerfTestMonitor = () => {
   ]
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          <DashboardOutlined style={{ marginRight: 8 }} />
-          实时监控
-        </Title>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={fetchRunningTests}
-          loading={loading}
-        >
-          刷新
-        </Button>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="fst-stat-icon fst-stat-icon--primary"><DashboardOutlined style={{ fontSize: 18 }} /></div>
+          <h1 className="fst-page-title">实时监控</h1>
+        </div>
+        <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchRunningTests}><ReloadOutlined /> 刷新</button>
       </div>
 
       {runningTests.length === 0 ? (

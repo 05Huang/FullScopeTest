@@ -1,27 +1,39 @@
-"""
-数据库初始化脚本
-
-直接创建所有表，用于开发环境快速初始化
-"""
-
+#!/usr/bin/env python
+"""Initialize database with all tables."""
+import sys
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 
-# 先加载 backend 目录下的 .env，避免 config.py 提前读取到默认值
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path, override=True)
-
-print("DATABASE_URL =", os.getenv("DATABASE_URL"))
-print("CELERY_ENABLE =", os.getenv("CELERY_ENABLE"))
+# Add the backend directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app
 from app.extensions import db
 
-app = create_app('development')
+def init_database():
+    """Create all database tables."""
+    app = create_app('development')
+    with app.app_context():
+        print("Creating database tables...")
+        db.create_all()
+        print("Database tables created successfully!")
+        
+        # Create admin user
+        from app.models.user import User
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            print("Creating admin user...")
+            admin = User(
+                username='admin',
+                email='admin@fullscopetest.com',
+                is_admin=True,
+                is_active=True
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            print("Admin user created: admin / admin123")
+        else:
+            print("Admin user already exists.")
 
-with app.app_context():
-    # 删除所有表并重建
-    db.drop_all()
-    db.create_all()
-    print("数据库初始化完成！")
+if __name__ == '__main__':
+    init_database()

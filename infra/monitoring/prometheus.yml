@@ -6,14 +6,23 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  # FullScopeTest 后端应用
+  # FullScopeTest 后端应用 (Docker 环境)
   - job_name: "fullscopetest-backend"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["backend:5000"]
+      - targets: ["host.docker.internal:5000"]
         labels:
           service: "fullscopetest-backend"
           environment: "development"
+
+  # FullScopeTest 后端应用 (本地环境)
+  # - job_name: "fullscopetest-backend-local"
+  #   metrics_path: "/metrics"
+  #   static_configs:
+  #     - targets: ["localhost:5000"]
+  #       labels:
+  #         service: "fullscopetest-backend"
+  #         environment: "development"
 
   # Celery Worker（如果暴露了 metrics）
   # - job_name: "fullscopetest-celery"

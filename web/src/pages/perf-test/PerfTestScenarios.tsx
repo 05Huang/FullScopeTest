@@ -692,18 +692,9 @@ const PerfTestScenarios = () => {
   ]
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          场景管理
-        </Title>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <h1 className="fst-page-title">场景管理</h1>
         <Space>
           <Input
             placeholder="搜索场景..."
@@ -758,29 +749,31 @@ const PerfTestScenarios = () => {
         </Space>
       </div>
 
-      <Card>
-        <Table
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
-          columns={columns}
-          dataSource={scenarios.filter(s => 
-            !searchText || 
-            s.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            s.description?.toLowerCase().includes(searchText.toLowerCase()) ||
-            s.target_url?.toLowerCase().includes(searchText.toLowerCase())
-          )}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            total: scenarios.length,
-            showTotal: (total) => `共 ${total} 条`,
-            showSizeChanger: true,
-            showQuickJumper: true,
-          }}
-        />
-      </Card>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-table-wrap">
+          <Table
+            rowSelection={{
+              selectedRowKeys,
+              onChange: setSelectedRowKeys,
+            }}
+            columns={columns}
+            dataSource={scenarios.filter(s =>
+              !searchText ||
+              s.name.toLowerCase().includes(searchText.toLowerCase()) ||
+              s.description?.toLowerCase().includes(searchText.toLowerCase()) ||
+              s.target_url?.toLowerCase().includes(searchText.toLowerCase())
+            )}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              total: scenarios.length,
+              showTotal: (total) => `共 ${total} 条`,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+          />
+        </div>
+      </div>
 
       {/* 新建/编辑场景弹窗 */}
       <Modal

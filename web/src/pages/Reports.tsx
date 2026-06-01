@@ -28,6 +28,7 @@ import {
   FileTextOutlined,
   MoreOutlined,
   SearchOutlined,
+  ArrowUpOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -419,42 +420,64 @@ const Reports = () => {
   ]
 
   return (
-    <div>
-      <Title level={4} style={{ marginBottom: 24 }}>
-        测试报告
-      </Title>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <h1 className="fst-page-title">测试报告</h1>
+      </div>
 
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="执行总数" value={statistics.total_runs} prefix={<FileTextOutlined style={{ color: '#1890ff' }} />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="成功执行" value={statistics.success_runs} valueStyle={{ color: '#52c41a' }} prefix={<CheckCircleOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="失败执行" value={statistics.failed_runs} valueStyle={{ color: '#ff4d4f' }} prefix={<CloseCircleOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="成功率" value={statistics.success_rate} suffix="%" valueStyle={{ color: '#52c41a' }} />
-          </Card>
-        </Col>
-      </Row>
+      <div className="fst-stat-row fst-animate-in fst-animate-in-1">
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">执行总数</div>
+              <div className="fst-stat-value">{statistics.total_runs}</div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--info"><FileTextOutlined style={{ fontSize: 20 }} /></div>
+          </div>
+        </div>
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">成功执行</div>
+              <div className="fst-stat-value">{statistics.success_runs}</div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--primary"><CheckCircleOutlined style={{ fontSize: 20 }} /></div>
+          </div>
+          <div><span className="fst-stat-trend fst-stat-trend--up"><ArrowUpOutlined /> {statistics.success_rate}%</span></div>
+        </div>
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">失败执行</div>
+              <div className="fst-stat-value">{statistics.failed_runs}</div>
+            </div>
+            <div className="fst-stat-icon" style={{ background: '#FDECEA', color: 'var(--fst-error)' }}><CloseCircleOutlined style={{ fontSize: 20 }} /></div>
+          </div>
+        </div>
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">成功率</div>
+              <div className="fst-stat-value">{statistics.success_rate}%</div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--secondary"><CheckCircleOutlined style={{ fontSize: 20 }} /></div>
+          </div>
+        </div>
+      </div>
 
-      <Card title="测试趋势（近7天）" style={{ marginBottom: 24 }}>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-2">
+        <div className="fst-ios-card-header">
+          <div className="fst-ios-card-title">测试趋势（近7天）</div>
+        </div>
         <ReactECharts option={trendOption} style={{ height: 250 }} />
-      </Card>
+      </div>
 
-      <Card
-        title="执行记录"
-        extra={
-          <Space>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-3">
+        <div className="fst-toolbar">
+          <div className="fst-toolbar-left">
+            <div className="fst-ios-card-title">执行记录</div>
+          </div>
+          <div className="fst-toolbar-right">
             <RangePicker
               size="small"
               onChange={(dates) => {
@@ -494,42 +517,38 @@ const Reports = () => {
               menu={{
                 items: moreMenuItems,
                 onClick: ({ key }) => {
-                  if (key === 'delete') {
-                    handleBatchDelete()
-                  } else if (key === 'download') {
-                    handleBatchDownload()
-                  }
+                  if (key === 'delete') handleBatchDelete()
+                  else if (key === 'download') handleBatchDownload()
                 },
               }}
               disabled={selectedRowKeys.length === 0}
             >
-              <Button size="small" icon={<MoreOutlined />}>
-                更多
-              </Button>
+              <Button size="small" icon={<MoreOutlined />}>更多</Button>
             </Dropdown>
-          </Space>
-        }
-      >
-        <Table
-          rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
-          columns={columns}
-          dataSource={testRuns.filter(
-            (run) =>
-              !filters.keyword ||
-              run.test_object_name?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
-              run.environment_name?.toLowerCase().includes(filters.keyword.toLowerCase()),
-          )}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            ...pagination,
-            showTotal: (total) => `共 ${total} 条`,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            onChange: (page, pageSize) => setPagination((prev) => ({ ...prev, current: page, pageSize })),
-          }}
-        />
-      </Card>
+          </div>
+        </div>
+        <div className="fst-table-wrap">
+          <Table
+            rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
+            columns={columns}
+            dataSource={testRuns.filter(
+              (run) =>
+                !filters.keyword ||
+                run.test_object_name?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
+                run.environment_name?.toLowerCase().includes(filters.keyword.toLowerCase()),
+            )}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              ...pagination,
+              showTotal: (total) => `共 ${total} 条`,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              onChange: (page, pageSize) => setPagination((prev) => ({ ...prev, current: page, pageSize })),
+            }}
+          />
+        </div>
+      </div>
 
       <Modal
         title={currentReportTitle}
@@ -537,21 +556,11 @@ const Reports = () => {
         onCancel={() => setHtmlModalVisible(false)}
         width="90%"
         footer={[
-          <Button key="close" onClick={() => setHtmlModalVisible(false)}>
-            关闭
-          </Button>,
+          <Button key="close" onClick={() => setHtmlModalVisible(false)}>关闭</Button>,
         ]}
         style={{ top: 20 }}
       >
-        <div
-          style={{
-            height: '70vh',
-            overflow: 'auto',
-            border: '1px solid #d9d9d9',
-            borderRadius: 4,
-          }}
-          dangerouslySetInnerHTML={{ __html: reportHtml }}
-        />
+        <div style={{ height: '70vh', overflow: 'auto', borderRadius: 12, border: '1px solid var(--fst-outline-soft)' }} dangerouslySetInnerHTML={{ __html: reportHtml }} />
       </Modal>
     </div>
   )

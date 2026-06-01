@@ -256,29 +256,16 @@ const PerfTestResults = () => {
   ]
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          <BarChartOutlined style={{ marginRight: 8 }} />
-          结果分析
-        </Title>
-        <Space>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="fst-stat-icon fst-stat-icon--info"><BarChartOutlined style={{ fontSize: 18 }} /></div>
+          <h1 className="fst-page-title">结果分析</h1>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <RangePicker size="small" />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchResults}
-            loading={loading}
-          >
-            刷新
-          </Button>
-        </Space>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchResults}><ReloadOutlined /> 刷新</button>
+        </div>
       </div>
 
       {/* 统计概览 */}

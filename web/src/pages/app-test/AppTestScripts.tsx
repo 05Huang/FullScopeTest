@@ -400,25 +400,21 @@ const AppTestScripts = () => {
   })
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>
-          <MobileOutlined style={{ marginRight: 8 }} />
-          APP 自动化测试
-        </Title>
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingScript(null)
-              form.resetFields()
-              setIsModalOpen(true)
-            }}
-          >
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="fst-stat-icon fst-stat-icon--primary"><MobileOutlined style={{ fontSize: 18 }} /></div>
+          <h1 className="fst-page-title">APP 自动化测试</h1>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={loadData}><ReloadOutlined /> 刷新</button>
+          <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={() => {
+            setEditingScript(null)
+            form.resetFields()
+            setIsModalOpen(true)
+          }}>
             新建脚本
-          </Button>
+          </button>
           <Dropdown
             menu={{
               items: moreMenuItems,
@@ -434,10 +430,10 @@ const AppTestScripts = () => {
           >
             <Button icon={<MoreOutlined />}>更多</Button>
           </Dropdown>
-        </Space>
+        </div>
       </div>
 
-      <Card>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
         <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
           <Input
             placeholder="搜索脚本名称"
@@ -473,7 +469,7 @@ const AppTestScripts = () => {
             defaultPageSize: 20,
           }}
         />
-      </Card>
+      </div>
 
       {/* 创建/编辑模态框 */}
       <Modal

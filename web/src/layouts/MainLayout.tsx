@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Avatar, Dropdown, Button, theme, Tour, ConfigProvider, Popover, Typography, Select } from 'antd'
+import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Select } from 'antd'
 import type { TourProps } from 'antd'
 import {
   HomeOutlined,
@@ -21,7 +21,6 @@ import {
   FolderOutlined,
   TranslationOutlined,
 } from '@ant-design/icons'
-import type { MenuProps } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { useProjectStore } from '@/stores/projectStore'
@@ -29,8 +28,96 @@ import GlobalCopilot from '../components/GlobalCopilot'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
 
-const { Header, Sider, Content, Footer } = Layout
+const { Content, Footer } = Layout
 const { Text } = Typography
+
+/* ─── iOS Sidebar Nav Item ─── */
+interface SidebarItemProps {
+  icon: React.ReactNode
+  label: string
+  path: string
+  active: boolean
+  expanded: boolean
+  currentPath: string
+  children?: { label: string; path: string }[]
+  onClick: (path: string) => void
+  onToggle: () => void
+}
+
+const SidebarItem = ({ icon, label, path, active, expanded, currentPath, children, onClick, onToggle }: SidebarItemProps) => {
+  const isActive = active || (children?.some(c => currentPath === c.path) ?? false)
+  return (
+    <div style={{ marginBottom: 2 }}>
+      <button
+        onClick={() => children && children.length ? onToggle() : onClick(path)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 14px',
+          borderRadius: 12,
+          border: 'none',
+          background: isActive && !children ? 'rgba(45, 106, 100, 0.12)' : 'transparent',
+          color: isActive && !children ? 'var(--fst-primary)' : 'var(--fst-on-surface-variant)',
+          fontSize: 14,
+          fontWeight: isActive && !children ? 600 : 400,
+          cursor: 'pointer',
+          transition: 'all 150ms ease',
+          textAlign: 'left',
+        }}
+        onMouseEnter={e => {
+          if (!isActive || children) e.currentTarget.style.background = 'rgba(0,0,0,0.04)'
+        }}
+        onMouseLeave={e => {
+          if (!isActive || children) e.currentTarget.style.background = 'transparent'
+        }}
+      >
+        <span style={{ fontSize: 18, width: 22, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+        <span style={{ flex: 1 }}>{label}</span>
+        {children && children.length > 0 && (
+          <span style={{
+            fontSize: 10,
+            transition: 'transform 200ms ease',
+            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            opacity: 0.5,
+          }}>▶</span>
+        )}
+      </button>
+      {children && children.length > 0 && expanded && (
+        <div style={{ paddingLeft: 28, paddingTop: 2 }}>
+          {children.map(child => (
+            <button
+              key={child.path}
+              onClick={() => onClick(child.path)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8px 14px',
+                borderRadius: 10,
+                border: 'none',
+                background: currentPath === child.path ? 'rgba(45, 106, 100, 0.10)' : 'transparent',
+                color: currentPath === child.path ? 'var(--fst-primary)' : 'var(--fst-on-surface-muted)',
+                fontSize: 13,
+                fontWeight: currentPath === child.path ? 600 : 400,
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)' }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = currentPath === child.path ? 'rgba(45, 106, 100, 0.10)' : 'transparent'
+              }}
+            >
+              {child.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const AppBrandMark = () => (
   <div className="fst-app-brand" aria-hidden="true">
@@ -104,71 +191,7 @@ const FooterGithubIcon = ({ className, style }: { className?: string; style?: Re
   </svg>
 )
 
-// 侧边栏菜单配置（使用翻译）
-const getMenuItems = (t: (key: string) => string): MenuProps['items'] => [
-  {
-    key: '/dashboard',
-    icon: <HomeOutlined />,
-    label: t('sidebar.dashboard'),
-  },
-  {
-    key: '/api-test',
-    icon: <ApiOutlined />,
-    label: t('sidebar.apiTest'),
-    children: [
-      { key: '/api-test/workspace', label: t('sidebar.workspace') },
-      { key: '/api-test/collections', label: t('sidebar.collections') },
-      { key: '/api-test/environments', label: t('sidebar.environments') },
-    ],
-  },
-  {
-    key: '/web-test',
-    icon: <GlobalOutlined />,
-    label: t('sidebar.webTest'),
-    children: [
-      { key: '/web-test/scripts', label: t('sidebar.scripts') },
-    ],
-  },
-  {
-    key: '/app-test',
-    icon: <MobileOutlined />,
-    label: t('sidebar.appTest'),
-    children: [
-      { key: '/app-test/scripts', label: t('sidebar.scripts') },
-    ],
-  },
-  {
-    key: '/perf-test',
-    icon: <ThunderboltOutlined />,
-    label: t('sidebar.perfTest'),
-    children: [
-      { key: '/perf-test/scenarios', label: t('sidebar.scenarios') },
-      { key: '/perf-test/monitor', label: t('sidebar.monitor') },
-      { key: '/perf-test/results', label: t('sidebar.results') },
-      { key: '/perf-test/dashboard', label: t('sidebar.perfDashboard') },
-    ],
-  },
-  {
-    key: '/reports',
-    icon: <BarChartOutlined />,
-    label: t('sidebar.reports'),
-  },
-  {
-    key: '/ci-cd',
-    icon: <ApiOutlined />,
-    label: t('sidebar.cicd'),
-  },
-  {
-    key: '/docs',
-    icon: <FileTextOutlined />,
-    label: t('sidebar.documents'),
-  },
-  {
-    key: '/settings',
-    icon: <SettingOutlined />,
-    label: t('sidebar.settings'),
-  },
-]
+// 用户下拉菜单
 
 const MainLayout = () => {
   const { t, i18n } = useTranslation()
@@ -177,7 +200,6 @@ const MainLayout = () => {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
-  const { token: themeToken } = theme.useToken()
   const rawEnvNotice = (import.meta as any).env?.VITE_ENV_NOTICE as string | undefined
   const envMode = (import.meta as any).env?.MODE as string | undefined
   const deployEnv = (import.meta as any).env?.VITE_DEPLOY_ENV as string | undefined
@@ -189,7 +211,7 @@ const MainLayout = () => {
     : noticeOverride || '您目前处于线上环境，受限于个人服务器配置，部分功能性能可能会不理想。'
 
   // 用户下拉菜单
-  const userMenuItems: MenuProps['items'] = [
+  const userMenuItems = [
     {
       key: 'profile',
       icon: <UserOutlined />,
@@ -200,7 +222,7 @@ const MainLayout = () => {
       icon: <SettingOutlined />,
       label: t('header.settings'),
     },
-    { type: 'divider' },
+    { type: 'divider' as const },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
@@ -209,11 +231,7 @@ const MainLayout = () => {
     },
   ]
 
-  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-    navigate(key)
-  }
-
-  const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+  const handleUserMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
       logout()
       navigate('/login')
@@ -228,22 +246,6 @@ const MainLayout = () => {
   useEffect(() => {
     fetchProjects()
   }, [fetchProjects])
-
-  // 获取当前选中的菜单项
-  const getSelectedKeys = () => {
-    const path = location.pathname
-    return [path]
-  }
-
-  // 获取展开的子菜单
-  const getOpenKeys = () => {
-    const path = location.pathname
-    const parts = path.split('/').filter(Boolean)
-    if (parts.length > 1) {
-      return [`/${parts[0]}`]
-    }
-    return []
-  }
 
   const [tourOpen, setTourOpen] = useState(false)
 
@@ -288,47 +290,224 @@ const MainLayout = () => {
     },
   ]
 
+  // Sidebar nav configuration
+  const sidebarNav = [
+    { icon: <HomeOutlined />, label: t('sidebar.dashboard'), path: '/dashboard' },
+    { icon: <ApiOutlined />, label: t('sidebar.apiTest'), path: '/api-test', children: [
+      { label: t('sidebar.workspace'), path: '/api-test/workspace' },
+      { label: t('sidebar.collections'), path: '/api-test/collections' },
+      { label: t('sidebar.environments'), path: '/api-test/environments' },
+    ]},
+    { icon: <GlobalOutlined />, label: t('sidebar.webTest'), path: '/web-test', children: [
+      { label: t('sidebar.scripts'), path: '/web-test/scripts' },
+    ]},
+    { icon: <MobileOutlined />, label: t('sidebar.appTest'), path: '/app-test', children: [
+      { label: t('sidebar.scripts'), path: '/app-test/scripts' },
+    ]},
+    { icon: <ThunderboltOutlined />, label: t('sidebar.perfTest'), path: '/perf-test', children: [
+      { label: t('sidebar.scenarios'), path: '/perf-test/scenarios' },
+      { label: t('sidebar.monitor'), path: '/perf-test/monitor' },
+      { label: t('sidebar.results'), path: '/perf-test/results' },
+      { label: t('sidebar.perfDashboard'), path: '/perf-test/dashboard' },
+    ]},
+    { icon: <BarChartOutlined />, label: t('sidebar.reports'), path: '/reports' },
+    { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd' },
+    { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
+    { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
+  ]
+
+  // Track expanded sidebar groups
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    const path = location.pathname
+    const parts = path.split('/').filter(Boolean)
+    if (parts.length > 1) return new Set([`/${parts[0]}`])
+    return new Set()
+  })
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
   return (
-    <Layout className="fst-app-root" style={{ minHeight: '100vh' }}>
-      {/* 侧边栏 */}
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        width={220}
-        className="fst-app-sider"
-      >
+    <div className="fst-app-root" style={{ minHeight: '100vh', display: 'flex' }}>
+      {/* ─── iOS Sidebar ─── */}
+      <aside style={{
+        width: collapsed ? 72 : 260,
+        height: '100vh',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '16px 12px',
+        background: 'var(--fst-glass-bg)',
+        backdropFilter: 'var(--fst-glass-blur)',
+        WebkitBackdropFilter: 'var(--fst-glass-blur)',
+        borderRight: '1px solid var(--fst-glass-border)',
+        zIndex: 50,
+        transition: 'width 250ms cubic-bezier(0.25,0.1,0.25,1)',
+        overflow: 'hidden',
+      }}>
         {/* Logo */}
-        <div className={`fst-app-logo ${collapsed ? 'is-collapsed' : ''}`}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '8px 4px 20px',
+          borderBottom: '1px solid var(--fst-outline-soft)',
+          marginBottom: 12,
+          minWidth: 0,
+        }}>
           <AppBrandMark />
-          {!collapsed && <span className="fst-app-logo-text">FullScopeTest</span>}
+          {!collapsed && (
+            <div style={{ minWidth: 0 }}>
+              <div style={{
+                fontSize: 17,
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                color: 'var(--fst-primary)',
+                whiteSpace: 'nowrap',
+              }}>FullScopeTest</div>
+              <div style={{
+                fontSize: 11,
+                color: 'var(--fst-on-surface-muted)',
+                letterSpacing: '0.02em',
+              }}>Enterprise QA</div>
+            </div>
+          )}
         </div>
 
-        {/* 菜单 */}
-        <Menu
-          mode="inline"
-          selectedKeys={getSelectedKeys()}
-          defaultOpenKeys={getOpenKeys()}
-          items={getMenuItems(t)}
-          onClick={handleMenuClick}
-          className="fst-app-menu"
-        />
-      </Sider>
-
-      <Layout>
-        {/* 顶部栏 */}
-        <Header
-          className="fst-app-header"
-          style={{ padding: '0 24px' }}
-        >
-          {/* 左侧：折叠按钮 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-              style={{ fontSize: 16, width: 48, height: 48 }}
+        {/* Navigation */}
+        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          {sidebarNav.map(item => (
+            <SidebarItem
+              key={item.path}
+              icon={item.icon}
+              label={item.label}
+              path={item.path}
+              active={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
+              expanded={expandedGroups.has(item.path)}
+              currentPath={location.pathname}
+              children={item.children}
+              onClick={(p) => navigate(p)}
+              onToggle={() => toggleGroup(item.path)}
             />
+          ))}
+        </nav>
+
+        {/* Bottom actions */}
+        <div style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--fst-outline-soft)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+        }}>
+          <Popover
+            content={
+              <div style={{ width: 260, padding: '4px' }}>
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#3D6E66', marginBottom: 4 }}>
+                    联系作者
+                  </div>
+                  <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+                    全栈测试开发 / 独立开发者
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <Button
+                    type="primary"
+                    style={{ background: '#5FA59B', border: 'none', width: '100%' }}
+                    href="https://huangxuan.chat/resume"
+                    target="_blank"
+                  >
+                    查看个人主页 & 简历
+                  </Button>
+                  <div style={{ background: '#f6f8f8', padding: '12px', borderRadius: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+                      <PhoneOutlined style={{ color: '#5FA59B', marginRight: 10, fontSize: 16 }} />
+                      <Text copyable={{ text: '18888888888' }} style={{ color: '#333' }}>+86 188-5212-2635</Text>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <MailOutlined style={{ color: '#5FA59B', marginRight: 10, fontSize: 16 }} />
+                      <Text copyable={{ text: 'author@example.com' }} style={{ color: '#333' }}>3441578327@qq.com</Text>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: 4 }}>
+                    <div style={{ display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12 }}>
+                      <img
+                        src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png"
+                        alt="WeChat QRCode"
+                        style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>扫一扫添加微信</div>
+                  </div>
+                </div>
+              </div>
+            }
+            trigger="click"
+            placement="right"
+          >
+            <SidebarItem
+              icon={<CustomerServiceOutlined />}
+              label={t('header.help') || 'Support'}
+              path="#support"
+              active={false}
+              expanded={false}
+              currentPath={location.pathname}
+              onClick={() => {}}
+              onToggle={() => {}}
+            />
+          </Popover>
+        </div>
+      </aside>
+
+      {/* ─── Main Content ─── */}
+      <div style={{
+        flex: 1,
+        marginLeft: collapsed ? 72 : 260,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        transition: 'margin-left 250ms cubic-bezier(0.25,0.1,0.25,1)',
+      }}>
+        {/* ─── iOS Top Bar ─── */}
+        <header style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 32px',
+          background: 'rgba(249, 249, 248, 0.6)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--fst-outline-soft)',
+        }}>
+          {/* Left */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                border: 'none', background: 'transparent',
+                display: 'grid', placeItems: 'center',
+                cursor: 'pointer', color: 'var(--fst-on-surface-variant)',
+                transition: 'background 150ms ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {collapsed ? <MenuUnfoldOutlined style={{ fontSize: 18 }} /> : <MenuFoldOutlined style={{ fontSize: 18 }} />}
+            </button>
             <Select
               showSearch
               placeholder="选择项目"
@@ -339,19 +518,20 @@ const MainLayout = () => {
               style={{ width: 200 }}
               prefix={<FolderOutlined />}
               allowClear
+              size="middle"
             />
             <div id="tour-step-search">
               <GlobalSearch />
             </div>
           </div>
 
+          {/* Center notice */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
             {isProduction && envNotice && <div className="fst-env-notice">{envNotice}</div>}
           </div>
 
-          {/* 右侧：通知和用户 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            {/* 联系作者 */}
+          {/* Right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <Popover
               content={
                 <div style={{ width: 260, padding: '4px' }}>
@@ -363,18 +543,16 @@ const MainLayout = () => {
                       全栈测试开发 / 独立开发者
                     </div>
                   </div>
-                  
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <Button 
-                      type="primary" 
-                      style={{ background: '#5FA59B', border: 'none', width: '100%', borderRadius: 6 }}
+                    <Button
+                      type="primary"
+                      style={{ background: '#5FA59B', border: 'none', width: '100%' }}
                       href="https://huangxuan.chat/resume"
                       target="_blank"
                     >
                       查看个人主页 & 简历
                     </Button>
-
-                    <div style={{ background: '#f6f8f8', padding: '12px', borderRadius: 6 }}>
+                    <div style={{ background: '#f6f8f8', padding: '12px', borderRadius: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
                         <PhoneOutlined style={{ color: '#5FA59B', marginRight: 10, fontSize: 16 }} />
                         <Text copyable={{ text: '18888888888' }} style={{ color: '#333' }}>+86 188-5212-2635</Text>
@@ -384,20 +562,15 @@ const MainLayout = () => {
                         <Text copyable={{ text: 'author@example.com' }} style={{ color: '#333' }}>3441578327@qq.com</Text>
                       </div>
                     </div>
-
                     <div style={{ textAlign: 'center', marginTop: 4 }}>
-                      <div style={{ display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 8 }}>
-                        <div style={{ width: 120, height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                          <img 
-                            src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png" 
-                            alt="WeChat QRCode" 
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                          />
-                        </div>
+                      <div style={{ display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12 }}>
+                        <img
+                          src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png"
+                          alt="WeChat QRCode"
+                          style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
+                        />
                       </div>
-                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
-                        扫一扫添加微信
-                      </div>
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>扫一扫添加微信</div>
                     </div>
                   </div>
                 </div>
@@ -405,49 +578,41 @@ const MainLayout = () => {
               trigger="hover"
               placement="bottom"
             >
-              <div
+              <button
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#4b5563', // 更深的灰色以统一视觉
-                  transition: 'color 0.3s',
-                  width: 24,
-                  height: 24,
-                  cursor: 'pointer',
+                  width: 36, height: 36, borderRadius: 10,
+                  border: 'none', background: 'transparent',
+                  display: 'grid', placeItems: 'center',
+                  cursor: 'pointer', color: 'var(--fst-on-surface-variant)',
+                  transition: 'all 150ms ease',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#3D6E66')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#4b5563')}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = 'var(--fst-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fst-on-surface-variant)' }}
                 aria-label="联系作者"
               >
                 <CustomerServiceOutlined style={{ fontSize: 18 }} />
-              </div>
+              </button>
             </Popover>
 
-            {/* GitHub 链接 */}
             <a
               href="https://github.com/05Huang/FullScopeTest"
               target="_blank"
               rel="noreferrer noopener"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#4b5563', // 统一为较深的灰色
-                transition: 'color 0.3s',
-                width: 24,
-                height: 24,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#3D6E66')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4b5563')}
               aria-label="GitHub"
+              style={{
+                display: 'grid', placeItems: 'center',
+                width: 36, height: 36, borderRadius: 10,
+                color: 'var(--fst-on-surface-variant)',
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = 'var(--fst-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fst-on-surface-variant)' }}
             >
               <FooterGithubIcon style={{ width: 18, height: 18 }} />
             </a>
 
             <NotificationPopover />
 
-            {/* 语言切换 */}
             <Dropdown
               menu={{
                 items: [
@@ -461,24 +626,23 @@ const MainLayout = () => {
               }}
               trigger={['click']}
             >
-              <div
+              <button
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#4b5563',
-                  transition: 'color 0.3s',
-                  width: 24,
-                  height: 24,
-                  cursor: 'pointer',
+                  width: 36, height: 36, borderRadius: 10,
+                  border: 'none', background: 'transparent',
+                  display: 'grid', placeItems: 'center',
+                  cursor: 'pointer', color: 'var(--fst-on-surface-variant)',
+                  transition: 'all 150ms ease',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#3D6E66')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#4b5563')}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = 'var(--fst-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fst-on-surface-variant)' }}
                 aria-label={t('header.language')}
               >
                 <TranslationOutlined style={{ fontSize: 18 }} />
-              </div>
+              </button>
             </Dropdown>
+
+            <div style={{ width: 1, height: 20, background: 'var(--fst-outline-soft)', margin: '0 4px' }} />
 
             <Dropdown
               menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
@@ -488,79 +652,71 @@ const MainLayout = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  gap: 10,
                   cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: 8,
+                  padding: '6px 12px 6px 6px',
+                  borderRadius: 12,
+                  transition: 'background 150ms ease',
                 }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.04)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <Avatar
-                  size={32}
+                  size={34}
                   icon={<UserOutlined />}
                   src={user?.avatar}
-                  style={{ backgroundColor: themeToken.colorPrimary }}
+                  style={{ backgroundColor: 'var(--fst-primary)' }}
                 />
-                <span style={{ marginLeft: 8, fontWeight: 500 }}>
+                <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--fst-on-surface)' }}>
                   {user?.username || '用户'}
                 </span>
               </div>
             </Dropdown>
           </div>
-        </Header>
+        </header>
 
-        {/* 内容区域 */}
-        <Content
-          className="fst-app-content"
-          style={{ margin: 24, padding: 24, minHeight: 'calc(100vh - 64px - 48px)' }}
-        >
+        {/* ─── Page Content ─── */}
+        <main style={{
+          flex: 1,
+          padding: 24,
+          maxWidth: 1440,
+          width: '100%',
+          margin: '0 auto',
+        }}>
           <Outlet />
-        </Content>
+        </main>
 
-        <Footer className="fst-app-footer">
+        {/* ─── Footer ─── */}
+        <footer className="fst-app-footer">
           <div className="fst-site-footer" aria-label="网站页脚">
-            <a
-              className="fst-site-footer-link"
-              href="https://beian.miit.gov.cn/"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
+            <a className="fst-site-footer-link" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer noopener">
               <FooterBeianIcon className="fst-site-footer-icon" />
               苏ICP备2025167047号-3
             </a>
             <span className="fst-site-footer-sep" aria-hidden="true" />
-            <a
-              className="fst-site-footer-link"
-              href="https://github.com/05Huang/FullScopeTest"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
+            <a className="fst-site-footer-link" href="https://github.com/05Huang/FullScopeTest" target="_blank" rel="noreferrer noopener">
               <FooterGithubIcon className="fst-site-footer-icon" />
               GitHub 开源
             </a>
           </div>
-        </Footer>
+        </footer>
         <GlobalCopilot />
-      </Layout>
+      </div>
 
       {/* 用户引导 */}
       <ConfigProvider
         theme={{
-          token: {
-            colorPrimary: '#5FA59B',
-          },
+          token: { colorPrimary: '#2D6A64' },
           components: {
             Tour: {
-              boxShadowSecondary: '0 6px 16px 0 rgba(95, 165, 155, 0.15), 0 3px 6px -4px rgba(95, 165, 155, 0.1), 0 9px 28px 8px rgba(95, 165, 155, 0.08)',
+              boxShadowSecondary: '0 6px 16px 0 rgba(45, 106, 100, 0.15), 0 3px 6px -4px rgba(45, 106, 100, 0.1), 0 9px 28px 8px rgba(45, 106, 100, 0.08)',
             }
           }
         }}
       >
-        <Tour
-          open={tourOpen}
-          onClose={handleTourClose}
-          steps={tourSteps}
-        />
+        <Tour open={tourOpen} onClose={handleTourClose} steps={tourSteps} />
       </ConfigProvider>
-    </Layout>
+    </div>
   )
 }
 

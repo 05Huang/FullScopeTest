@@ -120,35 +120,82 @@ const AIInsightsDashboard = () => {
   ]
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}><RobotOutlined style={{ marginRight: 8 }} />{t('ai.title')}</Title>
-        <Space>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="fst-stat-icon fst-stat-icon--primary"><RobotOutlined style={{ fontSize: 18 }} /></div>
+          <h1 className="fst-page-title">{t('ai.title')}</h1>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <Select value={days} onChange={setDays} style={{ width: 120 }} options={[{ value: 7, label: t('ai.last7Days') }, { value: 14, label: 'Last 14 Days' }, { value: 30, label: t('ai.last30Days') }, { value: 90, label: t('ai.last90Days') }]} />
           <Select allowClear placeholder={t('ai.allFeatures')} style={{ width: 140 }} value={featureFilter} onChange={setFeatureFilter} options={Object.entries(FEATURE_LABELS).map(([k, l]) => ({ value: k, label: l }))} />
-          <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>{t('common.refresh')}</Button>
-        </Space>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchData}><ReloadOutlined /> {t('common.refresh')}</button>
+        </div>
       </div>
+
       <Spin spinning={loading}>
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-          <Col xs={12} sm={8} lg={4}><Card size="small"><Statistic title={t('ai.totalInvocations')} value={overview?.total_invocations ?? 0} prefix={<BarChartOutlined style={{ color: COLORS.primary }} />} /></Card></Col>
-          <Col xs={12} sm={8} lg={4}><Card size="small"><Statistic title={t('ai.successRate')} value={overview?.success_rate ?? 0} suffix="%" valueStyle={{ color: (overview?.success_rate ?? 0) >= 95 ? COLORS.success : COLORS.warning }} prefix={(overview?.success_rate ?? 0) >= 95 ? <CheckCircleOutlined /> : <CloseCircleOutlined />} /></Card></Col>
-          <Col xs={12} sm={8} lg={4}><Card size="small"><Statistic title={t('ai.avgLatency')} value={overview?.avg_latency_ms ?? 0} suffix="ms" prefix={<ClockCircleOutlined style={{ color: COLORS.primary }} />} /></Card></Col>
-          <Col xs={12} sm={8} lg={4}><Card size="small"><Statistic title={t('ai.totalTokens')} value={overview?.total_tokens ?? 0} prefix={<BarChartOutlined style={{ color: COLORS.purple }} />} /></Card></Col>
-          <Col xs={12} sm={8} lg={4}><Card size="small"><Statistic title={t('ai.totalCost')} value={overview?.total_cost ?? 0} prefix={<DollarOutlined style={{ color: COLORS.warning }} />} precision={4} /></Card></Col>
-          <Col xs={12} sm={8} lg={4}><Card size="small"><Statistic title={t('ai.featureDistribution')} value={Object.keys(overview?.features ?? {}).length} prefix={<TrophyOutlined style={{ color: COLORS.cyan }} />} /></Card></Col>
-        </Row>
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-          <Col xs={24} lg={12}><Card title={t('ai.successRateTrend')} size="small">{successTrend.length > 0 ? <ReactECharts option={successRateChartOption} style={{ height: 300 }} /> : <Empty description={t('common.noData')} />}</Card></Col>
-          <Col xs={24} lg={12}><Card title={t('ai.featureDistribution')} size="small">{overview && Object.keys(overview.features).length > 0 ? <ReactECharts option={featurePieOption} style={{ height: 300 }} /> : <Empty description={t('common.noData')} />}</Card></Col>
-        </Row>
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-          <Col xs={24} lg={12}><Card title={t('ai.latencyTrend')} size="small">{latencyTrend.length > 0 ? <ReactECharts option={latencyChartOption} style={{ height: 300 }} /> : <Empty description={t('common.noData')} />}</Card></Col>
-          <Col xs={24} lg={12}><Card title={t('ai.tokenConsumption')} size="small">{tokenConsumption.length > 0 ? <ReactECharts option={tokenChartOption} style={{ height: 300 }} /> : <Empty description={t('common.noData')} />}</Card></Col>
-        </Row>
-        <Card title={t('ai.promptVersions')} size="small">
-          {promptVersions.length > 0 ? <Table columns={versionColumns} dataSource={promptVersions} rowKey="id" size="small" pagination={{ pageSize: 10, showTotal: (total) => `${total} versions` }} scroll={{ x: 800 }} /> : <Empty description={t('common.noData')} />}
-        </Card>
+        <div className="fst-stat-row fst-animate-in fst-animate-in-1">
+          {[
+            { label: t('ai.totalInvocations'), value: overview?.total_invocations ?? 0, icon: <BarChartOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--primary' },
+            { label: t('ai.successRate'), value: `${overview?.success_rate ?? 0}%`, icon: (overview?.success_rate ?? 0) >= 95 ? <CheckCircleOutlined style={{ fontSize: 20 }} /> : <CloseCircleOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--secondary' },
+            { label: t('ai.avgLatency'), value: `${overview?.avg_latency_ms ?? 0}ms`, icon: <ClockCircleOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--primary' },
+            { label: t('ai.totalTokens'), value: overview?.total_tokens ?? 0, icon: <BarChartOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--tertiary' },
+            { label: t('ai.totalCost'), value: `$${(overview?.total_cost ?? 0).toFixed(4)}`, icon: <DollarOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--tertiary' },
+            { label: t('ai.featureDistribution'), value: Object.keys(overview?.features ?? {}).length, icon: <TrophyOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--info' },
+          ].map((card, i) => (
+            <div key={i} className="fst-stat-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div className="fst-stat-label">{card.label}</div>
+                  <div className="fst-stat-value" style={{ fontSize: 22 }}>{card.value}</div>
+                </div>
+                <div className={`fst-stat-icon ${card.iconClass}`}>{card.icon}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="fst-grid fst-grid--2 fst-animate-in fst-animate-in-2" style={{ marginTop: 16 }}>
+          <div className="fst-ios-card">
+            <div className="fst-ios-card-header">
+              <div className="fst-ios-card-title">{t('ai.successRateTrend')}</div>
+            </div>
+            {successTrend.length > 0 ? <ReactECharts option={successRateChartOption} style={{ height: 300 }} /> : <div className="fst-empty"><div className="fst-empty-title">{t('common.noData')}</div></div>}
+          </div>
+          <div className="fst-ios-card">
+            <div className="fst-ios-card-header">
+              <div className="fst-ios-card-title">{t('ai.featureDistribution')}</div>
+            </div>
+            {overview && Object.keys(overview.features).length > 0 ? <ReactECharts option={featurePieOption} style={{ height: 300 }} /> : <div className="fst-empty"><div className="fst-empty-title">{t('common.noData')}</div></div>}
+          </div>
+        </div>
+
+        <div className="fst-grid fst-grid--2 fst-animate-in fst-animate-in-3" style={{ marginTop: 16 }}>
+          <div className="fst-ios-card">
+            <div className="fst-ios-card-header">
+              <div className="fst-ios-card-title">{t('ai.latencyTrend')}</div>
+            </div>
+            {latencyTrend.length > 0 ? <ReactECharts option={latencyChartOption} style={{ height: 300 }} /> : <div className="fst-empty"><div className="fst-empty-title">{t('common.noData')}</div></div>}
+          </div>
+          <div className="fst-ios-card">
+            <div className="fst-ios-card-header">
+              <div className="fst-ios-card-title">{t('ai.tokenConsumption')}</div>
+            </div>
+            {tokenConsumption.length > 0 ? <ReactECharts option={tokenChartOption} style={{ height: 300 }} /> : <div className="fst-empty"><div className="fst-empty-title">{t('common.noData')}</div></div>}
+          </div>
+        </div>
+
+        <div className="fst-ios-card fst-animate-in fst-animate-in-4" style={{ marginTop: 16 }}>
+          <div className="fst-ios-card-header">
+            <div className="fst-ios-card-title">{t('ai.promptVersions')}</div>
+          </div>
+          <div className="fst-table-wrap">
+            {promptVersions.length > 0
+              ? <Table columns={versionColumns} dataSource={promptVersions} rowKey="id" size="small" pagination={{ pageSize: 10, showTotal: (total) => `${total} versions` }} scroll={{ x: 800 }} />
+              : <div className="fst-empty"><div className="fst-empty-title">{t('common.noData')}</div></div>
+            }
+          </div>
+        </div>
       </Spin>
     </div>
   )

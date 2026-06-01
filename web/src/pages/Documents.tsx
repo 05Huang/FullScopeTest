@@ -277,41 +277,27 @@ const Documents = () => {
   ]
 
   return (
-    <Layout style={{ height: 'calc(100vh - 160px)', background: 'transparent' }}>
-      {/* 左侧文档树 */}
-      <Sider
-        width={280}
-        style={{
-          background: '#fff',
-          borderRadius: 8,
-          marginRight: 16,
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ padding: 12 }}>
-          <Space.Compact style={{ width: '100%', marginBottom: 12 }}>
-            <Input
-              placeholder="搜索文档..."
-              prefix={<SearchOutlined />}
-              allowClear
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-            <Tooltip title="刷新">
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={fetchDocuments}
-                loading={loading}
-              />
-            </Tooltip>
-            <Tooltip title="新建文档">
-              <Button
-                icon={<PlusOutlined />}
-                onClick={() => setIsModalOpen(true)}
-              />
-            </Tooltip>
-          </Space.Compact>
-
+    <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+      {/* Left: Document Tree */}
+      <div className="fst-ios-card" style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 12px 0', display: 'flex', gap: 6, marginBottom: 12 }}>
+          <Input
+            placeholder="搜索文档..."
+            prefix={<SearchOutlined />}
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            size="small"
+            style={{ flex: 1 }}
+          />
+          <Tooltip title="刷新">
+            <Button icon={<ReloadOutlined />} onClick={fetchDocuments} loading={loading} size="small" />
+          </Tooltip>
+          <Tooltip title="新建文档">
+            <Button icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} size="small" type="primary" />
+          </Tooltip>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', padding: '0 4px' }}>
           <Spin spinning={loading}>
             {documents.length > 0 || categories.length > 0 ? (
               <Tree
@@ -325,194 +311,99 @@ const Documents = () => {
                     if (key.startsWith('doc-')) {
                       const docId = parseInt(key.replace('doc-', ''))
                       const doc = documents.find(d => d.id === docId)
-                      if (doc) {
-                        handleSelectDoc(doc)
-                      }
+                      if (doc) handleSelectDoc(doc)
                     }
                   }
                 }}
                 style={{ background: 'transparent' }}
               />
             ) : (
-              <Empty description="暂无文档" style={{ marginTop: 40 }}>
-                <Button type="primary" onClick={() => setIsModalOpen(true)}>
+              <div className="fst-empty" style={{ padding: '40px 16px' }}>
+                <div className="fst-empty-title" style={{ fontSize: 14 }}>暂无文档</div>
+                <button className="fst-btn fst-btn--primary fst-btn--sm" style={{ marginTop: 12 }} onClick={() => setIsModalOpen(true)}>
                   创建第一个文档
-                </Button>
-              </Empty>
+                </button>
+              </div>
             )}
           </Spin>
         </div>
-      </Sider>
+      </div>
 
-      {/* 右侧文档内容 */}
-      <Content
-        style={{
-          background: '#fff',
-          borderRadius: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
+      {/* Right: Document Content */}
+      <div className="fst-ios-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {selectedDoc ? (
           <>
-            {/* 工具栏 */}
-            <div
-              style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid #f0f0f0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <Title level={5} style={{ margin: 0 }}>
-                {selectedDoc.title}
-              </Title>
-              <Space>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--fst-outline-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--fst-on-surface)' }}>{selectedDoc.title}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
                 {isEditing ? (
                   <>
-                    <Button onClick={() => {
-                      setContent(selectedDoc.content || '')
-                      setIsEditing(false)
-                    }}>
-                      取消
-                    </Button>
-                    <Button
-                      type="primary"
-                      icon={<SaveOutlined />}
-                      onClick={handleSaveDoc}
-                    >
-                      保存
-                    </Button>
+                    <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => { setContent(selectedDoc.content || ''); setIsEditing(false) }}>取消</button>
+                    <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={handleSaveDoc}><SaveOutlined /> 保存</button>
                   </>
                 ) : (
                   <>
-                    <Button
-                      icon={<EditOutlined />}
-                      onClick={() => setIsEditing(true)}
-                    >
-                      编辑
-                    </Button>
+                    <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => setIsEditing(true)}><EditOutlined /> 编辑</button>
                     <Dropdown menu={{ items: moreMenuItems }}>
-                      <Button icon={<MoreOutlined />} />
+                      <button className="fst-btn fst-btn--ghost fst-btn--sm"><MoreOutlined /></button>
                     </Dropdown>
                   </>
                 )}
-              </Space>
+              </div>
             </div>
-
-            {/* 内容区域 */}
             <div style={{ flex: 1, overflow: 'auto' }}>
               {isEditing ? (
                 <div style={{ display: 'flex', height: '100%' }}>
-                  {/* 编辑器 */}
-                  <div style={{ flex: 1, borderRight: '1px solid #f0f0f0' }}>
+                  <div style={{ flex: 1, borderRight: '1px solid var(--fst-outline-soft)' }}>
                     <MonacoEditor
                       height="100%"
                       language="markdown"
                       theme="vs-light"
                       value={content}
                       onChange={(value) => setContent(value || '')}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        wordWrap: 'on',
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                      }}
+                      options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on', scrollBeyondLastLine: false, automaticLayout: true }}
                     />
                   </div>
-                  {/* 预览 */}
-                  <div
-                    style={{
-                      flex: 1,
-                      padding: 24,
-                      overflow: 'auto',
-                      background: '#fafafa',
-                    }}
-                  >
-                    <div className="markdown-body">
-                      <ReactMarkdown>{content}</ReactMarkdown>
-                    </div>
+                  <div style={{ flex: 1, padding: 24, overflow: 'auto', background: 'var(--fst-surface)' }}>
+                    <div className="markdown-body"><ReactMarkdown>{content}</ReactMarkdown></div>
                   </div>
                 </div>
               ) : (
                 <div style={{ padding: 24, overflow: 'auto', height: '100%' }}>
-                  <div className="markdown-body">
-                    <ReactMarkdown>{content}</ReactMarkdown>
-                  </div>
+                  <div className="markdown-body"><ReactMarkdown>{content}</ReactMarkdown></div>
                 </div>
               )}
             </div>
           </>
         ) : (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-            }}
-          >
-            <Empty description="请从左侧选择文档或创建新文档">
-              <Button type="primary" onClick={() => setIsModalOpen(true)}>
-                创建新文档
-              </Button>
-            </Empty>
+          <div className="fst-empty" style={{ flex: 1 }}>
+            <div className="fst-empty-icon"><FileTextOutlined /></div>
+            <div className="fst-empty-title">请从左侧选择文档或创建新文档</div>
+            <button className="fst-btn fst-btn--primary" style={{ marginTop: 16 }} onClick={() => setIsModalOpen(true)}>创建新文档</button>
           </div>
         )}
-      </Content>
+      </div>
 
-      {/* 新建文档弹窗 */}
+      {/* New Document Modal */}
       <Modal
         title="新建文档"
         open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false)
-          form.resetFields()
-        }}
-        onOk={() => {
-          form.validateFields().then(handleCreateDoc)
-        }}
+        onCancel={() => { setIsModalOpen(false); form.resetFields() }}
+        onOk={() => form.validateFields().then(handleCreateDoc)}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label="文档名称"
-            rules={[{ required: true, message: '请输入文档名称' }]}
-          >
+          <Form.Item name="name" label={<span style={{ fontWeight: 600, fontSize: 13 }}>文档名称</span>} rules={[{ required: true, message: '请输入文档名称' }]}>
             <Input placeholder="请输入文档名称" />
           </Form.Item>
-          <Form.Item
-            name="category"
-            label="文档分类"
-            rules={[{ required: true, message: '请选择文档分类' }]}
-          >
-            <Select
-              placeholder="请选择文档分类"
-              options={categories.map(cat => ({
-                value: cat.value,
-                label: `${cat.icon} ${cat.label}`
-              }))}
-            />
+          <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 13 }}>文档分类</span>} rules={[{ required: true, message: '请选择文档分类' }]}>
+            <Select placeholder="请选择文档分类" options={categories.map(cat => ({ value: cat.value, label: `${cat.icon} ${cat.label}` }))} />
           </Form.Item>
-          <Form.Item
-            name="template"
-            label="使用模板"
-          >
-            <Select
-              placeholder="选择模板（可选）"
-              allowClear
-              options={templates.map(tpl => ({
-                value: tpl.id,
-                label: tpl.name
-              }))}
-            />
+          <Form.Item name="template" label={<span style={{ fontWeight: 600, fontSize: 13 }}>使用模板</span>}>
+            <Select placeholder="选择模板（可选）" allowClear options={templates.map(tpl => ({ value: tpl.id, label: tpl.name }))} />
           </Form.Item>
         </Form>
       </Modal>
-    </Layout>
+    </div>
   )
 }
 

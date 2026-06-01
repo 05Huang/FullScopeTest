@@ -157,7 +157,8 @@
     "logout": "退出登录",
     "settings": "系统设置",
     "profile": "个人中心",
-    "language": "语言"
+    "language": "语言",
+    "help": "帮助与支持"
   },
   "apiTest": {
     "title": "接口测试工作台",

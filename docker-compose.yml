@@ -45,6 +45,8 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/Dockerfile.backend.dev
+      args:
+        SKIP_PLAYWRIGHT_BROWSERS: "1"
     container_name: fullscopetest_backend
     restart: unless-stopped
     ports:
@@ -86,6 +88,8 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/Dockerfile.backend.dev
+      args:
+        SKIP_PLAYWRIGHT_BROWSERS: "1"
     container_name: fullscopetest_celery
     restart: unless-stopped
     environment:

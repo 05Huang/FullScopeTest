@@ -273,23 +273,15 @@ const ApiTestEnvironments = () => {
   ]
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          环境配置
-        </Title>
-        <Space>
-          <Input
-            placeholder="搜索环境..."
-            prefix={<SearchOutlined />}
-            style={{ width: 250 }}
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <h1 className="fst-page-title">环境配置</h1>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <Input
+          placeholder="搜索环境..."
+          prefix={<SearchOutlined />}
+          style={{ width: 250 }}
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -305,14 +297,14 @@ const ApiTestEnvironments = () => {
           >
             新建环境
           </Button>
-        </Space>
-      </div>
+        </div>
 
-      <Card>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-table-wrap">
         <Table
           columns={columns}
-          dataSource={environments.filter(env => 
-            !searchText || 
+          dataSource={environments.filter(env =>
+            !searchText ||
             env.name.toLowerCase().includes(searchText.toLowerCase()) ||
             env.base_url?.toLowerCase().includes(searchText.toLowerCase()) ||
             env.description?.toLowerCase().includes(searchText.toLowerCase())
@@ -324,7 +316,8 @@ const ApiTestEnvironments = () => {
             showTotal: (total) => `共 ${total} 条`,
           }}
         />
-      </Card>
+        </div>
+      </div>
 
       {/* 新建/编辑环境弹窗 */}
       <Modal

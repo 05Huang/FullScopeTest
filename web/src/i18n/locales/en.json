@@ -157,7 +157,8 @@
     "logout": "Log Out",
     "settings": "Settings",
     "profile": "Profile",
-    "language": "Language"
+    "language": "Language",
+    "help": "Help & Support"
   },
   "apiTest": {
     "title": "API Test Workspace",

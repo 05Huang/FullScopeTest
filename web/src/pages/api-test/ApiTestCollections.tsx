@@ -389,37 +389,29 @@ const ApiTestCollections = () => {
   ]
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          用例管理
-        </Title>
-        <Space>
-          <Input
-            placeholder="搜索用例..."
-            prefix={<SearchOutlined />}
-            style={{ width: 250 }}
-            allowClear
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-            setEditingCase(null)
-            form.resetFields()
-            setIsModalOpen(true)
-          }}>
-            新建用例
-          </Button>
-          <Dropdown menu={{ 
-            items: moreMenuItems,
-            onClick: ({ key }) => {
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <h1 className="fst-page-title">用例集管理</h1>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <Input
+          placeholder="搜索用例..."
+          prefix={<SearchOutlined />}
+          style={{ width: 250 }}
+          allowClear
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+          setEditingCase(null)
+          form.resetFields()
+          setIsModalOpen(true)
+        }}>
+          新建用例
+        </Button>
+        <Dropdown menu={{
+          items: moreMenuItems,
+          onClick: ({ key }) => {
               if (key === 'delete') {
                 handleBatchDelete()
               } else if (key === 'run') {
@@ -431,18 +423,18 @@ const ApiTestCollections = () => {
           }} disabled={selectedRowKeys.length === 0}>
             <Button icon={<MoreOutlined />}>更多</Button>
           </Dropdown>
-        </Space>
-      </div>
+        </div>
 
-      <Card>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-table-wrap">
         <Table
           rowSelection={{
             selectedRowKeys,
             onChange: setSelectedRowKeys,
           }}
           columns={columns}
-          dataSource={cases.filter(c => 
-            !searchText || 
+          dataSource={cases.filter(c =>
+            !searchText ||
             c.name.toLowerCase().includes(searchText.toLowerCase()) ||
             c.url?.toLowerCase().includes(searchText.toLowerCase())
           )}
@@ -455,7 +447,8 @@ const ApiTestCollections = () => {
             showQuickJumper: true,
           }}
         />
-      </Card>
+        </div>
+      </div>
 
       {/* 新建/编辑用例弹窗 */}
       <Modal

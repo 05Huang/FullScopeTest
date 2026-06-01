@@ -1063,18 +1063,9 @@ const WebTestScripts = () => {
   ]
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={4} style={{ margin: 0 }}>
-          脚本管理
-        </Title>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <h1 className="fst-page-title">脚本管理</h1>
         <Space>
           <Select
             placeholder="按用例集筛选"
@@ -1163,28 +1154,30 @@ const WebTestScripts = () => {
         </Space>
       </div>
 
-      <Card>
-        <Table
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
-          columns={columns}
-          dataSource={scripts.filter(s => 
-            !searchText || 
-            s.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            s.description?.toLowerCase().includes(searchText.toLowerCase())
-          )}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            total: scripts.length,
-            showTotal: (total) => `共 ${total} 条`,
-            showSizeChanger: true,
-            showQuickJumper: true,
-          }}
-        />
-      </Card>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-table-wrap">
+          <Table
+            rowSelection={{
+              selectedRowKeys,
+              onChange: setSelectedRowKeys,
+            }}
+            columns={columns}
+            dataSource={scripts.filter(s =>
+              !searchText ||
+              s.name.toLowerCase().includes(searchText.toLowerCase()) ||
+              s.description?.toLowerCase().includes(searchText.toLowerCase())
+            )}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              total: scripts.length,
+              showTotal: (total) => `共 ${total} 条`,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+          />
+        </div>
+      </div>
 
       <Modal
         title="用例集管理"

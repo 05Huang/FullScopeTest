@@ -246,67 +246,59 @@ const CICD: React.FC = () => {
   ]
 
   if (!currentProjectId) {
-    return <div style={{ padding: 24 }}>请先选择一个项目</div>
+    return <div className="fst-page"><div className="fst-empty"><div className="fst-empty-title">请先选择一个项目</div></div></div>
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>CI/CD 与 定时任务</Typography.Title>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <h1 className="fst-page-title">CI/CD 与 定时任务</h1>
       </div>
 
-      <Card>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={[
-            {
-              key: 'webhooks',
-              label: <span><ApiOutlined /> Webhook 触发器</span>,
-              children: (
-                <>
-                  <div style={{ marginBottom: 16 }}>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setWebhookModalVisible(true)}>
-                      新建 Webhook
-                    </Button>
-                  </div>
-                  <Table 
-                    columns={webhookColumns} 
-                    dataSource={webhooks} 
-                    rowKey="id" 
-                    loading={loading}
-                    pagination={{ pageSize: 10 }}
-                  />
-                </>
-              )
-            },
-            {
-              key: 'schedules',
-              label: <span><ClockCircleOutlined /> 定时任务</span>,
-              children: (
-                <>
-                  <div style={{ marginBottom: 16 }}>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-                      setEditingSchedule(null)
-                      scheduleForm.resetFields()
-                      setScheduleModalVisible(true)
-                    }}>
-                      新建定时任务
-                    </Button>
-                  </div>
-                  <Table 
-                    columns={scheduleColumns} 
-                    dataSource={schedules} 
-                    rowKey="id" 
-                    loading={loading}
-                    pagination={{ pageSize: 10 }}
-                  />
-                </>
-              )
-            }
-          ]}
-        />
-      </Card>
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-tabs" style={{ marginBottom: 20 }}>
+          <button className={`fst-tab ${activeTab === 'webhooks' ? 'fst-tab--active' : ''}`} onClick={() => setActiveTab('webhooks')}>
+            <ApiOutlined style={{ marginRight: 6 }} /> Webhook 触发器
+          </button>
+          <button className={`fst-tab ${activeTab === 'schedules' ? 'fst-tab--active' : ''}`} onClick={() => setActiveTab('schedules')}>
+            <ClockCircleOutlined style={{ marginRight: 6 }} /> 定时任务
+          </button>
+        </div>
+
+        {activeTab === 'webhooks' ? (
+          <>
+            <div className="fst-toolbar">
+              <div />
+              <div className="fst-toolbar-right">
+                <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={() => setWebhookModalVisible(true)}>
+                  <PlusOutlined /> 新建 Webhook
+                </button>
+              </div>
+            </div>
+            <div className="fst-table-wrap">
+              <Table columns={webhookColumns} dataSource={webhooks} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="fst-toolbar">
+              <div />
+              <div className="fst-toolbar-right">
+                <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={() => {
+                  setEditingSchedule(null)
+                  scheduleForm.resetFields()
+                  setScheduleModalVisible(true)
+                }}>
+                  <PlusOutlined /> 新建定时任务
+                </button>
+              </div>
+            </div>
+            <div className="fst-table-wrap">
+              <Table columns={scheduleColumns} dataSource={schedules} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} />
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Webhook Modal */}
       <Modal

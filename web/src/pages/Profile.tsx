@@ -87,140 +87,129 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={4}>个人设置</Title>
-        <Text type="secondary">管理您的个人基本信息与账号安全</Text>
+    <div className="fst-page" style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div className="fst-page-header fst-animate-in">
+        <div>
+          <h1 className="fst-page-title">个人设置</h1>
+          <div className="fst-ios-card-subtitle">管理您的个人基本信息与账号安全</div>
+        </div>
       </div>
 
-      <Row gutter={[24, 24]}>
-        <Col span={24}>
-          <Card title={
-            <Space>
-              <UserOutlined style={{ color: '#3D6E66' }} />
-              <span>基本信息</span>
-            </Space>
-          }>
-            <Form
-              form={profileForm}
-              layout="vertical"
-              onFinish={handleUpdateProfile}
-            >
-              <Row gutter={24}>
-                <Col span={24} style={{ textAlign: 'center', marginBottom: 24 }}>
-                  <Spin spinning={uploading}>
-                    <Upload
-                      name="file"
-                      showUploadList={false}
-                      customRequest={handleUploadAvatar}
-                      accept="image/*"
-                    >
-                      <div style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
-                        <Avatar 
-                          size={80} 
-                          icon={<UserOutlined />} 
-                          src={user?.avatar}
-                          style={{ backgroundColor: '#3D6E66' }}
-                        />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          right: -8,
-                          backgroundColor: '#fff',
-                          borderRadius: '50%',
-                          padding: 4,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                        }}>
-                          <UploadOutlined style={{ color: '#3D6E66', fontSize: 16 }} />
-                        </div>
-                      </div>
-                    </Upload>
-                  </Spin>
-                  <div style={{ marginTop: 16 }}>
-                    <Text type="secondary">点击头像可直接上传更换 (支持 JPG/PNG 等格式)</Text>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="用户名"
-                    name="username"
-                    rules={[{ required: true, message: '请输入用户名' }, { min: 3, max: 50, message: '长度需在 3-50 个字符之间' }]}
-                  >
-                    <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="邮箱"
-                    name="email"
-                    rules={[
-                      { required: true, message: '请输入邮箱' },
-                      { type: 'email', message: '请输入有效的邮箱地址' }
-                    ]}
-                  >
-                    <Input prefix={<MailOutlined />} placeholder="请输入邮箱" />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Form.Item
-                    label="头像 URL"
-                    name="avatar"
-                  >
-                    <Input placeholder="请输入头像图片的 URL" />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
-                  保存基本信息
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Col>
+      {/* Profile Card */}
+      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+        <div className="fst-ios-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="fst-stat-icon fst-stat-icon--primary"><UserOutlined style={{ fontSize: 18 }} /></div>
+            <div>
+              <div className="fst-ios-card-title">基本信息</div>
+              <div className="fst-ios-card-subtitle">更新您的头像、用户名和邮箱</div>
+            </div>
+          </div>
+        </div>
 
-        <Col span={24}>
-          <Card title={
-            <Space>
-              <LockOutlined style={{ color: '#3D6E66' }} />
-              <span>修改密码</span>
-            </Space>
-          }>
-            <Form
-              form={passwordForm}
-              layout="vertical"
-              onFinish={handleUpdatePassword}
-            >
+        <Form form={profileForm} layout="vertical" onFinish={handleUpdateProfile}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <Spin spinning={uploading}>
+              <Upload name="file" showUploadList={false} customRequest={handleUploadAvatar} accept="image/*">
+                <div style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                  <Avatar
+                    size={88}
+                    icon={<UserOutlined />}
+                    src={user?.avatar}
+                    style={{ backgroundColor: 'var(--fst-primary)', border: '3px solid var(--fst-surface-card)', boxShadow: 'var(--fst-shadow-md)' }}
+                  />
+                  <div style={{
+                    position: 'absolute', bottom: 0, right: -4,
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: 'var(--fst-primary)', color: '#fff',
+                    display: 'grid', placeItems: 'center',
+                    boxShadow: 'var(--fst-shadow-sm)',
+                  }}>
+                    <UploadOutlined style={{ fontSize: 12 }} />
+                  </div>
+                </div>
+              </Upload>
+            </Spin>
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--fst-on-surface-muted)' }}>
+              点击头像可直接上传更换
+            </div>
+          </div>
+
+          <Row gutter={24}>
+            <Col span={12}>
               <Form.Item
-                label="原密码"
-                name="old_password"
-                rules={[{ required: true, message: '请输入原密码' }]}
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>用户名</span>}
+                name="username"
+                rules={[{ required: true, message: '请输入用户名' }, { min: 3, max: 50 }]}
               >
-                <Input.Password placeholder="请输入原密码" />
+                <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
               </Form.Item>
+            </Col>
+            <Col span={12}>
               <Form.Item
-                label="新密码"
-                name="new_password"
-                rules={[{ required: true, message: '请输入新密码' }, { min: 6, message: '密码长度至少为 6 位' }]}
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>邮箱</span>}
+                name="email"
+                rules={[{ required: true, message: '请输入邮箱' }, { type: 'email' }]}
               >
-                <Input.Password placeholder="请输入新密码" />
+                <Input prefix={<MailOutlined />} placeholder="请输入邮箱" />
               </Form.Item>
-              <Form.Item
-                label="确认新密码"
-                name="confirm_password"
-                rules={[{ required: true, message: '请确认新密码' }]}
-              >
-                <Input.Password placeholder="请再次输入新密码" />
+            </Col>
+            <Col span={24}>
+              <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>头像 URL</span>} name="avatar">
+                <Input placeholder="请输入头像图片的 URL" />
               </Form.Item>
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={pwdLoading}>
-                  更新密码
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Col>
-      </Row>
+            </Col>
+          </Row>
+
+          <div style={{ borderTop: '1px solid var(--fst-outline-soft)', paddingTop: 20 }}>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>保存基本信息</Button>
+            </Form.Item>
+          </div>
+        </Form>
+      </div>
+
+      {/* Password Card */}
+      <div className="fst-ios-card fst-animate-in fst-animate-in-2">
+        <div className="fst-ios-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="fst-stat-icon fst-stat-icon--tertiary"><LockOutlined style={{ fontSize: 18 }} /></div>
+            <div>
+              <div className="fst-ios-card-title">修改密码</div>
+              <div className="fst-ios-card-subtitle">确保您的账号安全</div>
+            </div>
+          </div>
+        </div>
+
+        <Form form={passwordForm} layout="vertical" onFinish={handleUpdatePassword}>
+          <Form.Item
+            label={<span style={{ fontWeight: 600, fontSize: 13 }}>原密码</span>}
+            name="old_password"
+            rules={[{ required: true, message: '请输入原密码' }]}
+          >
+            <Input.Password placeholder="请输入原密码" />
+          </Form.Item>
+          <Form.Item
+            label={<span style={{ fontWeight: 600, fontSize: 13 }}>新密码</span>}
+            name="new_password"
+            rules={[{ required: true, message: '请输入新密码' }, { min: 6 }]}
+          >
+            <Input.Password placeholder="请输入新密码" />
+          </Form.Item>
+          <Form.Item
+            label={<span style={{ fontWeight: 600, fontSize: 13 }}>确认新密码</span>}
+            name="confirm_password"
+            rules={[{ required: true, message: '请确认新密码' }]}
+          >
+            <Input.Password placeholder="请再次输入新密码" />
+          </Form.Item>
+          <div style={{ borderTop: '1px solid var(--fst-outline-soft)', paddingTop: 20 }}>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={pwdLoading}>更新密码</Button>
+            </Form.Item>
+          </div>
+        </Form>
+      </div>
     </div>
   )
 }

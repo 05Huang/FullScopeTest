@@ -164,69 +164,63 @@ const VisualRegressionHistory: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-          返回
-        </Button>
-        <Title level={3} style={{ margin: 0 }}>
-          <LineChartOutlined /> 视觉回归历史趋势 - 用例 #{testCaseId}
-        </Title>
+    <div className="fst-page">
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => navigate(-1)}><ArrowLeftOutlined /> 返回</button>
+          <h1 className="fst-page-title" style={{ fontSize: 20 }}>
+            <LineChartOutlined /> 视觉回归历史趋势 - 用例 #{testCaseId}
+          </h1>
+        </div>
       </div>
 
       {history.length === 0 ? (
-        <Empty description="暂无视觉回归历史数据" />
+        <div className="fst-empty">
+          <div className="fst-empty-icon"><LineChartOutlined /></div>
+          <div className="fst-empty-title">暂无视觉回归历史数据</div>
+        </div>
       ) : (
         <>
-          <Card title="差异百分比趋势" style={{ marginBottom: 24 }}>
+          <div className="fst-ios-card fst-animate-in fst-animate-in-1">
+            <div className="fst-ios-card-header">
+              <div className="fst-ios-card-title">差异百分比趋势</div>
+            </div>
             {renderChart()}
-          </Card>
+          </div>
 
-          <Card title="执行历史记录">
-            <Table
-              columns={columns}
-              dataSource={history.map((h, i) => ({ ...h, key: i }))}
-              pagination={{ pageSize: 10 }}
-              size="small"
-            />
-          </Card>
+          <div className="fst-ios-card fst-animate-in fst-animate-in-2" style={{ marginTop: 16 }}>
+            <div className="fst-ios-card-header">
+              <div className="fst-ios-card-title">执行历史记录</div>
+            </div>
+            <div className="fst-table-wrap">
+              <Table columns={columns} dataSource={history.map((h, i) => ({ ...h, key: i }))} pagination={{ pageSize: 10 }} size="small" />
+            </div>
+          </div>
 
           {selectedRecord && (
-            <Card
-              title={`详情 - 执行 #${selectedRecord.test_run_id}`}
-              style={{ marginTop: 24 }}
-              extra={<Button onClick={() => setSelectedRecord(null)}>关闭</Button>}
-            >
+            <div className="fst-ios-card fst-animate-in fst-animate-in-3" style={{ marginTop: 16 }}>
+              <div className="fst-ios-card-header">
+                <div className="fst-ios-card-title">详情 - 执行 #{selectedRecord.test_run_id}</div>
+                <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => setSelectedRecord(null)}>关闭</button>
+              </div>
               <Row gutter={16}>
                 <Col span={8}>
                   <Text strong>基准截图</Text>
                   <br />
-                  {selectedRecord.sample_baseline_image ? (
-                    <Image src={selectedRecord.sample_baseline_image} width="100%" />
-                  ) : (
-                    <Empty description="无基准截图" />
-                  )}
+                  {selectedRecord.sample_baseline_image ? <Image src={selectedRecord.sample_baseline_image} width="100%" /> : <Empty description="无基准截图" />}
                 </Col>
                 <Col span={8}>
                   <Text strong>当前截图</Text>
                   <br />
-                  {selectedRecord.sample_current_image ? (
-                    <Image src={selectedRecord.sample_current_image} width="100%" />
-                  ) : (
-                    <Empty description="无当前截图" />
-                  )}
+                  {selectedRecord.sample_current_image ? <Image src={selectedRecord.sample_current_image} width="100%" /> : <Empty description="无当前截图" />}
                 </Col>
                 <Col span={8}>
                   <Text strong>差异图</Text>
                   <br />
-                  {selectedRecord.sample_diff_image ? (
-                    <Image src={selectedRecord.sample_diff_image} width="100%" />
-                  ) : (
-                    <Empty description="无差异图" />
-                  )}
+                  {selectedRecord.sample_diff_image ? <Image src={selectedRecord.sample_diff_image} width="100%" /> : <Empty description="无差异图" />}
                 </Col>
               </Row>
-            </Card>
+            </div>
           )}
         </>
       )}
