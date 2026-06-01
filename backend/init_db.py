@@ -19,19 +19,20 @@ def init_database():
         
         # Create admin user
         from app.models.user import User
+        from werkzeug.security import generate_password_hash
         admin = User.query.filter_by(username='admin').first()
         if not admin:
             print("Creating admin user...")
             admin = User(
                 username='admin',
                 email='admin@fullscopetest.com',
-                is_admin=True,
-                is_active=True
+                role='admin',
+                is_active=True,
+                password_hash=generate_password_hash('Admin@12345')
             )
-            admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            print("Admin user created: admin / admin123")
+            print("Admin user created: admin / Admin@12345")
         else:
             print("Admin user already exists.")
 

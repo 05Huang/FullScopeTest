@@ -234,30 +234,8 @@ def generate_web_script():
         return error_response(400, 'prompt is required')
         
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
-        }
-
-        # Frontend runtime override
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+        from .api_test import _build_ai_runtime_config
+        runtime_config = _build_ai_runtime_config(data)
 
         user_id = get_current_user_id()
         script_content = generate_test_script(prompt, "web", runtime_config, user_id=user_id)
@@ -283,30 +261,8 @@ def analyze_web_test_error():
         return error_response(404, '脚本不存在')
         
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
-        }
-
-        # Frontend runtime override
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+        from .api_test import _build_ai_runtime_config
+        runtime_config = _build_ai_runtime_config(data)
 
         result = analyze_test_error(
             script_content=script.script_content,
@@ -682,8 +638,8 @@ def update_script(script_id):
             collection, err = _get_collection_or_404(collection_id, user_id)
             if err:
                 return err
-                if script.project_id and collection.project_id and script.project_id != collection.project_id:
-                    return error_response(400, 'collection_id 与脚本项目不匹配')
+            if script.project_id and collection.project_id and script.project_id != collection.project_id:
+                return error_response(400, 'collection_id 与脚本项目不匹配')
             script.collection_id = collection.id
             if script.project_id is None:
                 script.project_id = collection.project_id

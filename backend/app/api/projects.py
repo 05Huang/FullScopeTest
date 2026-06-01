@@ -28,7 +28,7 @@ def get_projects():
     """
     user_id = get_current_user_id()
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
     keyword = request.args.get('keyword', '').strip()
     
     query = Project.query.filter_by(owner_id=user_id)

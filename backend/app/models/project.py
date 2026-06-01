@@ -38,6 +38,7 @@ class Project(db.Model):
             'name': self.name,
             'description': self.description,
             'owner_id': self.owner_id,
+            'organization_id': self.organization_id,
             'settings': self.settings,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

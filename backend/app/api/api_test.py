@@ -61,6 +61,35 @@ def _sanitize_env_value(value: str) -> str:
     return str(value or '').replace('\n', '').replace('\r', '').strip()
 
 
+def _build_ai_runtime_config(data: dict, *, timeout: int = 30) -> dict:
+    """从 Flask config 和请求 data 中构建 AI runtime_config，支持前端 per-request 覆盖。"""
+    from flask import current_app
+    runtime_config = {
+        'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
+        'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
+        'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
+        'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
+        'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
+        'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
+        'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
+        'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', timeout),
+    }
+    # Frontend runtime override
+    if data.get('base_url'):
+        runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
+    if data.get('model'):
+        runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
+    if data.get('api_key'):
+        runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
+    if data.get('vision_base_url'):
+        runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
+    if data.get('vision_model'):
+        runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
+    if data.get('vision_api_key'):
+        runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+    return runtime_config
+
+
 def _get_backend_env_path() -> str:
     return os.path.join(os.path.dirname(current_app.root_path), '.env')
 
@@ -214,30 +243,7 @@ def generate_ai_plan():
     }
 
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
-        }
-
-        # Frontend runtime override: allow per-request model provider settings.
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+        runtime_config = _build_ai_runtime_config(data)
 
         plan = generate_api_test_plan(
             prompt=prompt,
@@ -264,29 +270,7 @@ def synthesize_api_cases():
         return error_response(400, 'base_request is required')
         
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
-        }
-
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+        runtime_config = _build_ai_runtime_config(data)
 
         cases = synthesize_test_cases(base_request, count, runtime_config)
         return success_response(data={'cases': cases}, message='AI 用例扩充成功')
@@ -325,29 +309,7 @@ def review_collection_cases():
         })
         
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 60),
-        }
-
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+        runtime_config = _build_ai_runtime_config(data, timeout=60)
 
         result = review_api_collection(collection.name, case_list, runtime_config)
         return success_response(data=result, message='AI 评审完成')
@@ -659,9 +621,7 @@ def execute_request():
 
             # 前置脚本失败则直接返回
             if not pre_result.get('passed', True):
-                return success_response(data={
-                    'success': False,
-                    'error': pre_result.get('error', '前置脚本执行失败'),
+                return error_response(400, pre_result.get('error', '前置脚本执行失败'), errors={
                     'script_execution': script_execution
                 })
 
@@ -683,9 +643,7 @@ def execute_request():
 
         except Exception as e:
             logger.error("前置脚本执行异常", error=str(e))
-            return success_response(data={
-                'success': False,
-                'error': f'前置脚本执行异常: {str(e)}',
+            return error_response(500, f'前置脚本执行异常: {str(e)}', errors={
                 'script_execution': script_execution
             })
 
@@ -835,27 +793,21 @@ def execute_request():
 
     except requests.exceptions.Timeout:
         elapsed_time = (time.time() - start_time) * 1000
-        return success_response(data={
-            'success': False,
-            'error': '请求超时',
+        return error_response(504, '请求超时', errors={
             'response_time': round(elapsed_time, 2),
             'script_execution': script_execution
         })
 
     except requests.exceptions.ConnectionError as e:
         elapsed_time = (time.time() - start_time) * 1000
-        return success_response(data={
-            'success': False,
-            'error': f'连接错误: {str(e)}',
+        return error_response(502, f'连接错误: {str(e)}', errors={
             'response_time': round(elapsed_time, 2),
             'script_execution': script_execution
         })
 
     except Exception as e:
         elapsed_time = (time.time() - start_time) * 1000
-        return success_response(data={
-            'success': False,
-            'error': str(e),
+        return error_response(500, str(e), errors={
             'response_time': round(elapsed_time, 2),
             'script_execution': script_execution
         })
@@ -1359,7 +1311,8 @@ def run_collection(collection_id):
                 'headers': headers,
                 'params': params,
                 'timeout': case.timeout or 30,
-                'verify': False
+                'verify': False,
+                'allow_redirects': True
             }
 
             if body and case.method in ['POST', 'PUT', 'PATCH']:

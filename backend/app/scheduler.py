@@ -65,13 +65,16 @@ def init_scheduler(app):
             # 检查表是否存在，防止在测试环境或初始化时报错
             from sqlalchemy import inspect
             from .extensions import db
-            inspector = inspect(db.engine)
-            if inspector.has_table("scheduled_tasks"):
-                active_tasks = ScheduledTask.query.filter_by(is_active=True).all()
-                for task in active_tasks:
-                    add_or_update_job(task)
-            else:
-                logger.warning("scheduled_tasks 表不存在，跳过加载定时任务")
+            try:
+                inspector = inspect(db.engine)
+                if inspector.has_table("scheduled_tasks"):
+                    active_tasks = ScheduledTask.query.filter_by(is_active=True).all()
+                    for task in active_tasks:
+                        add_or_update_job(task)
+                else:
+                    logger.warning("scheduled_tasks 表不存在，跳过加载定时任务")
+            except Exception as e:
+                logger.warning("数据库未就绪，跳过加载定时任务", error=str(e))
                 
     except IOError:
         # 获取锁失败，说明其他进程已经启动了调度器

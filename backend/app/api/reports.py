@@ -746,8 +746,12 @@ def delete_test_report(report_id):
         return error_response(404, '报告不存在或无权访问')
 
     try:
+        # 先清理关联 TestRun 的外键引用，避免悬空引用
+        db.session.query(TestRun).filter(
+            TestRun.report_id == report_id
+        ).update({'report_id': None}, synchronize_session=False)
+
         # 使用原始 SQL DELETE，绕过 ORM 的关系处理
-        # 避免 SQLAlchemy 尝试更新关联的 TestRun
         stmt = sql_delete(TestReport).where(TestReport.id == report_id)
         db.session.execute(stmt)
         db.session.commit()

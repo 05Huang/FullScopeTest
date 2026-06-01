@@ -129,13 +129,20 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     """开发环境配置"""
-    
+
     DEBUG = True
     # 使用 PostgreSQL 数据库
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+    _raw_db_url = os.environ.get(
         'DATABASE_URL',
         'postgresql://localhost:5432/fullscopetest_dev'
     )
+    # SQLite 相对路径需要基于项目根目录解析，避免被 Flask instance_path 二次拼接
+    if _raw_db_url.startswith('sqlite:///') and not _raw_db_url.startswith('sqlite:////'):
+        _rel_path = _raw_db_url[len('sqlite:///'):]
+        _abs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), _rel_path)
+        SQLALCHEMY_DATABASE_URI = f'sqlite:///{_abs_path}'
+    else:
+        SQLALCHEMY_DATABASE_URI = _raw_db_url
     SQLALCHEMY_ECHO = True  # 开发时打印 SQL
 
 

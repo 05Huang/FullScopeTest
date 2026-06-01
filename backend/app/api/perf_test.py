@@ -219,30 +219,8 @@ def generate_perf_script():
         return error_response(400, 'prompt is required')
         
     try:
-        runtime_config = {
-            'AI_ASSISTANT_ENABLED': current_app.config.get('AI_ASSISTANT_ENABLED', True),
-            'AI_ASSISTANT_BASE_URL': current_app.config.get('AI_ASSISTANT_BASE_URL', ''),
-            'AI_ASSISTANT_API_KEY': current_app.config.get('AI_ASSISTANT_API_KEY', ''),
-            'AI_ASSISTANT_MODEL': current_app.config.get('AI_ASSISTANT_MODEL', ''),
-            'AI_VISION_BASE_URL': current_app.config.get('AI_VISION_BASE_URL', ''),
-            'AI_VISION_API_KEY': current_app.config.get('AI_VISION_API_KEY', ''),
-            'AI_VISION_MODEL': current_app.config.get('AI_VISION_MODEL', ''),
-            'AI_ASSISTANT_TIMEOUT': current_app.config.get('AI_ASSISTANT_TIMEOUT', 30),
-        }
-
-        # Frontend runtime override
-        if data.get('base_url'):
-            runtime_config['AI_ASSISTANT_BASE_URL'] = str(data.get('base_url')).strip()
-        if data.get('model'):
-            runtime_config['AI_ASSISTANT_MODEL'] = str(data.get('model')).strip()
-        if data.get('api_key'):
-            runtime_config['AI_ASSISTANT_API_KEY'] = str(data.get('api_key')).strip()
-        if data.get('vision_base_url'):
-            runtime_config['AI_VISION_BASE_URL'] = str(data.get('vision_base_url')).strip()
-        if data.get('vision_model'):
-            runtime_config['AI_VISION_MODEL'] = str(data.get('vision_model')).strip()
-        if data.get('vision_api_key'):
-            runtime_config['AI_VISION_API_KEY'] = str(data.get('vision_api_key')).strip()
+        from .api_test import _build_ai_runtime_config
+        runtime_config = _build_ai_runtime_config(data)
 
         user_id = get_current_user_id()
         script_content = generate_test_script(prompt, "perf", runtime_config, user_id=user_id)

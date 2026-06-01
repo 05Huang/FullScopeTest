@@ -127,6 +127,15 @@ def _seed_default_prompt_versions(app):
     try:
         with app.app_context():
             from .extensions import db
+            from sqlalchemy import inspect as sa_inspect
+            # 检查表是否存在，数据库未初始化时跳过
+            try:
+                inspector = sa_inspect(db.engine)
+                if not inspector.has_table("prompt_versions"):
+                    return
+            except Exception:
+                return
+
             from .models.prompt_version import PromptVersion
             from .services.ai.script_generator import (
                 DEFAULT_WEB_SYSTEM_PROMPT,

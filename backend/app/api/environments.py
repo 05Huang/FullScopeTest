@@ -93,7 +93,7 @@ def create_global_environment():
         base_url=base_url,
         variables=variables,
         headers=data.get('headers', {}),
-        is_default=data.get('is_active', False)
+        is_default=data.get('is_default', False)
     )
     
     # 如果设为默认，取消其他环境的默认状态

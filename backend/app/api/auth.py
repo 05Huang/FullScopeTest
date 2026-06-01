@@ -303,8 +303,14 @@ def forgot_password():
     # reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
     # send_reset_email(user.email, reset_url)
 
+    response_data = {}
+    # 仅在开发环境返回 token，生产环境不应暴露
+    from flask import current_app
+    if current_app.config.get('DEBUG'):
+        response_data['reset_token'] = reset_token
+
     return success_response(
-        data={'reset_token': reset_token},
+        data=response_data,
         message='如果该邮箱已注册，重置链接已发送'
     )
 

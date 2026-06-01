@@ -25,10 +25,16 @@ from typing import Optional, Dict, Any, List
 logger = get_logger(__name__)
 
 
+_flask_app_cache = None
+
+
 def _get_flask_app():
-    """延迟获取 Flask 应用实例，避免循环导入"""
-    from app import create_app
-    return create_app()
+    """延迟获取 Flask 应用实例，避免循环导入（缓存复用）"""
+    global _flask_app_cache
+    if _flask_app_cache is None:
+        from app import create_app
+        _flask_app_cache = create_app()
+    return _flask_app_cache
 
 
 class RealtimeStatsCollector:
@@ -48,6 +54,7 @@ class RealtimeStatsCollector:
             if not success:
                 self.failure_count += 1
             self.response_times.append(response_time)
+            self.last_update = time.time()
 
     def get_stats(self):
         """获取当前统计数据"""
@@ -588,6 +595,7 @@ def run_perf_test_task(
         temp_dir = None
         monitor_thread = None
         stop_monitor = threading.Event()
+        perf_result_id = None
 
         def _safe_float(val, default=0.0):
             try:
@@ -854,7 +862,7 @@ def run_perf_test_task(
             # 标记性能测试结果为失败
             try:
                 from app.models.perf_test_result import PerformanceTestResult
-                if 'perf_result_id' in dir():
+                if perf_result_id is not None:
                     perf_result = PerformanceTestResult.query.get(perf_result_id)
                     if perf_result:
                         perf_result.status = 'failed'
