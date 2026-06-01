@@ -62,13 +62,14 @@ const CICD: React.FC = () => {
   }, [targetType, webhookModalVisible, scheduleModalVisible])
 
   const fetchData = async () => {
+    if (!currentProjectId) return
     setLoading(true)
     try {
       if (activeTab === 'webhooks') {
-        const response: any = await cicdService.getWebhooks(currentProjectId || 1)
+        const response: any = await cicdService.getWebhooks(currentProjectId)
         setWebhooks(response.data || [])
       } else {
-        const response: any = await cicdService.getSchedules(currentProjectId || 1)
+        const response: any = await cicdService.getSchedules(currentProjectId)
         setSchedules(response.data || [])
       }
     } catch (error: any) {
@@ -79,16 +80,17 @@ const CICD: React.FC = () => {
   }
 
   const fetchTargetOptions = async (type: string) => {
+    if (!currentProjectId) return
     try {
       let options: {label: string, value: number}[] = []
       if (type === 'api_collection') {
-        const response: any = await apiTestService.getCollections(currentProjectId || 1)
+        const response: any = await apiTestService.getCollections(currentProjectId)
         options = (response.data || []).map((item: any) => ({ label: item.name, value: item.id }))
       } else if (type === 'web_collection') {
-        const response: any = await webTestService.getCollections(currentProjectId || 1)
+        const response: any = await webTestService.getCollections(currentProjectId)
         options = (response.data || []).map((item: any) => ({ label: item.name, value: item.id }))
       } else if (type === 'perf_scenario') {
-        const response: any = await perfTestService.getScenarios(currentProjectId || 1)
+        const response: any = await perfTestService.getScenarios(currentProjectId)
         options = (response.data || []).map((item: any) => ({ label: item.name, value: item.id }))
       }
       setTargetOptions(options)

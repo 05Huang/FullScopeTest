@@ -33,6 +33,7 @@ import MonacoEditor from '@monaco-editor/react'
 import ReactMarkdown from 'react-markdown'
 import { useTranslation } from 'react-i18next'
 import { documentService } from '@/services'
+import { useProjectStore } from '@/stores/projectStore'
 
 const { Sider, Content } = Layout
 const { Title } = Typography
@@ -76,20 +77,19 @@ const Documents = () => {
   const [templates, setTemplates] = useState<any[]>([])
   const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
-  
-  // 假设使用项目 ID 1，实际应从项目选择器获取
-  const projectId = 1
+  const { currentProjectId } = useProjectStore()
 
   useEffect(() => {
     fetchDocuments()
     fetchCategories()
     fetchTemplates()
-  }, [])
+  }, [currentProjectId])
 
   const fetchDocuments = async () => {
+    if (!currentProjectId) return
     setLoading(true)
     try {
-      const res = await documentService.getDocuments(projectId)
+      const res = await documentService.getDocuments(currentProjectId)
       if (res.code === 200) {
         setDocuments(res.data.items || res.data || [])
       }
@@ -153,6 +153,7 @@ const Documents = () => {
   }
 
   const handleCreateDoc = async (values: any) => {
+    if (!currentProjectId) return
     try {
       // 如果选择了模板，使用模板内容
       let initialContent = defaultContent
@@ -163,7 +164,7 @@ const Documents = () => {
         }
       }
 
-      const res = await documentService.createDocument(projectId, {
+      const res = await documentService.createDocument(currentProjectId, {
         title: values.name,
         category: values.category,
         content: initialContent,

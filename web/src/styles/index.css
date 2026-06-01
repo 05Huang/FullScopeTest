@@ -56,6 +56,170 @@ body {
   transition: opacity 200ms ease-out;
 }
 
+/* ═══════════════════════════════════════════════════════
+   Split Login Layout
+   ═══════════════════════════════════════════════════════ */
+
+.fst-login-split {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #f7f5f2;
+}
+
+/* ─── Left panel: product showcase image ─── */
+.fst-login-left {
+  position: relative;
+  overflow: hidden;
+  background: #eef0f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fst-login-left-img {
+  height: 100vh;
+  width: auto;
+  display: block;
+}
+
+/* ─── Right panel: login form ─── */
+.fst-login-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 60px 24px;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.fst-login-right-inner {
+  width: 100%;
+  max-width: 420px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fst-login-right-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.fst-login-right-logo {
+  height: 72px;
+  width: auto;
+  display: block;
+}
+
+.fst-login-right-card {
+  width: 100%;
+  min-height: 380px;
+}
+
+.fst-login-right-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2b2a;
+  margin: 0 0 20px;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Social login divider ─── */
+.fst-login-right-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 4px 0 16px;
+}
+
+.fst-login-right-divider::before,
+.fst-login-right-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e8e8e8;
+}
+
+.fst-login-right-divider span {
+  font-size: 12px;
+  color: #b0b0b0;
+  white-space: nowrap;
+}
+
+/* ─── Social buttons ─── */
+.fst-login-right-socials {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+.fst-login-right-social-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #e8e8e8;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #333;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.fst-login-right-social-btn:hover {
+  border-color: #c0c0c0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.fst-login-right-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.fst-login-right-copyright {
+  margin-top: 24px;
+  font-size: 12px;
+  color: #b0b0b0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 960px) {
+  .fst-login-left {
+    display: none;
+  }
+  .fst-login-right {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .fst-login-right {
+    padding: 28px 20px 18px;
+  }
+  .fst-login-right-brand-name {
+    font-size: 20px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Legacy auth root (still used by other pages if any)
+   ═══════════════════════════════════════════════════════ */
 .fst-auth-root {
   min-height: 100vh;
   position: relative;
@@ -351,6 +515,35 @@ body {
   animation: fst-auth-card-in 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ─── Flip card in split layout ─── */
+.fst-login-right-card .fst-auth-flip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 680ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  will-change: transform;
+}
+
+.fst-login-right-card .fst-auth-flip.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.fst-login-right-card .fst-auth-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  backface-visibility: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fst-login-right-card .fst-auth-back {
+  transform: rotateY(180deg);
+}
+
 .fst-auth-flip {
   position: relative;
   width: 100%;
@@ -425,24 +618,22 @@ body {
 }
 
 .fst-auth-input.ant-input-affix-wrapper {
-  height: 50px;
-  border-radius: 14px;
+  height: 48px;
+  border-radius: 10px;
   padding: 0 14px;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(15, 45, 40, 0.14);
-  box-shadow: 0 14px 40px rgba(15, 45, 40, 0.08);
-  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, background 220ms ease;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  box-shadow: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .fst-auth-input.ant-input-affix-wrapper:hover {
-  border-color: rgba(95, 165, 155, 0.42);
+  border-color: #b0b0b0;
 }
 
 .fst-auth-input.ant-input-affix-wrapper-focused {
-  border-color: rgba(95, 165, 155, 0.72) !important;
-  box-shadow: 0 0 0 4px rgba(95, 165, 155, 0.16), 0 22px 60px rgba(15, 45, 40, 0.12) !important;
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.72);
+  border-color: #2D5A52 !important;
+  box-shadow: 0 0 0 3px rgba(45, 90, 82, 0.12) !important;
 }
 
 .fst-auth-input .ant-input {
@@ -451,7 +642,7 @@ body {
 
 .fst-auth-input .ant-input-prefix {
   margin-right: 10px;
-  color: rgba(15, 45, 40, 0.55);
+  color: #999;
 }
 
 .fst-auth-icon {
@@ -507,35 +698,33 @@ body {
 
 .fst-auth-submit.ant-btn {
   height: 50px;
-  border-radius: 14px;
-  border: 1px solid rgba(215, 181, 109, 0.42);
-  background: linear-gradient(135deg, rgba(95, 165, 155, 0.96) 0%, rgba(61, 110, 102, 0.96) 58%, rgba(215, 181, 109, 0.78) 100%);
-  color: rgba(255, 255, 255, 0.97);
+  border-radius: 10px;
+  border: none;
+  background: #2D5A52;
+  color: #fff;
   font-size: 15px;
   font-weight: 650;
   letter-spacing: 0.02em;
-  box-shadow: 0 22px 70px rgba(61, 110, 102, 0.34);
-  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease, border-color 220ms ease;
+  box-shadow: 0 4px 16px rgba(45, 90, 82, 0.25);
+  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
 }
 
 .fst-auth-submit.ant-btn:hover {
-  transform: translateY(-2px);
-  border-color: rgba(215, 181, 109, 0.6) !important;
-  color: rgba(255, 255, 255, 0.97) !important;
-  background: linear-gradient(135deg, rgba(95, 165, 155, 0.98) 0%, rgba(61, 110, 102, 0.98) 58%, rgba(215, 181, 109, 0.82) 100%) !important;
-  filter: saturate(1.08);
-  box-shadow: 0 28px 86px rgba(61, 110, 102, 0.42);
+  transform: translateY(-1px);
+  color: #fff !important;
+  background: #244a44 !important;
+  box-shadow: 0 6px 24px rgba(45, 90, 82, 0.35);
 }
 
 .fst-auth-submit.ant-btn:active {
   transform: translateY(0px);
-  color: rgba(255, 255, 255, 0.97) !important;
-  filter: saturate(1);
+  color: #fff !important;
+  background: #1a3a33 !important;
 }
 
 .fst-auth-submit.ant-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(215, 181, 109, 0.24), 0 28px 86px rgba(61, 110, 102, 0.42);
+  box-shadow: 0 0 0 4px rgba(45, 90, 82, 0.2), 0 6px 24px rgba(45, 90, 82, 0.35);
 }
 
 .fst-auth-footer {
@@ -664,7 +853,7 @@ body {
 
 .fst-auth-input.ant-input-affix-wrapper-status-error {
   border-color: rgba(152, 62, 55, 0.55) !important;
-  box-shadow: 0 0 0 4px rgba(152, 62, 55, 0.12), 0 22px 60px rgba(15, 45, 40, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(152, 62, 55, 0.1) !important;
 }
 
 .fst-auth-link {

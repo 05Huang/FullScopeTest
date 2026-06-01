@@ -37,6 +37,7 @@ import type { TestReport } from '@/services/reportService'
 import { useTranslation } from 'react-i18next'
 import { reportService } from '@/services'
 import api from '@/services/api'
+import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -64,6 +65,7 @@ interface TestRun {
 
 const Reports = () => {
   const { t } = useTranslation();
+  const { currentProjectId } = useProjectStore();
 
   const typeConfig: Record<string, { color: string; text: string }> = {
     api: { color: 'blue', text: t('reports.apiTest') },
@@ -98,7 +100,7 @@ const Reports = () => {
 
   useEffect(() => {
     fetchData()
-  }, [pagination.current, pagination.pageSize, filters.keyword, filters.test_type, filters.date_range])
+  }, [currentProjectId, pagination.current, pagination.pageSize, filters.keyword, filters.test_type, filters.date_range])
 
   const fetchData = async () => {
     try {
@@ -113,12 +115,14 @@ const Reports = () => {
           page: pagination.current,
           per_page: pagination.pageSize,
           test_type: filters.test_type || undefined,
+          project_id: currentProjectId,
           ...dateParams,
         }),
         reportService.getTestReports({
           page: pagination.current,
           per_page: pagination.pageSize,
           test_type: filters.test_type || undefined,
+          project_id: currentProjectId,
           ...dateParams,
         }),
         reportService.getReportStatistics({ days: 7 }),

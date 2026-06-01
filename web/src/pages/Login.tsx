@@ -1,11 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Typography, message } from 'antd'
+import { Form, Input, Button, message } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
-
-const { Title, Text } = Typography
 
 interface LoginForm {
   username: string
@@ -112,77 +110,9 @@ const EyeGlyph = ({ open }: { open: boolean }) => (
   </svg>
 )
 
-const BrandMark = () => (
-  <div className="fst-auth-brand" aria-hidden="true">
-    <svg viewBox="0 0 64 64" className="fst-auth-brand-svg">
-      <defs>
-        <linearGradient id="fstBrandG" x1="10" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#5FA59B" />
-          <stop offset="0.6" stopColor="#3D6E66" />
-          <stop offset="1" stopColor="#D7B56D" />
-        </linearGradient>
-        <filter id="fstGlow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
-          <feColorMatrix
-            in="blur"
-            type="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.9 0"
-            result="glow"
-          />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <path
-        d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
-        fill="url(#fstBrandG)"
-        filter="url(#fstGlow)"
-      />
-      <path
-        d="M22 23h24"
-        stroke="rgba(255,255,255,0.55)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M22 45h18"
-        stroke="rgba(255,255,255,0.38)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  </div>
-)
-
-const FooterBeianIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M12 2.8 19.4 6.2v6.1c0 5-3.1 9.2-7.4 10.9C7.7 21.5 4.6 17.3 4.6 12.3V6.2L12 2.8Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M9.2 12.2 11 14l3.9-4.1"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
-
-const FooterGithubIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M12 2.6c-5.3 0-9.6 4.3-9.6 9.6 0 4.2 2.7 7.8 6.5 9.1.5.1.7-.2.7-.5v-1.7c-2.6.6-3.2-1.1-3.2-1.1-.4-1-1.1-1.3-1.1-1.3-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.7.4-1.1.6-1.3-2.1-.2-4.3-1.1-4.3-4.8 0-1 .4-1.9 1-2.6-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1a9 9 0 0 1 4.8 0c1.8-1.3 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.6 1 2.6 0 3.7-2.2 4.6-4.3 4.8.4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 3.8-1.3 6.5-4.9 6.5-9.1 0-5.3-4.3-9.6-9.6-9.6Z"
-      fill="currentColor"
-      opacity="0.88"
-    />
-  </svg>
-)
+/* ═══════════════════════════════════════════════════ */
+/*                   LOGIN COMPONENT                   */
+/* ═══════════════════════════════════════════════════ */
 
 const Login = () => {
   const { t } = useTranslation()
@@ -287,282 +217,228 @@ const Login = () => {
   }
 
   return (
-    <div className="fst-auth-root">
-      <div className="fst-auth-bg" aria-hidden="true">
-        <div className="fst-auth-bg-blob fst-auth-bg-blob-a" />
-        <div className="fst-auth-bg-blob fst-auth-bg-blob-b" />
-        <div className="fst-auth-bg-grid" />
-        <div className="fst-auth-bg-particles" />
+    <div className="fst-login-split">
+      {/* ─── Left: Product showcase image ─── */}
+      <div className="fst-login-left">
+        <img
+          className="fst-login-left-img"
+          src="/login-left.png"
+          alt="FullScopeTest Dashboard"
+          draggable={false}
+        />
       </div>
 
-      <div className="fst-auth-shell">
-        <div className="fst-auth-card">
-          <div className={`fst-auth-flip ${isRegister ? 'is-flipped' : ''}`}>
-            <section className="fst-auth-face fst-auth-front" aria-label={t("login.loginForm")}>
-              <div className="fst-auth-header">
-                <BrandMark />
-                <div className="fst-auth-heading">
-                  <Title level={3} className="fst-auth-title">
-                    {t('login.title')}
-                  </Title>
-                  <Text className="fst-auth-subtitle">{t('login.subtitle')}</Text>
-                </div>
-              </div>
+      {/* ─── Right: Login form ─── */}
+      <div className="fst-login-right">
+        <div className="fst-login-right-inner">
+          {/* Logo + brand */}
+          <div className="fst-login-right-brand">
+            <img
+              className="fst-login-right-logo"
+              src="/logo-full.png"
+              alt="FullScopeTest"
+              draggable={false}
+            />
+          </div>
 
-              <Form<LoginForm>
-                form={loginForm}
-                name="login"
-                onFinish={onLoginFinish}
-                onValuesChange={(changed) => {
-                  const keys = Object.keys(changed) as Array<keyof LoginForm>
-                  keys.forEach((k) => loginForm.setFields([{ name: k, errors: [] }]))
-                  if ('username' in changed || 'password' in changed) setLoginError(null)
-                }}
-                autoComplete="off"
-                size="large"
-                layout="vertical"
-              >
-                <Form.Item name="username" rules={[{ required: true, message: t('login.validation.usernameRequired') }]}>
-                  <Input
-                    className="fst-auth-input"
-                    prefix={<IconUser className="fst-auth-icon" />}
-                    placeholder={t('login.username')}
-                    aria-label={t('login.username')}
-                  />
-                </Form.Item>
+          <div className="fst-login-right-card">
+            <div className={`fst-auth-flip ${isRegister ? 'is-flipped' : ''}`}>
+              {/* ─── Login face ─── */}
+              <section className="fst-auth-face fst-auth-front" aria-label={t('login.loginForm')}>
+                <h3 className="fst-login-right-title">{t('login.accountLogin')}</h3>
 
-                <Form.Item
-                  name="password"
-                  rules={[{ required: true, message: t('login.validation.passwordRequired') }]}
-                  validateStatus={loginError ? 'error' : undefined}
-                  help={loginError || undefined}
+                <Form<LoginForm>
+                  form={loginForm}
+                  name="login"
+                  onFinish={onLoginFinish}
+                  onValuesChange={(changed) => {
+                    const keys = Object.keys(changed) as Array<keyof LoginForm>
+                    keys.forEach((k) => loginForm.setFields([{ name: k, errors: [] }]))
+                    if ('username' in changed || 'password' in changed) setLoginError(null)
+                  }}
+                  autoComplete="off"
+                  size="large"
+                  layout="vertical"
                 >
-                  <Input
-                    className="fst-auth-input"
-                    prefix={<IconLock className="fst-auth-icon" />}
-                    type={loginPwdVisible ? 'text' : 'password'}
-                    placeholder={t('login.password')}
-                    aria-label={t('login.password')}
-                    suffix={
-                      <button
-                        type="button"
-                        className="fst-auth-eye-btn"
-                        aria-label={loginPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setLoginPwdVisible((v) => !v)}
-                      >
-                        <EyeGlyph open={loginPwdVisible} />
-                      </button>
-                    }
-                  />
-                </Form.Item>
+                  <Form.Item name="username" rules={[{ required: true, message: t('login.validation.usernameRequired') }]}>
+                    <Input
+                      className="fst-auth-input"
+                      prefix={<IconUser className="fst-auth-icon" />}
+                      placeholder={t('login.username')}
+                      aria-label={t('login.username')}
+                    />
+                  </Form.Item>
 
-                {loginError ? (
-                  <div className="fst-auth-error" role="alert" aria-live="polite">
-                    {loginError}
-                  </div>
-                ) : null}
+                  <Form.Item
+                    name="password"
+                    rules={[{ required: true, message: t('login.validation.passwordRequired') }]}
+                    validateStatus={loginError ? 'error' : undefined}
+                    help={loginError || undefined}
+                  >
+                    <Input
+                      className="fst-auth-input"
+                      prefix={<IconLock className="fst-auth-icon" />}
+                      type={loginPwdVisible ? 'text' : 'password'}
+                      placeholder={t('login.password')}
+                      aria-label={t('login.password')}
+                      suffix={
+                        <button
+                          type="button"
+                          className="fst-auth-eye-btn"
+                          aria-label={loginPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setLoginPwdVisible((v) => !v)}
+                        >
+                          <EyeGlyph open={loginPwdVisible} />
+                        </button>
+                      }
+                    />
+                  </Form.Item>
 
-                <div style={{ textAlign: 'right', marginBottom: 14 }}>
-                  <Link to="/forgot-password" className="fst-auth-link" style={{ fontSize: 13 }}>
-                    {t('login.forgotPassword')}
+                  {loginError ? (
+                    <div className="fst-auth-error" role="alert" aria-live="polite">
+                      {loginError}
+                    </div>
+                  ) : null}
+
+                  <Form.Item style={{ marginBottom: 16 }}>
+                    <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
+                      {t('login.loginBtn')}
+                    </Button>
+                  </Form.Item>
+                </Form>
+
+              </section>
+
+              {/* ─── Register face ─── */}
+              <section className="fst-auth-face fst-auth-back" aria-label={t('login.registerForm')}>
+                <h3 className="fst-login-right-title">{t('login.register.title')}</h3>
+
+                <Form<RegisterForm>
+                  form={registerForm}
+                  name="register"
+                  onFinish={onRegisterFinish}
+                  onValuesChange={(changed) => {
+                    const keys = Object.keys(changed) as Array<keyof RegisterForm>
+                    keys.forEach((k) => registerForm.setFields([{ name: k, errors: [] }]))
+                  }}
+                  autoComplete="off"
+                  size="large"
+                  layout="vertical"
+                >
+                  <Form.Item
+                    name="username"
+                    rules={[
+                      { required: true, message: t('login.validation.usernameRequired') },
+                      { min: 3, message: t('login.validation.usernameMin') },
+                      { max: 20, message: t('login.validation.usernameMax') },
+                    ]}
+                  >
+                    <Input
+                      className="fst-auth-input"
+                      prefix={<IconUser className="fst-auth-icon" />}
+                      placeholder={t('login.username')}
+                      aria-label={t('login.username')}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="email"
+                    rules={[
+                      { required: true, message: t('login.validation.emailRequired') },
+                      { type: 'email', message: t('login.validation.emailInvalid') },
+                    ]}
+                  >
+                    <Input
+                      className="fst-auth-input"
+                      prefix={<IconMail className="fst-auth-icon" />}
+                      placeholder={t('login.register.email')}
+                      aria-label={t('login.register.email')}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="password"
+                    rules={[
+                      { required: true, message: t('login.validation.passwordRequired') },
+                      { min: 8, message: t('login.validation.passwordMin') },
+                    ]}
+                  >
+                    <Input
+                      className="fst-auth-input"
+                      prefix={<IconLock className="fst-auth-icon" />}
+                      type={registerPwdVisible ? 'text' : 'password'}
+                      placeholder={t('login.password')}
+                      aria-label={t('login.password')}
+                      suffix={
+                        <button
+                          type="button"
+                          className="fst-auth-eye-btn"
+                          aria-label={registerPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setRegisterPwdVisible((v) => !v)}
+                        >
+                          <EyeGlyph open={registerPwdVisible} />
+                        </button>
+                      }
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="confirmPassword"
+                    dependencies={['password']}
+                    rules={[
+                      { required: true, message: t('login.validation.confirmRequired') },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          if (!value || getFieldValue('password') === value) return Promise.resolve()
+                          return Promise.reject(new Error(t('login.validation.passwordMismatch')))
+                        },
+                      }),
+                    ]}
+                  >
+                    <Input
+                      className="fst-auth-input"
+                      prefix={<IconLock className="fst-auth-icon" />}
+                      type={registerConfirmPwdVisible ? 'text' : 'password'}
+                      placeholder={t('login.register.confirmPassword')}
+                      aria-label={t('login.register.confirmPassword')}
+                      suffix={
+                        <button
+                          type="button"
+                          className="fst-auth-eye-btn"
+                          aria-label={registerConfirmPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setRegisterConfirmPwdVisible((v) => !v)}
+                        >
+                          <EyeGlyph open={registerConfirmPwdVisible} />
+                        </button>
+                      }
+                    />
+                  </Form.Item>
+
+                  <Form.Item style={{ marginBottom: 16 }}>
+                    <Button htmlType="submit" loading={registerLoading} block className="fst-auth-submit">
+                      {t('login.registerBtn')}
+                    </Button>
+                  </Form.Item>
+                </Form>
+
+                <div className="fst-login-right-footer">
+                  <span className="fst-auth-footer-muted">{t('login.hasAccount')}</span>
+                  <Link to="/login" className="fst-auth-link">
+                    {t('login.goLogin')}
                   </Link>
                 </div>
-
-                <Form.Item style={{ marginBottom: 14 }}>
-                  <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
-                    {t('login.loginBtn')}
-                  </Button>
-                </Form.Item>
-              </Form>
-
-              <div className="fst-auth-meta" aria-label={t("login.loginTips")}>
-                <div className="fst-auth-slogan">
-                  <div className="fst-auth-slogan-line">{t('login.slogan1')}</div>
-                  <div className="fst-auth-slogan-line">{t('login.slogan2')}</div>
-                </div>
-                <div className="fst-auth-slogan-sub">{t('login.sloganSub')}</div>
-                <div className="fst-auth-chips" aria-label={t("login.features")}>
-                  <span className="fst-auth-chip">{t('login.chip1')}</span>
-                  <span className="fst-auth-chip">{t('login.chip2')}</span>
-                  <span className="fst-auth-chip">{t('login.chip3')}</span>
-                </div>
-              </div>
-
-              <div className="fst-auth-footer">
-                <span className="fst-auth-footer-muted">{t('login.noAccount')}</span>
-                <Link to="/register" className="fst-auth-link">
-                  {t('login.registerNow')}
-                </Link>
-              </div>
-            </section>
-
-            <section className="fst-auth-face fst-auth-back" aria-label={t("login.registerForm")}>
-              <div className="fst-auth-header">
-                <BrandMark />
-                <div className="fst-auth-heading">
-                  <Title level={3} className="fst-auth-title">
-                    {t('login.register.title')}
-                  </Title>
-                  <Text className="fst-auth-subtitle">{t('login.register.subtitle')}</Text>
-                </div>
-              </div>
-
-              <Form<RegisterForm>
-                form={registerForm}
-                name="register"
-                onFinish={onRegisterFinish}
-                onValuesChange={(changed) => {
-                  const keys = Object.keys(changed) as Array<keyof RegisterForm>
-                  keys.forEach((k) => registerForm.setFields([{ name: k, errors: [] }]))
-                }}
-                autoComplete="off"
-                size="large"
-                layout="vertical"
-              >
-                <Form.Item
-                  name="username"
-                  rules={[
-                    { required: true, message: t('login.validation.usernameRequired') },
-                    { min: 3, message: t('login.validation.usernameMin') },
-                    { max: 20, message: t('login.validation.usernameMax') },
-                  ]}
-                >
-                  <Input
-                    className="fst-auth-input"
-                    prefix={<IconUser className="fst-auth-icon" />}
-                    placeholder={t('login.username')}
-                    aria-label={t('login.username')}
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  name="email"
-                  rules={[
-                    { required: true, message: t('login.validation.emailRequired') },
-                    { type: 'email', message: t('login.validation.emailInvalid') },
-                  ]}
-                >
-                  <Input
-                    className="fst-auth-input"
-                    prefix={<IconMail className="fst-auth-icon" />}
-                    placeholder={t('login.register.email')}
-                    aria-label={t('login.register.email')}
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  name="password"
-                  rules={[
-                    { required: true, message: t('login.validation.passwordRequired') },
-                    { min: 8, message: t('login.validation.passwordMin') },
-                  ]}
-                >
-                  <Input
-                    className="fst-auth-input"
-                    prefix={<IconLock className="fst-auth-icon" />}
-                    type={registerPwdVisible ? 'text' : 'password'}
-                    placeholder={t('login.password')}
-                    aria-label={t('login.password')}
-                    suffix={
-                      <button
-                        type="button"
-                        className="fst-auth-eye-btn"
-                        aria-label={registerPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setRegisterPwdVisible((v) => !v)}
-                      >
-                        <EyeGlyph open={registerPwdVisible} />
-                      </button>
-                    }
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  name="confirmPassword"
-                  dependencies={['password']}
-                  rules={[
-                    { required: true, message: t('login.validation.confirmRequired') },
-                    ({ getFieldValue }) => ({
-                      validator(_, value) {
-                        if (!value || getFieldValue('password') === value) return Promise.resolve()
-                        return Promise.reject(new Error(t('login.validation.passwordMismatch')))
-                      },
-                    }),
-                  ]}
-                >
-                  <Input
-                    className="fst-auth-input"
-                    prefix={<IconLock className="fst-auth-icon" />}
-                    type={registerConfirmPwdVisible ? 'text' : 'password'}
-                    placeholder={t('login.register.confirmPassword')}
-                    aria-label={t('login.register.confirmPassword')}
-                    suffix={
-                      <button
-                        type="button"
-                        className="fst-auth-eye-btn"
-                        aria-label={registerConfirmPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setRegisterConfirmPwdVisible((v) => !v)}
-                      >
-                        <EyeGlyph open={registerConfirmPwdVisible} />
-                      </button>
-                    }
-                  />
-                </Form.Item>
-
-                <Form.Item style={{ marginBottom: 14 }}>
-                  <Button htmlType="submit" loading={registerLoading} block className="fst-auth-submit">
-                    {t('login.registerBtn')}
-                  </Button>
-                </Form.Item>
-              </Form>
-
-              <div className="fst-auth-meta" aria-label={t("login.registerTips")}>
-                <div className="fst-auth-meta-line">
-                  <span className="fst-auth-meta-text">{t('login.register.meta1')}</span>
-                  <span className="fst-auth-dot" />
-                  <span className="fst-auth-meta-text">{t('login.register.meta2')}</span>
-                </div>
-                <div className="fst-auth-chips" aria-label={t("login.features")}>
-                  <span className="fst-auth-chip">{t('login.register.chip1')}</span>
-                  <span className="fst-auth-chip">{t('login.register.chip2')}</span>
-                  <span className="fst-auth-chip">{t('login.register.chip3')}</span>
-                </div>
-              </div>
-
-              <div className="fst-auth-footer">
-                <span className="fst-auth-footer-muted">{t('login.hasAccount')}</span>
-                <Link to="/login" className="fst-auth-link">
-                  {t('login.goLogin')}
-                </Link>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
-      </div>
 
-      <footer className="fst-site-footer" aria-label="网站页脚">
-        <a
-          className="fst-site-footer-link"
-          href="https://beian.miit.gov.cn/"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          <FooterBeianIcon className="fst-site-footer-icon" />
-          苏ICP备2025167047号-3
-        </a>
-        <span className="fst-site-footer-sep" aria-hidden="true" />
-        <a
-          className="fst-site-footer-link"
-          href="https://github.com/05Huang/FullScopeTest"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          <FooterGithubIcon className="fst-site-footer-icon" />
-          GitHub 开源
-        </a>
-      </footer>
+        <footer className="fst-login-right-copyright">
+          © 2024 FullScopeTest. All rights reserved.
+        </footer>
+      </div>
     </div>
   )
 }

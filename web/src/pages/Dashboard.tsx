@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactECharts from 'echarts-for-react'
 import { reportService } from '@/services'
+import { useProjectStore } from '@/stores/projectStore'
 import {
   ApiOutlined,
   GlobalOutlined,
@@ -22,6 +23,7 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const { t } = useTranslation()
+  const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats>({
     api_tests: { total: 0, passed: 0, failed: 0 },
@@ -33,7 +35,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [currentProjectId])
 
   const fetchDashboardData = async () => {
     setLoading(true)

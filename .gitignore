@@ -168,3 +168,4 @@ scripts/add_i18n_keys.py
 
 # i18n 临时文件
 chinese_*.txt
+remaining_chinese.txt

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Select } from 'antd'
+import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, message } from 'antd'
 import type { TourProps } from 'antd'
 import {
   HomeOutlined,
@@ -20,10 +20,14 @@ import {
   CustomerServiceOutlined,
   FolderOutlined,
   TranslationOutlined,
+  DotChartOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { useProjectStore } from '@/stores/projectStore'
+import { projectService } from '@/services/projectService'
 import GlobalCopilot from '../components/GlobalCopilot'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
@@ -119,50 +123,6 @@ const SidebarItem = ({ icon, label, path, active, expanded, currentPath, childre
   )
 }
 
-const AppBrandMark = () => (
-  <div className="fst-app-brand" aria-hidden="true">
-    <svg viewBox="0 0 64 64" className="fst-app-brand-svg">
-      <defs>
-        <linearGradient id="fstAppBrandG" x1="10" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#5FA59B" />
-          <stop offset="0.6" stopColor="#3D6E66" />
-          <stop offset="1" stopColor="#D7B56D" />
-        </linearGradient>
-        <filter id="fstAppGlow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="3.2" result="blur" />
-          <feColorMatrix
-            in="blur"
-            type="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.85 0"
-            result="glow"
-          />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <path
-        d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
-        fill="url(#fstAppBrandG)"
-        filter="url(#fstAppGlow)"
-      />
-      <path
-        d="M22 23h24"
-        stroke="rgba(255,255,255,0.55)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M22 45h18"
-        stroke="rgba(255,255,255,0.38)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  </div>
-)
-
 const FooterBeianIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
     <path
@@ -200,6 +160,15 @@ const MainLayout = () => {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
+  const [projectModalOpen, setProjectModalOpen] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [newProjectDesc, setNewProjectDesc] = useState('')
+  const [createProjectLoading, setCreateProjectLoading] = useState(false)
+  const [editProjectModalOpen, setEditProjectModalOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<{ id: number; name: string; description?: string } | null>(null)
+  const [editProjectName, setEditProjectName] = useState('')
+  const [editProjectDesc, setEditProjectDesc] = useState('')
+  const [editProjectLoading, setEditProjectLoading] = useState(false)
   const rawEnvNotice = (import.meta as any).env?.VITE_ENV_NOTICE as string | undefined
   const envMode = (import.meta as any).env?.MODE as string | undefined
   const deployEnv = (import.meta as any).env?.VITE_DEPLOY_ENV as string | undefined
@@ -240,6 +209,79 @@ const MainLayout = () => {
     } else if (key === 'profile') {
       navigate('/profile')
     }
+  }
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) return
+    setCreateProjectLoading(true)
+    try {
+      const res = await projectService.createProject({
+        name: newProjectName.trim(),
+        description: newProjectDesc.trim() || undefined,
+      })
+      if (res.code === 200 || res.code === 201) {
+        message.success(t('layout.createProjectSuccess'))
+        setProjectModalOpen(false)
+        setNewProjectName('')
+        setNewProjectDesc('')
+        await fetchProjects()
+        if (res.data?.id) setCurrentProject(res.data.id)
+      } else {
+        message.error(res.message || t('layout.createProjectFailed'))
+      }
+    } catch {
+      message.error(t('layout.createProjectFailed'))
+    } finally {
+      setCreateProjectLoading(false)
+    }
+  }
+
+  const handleEditProject = async () => {
+    if (!editingProject || !editProjectName.trim()) return
+    setEditProjectLoading(true)
+    try {
+      const res = await projectService.updateProject(editingProject.id, {
+        name: editProjectName.trim(),
+        description: editProjectDesc.trim() || undefined,
+      })
+      if (res.code === 200) {
+        message.success(t('layout.updateProjectSuccess'))
+        setEditProjectModalOpen(false)
+        setEditingProject(null)
+        await fetchProjects()
+      } else {
+        message.error(res.message || t('layout.updateProjectFailed'))
+      }
+    } catch {
+      message.error(t('layout.updateProjectFailed'))
+    } finally {
+      setEditProjectLoading(false)
+    }
+  }
+
+  const handleDeleteProject = async (projectId: number, projectName: string) => {
+    Modal.confirm({
+      title: t('layout.deleteProjectConfirm', { name: projectName }),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          const res = await projectService.deleteProject(projectId)
+          if (res.code === 200) {
+            message.success(t('layout.deleteProjectSuccess'))
+            if (currentProjectId === projectId) {
+              setCurrentProject(undefined)
+            }
+            await fetchProjects()
+          } else {
+            message.error(res.message || t('layout.deleteProjectFailed'))
+          }
+        } catch {
+          message.error(t('layout.deleteProjectFailed'))
+        }
+      },
+    })
   }
 
   // 加载项目列表
@@ -311,6 +353,7 @@ const MainLayout = () => {
       { label: t('sidebar.perfDashboard'), path: '/perf-test/dashboard' },
     ]},
     { icon: <BarChartOutlined />, label: t('sidebar.reports'), path: '/reports' },
+    { icon: <DotChartOutlined />, label: t('sidebar.aiInsights'), path: '/ai-insights' },
     { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd' },
     { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
@@ -357,28 +400,16 @@ const MainLayout = () => {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          padding: '8px 4px 20px',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          padding: collapsed ? '8px 4px 20px' : '8px 4px 20px',
           borderBottom: '1px solid var(--fst-outline-soft)',
           marginBottom: 12,
           minWidth: 0,
         }}>
-          <AppBrandMark />
-          {!collapsed && (
-            <div style={{ minWidth: 0 }}>
-              <div style={{
-                fontSize: 17,
-                fontWeight: 700,
-                letterSpacing: '0.01em',
-                color: 'var(--fst-primary)',
-                whiteSpace: 'nowrap',
-              }}>FullScopeTest</div>
-              <div style={{
-                fontSize: 11,
-                color: 'var(--fst-on-surface-muted)',
-                letterSpacing: '0.02em',
-              }}>Enterprise QA</div>
-            </div>
+          {collapsed ? (
+            <img src="/logo-icon.png" alt="FST" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
+          ) : (
+            <img src="/logo-full.png" alt="FullScopeTest" style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }} />
           )}
         </div>
 
@@ -508,18 +539,59 @@ const MainLayout = () => {
             >
               {collapsed ? <MenuUnfoldOutlined style={{ fontSize: 18 }} /> : <MenuFoldOutlined style={{ fontSize: 18 }} />}
             </button>
-            <Select
-              showSearch
-              placeholder={t("layout.selectProject")}
-              optionFilterProp="label"
-              value={currentProjectId}
-              onChange={setCurrentProject}
-              options={projects.map(p => ({ value: p.id, label: p.name }))}
-              style={{ width: 200 }}
-              prefix={<FolderOutlined />}
-              allowClear
-              size="middle"
-            />
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [
+                  ...projects.map(p => ({
+                    key: `project-${p.id}`,
+                    label: (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.name}
+                        </span>
+                        <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <EditOutlined
+                            style={{ fontSize: 13, color: '#999' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingProject(p)
+                              setEditProjectName(p.name)
+                              setEditProjectDesc(p.description || '')
+                              setEditProjectModalOpen(true)
+                            }}
+                          />
+                          <DeleteOutlined
+                            style={{ fontSize: 13, color: '#ff4d4f' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteProject(p.id, p.name)
+                            }}
+                          />
+                        </span>
+                      </div>
+                    ),
+                    onClick: () => setCurrentProject(p.id),
+                    style: currentProjectId === p.id ? { fontWeight: 600 } : {},
+                  })),
+                  { type: 'divider' },
+                  {
+                    key: '__create__',
+                    label: <span style={{ color: '#2D5A52', fontWeight: 500 }}>+ {t('layout.createNewProject')}</span>,
+                    onClick: () => setProjectModalOpen(true),
+                  },
+                ],
+              }}
+            >
+              <Button
+                style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 180, justifyContent: 'flex-start' }}
+                icon={<FolderOutlined />}
+              >
+                {currentProjectId
+                  ? projects.find(p => p.id === currentProjectId)?.name || t('layout.selectProject')
+                  : t('layout.selectProject')}
+              </Button>
+            </Dropdown>
             <div id="tour-step-search">
               <GlobalSearch />
             </div>
@@ -716,6 +788,85 @@ const MainLayout = () => {
       >
         <Tour open={tourOpen} onClose={handleTourClose} steps={tourSteps} />
       </ConfigProvider>
+
+      {/* 创建项目弹窗 */}
+      <Modal
+        title={t('layout.createNewProject')}
+        open={projectModalOpen}
+        onCancel={() => {
+          setProjectModalOpen(false)
+          setNewProjectName('')
+          setNewProjectDesc('')
+        }}
+        onOk={handleCreateProject}
+        confirmLoading={createProjectLoading}
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        destroyOnHidden
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+          <div>
+            <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>{t('layout.projectName')}</div>
+            <Input
+              placeholder={t('layout.projectNamePlaceholder')}
+              value={newProjectName}
+              onChange={e => setNewProjectName(e.target.value)}
+              onPressEnter={handleCreateProject}
+              maxLength={50}
+              autoFocus
+            />
+          </div>
+          <div>
+            <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>{t('layout.projectDesc')}</div>
+            <Input.TextArea
+              placeholder={t('layout.projectDescPlaceholder')}
+              value={newProjectDesc}
+              onChange={e => setNewProjectDesc(e.target.value)}
+              rows={3}
+              maxLength={200}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* 编辑项目弹窗 */}
+      <Modal
+        title={t('layout.editProject')}
+        open={editProjectModalOpen}
+        onCancel={() => {
+          setEditProjectModalOpen(false)
+          setEditingProject(null)
+        }}
+        onOk={handleEditProject}
+        confirmLoading={editProjectLoading}
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        destroyOnHidden
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+          <div>
+            <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>{t('layout.projectName')}</div>
+            <Input
+              placeholder={t('layout.projectNamePlaceholder')}
+              value={editProjectName}
+              onChange={e => setEditProjectName(e.target.value)}
+              onPressEnter={handleEditProject}
+              maxLength={50}
+              autoFocus
+            />
+          </div>
+          <div>
+            <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>{t('layout.projectDesc')}</div>
+            <Input.TextArea
+              placeholder={t('layout.projectDescPlaceholder')}
+              value={editProjectDesc}
+              onChange={e => setEditProjectDesc(e.target.value)}
+              rows={3}
+              maxLength={200}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
