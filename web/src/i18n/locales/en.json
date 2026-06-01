@@ -125,6 +125,19 @@
     "webTest": "Web",
     "perfTest": "Perf",
     "fetchFailed": "Failed to fetch data",
+    "trendSubtitle": "Automation stats for the past 30 days",
+    "distributionSubtitle": "Cross-platform automation coverage",
+    "week": "Week",
+    "month": "Month",
+    "weekdays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
     "time": {
       "justNow": "Just now",
       "minutesAgo": "{{minutes}}m ago",
@@ -245,12 +258,63 @@
   },
   "reports": {
     "title": "Test Reports",
-    "noReports": "No test reports yet"
+    "noReports": "No test reports yet",
+    "viewReport": "View Report",
+    "deleteReport": "Delete Report",
+    "exportReport": "Export Report",
+    "reportDetails": "Report Details",
+    "testSummary": "Test Summary",
+    "testResults": "Test Results",
+    "executionTime": "Execution Time",
+    "duration": "Duration",
+    "totalCases": "Total Cases",
+    "passedCases": "Passed Cases",
+    "failedCases": "Failed Cases",
+    "passRate": "Pass Rate"
   },
   "settings": {
-    "title": "Settings"
+    "title": "Settings",
+    "general": "General",
+    "security": "Security",
+    "notifications": "Notifications",
+    "integrations": "Integrations",
+    "about": "About"
   },
   "documents": {
-    "title": "Test Documents"
+    "title": "Test Documents",
+    "apiDocs": "API Documentation",
+    "userGuide": "User Guide",
+    "developerGuide": "Developer Guide",
+    "faq": "FAQ"
+  },
+  "cicd": {
+    "title": "CI/CD & Schedules",
+    "pipelines": "Pipelines",
+    "schedules": "Schedules",
+    "createPipeline": "New Pipeline",
+    "createSchedule": "New Schedule",
+    "lastRun": "Last Run",
+    "nextRun": "Next Run",
+    "status": "Status",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "profile": {
+    "title": "Profile",
+    "basicInfo": "Basic Info",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "saveChanges": "Save Changes"
+  },
+  "visualRegression": {
+    "title": "Visual Regression Testing",
+    "baselines": "Baselines",
+    "diffs": "Diffs",
+    "approve": "Approve",
+    "reject": "Reject",
+    "compare": "Compare",
+    "noBaselines": "No baselines yet"
   }
 }

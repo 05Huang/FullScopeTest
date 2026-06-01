@@ -54,7 +54,7 @@ const Dashboard = () => {
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     xAxis: {
       type: 'category', boundaryGap: false,
-      data: dailyTrend.length > 0 ? dailyTrend.map((d: any) => d.date) : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: dailyTrend.length > 0 ? dailyTrend.map((d: any) => d.date) : [t('dashboard.weekdays.mon'), t('dashboard.weekdays.tue'), t('dashboard.weekdays.wed'), t('dashboard.weekdays.thu'), t('dashboard.weekdays.fri'), t('dashboard.weekdays.sat'), t('dashboard.weekdays.sun')],
       axisLine: { lineStyle: { color: '#E8E8E8' } }, axisLabel: { color: '#7C8180', fontSize: 11 },
     },
     yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#F0F0F0' } }, axisLabel: { color: '#7C8180', fontSize: 11 } },
@@ -147,25 +147,25 @@ const Dashboard = () => {
           <div className="fst-ios-card-header">
             <div>
               <div className="fst-ios-card-title">{t('dashboard.testTrend')}</div>
-              <div className="fst-ios-card-subtitle">过去30天的自动化任务统计</div>
+              <div className="fst-ios-card-subtitle">{t('dashboard.trendSubtitle')}</div>
             </div>
             <div className="fst-tabs" style={{ width: 'auto' }}>
-              <button className="fst-tab">周</button>
-              <button className="fst-tab fst-tab--active">月</button>
+              <button className="fst-tab">{t('dashboard.week')}</button>
+              <button className="fst-tab fst-tab--active">{t('dashboard.month')}</button>
             </div>
           </div>
           {loading
-            ? <div style={{ height: 300, display: 'grid', placeItems: 'center', color: 'var(--fst-on-surface-muted)' }}>加载中...</div>
+            ? <div style={{ height: 300, display: 'grid', placeItems: 'center', color: 'var(--fst-on-surface-muted)' }}>{t('common.loading')}</div>
             : <ReactECharts option={trendOption} style={{ height: 300 }} />
           }
         </div>
         <div className="fst-ios-card">
           <div className="fst-ios-card-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
             <div className="fst-ios-card-title">{t('dashboard.testDistribution')}</div>
-            <div className="fst-ios-card-subtitle">各端自动化覆盖比例</div>
+            <div className="fst-ios-card-subtitle">{t('dashboard.distributionSubtitle')}</div>
           </div>
           {loading
-            ? <div style={{ height: 300, display: 'grid', placeItems: 'center', color: 'var(--fst-on-surface-muted)' }}>加载中...</div>
+            ? <div style={{ height: 300, display: 'grid', placeItems: 'center', color: 'var(--fst-on-surface-muted)' }}>{t('common.loading')}</div>
             : <ReactECharts option={distributionOption} style={{ height: 300 }} />
           }
         </div>

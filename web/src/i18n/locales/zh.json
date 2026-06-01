@@ -125,6 +125,19 @@
     "webTest": "Web测试",
     "perfTest": "性能测试",
     "fetchFailed": "获取数据失败",
+    "trendSubtitle": "过去30天的自动化任务统计",
+    "distributionSubtitle": "各端自动化覆盖比例",
+    "week": "周",
+    "month": "月",
+    "weekdays": {
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六",
+      "sun": "周日"
+    },
     "time": {
       "justNow": "刚刚",
       "minutesAgo": "{{minutes}}分钟前",
@@ -245,12 +258,63 @@
   },
   "reports": {
     "title": "测试报告",
-    "noReports": "暂无测试报告"
+    "noReports": "暂无测试报告",
+    "viewReport": "查看报告",
+    "deleteReport": "删除报告",
+    "exportReport": "导出报告",
+    "reportDetails": "报告详情",
+    "testSummary": "测试摘要",
+    "testResults": "测试结果",
+    "executionTime": "执行时间",
+    "duration": "持续时间",
+    "totalCases": "用例总数",
+    "passedCases": "通过用例",
+    "failedCases": "失败用例",
+    "passRate": "通过率"
   },
   "settings": {
-    "title": "系统设置"
+    "title": "系统设置",
+    "general": "通用设置",
+    "security": "安全设置",
+    "notifications": "通知设置",
+    " integrations": "集成设置",
+    "about": "关于"
   },
   "documents": {
-    "title": "测试文档"
+    "title": "测试文档",
+    "apiDocs": "API 文档",
+    "userGuide": "用户指南",
+    "developerGuide": "开发者指南",
+    "faq": "常见问题"
+  },
+  "cicd": {
+    "title": "CI/CD与定时任务",
+    "pipelines": "流水线",
+    "schedules": "定时任务",
+    "createPipeline": "新建流水线",
+    "createSchedule": "新建定时任务",
+    "lastRun": "上次运行",
+    "nextRun": "下次运行",
+    "status": "状态",
+    "enabled": "已启用",
+    "disabled": "已禁用"
+  },
+  "profile": {
+    "title": "个人中心",
+    "basicInfo": "基本信息",
+    "changePassword": "修改密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认密码",
+    "saveChanges": "保存更改"
+  },
+  "visualRegression": {
+    "title": "视觉回归测试",
+    "baselines": "基准图片",
+    "diffs": "差异对比",
+    "approve": "通过",
+    "reject": "拒绝",
+    "compare": "对比",
+    "noBaselines": "暂无基准图片"
   }
 }
