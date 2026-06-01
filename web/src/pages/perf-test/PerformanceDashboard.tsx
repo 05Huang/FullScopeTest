@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Card,
@@ -105,6 +106,7 @@ const RUN_COLOR_PALETTE = [
    ================================================================ */
 
 const PerformanceDashboard = () => {
+  const { t } = useTranslation();
   /* ---------- 状态 ---------- */
   const [resultsLoading, setResultsLoading] = useState(false)
   const [metricsLoading, setMetricsLoading] = useState(false)
@@ -575,7 +577,7 @@ const PerformanceDashboard = () => {
       render: (val: number) => val ? <Text style={{ color: COLORS.p99 }}>{val.toFixed(0)} ms</Text> : '-',
     },
     {
-      title: '错误率',
+      title: t('perfTest.errorRate'),
       dataIndex: 'error_rate',
       key: 'error_rate',
       width: 80,
@@ -586,14 +588,14 @@ const PerformanceDashboard = () => {
       },
     },
     {
-      title: '状态',
+      title: t('common.status'),
       dataIndex: 'status',
       key: 'status',
       width: 90,
       render: (status: string) => {
         const map: Record<string, { color: string; text: string }> = {
           completed: { color: 'success', text: '完成' },
-          failed: { color: 'error', text: '失败' },
+          failed: { color: 'error', text: t('common.failed') },
           stopped: { color: 'warning', text: '已停止' },
           running: { color: 'processing', text: '运行中' },
         }
@@ -624,13 +626,13 @@ const PerformanceDashboard = () => {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className={`fst-btn fst-btn--sm ${compareMode ? 'fst-btn--primary' : 'fst-btn--ghost'}`} onClick={toggleCompareMode}>
-            <SwapOutlined /> {compareMode ? '退出对比' : '历史对比'}
+            <SwapOutlined /> {compareMode ? '退出对比' : t('perfTest.historyComparison')}
           </button>
           <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => {
             fetchResults(currentPage)
             if (selectedResultId && !compareMode) fetchMetrics(selectedResultId)
           }}>
-            <ReloadOutlined /> 刷新
+            <ReloadOutlined /> {t('common.refresh')}
           </button>
         </div>
       </div>
@@ -647,7 +649,7 @@ const PerformanceDashboard = () => {
             onChange={(v) => setStatusFilter(v)}
             options={[
               { value: 'completed', label: '完成' },
-              { value: 'failed', label: '失败' },
+              { value: 'failed', label: t('common.failed') },
               { value: 'stopped', label: '已停止' },
               { value: 'running', label: '运行中' },
             ]}
@@ -701,7 +703,7 @@ const PerformanceDashboard = () => {
                               color={r.status === 'completed' ? 'success' : r.status === 'failed' ? 'error' : 'warning'}
                               style={{ fontSize: 11, lineHeight: '16px', padding: '0 4px' }}
                             >
-                              {r.status === 'completed' ? '完成' : r.status === 'failed' ? '失败' : r.status}
+                              {r.status === 'completed' ? '完成' : r.status === 'failed' ? (t('common.failed')) : r.status}
                             </Tag>
                           </Space>
                         </Checkbox>
@@ -801,7 +803,7 @@ const PerformanceDashboard = () => {
                           render: (v: number) => <Text style={{ color: COLORS.p99 }}>{v?.toFixed(0) ?? '-'}</Text>,
                         },
                         {
-                          title: '错误率',
+                          title: t('perfTest.errorRate'),
                           dataIndex: 'error_rate',
                           width: 80,
                           render: (v: number) => {
@@ -810,12 +812,12 @@ const PerformanceDashboard = () => {
                           },
                         },
                         {
-                          title: '状态',
+                          title: t('common.status'),
                           dataIndex: 'status',
                           width: 70,
                           render: (s: string) => (
                             <Tag color={s === 'completed' ? 'success' : s === 'failed' ? 'error' : 'warning'}>
-                              {s === 'completed' ? '完成' : s === 'failed' ? '失败' : s}
+                              {s === 'completed' ? '完成' : s === 'failed' ? (t('common.failed')) : s}
                             </Tag>
                           ),
                         },
@@ -910,7 +912,7 @@ const PerformanceDashboard = () => {
                     <Col xs={12} sm={8} lg={4}>
                       <Card size="small">
                         <Statistic
-                          title="错误率"
+                          title={t('perfTest.errorRate')}
                           value={summaryStats.errorRate}
                           suffix="%"
                           valueStyle={{ color: summaryStats.errorRate > 5 ? COLORS.failed : COLORS.success }}
@@ -968,7 +970,7 @@ const PerformanceDashboard = () => {
                       <Row gutter={[16, 16]}>
                         <Col span={4}><Statistic title="总请求数" value={currentResult.total_requests} /></Col>
                         <Col span={4}><Statistic title="失败请求数" value={currentResult.total_failures} valueStyle={{ color: COLORS.failed }} /></Col>
-                        <Col span={4}><Statistic title="持续时间" value={currentResult.duration} suffix="秒" /></Col>
+                        <Col span={4}><Statistic title={t('reports.duration')} value={currentResult.duration} suffix="秒" /></Col>
                         <Col span={4}><Statistic title="并发用户" value={currentResult.user_count} /></Col>
                         <Col span={4}><Statistic title="Min RT" value={currentResult.min_response_time?.toFixed(0)} suffix="ms" /></Col>
                         <Col span={4}><Statistic title="Max RT" value={currentResult.max_response_time?.toFixed(0)} suffix="ms" /></Col>
@@ -978,8 +980,8 @@ const PerformanceDashboard = () => {
                         <Col span={4}><Statistic title="P99" value={currentResult.p99_response_time?.toFixed(0)} suffix="ms" valueStyle={{ color: COLORS.p99 }} /></Col>
                         <Col span={4}>
                           <Statistic
-                            title="状态"
-                            value={currentResult.status === 'completed' ? '完成' : currentResult.status === 'failed' ? '失败' : currentResult.status}
+                            title={t('common.status')}
+                            value={currentResult.status === 'completed' ? '完成' : currentResult.status === 'failed' ? (t('common.failed')) : currentResult.status}
                             valueStyle={{ color: currentResult.status === 'completed' ? COLORS.success : currentResult.status === 'failed' ? COLORS.failed : COLORS.stopped }}
                           />
                         </Col>

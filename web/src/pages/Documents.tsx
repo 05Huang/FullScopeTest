@@ -31,6 +31,7 @@ import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import ReactMarkdown from 'react-markdown'
+import { useTranslation } from 'react-i18next'
 import { documentService } from '@/services'
 
 const { Sider, Content } = Layout
@@ -64,6 +65,7 @@ const defaultContent = `# 新文档
 `
 
 const Documents = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false)
   const [documents, setDocuments] = useState<Document[]>([])
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
@@ -130,7 +132,7 @@ const Documents = () => {
         setIsEditing(false)
       }
     } catch (error) {
-      message.error('获取文档详情失败')
+      message.error(t('documents.fetchFailed'))
     }
   }
 
@@ -141,12 +143,12 @@ const Documents = () => {
         content: content
       })
       if (res.code === 200) {
-        message.success('保存成功')
+        message.success(t('documents.saveSuccess'))
         setIsEditing(false)
         setSelectedDoc({ ...selectedDoc, content })
       }
     } catch (error) {
-      message.error('保存失败')
+      message.error(t('documents.saveFailed'))
     }
   }
 
@@ -167,13 +169,13 @@ const Documents = () => {
         content: initialContent,
       })
       if (res.code === 200 || res.code === 201) {
-        message.success('创建成功')
+        message.success(t('documents.createSuccess'))
         setIsModalOpen(false)
         form.resetFields()
         fetchDocuments()
       }
     } catch (error) {
-      message.error('创建失败')
+      message.error(t('documents.createFailed'))
     }
   }
 
@@ -181,7 +183,7 @@ const Documents = () => {
     try {
       const res = await documentService.deleteDocument(docId)
       if (res.code === 200) {
-        message.success('删除成功')
+        message.success(t('documents.deleteSuccess'))
         if (selectedDoc?.id === docId) {
           setSelectedDoc(null)
           setContent('')
@@ -189,7 +191,7 @@ const Documents = () => {
         fetchDocuments()
       }
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('documents.deleteFailed'))
     }
   }
 
@@ -256,18 +258,18 @@ const Documents = () => {
 
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
-    { key: 'export-md', icon: <ExportOutlined />, label: '导出 Markdown', onClick: () => handleExport('md') },
-    { key: 'export-html', icon: <ExportOutlined />, label: '导出 HTML', onClick: () => handleExport('html') },
+    { key: 'export-md', icon: <ExportOutlined />, label: t('documents.exportMd'), onClick: () => handleExport('md') },
+    { key: 'export-html', icon: <ExportOutlined />, label: t('documents.exportHtml'), onClick: () => handleExport('html') },
     { type: 'divider' },
     { 
       key: 'delete', 
       icon: <DeleteOutlined />, 
-      label: '删除', 
+      label: t('common.delete'), 
       danger: true,
       onClick: () => {
         if (selectedDoc) {
           Modal.confirm({
-            title: '确认删除',
+            title: t('documents.confirmDelete'),
             content: `确定要删除文档 "${selectedDoc.title}" 吗？`,
             onOk: () => handleDeleteDoc(selectedDoc.id)
           })
@@ -282,7 +284,7 @@ const Documents = () => {
       <div className="fst-ios-card" style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '12px 12px 0', display: 'flex', gap: 6, marginBottom: 12 }}>
           <Input
-            placeholder="搜索文档..."
+            placeholder={t("documents.searchPlaceholder")}
             prefix={<SearchOutlined />}
             allowClear
             value={searchText}
@@ -290,10 +292,10 @@ const Documents = () => {
             size="small"
             style={{ flex: 1 }}
           />
-          <Tooltip title="刷新">
+          <Tooltip title={t("common.refresh")}>
             <Button icon={<ReloadOutlined />} onClick={fetchDocuments} loading={loading} size="small" />
           </Tooltip>
-          <Tooltip title="新建文档">
+          <Tooltip title={t("documents.createNew")}>
             <Button icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} size="small" type="primary" />
           </Tooltip>
         </div>
@@ -319,9 +321,9 @@ const Documents = () => {
               />
             ) : (
               <div className="fst-empty" style={{ padding: '40px 16px' }}>
-                <div className="fst-empty-title" style={{ fontSize: 14 }}>暂无文档</div>
+                <div className="fst-empty-title" style={{ fontSize: 14 }}>{t("documents.noDocuments")}</div>
                 <button className="fst-btn fst-btn--primary fst-btn--sm" style={{ marginTop: 12 }} onClick={() => setIsModalOpen(true)}>
-                  创建第一个文档
+                  {t("documents.createFirst")}
                 </button>
               </div>
             )}
@@ -338,12 +340,12 @@ const Documents = () => {
               <div style={{ display: 'flex', gap: 8 }}>
                 {isEditing ? (
                   <>
-                    <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => { setContent(selectedDoc.content || ''); setIsEditing(false) }}>取消</button>
-                    <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={handleSaveDoc}><SaveOutlined /> 保存</button>
+                    <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => { setContent(selectedDoc.content || ''); setIsEditing(false) }}>{t("common.cancel")}</button>
+                    <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={handleSaveDoc}><SaveOutlined /> {t("common.save")}</button>
                   </>
                 ) : (
                   <>
-                    <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => setIsEditing(true)}><EditOutlined /> 编辑</button>
+                    <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => setIsEditing(true)}><EditOutlined /> {t("common.edit")}</button>
                     <Dropdown menu={{ items: moreMenuItems }}>
                       <button className="fst-btn fst-btn--ghost fst-btn--sm"><MoreOutlined /></button>
                     </Dropdown>
@@ -378,28 +380,28 @@ const Documents = () => {
         ) : (
           <div className="fst-empty" style={{ flex: 1 }}>
             <div className="fst-empty-icon"><FileTextOutlined /></div>
-            <div className="fst-empty-title">请从左侧选择文档或创建新文档</div>
-            <button className="fst-btn fst-btn--primary" style={{ marginTop: 16 }} onClick={() => setIsModalOpen(true)}>创建新文档</button>
+            <div className="fst-empty-title">{t("documents.selectOrCreate")}</div>
+            <button className="fst-btn fst-btn--primary" style={{ marginTop: 16 }} onClick={() => setIsModalOpen(true)}>{t("documents.createNew")}</button>
           </div>
         )}
       </div>
 
       {/* New Document Modal */}
       <Modal
-        title="新建文档"
+        title={t("documents.createNew")}
         open={isModalOpen}
         onCancel={() => { setIsModalOpen(false); form.resetFields() }}
         onOk={() => form.validateFields().then(handleCreateDoc)}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label={<span style={{ fontWeight: 600, fontSize: 13 }}>文档名称</span>} rules={[{ required: true, message: '请输入文档名称' }]}>
-            <Input placeholder="请输入文档名称" />
+          <Form.Item name="name" label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('documents.docName')}</span>} rules={[{ required: true, message: t('documents.docNameRequired') }]}>
+            <Input placeholder={t("documents.docNamePlaceholder")} />
           </Form.Item>
-          <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 13 }}>文档分类</span>} rules={[{ required: true, message: '请选择文档分类' }]}>
-            <Select placeholder="请选择文档分类" options={categories.map(cat => ({ value: cat.value, label: `${cat.icon} ${cat.label}` }))} />
+          <Form.Item name="category" label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('documents.docCategory')}</span>} rules={[{ required: true, message: t('documents.docCategoryRequired') }]}>
+            <Select placeholder={t("documents.docCategoryPlaceholder")} options={categories.map(cat => ({ value: cat.value, label: `${cat.icon} ${cat.label}` }))} />
           </Form.Item>
-          <Form.Item name="template" label={<span style={{ fontWeight: 600, fontSize: 13 }}>使用模板</span>}>
-            <Select placeholder="选择模板（可选）" allowClear options={templates.map(tpl => ({ value: tpl.id, label: tpl.name }))} />
+          <Form.Item name="template" label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('documents.useTemplate')}</span>}>
+            <Select placeholder={t("documents.templatePlaceholder")} allowClear options={templates.map(tpl => ({ value: tpl.id, label: tpl.name }))} />
           </Form.Item>
         </Form>
       </Modal>

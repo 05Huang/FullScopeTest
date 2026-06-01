@@ -34,6 +34,7 @@ import type { MenuProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import ReactECharts from 'echarts-for-react'
 import type { TestReport } from '@/services/reportService'
+import { useTranslation } from 'react-i18next'
 import { reportService } from '@/services'
 import api from '@/services/api'
 
@@ -61,22 +62,23 @@ interface TestRun {
   created_at: string
 }
 
-const typeConfig: Record<string, { color: string; text: string }> = {
-  api: { color: 'blue', text: 'API测试' },
-  web: { color: 'purple', text: 'Web测试' },
-  performance: { color: 'orange', text: '性能测试' },
-  perf: { color: 'orange', text: '性能测试' },
-}
-
-const statusConfig: Record<string, { color: string; text: string }> = {
-  pending: { color: 'default', text: '等待中' },
-  running: { color: 'processing', text: '执行中' },
-  success: { color: 'success', text: '成功' },
-  failed: { color: 'error', text: '失败' },
-  cancelled: { color: 'warning', text: '已取消' },
-}
-
 const Reports = () => {
+  const { t } = useTranslation();
+
+  const typeConfig: Record<string, { color: string; text: string }> = {
+    api: { color: 'blue', text: t('reports.apiTest') },
+    web: { color: 'purple', text: t('reports.webTest') },
+    performance: { color: 'orange', text: t('reports.perfTest') },
+    perf: { color: 'orange', text: t('reports.perfTest') },
+  }
+
+  const statusConfig: Record<string, { color: string; text: string }> = {
+    pending: { color: 'default', text: t('reports.pending') },
+    running: { color: 'processing', text: t('reports.running') },
+    success: { color: 'success', text: t('reports.success') },
+    failed: { color: 'error', text: t('reports.failed') },
+    cancelled: { color: 'warning', text: t('reports.cancelled') },
+  }
   const [loading, setLoading] = useState(false)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [testRuns, setTestRuns] = useState<TestRun[]>([])
@@ -145,7 +147,7 @@ const Reports = () => {
       setStatistics(statsData?.summary || { total_runs: 0, success_runs: 0, failed_runs: 0, success_rate: 0 })
       setDailyTrend(statsData?.daily_trend || [])
     } catch (error) {
-      message.error('获取数据失败')
+      message.error(t('reports.fetchDataFailed'))
       console.error(error)
     } finally {
       setLoading(false)
@@ -178,7 +180,7 @@ const Reports = () => {
   const handleViewReport = async (runId: number, title: string) => {
     const report = findReportByRunId(runId)
     if (!report) {
-      message.warning('未找到该执行的报告')
+      message.warning(t('reports.reportNotFound'))
       return
     }
 
@@ -188,7 +190,7 @@ const Reports = () => {
       setReportHtml(html)
       setHtmlModalVisible(true)
     } catch (error) {
-      message.error('获取报告失败')
+      message.error(t('reports.fetchReportFailed'))
       console.error(error)
     }
   }
@@ -202,9 +204,9 @@ const Reports = () => {
 
     try {
       await downloadReportJson(report.test_run_id, `${getReportName(report)}-${report.id}.json`)
-      message.success('已开始下载')
+      message.success(t('reports.downloadStarted'))
     } catch (error) {
-      message.error('下载失败')
+      message.error(t('reports.downloadFailed'))
       console.error(error)
     }
   }
@@ -219,18 +221,18 @@ const Reports = () => {
         // 回退删除执行记录，避免无匹配报告时无请求
         await reportService.deleteTestRun(runId)
       }
-      message.success('删除成功')
+      message.success(t('reports.deleteSuccess'))
       setSelectedRowKeys((prev) => prev.filter((key) => key !== runId))
       fetchData()
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('reports.deleteFailed'))
       console.error(error)
     }
   }
 
   const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) {
-      message.warning('请选择要删除的执行记录')
+      message.warning(t('reports.selectToDelete'))
       return
     }
 
@@ -247,11 +249,11 @@ const Reports = () => {
           }
         }),
       )
-      message.success('已删除选中记录')
+      message.success(t('reports.batchDeleteSuccess'))
       setSelectedRowKeys([])
       fetchData()
     } catch (error) {
-      message.error('批量删除失败')
+      message.error(t('reports.batchDeleteFailed'))
       console.error(error)
     } finally {
       setLoading(false)
@@ -260,7 +262,7 @@ const Reports = () => {
 
   const handleBatchDownload = async () => {
     if (selectedRowKeys.length === 0) {
-      message.warning('请选择要下载的执行记录')
+      message.warning(t('reports.selectToDownload'))
       return
     }
 
@@ -272,16 +274,16 @@ const Reports = () => {
           await downloadReportJson(report.test_run_id, `${getReportName(report)}-${report.id}.json`)
         }
       }
-      message.success('下载完成')
+      message.success(t('reports.downloadComplete'))
     } catch (error) {
-      message.error('批量下载失败')
+      message.error(t('reports.batchDownloadFailed'))
       console.error(error)
     }
   }
 
   const trendOption = {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['通过', '失败'] },
+    legend: { data: [t('common.passed'), t('common.failed')] },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
@@ -291,14 +293,14 @@ const Reports = () => {
     yAxis: { type: 'value' },
     series: [
       {
-        name: '通过',
+        name: t('common.passed'),
         type: 'bar',
         stack: 'total',
         data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.passed) : [],
         itemStyle: { color: '#52c41a' },
       },
       {
-        name: '失败',
+        name: t('common.failed'),
         type: 'bar',
         stack: 'total',
         data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.failed) : [],
@@ -309,40 +311,40 @@ const Reports = () => {
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return '-'
-    if (seconds < 60) return `${seconds.toFixed(1)}秒`
+    if (seconds < 60) return `${seconds.toFixed(1)}s`
     const minutes = Math.floor(seconds / 60)
     const secs = Math.round(seconds % 60)
-    return `${minutes}分${secs}秒`
+    return `${minutes}m ${secs}s`
   }
 
   const columns: ColumnsType<TestRun> = [
     {
-      title: '测试名称',
+      title: t('reports.testName'),
       dataIndex: 'test_object_name',
       key: 'test_object_name',
       render: (text, record) => (
         <Space>
           <FileTextOutlined style={{ color: '#1890ff' }} />
-          <Text strong>{text || `测试执行 #${record.id}`}</Text>
+          <Text strong>{text || `${t('reports.testRunPrefix')}${record.id}`}</Text>
         </Space>
       ),
     },
     {
-      title: '类型',
+      title: t('reports.type'),
       dataIndex: 'test_type',
       key: 'test_type',
       width: 100,
       render: (type) => <Tag color={typeConfig[type]?.color}>{typeConfig[type]?.text || type}</Tag>,
     },
     {
-      title: '状态',
+      title: t('reports.statusCol'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
       render: (status) => <Tag color={statusConfig[status]?.color}>{statusConfig[status]?.text || status}</Tag>,
     },
     {
-      title: '测试结果',
+      title: t('reports.testResult'),
       key: 'result',
       width: 200,
       render: (_, record) => (
@@ -358,7 +360,7 @@ const Reports = () => {
       ),
     },
     {
-      title: '执行耗时',
+      title: t('reports.durationCol'),
       dataIndex: 'duration',
       key: 'duration',
       width: 120,
@@ -370,29 +372,29 @@ const Reports = () => {
       ),
     },
     {
-      title: '触发方式',
+      title: t('reports.triggeredBy'),
       dataIndex: 'triggered_by',
       key: 'triggered_by',
       width: 100,
       render: (by) => {
-        const map: Record<string, string> = { manual: '手动', schedule: '定时', ci: 'CI/CD' }
+        const map: Record<string, string> = { manual: t('reports.manual'), schedule: t('reports.schedule'), ci: 'CI/CD' }
         return map[by] || by
       },
     },
     {
-      title: '执行时间',
+      title: t('reports.executionTime'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 170,
       render: (time) => (time ? new Date(time).toLocaleString() : '-'),
     },
     {
-      title: '操作',
+      title: t('reports.actionCol'),
       key: 'action',
       width: 170,
       render: (_, record) => (
         <Space>
-          <Tooltip title="查看报告">
+          <Tooltip title={t("reports.viewReport")}>
             <Button
               type="text"
               size="small"
@@ -400,11 +402,11 @@ const Reports = () => {
               onClick={() => handleViewReport(record.id, record.test_object_name || `测试执行 #${record.id}`)}
             />
           </Tooltip>
-          <Tooltip title="下载JSON">
+          <Tooltip title={t("reports.downloadJson")}>
             <Button type="text" size="small" icon={<DownloadOutlined />} onClick={() => handleExportJson(record.id)} />
           </Tooltip>
           <Popconfirm title="确定删除该记录吗？" onConfirm={() => handleDelete(record.id)}>
-            <Tooltip title="删除">
+            <Tooltip title={t("common.delete")}>
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -414,22 +416,22 @@ const Reports = () => {
   ]
 
   const moreMenuItems: MenuProps['items'] = [
-    { key: 'download', icon: <DownloadOutlined />, label: '批量下载' },
+    { key: 'download', icon: <DownloadOutlined />, label: t('reports.batchDownload') },
     { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: '批量删除', danger: true },
+    { key: 'delete', icon: <DeleteOutlined />, label: t('reports.batchDelete'), danger: true },
   ]
 
   return (
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">测试报告</h1>
+        <h1 className="fst-page-title">{t("reports.title")}</h1>
       </div>
 
       <div className="fst-stat-row fst-animate-in fst-animate-in-1">
         <div className="fst-stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="fst-stat-label">执行总数</div>
+              <div className="fst-stat-label">{t("reports.totalRuns")}</div>
               <div className="fst-stat-value">{statistics.total_runs}</div>
             </div>
             <div className="fst-stat-icon fst-stat-icon--info"><FileTextOutlined style={{ fontSize: 20 }} /></div>
@@ -438,7 +440,7 @@ const Reports = () => {
         <div className="fst-stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="fst-stat-label">成功执行</div>
+              <div className="fst-stat-label">{t("reports.successRuns")}</div>
               <div className="fst-stat-value">{statistics.success_runs}</div>
             </div>
             <div className="fst-stat-icon fst-stat-icon--primary"><CheckCircleOutlined style={{ fontSize: 20 }} /></div>
@@ -448,7 +450,7 @@ const Reports = () => {
         <div className="fst-stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="fst-stat-label">失败执行</div>
+              <div className="fst-stat-label">{t("reports.failedRuns")}</div>
               <div className="fst-stat-value">{statistics.failed_runs}</div>
             </div>
             <div className="fst-stat-icon" style={{ background: '#FDECEA', color: 'var(--fst-error)' }}><CloseCircleOutlined style={{ fontSize: 20 }} /></div>
@@ -457,7 +459,7 @@ const Reports = () => {
         <div className="fst-stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="fst-stat-label">成功率</div>
+              <div className="fst-stat-label">{t("reports.successRate")}</div>
               <div className="fst-stat-value">{statistics.success_rate}%</div>
             </div>
             <div className="fst-stat-icon fst-stat-icon--secondary"><CheckCircleOutlined style={{ fontSize: 20 }} /></div>
@@ -467,7 +469,7 @@ const Reports = () => {
 
       <div className="fst-ios-card fst-animate-in fst-animate-in-2">
         <div className="fst-ios-card-header">
-          <div className="fst-ios-card-title">测试趋势（近7天）</div>
+          <div className="fst-ios-card-title">{t("reports.trendTitle")}</div>
         </div>
         <ReactECharts option={trendOption} style={{ height: 250 }} />
       </div>
@@ -475,7 +477,7 @@ const Reports = () => {
       <div className="fst-ios-card fst-animate-in fst-animate-in-3">
         <div className="fst-toolbar">
           <div className="fst-toolbar-left">
-            <div className="fst-ios-card-title">执行记录</div>
+            <div className="fst-ios-card-title">{t("reports.executionRecords")}</div>
           </div>
           <div className="fst-toolbar-right">
             <RangePicker
@@ -492,20 +494,20 @@ const Reports = () => {
               }}
             />
             <Select
-              placeholder="类型"
+              placeholder={t("reports.typePlaceholder")}
               size="small"
               style={{ width: 120 }}
               allowClear
               value={filters.test_type || undefined}
               onChange={(val) => setFilters((prev) => ({ ...prev, test_type: val || '' }))}
               options={[
-                { value: 'api', label: 'API测试' },
-                { value: 'web', label: 'Web测试' },
-                { value: 'performance', label: '性能测试' },
+                { value: 'api', label: t('reports.apiTest') },
+                { value: 'web', label: t('reports.webTest') },
+                { value: 'performance', label: t('reports.perfTest') },
               ]}
             />
             <Input
-              placeholder="搜索..."
+              placeholder={t("reports.searchPlaceholder")}
               prefix={<SearchOutlined />}
               size="small"
               style={{ width: 200 }}
@@ -523,7 +525,7 @@ const Reports = () => {
               }}
               disabled={selectedRowKeys.length === 0}
             >
-              <Button size="small" icon={<MoreOutlined />}>更多</Button>
+              <Button size="small" icon={<MoreOutlined />}>{t("reports.more")}</Button>
             </Dropdown>
           </div>
         </div>
@@ -541,7 +543,7 @@ const Reports = () => {
             loading={loading}
             pagination={{
               ...pagination,
-              showTotal: (total) => `共 ${total} 条`,
+              showTotal: (total) => `${total} items`,
               showSizeChanger: true,
               showQuickJumper: true,
               onChange: (page, pageSize) => setPagination((prev) => ({ ...prev, current: page, pageSize })),
@@ -556,7 +558,7 @@ const Reports = () => {
         onCancel={() => setHtmlModalVisible(false)}
         width="90%"
         footer={[
-          <Button key="close" onClick={() => setHtmlModalVisible(false)}>关闭</Button>,
+          <Button key="close" onClick={() => setHtmlModalVisible(false)}>{t("reports.close")}</Button>,
         ]}
         style={{ top: 20 }}
       >

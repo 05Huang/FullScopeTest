@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react'
 import {
   Card,
@@ -108,13 +109,6 @@ const browserConfig: Record<string, { color: string; name: string }> = {
   webkit: { color: 'purple', name: 'WebKit' },
 }
 
-const statusConfig: Record<string, { color: string; text: string }> = {
-  passed: { color: 'success', text: '通过' },
-  failed: { color: 'error', text: '失败' },
-  pending: { color: 'default', text: '未执行' },
-  running: { color: 'processing', text: '执行中' },
-}
-
 const BATCH_ACTION_CONCURRENCY = 5
 const EXPLORE_HISTORY_LIMIT = 20
 
@@ -151,7 +145,15 @@ const trimExploreReport = (report: any) => {
 import { useAuthStore } from '@/stores/authStore'
 
 const WebTestScripts = () => {
+  const { t } = useTranslation();
   const { token, user } = useAuthStore()
+
+  const statusConfig: Record<string, { color: string; text: string }> = {
+    passed: { color: 'success', text: t('common.passed') },
+    failed: { color: 'error', text: t('common.failed') },
+    pending: { color: 'default', text: '未执行' },
+    running: { color: 'processing', text: t('common.running') },
+  }
   const [loading, setLoading] = useState(false)
   const [scripts, setScripts] = useState<WebTestScript[]>([])
   const [collections, setCollections] = useState<WebTestCollection[]>([])
@@ -333,7 +335,7 @@ const WebTestScripts = () => {
         browser: values.browser,
       })
       if (result.code === 200 || result.code === 201) {
-        message.success('创建成功')
+        message.success(t('webTest.createSuccess'))
         setIsModalOpen(false)
         setEditingScript(null)
         form.resetFields()
@@ -587,7 +589,7 @@ const WebTestScripts = () => {
         browser: values.browser,
       })
       if (result.code === 200) {
-        message.success('更新成功')
+        message.success(t('webTest.editSuccess'))
         setIsModalOpen(false)
         setEditingScript(null)
         form.resetFields()
@@ -605,7 +607,7 @@ const WebTestScripts = () => {
     try {
       const result = await webTestService.deleteScript(id)
       if (result.code === 200) {
-        message.success('删除成功')
+        message.success(t('webTest.deleteSuccess'))
         loadScripts()
       } else {
         message.error(result.message || '删除失败')
@@ -785,7 +787,7 @@ const WebTestScripts = () => {
       setSelectedRowKeys([])
       loadScripts()
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('webTest.deleteFailed'))
     }
   }
 
@@ -901,7 +903,7 @@ const WebTestScripts = () => {
   // 表格列配置
   const columns: ColumnsType<WebTestScript> = [
     {
-      title: '脚本名称',
+      title: t('webTest.scriptName'),
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
@@ -948,7 +950,7 @@ const WebTestScripts = () => {
       render: (steps) => <Text>{steps || 0} 步</Text>,
     },
     {
-      title: '状态',
+      title: t('webTest.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -979,14 +981,14 @@ const WebTestScripts = () => {
       render: (text) => text || '-',
     },
     {
-      title: '耗时',
+      title: t('apiTest.time'),
       dataIndex: 'last_run_duration',
       key: 'last_run_duration',
       width: 80,
       render: (duration) => (duration ? `${duration.toFixed(1)}s` : '-'),
     },
     {
-      title: '操作',
+      title: t('webTest.action'),
       key: 'action',
       width: 200,
       render: (_, record) => (
@@ -1018,7 +1020,7 @@ const WebTestScripts = () => {
               disabled={!record.last_result}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button 
               type="text" 
               size="small" 
@@ -1040,7 +1042,7 @@ const WebTestScripts = () => {
             title="确定删除此脚本吗？"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('common.delete')}>
               <Button
                 type="text"
                 size="small"
@@ -1079,7 +1081,7 @@ const WebTestScripts = () => {
             }))}
           />
           <Input
-            placeholder="搜索脚本..."
+            placeholder={t('webTest.searchScripts')}
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
             allowClear
@@ -1091,7 +1093,7 @@ const WebTestScripts = () => {
             onClick={loadScripts}
             loading={loading}
           >
-            刷新
+            {t('common.refresh')}
           </Button>
           <Button
             icon={<FolderAddOutlined />}
@@ -1132,7 +1134,7 @@ const WebTestScripts = () => {
               setIsModalOpen(true)
             }}
           >
-            新建脚本
+            {t('webTest.createScript')}
           </Button>
           <Dropdown
             menu={{ 
@@ -1241,7 +1243,7 @@ const WebTestScripts = () => {
                   onConfirm={() => handleDeleteCollection(collection.id)}
                 >
                   <Button danger size="small" icon={<DeleteOutlined />}>
-                    删除
+                    {t('common.delete')}
                   </Button>
                 </Popconfirm>
               </div>
@@ -1280,7 +1282,7 @@ const WebTestScripts = () => {
           >
             <Input placeholder="请输入脚本名称" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
+          <Form.Item name="description" label={t('common.description')}>
             <TextArea rows={2} placeholder="请输入脚本描述" />
           </Form.Item>
           <Form.Item name="collection_id" label="所属用例集">
@@ -1358,7 +1360,7 @@ const WebTestScripts = () => {
         width={1080}
         footer={
           exploreReport ? (
-            <Button onClick={closeExploreModal}>关闭</Button>
+            <Button onClick={closeExploreModal}>{t('common.close')}</Button>
           ) : (
             <Button
               type="primary"
@@ -1437,7 +1439,7 @@ const WebTestScripts = () => {
                       },
                       { title: '起始 URL', dataIndex: 'start_url', ellipsis: true },
                       {
-                        title: '状态',
+                        title: t('common.status'),
                         width: 100,
                         render: (_, record: ExploreHistoryItem) => (
                           <Tag color={record.report?.status === 'failed' ? 'red' : 'green'}>
@@ -1451,7 +1453,7 @@ const WebTestScripts = () => {
                         render: (_, record: ExploreHistoryItem) => String(record.report?.errors_found?.length || 0),
                       },
                       {
-                        title: '操作',
+                        title: t('common.actions'),
                         width: 150,
                         render: (_, record: ExploreHistoryItem) => (
                           <Space size={4}>
@@ -1605,7 +1607,7 @@ const WebTestScripts = () => {
                   size="small"
                   dataSource={exploreReport.errors_found}
                   columns={[
-                    { title: '类型', dataIndex: 'type', width: 120, render: (t) => <Tag color="red">{t}</Tag> },
+                    { title: t('common.type'), dataIndex: 'type', width: 120, render: (t) => <Tag color="red">{t}</Tag> },
                     {
                       title: '等级',
                       dataIndex: 'severity',
@@ -1671,7 +1673,7 @@ const WebTestScripts = () => {
                     setIsEditingCode(false)
                   }}
                 >
-                  取消
+                  {t('common.cancel')}
                 </Button>,
                 <Button
                   key="save"
@@ -1707,7 +1709,7 @@ const WebTestScripts = () => {
                     }
                   }}
                 >
-                  编辑脚本
+                  {t('webTest.editScript')}
                 </Button>,
               ]
         }

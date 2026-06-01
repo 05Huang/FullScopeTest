@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next'
 import { Button, Input, Card, Space, Avatar, Typography, Tooltip } from 'antd';
 import { 
   UserOutlined, 
@@ -76,6 +77,7 @@ const normalizeMarkdownLineBreaks = (text: string) => {
 };
 
 const GlobalCopilot: React.FC = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
   const createMessageId = () => {
@@ -527,7 +529,7 @@ const GlobalCopilot: React.FC = () => {
                 <span className="fst-copilot-header-icon" aria-hidden="true">
                   <AppBrandMark size={20} />
                 </span>
-                <span className="fst-copilot-header-title">AI Copilot</span>
+                <span className="fst-copilot-header-title">{t('copilot.title')}</span>
               </Space>
               <Space className="fst-copilot-header-actions">
                 <Button type="text" icon={<SettingOutlined />} onClick={() => setShowConfig(!showConfig)} />

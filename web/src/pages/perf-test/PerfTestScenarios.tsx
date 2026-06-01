@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -72,17 +73,18 @@ interface PerfTestScenario {
   updated_at: string
 }
 
-const statusConfig: Record<string, { color: string; text: string }> = {
-  passed: { color: 'success', text: '通过' },
-  failed: { color: 'error', text: '失败' },
-  pending: { color: 'default', text: '未执行' },
-  running: { color: 'processing', text: '执行中' },
-}
-
 const BATCH_ACTION_CONCURRENCY = 5
 const PERF_MAX_USERS = 2000
 
 const PerfTestScenarios = () => {
+  const { t } = useTranslation();
+
+  const statusConfig: Record<string, { color: string; text: string }> = {
+    passed: { color: 'success', text: t('common.passed') },
+    failed: { color: 'error', text: t('common.failed') },
+    pending: { color: 'default', text: '未执行' },
+    running: { color: 'processing', text: t('common.running') },
+  }
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [scenarios, setScenarios] = useState<PerfTestScenario[]>([])
@@ -173,7 +175,7 @@ const PerfTestScenarios = () => {
         step_duration: values.stepDuration,
       })
       if (result.code === 200 || result.code === 201) {
-        message.success('创建成功')
+        message.success(t('perfTest.createSuccess'))
         setIsModalOpen(false)
         setEditingScenario(null)
         form.resetFields()
@@ -302,7 +304,7 @@ const PerfTestScenarios = () => {
         step_duration: values.stepDuration,
       })
       if (result.code === 200) {
-        message.success('更新成功')
+        message.success(t('perfTest.editSuccess'))
         setIsModalOpen(false)
         setEditingScenario(null)
         form.resetFields()
@@ -343,7 +345,7 @@ const PerfTestScenarios = () => {
       setSelectedRowKeys([])
       loadScenarios()
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('perfTest.deleteFailed'))
     }
   }
 
@@ -391,7 +393,7 @@ const PerfTestScenarios = () => {
     try {
       const result = await perfTestService.deleteScenario(id)
       if (result.code === 200) {
-        message.success('删除成功')
+        message.success(t('perfTest.deleteSuccess'))
         loadScenarios()
       } else {
         message.error(result.message || '删除失败')
@@ -498,7 +500,7 @@ const PerfTestScenarios = () => {
   // 表格列配置
   const columns: ColumnsType<PerfTestScenario> = [
     {
-      title: '场景名称',
+      title: t('perfTest.scenarioName'),
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
@@ -534,7 +536,7 @@ const PerfTestScenarios = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('perfTest.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -549,7 +551,7 @@ const PerfTestScenarios = () => {
       },
     },
     {
-      title: '响应时间',
+      title: t('perfTest.responseTime'),
       dataIndex: 'avg_response_time',
       key: 'avg_response_time',
       width: 120,
@@ -570,7 +572,7 @@ const PerfTestScenarios = () => {
       },
     },
     {
-      title: '错误率',
+      title: t('perfTest.errorRate'),
       dataIndex: 'error_rate',
       key: 'error_rate',
       width: 120,
@@ -595,7 +597,7 @@ const PerfTestScenarios = () => {
       render: (text) => text || '-',
     },
     {
-      title: '操作',
+      title: t('perfTest.action'),
       key: 'action',
       width: 180,
       render: (_, record) => {
@@ -622,7 +624,7 @@ const PerfTestScenarios = () => {
                 />
               </Tooltip>
             )}
-            <Tooltip title="查看报告">
+            <Tooltip title={t('reports.viewReport')}>
               <Button
                 type="text"
                 size="small"
@@ -631,7 +633,7 @@ const PerfTestScenarios = () => {
                 onClick={() => navigate('/perf-test/results')}
               />
             </Tooltip>
-            <Tooltip title="编辑">
+            <Tooltip title={t('common.edit')}>
               <Button
                 type="text"
                 size="small"
@@ -668,7 +670,7 @@ const PerfTestScenarios = () => {
               title="确定删除此场景吗？"
               onConfirm={() => handleDelete(record.id)}
             >
-              <Tooltip title="删除">
+              <Tooltip title={t('common.delete')}>
                 <Button
                   type="text"
                   size="small"
@@ -697,7 +699,7 @@ const PerfTestScenarios = () => {
         <h1 className="fst-page-title">场景管理</h1>
         <Space>
           <Input
-            placeholder="搜索场景..."
+            placeholder={t('perfTest.searchScenarios')}
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
             allowClear
@@ -709,7 +711,7 @@ const PerfTestScenarios = () => {
             onClick={loadScenarios}
             loading={loading}
           >
-            刷新
+            {t('common.refresh')}
           </Button>
           <Button
             type="primary"
@@ -727,7 +729,7 @@ const PerfTestScenarios = () => {
               setIsModalOpen(true)
             }}
           >
-            新建场景
+            {t('perfTest.createScenario')}
           </Button>
           <Dropdown
             menu={{ 
@@ -803,7 +805,7 @@ const PerfTestScenarios = () => {
           >
             <Input placeholder="请输入场景名称" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
+          <Form.Item name="description" label={t('common.description')}>
             <TextArea rows={2} placeholder="请输入场景描述" />
           </Form.Item>
           <Form.Item
@@ -820,7 +822,7 @@ const PerfTestScenarios = () => {
             <Col span={8}>
               <Form.Item
                 name="users"
-                label="并发用户数"
+                label={t('perfTest.concurrentUsers')}
                 initialValue={10}
                 rules={[{ required: true }]}
               >
@@ -889,7 +891,7 @@ const PerfTestScenarios = () => {
               )
             }}
           </Form.Item>
-          <Form.Item name="method" label="请求方法" initialValue="GET">
+          <Form.Item name="method" label={t('apiTest.method')} initialValue="GET">
             <Select
               options={['GET', 'POST', 'PUT', 'DELETE'].map((m) => ({
                 value: m,
@@ -976,7 +978,7 @@ const PerfTestScenarios = () => {
                     setIsEditingCode(false)
                   }}
                 >
-                  取消
+                  {t('common.cancel')}
                 </Button>,
                 <Button
                   key="save"
@@ -1012,7 +1014,7 @@ const PerfTestScenarios = () => {
                     }
                   }}
                 >
-                  编辑脚本
+                  {t('webTest.editScript')}
                 </Button>,
               ]
         }

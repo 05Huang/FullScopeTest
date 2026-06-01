@@ -298,7 +298,7 @@ const Login = () => {
       <div className="fst-auth-shell">
         <div className="fst-auth-card">
           <div className={`fst-auth-flip ${isRegister ? 'is-flipped' : ''}`}>
-            <section className="fst-auth-face fst-auth-front" aria-label="登录表单">
+            <section className="fst-auth-face fst-auth-front" aria-label={t("login.loginForm")}>
               <div className="fst-auth-header">
                 <BrandMark />
                 <div className="fst-auth-heading">
@@ -347,7 +347,7 @@ const Login = () => {
                       <button
                         type="button"
                         className="fst-auth-eye-btn"
-                        aria-label={loginPwdVisible ? '隐藏密码' : '显示密码'}
+                        aria-label={loginPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => setLoginPwdVisible((v) => !v)}
                       >
@@ -376,13 +376,13 @@ const Login = () => {
                 </Form.Item>
               </Form>
 
-              <div className="fst-auth-meta" aria-label="登录提示">
+              <div className="fst-auth-meta" aria-label={t("login.loginTips")}>
                 <div className="fst-auth-slogan">
                   <div className="fst-auth-slogan-line">{t('login.slogan1')}</div>
                   <div className="fst-auth-slogan-line">{t('login.slogan2')}</div>
                 </div>
                 <div className="fst-auth-slogan-sub">{t('login.sloganSub')}</div>
-                <div className="fst-auth-chips" aria-label="平台特性">
+                <div className="fst-auth-chips" aria-label={t("login.features")}>
                   <span className="fst-auth-chip">{t('login.chip1')}</span>
                   <span className="fst-auth-chip">{t('login.chip2')}</span>
                   <span className="fst-auth-chip">{t('login.chip3')}</span>
@@ -397,7 +397,7 @@ const Login = () => {
               </div>
             </section>
 
-            <section className="fst-auth-face fst-auth-back" aria-label="注册表单">
+            <section className="fst-auth-face fst-auth-back" aria-label={t("login.registerForm")}>
               <div className="fst-auth-header">
                 <BrandMark />
                 <div className="fst-auth-heading">
@@ -468,7 +468,7 @@ const Login = () => {
                       <button
                         type="button"
                         className="fst-auth-eye-btn"
-                        aria-label={registerPwdVisible ? '隐藏密码' : '显示密码'}
+                        aria-label={registerPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => setRegisterPwdVisible((v) => !v)}
                       >
@@ -501,7 +501,7 @@ const Login = () => {
                       <button
                         type="button"
                         className="fst-auth-eye-btn"
-                        aria-label={registerConfirmPwdVisible ? '隐藏密码' : '显示密码'}
+                        aria-label={registerConfirmPwdVisible ? t('login.hidePassword') : t('login.showPassword')}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => setRegisterConfirmPwdVisible((v) => !v)}
                       >
@@ -518,13 +518,13 @@ const Login = () => {
                 </Form.Item>
               </Form>
 
-              <div className="fst-auth-meta" aria-label="注册提示">
+              <div className="fst-auth-meta" aria-label={t("login.registerTips")}>
                 <div className="fst-auth-meta-line">
                   <span className="fst-auth-meta-text">{t('login.register.meta1')}</span>
                   <span className="fst-auth-dot" />
                   <span className="fst-auth-meta-text">{t('login.register.meta2')}</span>
                 </div>
-                <div className="fst-auth-chips" aria-label="平台特性">
+                <div className="fst-auth-chips" aria-label={t("login.features")}>
                   <span className="fst-auth-chip">{t('login.register.chip1')}</span>
                   <span className="fst-auth-chip">{t('login.register.chip2')}</span>
                   <span className="fst-auth-chip">{t('login.register.chip3')}</span>

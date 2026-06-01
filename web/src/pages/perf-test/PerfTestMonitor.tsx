@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import {
   Card,
@@ -39,6 +40,7 @@ interface RunningTest {
 }
 
 const PerfTestMonitor = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false)
   const [runningTests, setRunningTests] = useState<RunningTest[]>([])
   const [selectedTest, setSelectedTest] = useState<RunningTest | null>(null)
@@ -185,7 +187,7 @@ const PerfTestMonitor = () => {
       trigger: 'axis',
     },
     legend: {
-      data: ['吞吐量', '错误率'],
+      data: ['吞吐量', (t('perfTest.errorRate'))],
       bottom: 0,
     },
     grid: {
@@ -224,7 +226,7 @@ const PerfTestMonitor = () => {
         itemStyle: { color: '#52c41a' },
       },
       {
-        name: '错误率',
+        name: t('perfTest.errorRate'),
         type: 'line',
         yAxisIndex: 1,
         data: realtimeData.length > 0
@@ -270,17 +272,17 @@ const PerfTestMonitor = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('common.status'),
       dataIndex: 'status',
       key: 'status',
       render: () => (
         <Tag color="processing" icon={<SyncOutlined spin />}>
-          执行中
+          {t('common.running')}
         </Tag>
       ),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       render: (_: any, record: RunningTest) => (
         <Button
@@ -299,9 +301,9 @@ const PerfTestMonitor = () => {
       <div className="fst-page-header fst-animate-in">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="fst-stat-icon fst-stat-icon--primary"><DashboardOutlined style={{ fontSize: 18 }} /></div>
-          <h1 className="fst-page-title">实时监控</h1>
+          <h1 className="fst-page-title">{t('perfTest.monitorTitle')}</h1>
         </div>
-        <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchRunningTests}><ReloadOutlined /> 刷新</button>
+        <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchRunningTests}><ReloadOutlined /> {t('common.refresh')}</button>
       </div>
 
       {runningTests.length === 0 ? (
@@ -364,7 +366,7 @@ const PerfTestMonitor = () => {
                 <Col span={6}>
                   <Card>
                     <Statistic
-                      title="错误率"
+                      title={t('perfTest.errorRate')}
                       value={selectedTest.error_rate || 0}
                       suffix="%"
                       valueStyle={{

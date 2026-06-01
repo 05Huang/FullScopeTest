@@ -204,7 +204,7 @@ const Dashboard = () => {
           <div className="fst-empty">
             <div className="fst-empty-icon"><ClockCircleOutlined /></div>
             <div className="fst-empty-title">{t('dashboard.noRecords')}</div>
-            <div className="fst-empty-desc">您最近尚未启动任何测试运行，开始您的第一次自动化测试吧。</div>
+            <div className="fst-empty-desc">{t('dashboard.noRecordsDesc')}</div>
           </div>
         )}
       </div>

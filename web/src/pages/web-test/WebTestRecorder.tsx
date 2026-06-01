@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import {
   Card,
@@ -42,6 +43,7 @@ interface RecordedStep {
 }
 
 const WebTestRecorder = () => {
+  const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [targetUrl, setTargetUrl] = useState('')
@@ -387,7 +389,7 @@ if __name__ == "__main__":
           </Col>
           <Col span={6}>
             <div style={{ marginBottom: 16 }}>
-              <Text strong>状态</Text>
+              <Text strong>{t('common.status')}</Text>
               <div style={{ marginTop: 8 }}>
                 {isRecording ? (
                   isPaused ? (
@@ -490,10 +492,10 @@ if __name__ == "__main__":
                   <Popconfirm
                     title="确认删除此步骤？"
                     onConfirm={() => handleDeleteStep(step.id)}
-                    okText="确认"
-                    cancelText="取消"
+                    okText={t('common.confirm')}
+                    cancelText={t('common.cancel')}
                   >
-                    <Tooltip title="删除" key="delete">
+                    <Tooltip title={t('common.delete')} key="delete">
                       <Button
                         type="text"
                         size="small"
@@ -568,7 +570,7 @@ if __name__ == "__main__":
           >
             <Input placeholder="请输入脚本名称" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
+          <Form.Item name="description" label={t('common.description')}>
             <TextArea rows={2} placeholder="请输入脚本描述" />
           </Form.Item>
           <Form.Item

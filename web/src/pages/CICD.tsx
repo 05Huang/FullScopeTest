@@ -26,11 +26,13 @@ import { cicdService, WebhookToken, ScheduledTask } from '@/services/cicdService
 import * as apiTestService from '@/services/apiTestService'
 import * as webTestService from '@/services/webTestService'
 import { perfTestService } from '@/services/perfTestService'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '@/stores/projectStore'
 
 const { Paragraph } = Typography
 
 const CICD: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('webhooks')
   const { currentProjectId } = useProjectStore()
   
@@ -70,7 +72,7 @@ const CICD: React.FC = () => {
         setSchedules(response.data || [])
       }
     } catch (error: any) {
-      message.error(`加载失败: ${error.message}`)
+      message.error(`${t('cicd.loadFailed')}: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -102,23 +104,23 @@ const CICD: React.FC = () => {
         ...values,
         project_id: currentProjectId || 1
       })
-      message.success('创建 Webhook 成功')
+      message.success(t('cicd.createSuccess'))
       setWebhookModalVisible(false)
       webhookForm.resetFields()
       fetchData()
     } catch (error: any) {
       if (error.errorFields) return
-      message.error(`创建失败: ${error.message}`)
+      message.error(`${t('cicd.createFailed')}: ${error.message}`)
     }
   }
 
   const handleDeleteWebhook = async (id: number) => {
     try {
       await cicdService.deleteWebhook(id)
-      message.success('删除成功')
+      message.success(t('cicd.deleteSuccess'))
       fetchData()
     } catch (error: any) {
-      message.error(`删除失败: ${error.message}`)
+      message.error(`${t('cicd.deleteFailed')}: ${error.message}`)
     }
   }
 
@@ -127,14 +129,14 @@ const CICD: React.FC = () => {
       const values = await scheduleForm.validateFields()
       if (editingSchedule) {
         await cicdService.updateSchedule(editingSchedule.id, values)
-        message.success('更新成功')
+        message.success(t('cicd.updateSuccess'))
       } else {
         await cicdService.createSchedule({
           ...values,
           project_id: currentProjectId || 1,
           is_active: true
         })
-        message.success('创建成功')
+        message.success(t('cicd.createSuccess'))
       }
       setScheduleModalVisible(false)
       scheduleForm.resetFields()
@@ -142,50 +144,50 @@ const CICD: React.FC = () => {
       fetchData()
     } catch (error: any) {
       if (error.errorFields) return
-      message.error(`保存失败: ${error.message}`)
+      message.error(`${t('cicd.saveFailed')}: ${error.message}`)
     }
   }
 
   const handleToggleSchedule = async (record: ScheduledTask, checked: boolean) => {
     try {
       await cicdService.updateSchedule(record.id, { is_active: checked })
-      message.success(checked ? '已启用任务' : '已暂停任务')
+      message.success(checked ? t('cicd.enabledTask') : t('cicd.disabledTask'))
       fetchData()
     } catch (error: any) {
-      message.error(`操作失败: ${error.message}`)
+      message.error(`${t('cicd.operationFailed')}: ${error.message}`)
     }
   }
 
   const handleDeleteSchedule = async (id: number) => {
     try {
       await cicdService.deleteSchedule(id)
-      message.success('删除成功')
+      message.success(t('cicd.deleteSuccess'))
       fetchData()
     } catch (error: any) {
-      message.error(`删除失败: ${error.message}`)
+      message.error(`${t('cicd.deleteFailed')}: ${error.message}`)
     }
   }
 
   const getTargetTypeName = (type: string) => {
     const map: Record<string, string> = {
-      'api_collection': 'API 集合',
-      'web_collection': 'Web 自动化集合',
-      'perf_scenario': '性能压测场景'
+      'api_collection': t('cicd.apiCollection'),
+      'web_collection': t('cicd.webCollection'),
+      'perf_scenario': t('cicd.perfScenario')
     }
     return map[type] || type
   }
 
   const webhookColumns = [
-    { title: '名称', dataIndex: 'name', key: 'name' },
+    { title: t('cicd.taskName'), dataIndex: 'name', key: 'name' },
     { 
-      title: '目标类型', 
+      title: t('cicd.targetType'), 
       dataIndex: 'target_type', 
       key: 'target_type',
       render: (text: string) => <Tag color="blue">{getTargetTypeName(text)}</Tag>
     },
-    { title: '目标ID', dataIndex: 'target_id', key: 'target_id' },
+    { title: t('cicd.targetId'), dataIndex: 'target_id', key: 'target_id' },
     { 
-      title: '触发地址 (Webhook URL)', 
+      title: t('cicd.triggerUrl'), 
       key: 'url',
       render: (_: any, record: WebhookToken) => {
         const url = `${window.location.origin}/api/v1/triggers/${record.token}`
@@ -196,13 +198,13 @@ const CICD: React.FC = () => {
         )
       }
     },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at' },
+    { title: t('cicd.createdAt'), dataIndex: 'created_at', key: 'created_at' },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       render: (_: any, record: WebhookToken) => (
         <Space>
-          <Popconfirm title="确定要删除吗？" onConfirm={() => handleDeleteWebhook(record.id)}>
+          <Popconfirm title={t('cicd.confirmDelete')} onConfirm={() => handleDeleteWebhook(record.id)}>
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -211,10 +213,10 @@ const CICD: React.FC = () => {
   ]
 
   const scheduleColumns = [
-    { title: '名称', dataIndex: 'name', key: 'name' },
+    { title: t('cicd.taskName'), dataIndex: 'name', key: 'name' },
     { title: 'Cron 表达式', dataIndex: 'cron_expression', key: 'cron_expression', render: (text: string) => <Tag>{text}</Tag> },
     { 
-      title: '目标类型', 
+      title: t('cicd.targetType'), 
       dataIndex: 'target_type', 
       key: 'target_type',
       render: (text: string) => <Tag color="blue">{getTargetTypeName(text)}</Tag>
@@ -223,7 +225,7 @@ const CICD: React.FC = () => {
       <Switch checked={record.is_active} onChange={(checked) => handleToggleSchedule(record, checked)} />
     )},
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       render: (_: any, record: ScheduledTask) => (
         <Space>
@@ -237,7 +239,7 @@ const CICD: React.FC = () => {
               setScheduleModalVisible(true)
             }}
           />
-          <Popconfirm title="确定要删除吗？" onConfirm={() => handleDeleteSchedule(record.id)}>
+          <Popconfirm title={t('cicd.confirmDelete')} onConfirm={() => handleDeleteSchedule(record.id)}>
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -246,13 +248,13 @@ const CICD: React.FC = () => {
   ]
 
   if (!currentProjectId) {
-    return <div className="fst-page"><div className="fst-empty"><div className="fst-empty-title">请先选择一个项目</div></div></div>
+    return <div className="fst-page"><div className="fst-empty"><div className="fst-empty-title">{t("cicd.selectProject")}</div></div></div>
   }
 
   return (
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">CI/CD 与 定时任务</h1>
+        <h1 className="fst-page-title">{t("sidebar.cicd")}</h1>
       </div>
 
       <div className="fst-ios-card fst-animate-in fst-animate-in-1">
@@ -302,25 +304,25 @@ const CICD: React.FC = () => {
 
       {/* Webhook Modal */}
       <Modal
-        title="新建 Webhook 触发器"
+        title={t("cicd.newWebhookTitle")}
         open={webhookModalVisible}
         onOk={handleCreateWebhook}
         onCancel={() => setWebhookModalVisible(false)}
         destroyOnClose
       >
         <Form form={webhookForm} layout="vertical">
-          <Form.Item name="name" label="触发器名称" rules={[{ required: true }]}>
-            <Input placeholder="例如: 每日回归触发器" />
+          <Form.Item name="name" label={t("cicd.triggerName")} rules={[{ required: true }]}>
+            <Input placeholder={t("cicd.triggerNamePlaceholder")} />
           </Form.Item>
-          <Form.Item name="target_type" label="目标类型" rules={[{ required: true }]} initialValue="api_collection">
+          <Form.Item name="target_type" label={t("cicd.targetType")} rules={[{ required: true }]} initialValue="api_collection">
             <Select onChange={setTargetType}>
-              <Select.Option value="api_collection">API 集合</Select.Option>
-              <Select.Option value="web_collection">Web 自动化集合</Select.Option>
-              <Select.Option value="perf_scenario">性能压测场景</Select.Option>
+              <Select.Option value="api_collection">{t("cicd.apiCollection")}</Select.Option>
+              <Select.Option value="web_collection">{t("cicd.webCollection")}</Select.Option>
+              <Select.Option value="perf_scenario">{t("cicd.perfScenario")}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="target_id" label="执行目标" rules={[{ required: true }]}>
-            <Select placeholder="请选择要触发的集合/场景">
+          <Form.Item name="target_id" label={t("cicd.targetId")} rules={[{ required: true }]}>
+            <Select placeholder={t("cicd.targetIdPlaceholder")}>
               {targetOptions.map(opt => (
                 <Select.Option key={opt.value} value={opt.value}>{opt.label}</Select.Option>
               ))}
@@ -331,40 +333,40 @@ const CICD: React.FC = () => {
 
       {/* Schedule Modal */}
       <Modal
-        title={editingSchedule ? "编辑定时任务" : "新建定时任务"}
+        title={editingSchedule ? t("cicd.editSchedule") : t("cicd.newScheduleTitle")}
         open={scheduleModalVisible}
         onOk={handleSaveSchedule}
         onCancel={() => setScheduleModalVisible(false)}
         destroyOnClose
       >
         <Form form={scheduleForm} layout="vertical">
-          <Form.Item name="name" label="任务名称" rules={[{ required: true }]}>
-            <Input placeholder="例如: 每日凌晨回归测试" />
+          <Form.Item name="name" label={t("cicd.taskName")} rules={[{ required: true }]}>
+            <Input placeholder={t("cicd.taskNamePlaceholder")} />
           </Form.Item>
-          <Form.Item name="cron_expression" label="Cron 表达式" rules={[{ required: true }]} tooltip="分 时 日 月 周，例如: 0 2 * * * 表示每天凌晨2点">
+          <Form.Item name="cron_expression" label={t("cicd.cronExpression")} rules={[{ required: true }]} tooltip={t('cicd.cronTooltip')}>
             <Input placeholder="0 2 * * *" />
           </Form.Item>
-          <Form.Item name="target_type" label="目标类型" rules={[{ required: true }]} initialValue="api_collection">
+          <Form.Item name="target_type" label={t("cicd.targetType")} rules={[{ required: true }]} initialValue="api_collection">
             <Select onChange={setTargetType}>
-              <Select.Option value="api_collection">API 集合</Select.Option>
-              <Select.Option value="web_collection">Web 自动化集合</Select.Option>
-              <Select.Option value="perf_scenario">性能压测场景</Select.Option>
+              <Select.Option value="api_collection">{t("cicd.apiCollection")}</Select.Option>
+              <Select.Option value="web_collection">{t("cicd.webCollection")}</Select.Option>
+              <Select.Option value="perf_scenario">{t("cicd.perfScenario")}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="target_id" label="执行目标" rules={[{ required: true }]}>
-            <Select placeholder="请选择要触发的集合/场景">
+          <Form.Item name="target_id" label={t("cicd.targetId")} rules={[{ required: true }]}>
+            <Select placeholder={t("cicd.targetIdPlaceholder")}>
               {targetOptions.map(opt => (
                 <Select.Option key={opt.value} value={opt.value}>{opt.label}</Select.Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="notify_webhook" label="钉钉/飞书通知 Webhook URL">
+          <Form.Item name="notify_webhook" label={t("cicd.notifyWebhook")}>
             <Input placeholder="https://oapi.dingtalk.com/robot/send?access_token=..." />
           </Form.Item>
-          <Form.Item name="notify_events" label="通知事件" initialValue="all">
+          <Form.Item name="notify_events" label={t("cicd.notifyEvents")} initialValue="all">
             <Select>
-              <Select.Option value="all">所有状态 (成功与失败)</Select.Option>
-              <Select.Option value="failed">仅失败时通知</Select.Option>
+              <Select.Option value="all">{t("cicd.allEvents")}</Select.Option>
+              <Select.Option value="failed">{t("cicd.failedOnly")}</Select.Option>
             </Select>
           </Form.Item>
         </Form>

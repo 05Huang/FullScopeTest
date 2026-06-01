@@ -7,6 +7,7 @@ import {
   MailOutlined,
   GithubOutlined,
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 
 const { Title, Text } = Typography
@@ -19,6 +20,7 @@ interface RegisterForm {
 }
 
 const Register = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -26,10 +28,10 @@ const Register = () => {
     setLoading(true)
     try {
       await authService.register(values.username, values.email, values.password)
-      message.success('注册成功！请登录')
+      message.success(t('login.register.registerSuccess'))
       navigate('/login')
     } catch (error: any) {
-      message.error(error.response?.data?.message || '注册失败，请稍后重试')
+      message.error(error.response?.data?.message || t('login.register.registerFailed'))
     } finally {
       setLoading(false)
     }
@@ -77,7 +79,7 @@ const Register = () => {
           <Title level={3} style={{ margin: 0 }}>
             创建账户
           </Title>
-          <Text type="secondary">开启你的自动化测试之旅</Text>
+          <Text type="secondary">{t("login.register.subtitle")}</Text>
         </div>
 
         <Form
@@ -90,14 +92,14 @@ const Register = () => {
           <Form.Item
             name="username"
             rules={[
-              { required: true, message: '请输入用户名' },
-              { min: 3, message: '用户名至少3个字符' },
-              { max: 20, message: '用户名最多20个字符' },
+              { required: true, message: t('login.validation.usernameRequired') },
+              { min: 3, message: t('login.validation.usernameMin') },
+              { max: 20, message: t('login.validation.usernameMax') },
             ]}
           >
             <Input
               prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="用户名"
+              placeholder={t("login.username")}
               style={{ height: 48, borderRadius: 8 }}
             />
           </Form.Item>
@@ -105,13 +107,13 @@ const Register = () => {
           <Form.Item
             name="email"
             rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
+              { required: true, message: t('login.validation.emailRequired') },
+              { type: 'email', message: t('login.validation.emailInvalid') },
             ]}
           >
             <Input
               prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="邮箱"
+              placeholder={t("login.register.email")}
               style={{ height: 48, borderRadius: 8 }}
             />
           </Form.Item>
@@ -119,13 +121,13 @@ const Register = () => {
           <Form.Item
             name="password"
             rules={[
-              { required: true, message: '请输入密码' },
-              { min: 6, message: '密码至少6个字符' },
+              { required: true, message: t('login.validation.passwordRequired') },
+              { min: 8, message: t('login.validation.passwordMin') },
             ]}
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="密码"
+              placeholder={t("login.password")}
               style={{ height: 48, borderRadius: 8 }}
             />
           </Form.Item>
@@ -134,20 +136,20 @@ const Register = () => {
             name="confirmPassword"
             dependencies={['password']}
             rules={[
-              { required: true, message: '请确认密码' },
+              { required: true, message: t('login.validation.confirmRequired') },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue('password') === value) {
                     return Promise.resolve()
                   }
-                  return Promise.reject(new Error('两次输入的密码不一致'))
+                  return Promise.reject(new Error(t('login.validation.passwordMismatch')))
                 },
               }),
             ]}
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
-              placeholder="确认密码"
+              placeholder={t("login.register.confirmPassword")}
               style={{ height: 48, borderRadius: 8 }}
             />
           </Form.Item>
@@ -190,7 +192,7 @@ const Register = () => {
         </Button>
 
         <div style={{ textAlign: 'center' }}>
-          <Text type="secondary">已有账号？</Text>
+          <Text type="secondary">{t("login.hasAccount")}</Text>
           <Link to="/login" style={{ marginLeft: 8, fontWeight: 500 }}>
             立即登录
           </Link>

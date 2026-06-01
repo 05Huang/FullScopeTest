@@ -144,7 +144,9 @@ backend/.deps/
 
 # Ralph runtime files
 .ralph/
-!/.ralph/
+
+# 设计稿/原型图
+示例原型图-首页/
 
 # 本地部署文档
 LOCAL_DEPLOYMENT.md
@@ -161,3 +163,8 @@ grafana_setup.md
 # 临时脚本
 _gen_doc.py
 grafana-custom.ini
+start_dev.sh
+scripts/add_i18n_keys.py
+
+# i18n 临时文件
+chinese_*.txt

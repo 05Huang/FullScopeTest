@@ -20,6 +20,7 @@ import {
   EditOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import { apiTestService, environmentService } from '@/services'
 
 const { TextArea } = Input
@@ -48,6 +49,7 @@ interface Props {
 }
 
 const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, onSelectCollection, onAiReview }) => {
+  const { t } = useTranslation();
   const [collections, setCollections] = useState<Collection[]>([])
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [loading, setLoading] = useState(false)
@@ -81,7 +83,7 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
         setEnvironments(envsRes.data || [])
       }
     } catch (error: any) {
-      message.error(error.message || '加载数据失败')
+      message.error(error.message || t('apiTest.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -92,10 +94,10 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
     try {
       if (editingCollection) {
         await apiTestService.updateCollection(editingCollection.id, values)
-        message.success('更新成功')
+        message.success(t('apiTest.environments.updateSuccess'))
       } else {
         await apiTestService.createCollection(values)
-        message.success('创建成功')
+        message.success(t('apiTest.environments.createSuccess'))
       }
       
       setModalVisible(false)
@@ -104,7 +106,7 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
       loadData()
       onCollectionChange?.()
     } catch (error: any) {
-      message.error(error.message || '操作失败')
+      message.error(error.message || t('apiTest.operationFailed'))
     }
   }
 
@@ -112,11 +114,11 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
   const handleDelete = async (id: number) => {
     try {
       await apiTestService.deleteCollection(id)
-      message.success('删除成功')
+      message.success(t('apiTest.environments.deleteSuccess'))
       loadData()
       onCollectionChange?.()
     } catch (error: any) {
-      message.error(error.message || '删除失败')
+      message.error(error.message || t('apiTest.environments.deleteFailed'))
     }
   }
 
@@ -135,14 +137,12 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
       )
       
       if (result.code === 200) {
-        message.success(
-          `测试完成！通过: ${result.data.passed}, 失败: ${result.data.failed}`
-        )
+        message.success(t('apiTest.runComplete', {passed: result.data.passed, failed: result.data.failed}))
         setRunModalVisible(false)
         onRunSuccess?.(result.data)
       }
     } catch (error: any) {
-      message.error(error.message || '执行失败')
+      message.error(error.message || t('apiTest.operationFailed'))
     } finally {
       setLoading(false)
     }
@@ -170,14 +170,14 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
   return (
     <div>
       <Card
-        title="用例集合"
+        title={t("apiTest.collectionManager")}
         extra={
           <Button
             type="primary"
             icon={<FolderAddOutlined />}
             onClick={() => showEditModal()}
           >
-            新建集合
+            {t('apiTest.createCollection')}
           </Button>
         }
       >
@@ -202,10 +202,10 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
                   title={
                     <Space style={{ width: '100%', wordBreak: 'break-all' }}>
                       <span style={{ fontSize: '15px', fontWeight: 500 }}>{collection.name}</span>
-                      <Tag color="blue" style={{ marginLeft: '4px' }}>{collection.case_count} 个用例</Tag>
+                      <Tag color="blue" style={{ marginLeft: '4px' }}>{t('apiTest.casesCount', {count: collection.case_count})}</Tag>
                     </Space>
                   }
-                  description={collection.description || '暂无描述'}
+                  description={collection.description || t('apiTest.noDescription')}
                   style={{ width: '100%' }}
                 />
               </div>
@@ -245,29 +245,29 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
                     e.stopPropagation()
                     showEditModal(collection)
                   }}
-                  title="编辑"
+                  title={t('common.edit')}
                 >
-                  编辑
+                  {t('common.edit')}
                 </Button>
                 <Popconfirm
                   key="delete"
-                  title="确认删除这个集合吗？"
+                  title={t('apiTest.confirmDeleteCollection')}
                   onConfirm={(e) => {
                     e?.stopPropagation()
                     handleDelete(collection.id)
                   }}
                   onCancel={(e) => e?.stopPropagation()}
-                  okText="确认"
-                  cancelText="取消"
+                  okText={t('common.confirm')}
+                  cancelText={t('common.cancel')}
                 >
                   <Button
                     size="small"
                     danger
                     icon={<DeleteOutlined />}
-                    title="删除"
+                    title={t('common.delete')}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    删除
+                    {t('common.delete')}
                   </Button>
                 </Popconfirm>
               </div>
@@ -278,7 +278,7 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
 
       {/* 创建/编辑集合模态框 */}
       <Modal
-        title={editingCollection ? '编辑集合' : '新建集合'}
+        title={editingCollection ? t('apiTest.editCollection') : t('apiTest.newCollection')}
         visible={modalVisible}
         onOk={() => form.submit()}
         onCancel={() => {
@@ -286,8 +286,8 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
           form.resetFields()
           setEditingCollection(null)
         }}
-        okText="确定"
-        cancelText="取消"
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
       >
         <Form
           form={form}
@@ -295,20 +295,20 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
           onFinish={handleSubmit}
         >
           <Form.Item
-            label="集合名称"
+            label={t('apiTest.collectionName')}
             name="name"
-            rules={[{ required: true, message: '请输入集合名称' }]}
+            rules={[{ required: true, message: t('apiTest.collectionNameRequired') }]}
           >
-            <Input placeholder="例如：用户模块接口" />
+            <Input placeholder={t("apiTest.collectionNamePlaceholder")} />
           </Form.Item>
           
           <Form.Item
-            label="描述"
+            label={t('apiTest.collectionDescription')}
             name="description"
           >
             <TextArea
               rows={4}
-              placeholder="对这个集合的简要描述"
+              placeholder={t("apiTest.collectionDescPlaceholder")}
             />
           </Form.Item>
         </Form>
@@ -316,32 +316,32 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
 
       {/* 运行集合模态框 */}
       <Modal
-        title={`运行集合: ${selectedCollectionForRun?.name}`}
+        title={t('apiTest.runCollection', {name: selectedCollectionForRun?.name})}
         visible={runModalVisible}
         onOk={handleRunCollection}
         onCancel={() => setRunModalVisible(false)}
         confirmLoading={loading}
         okText="开始运行"
-        cancelText="取消"
+        cancelText={t('common.cancel')}
       >
         <Form layout="vertical">
           <Form.Item label={(
             <Space>
-              <span>选择环境</span>
+              <span>{t("apiTest.selectEnvironment")}</span>
               <Tooltip title="可以选择“使用用例自身环境”，或选择具体环境覆盖所有用例">
                 <InfoCircleOutlined style={{ color: '#1890ff' }} />
               </Tooltip>
             </Space>
           )}>
             <Select
-              placeholder="请选择运行环境"
+              placeholder={t("apiTest.envSelectPlaceholder")}
               value={selectedEnvId}
               onChange={setSelectedEnvId}
             >
               <Select.Option key="default" value={USE_CASE_OWN_ENV}>
-                <Tag color="blue">使用用例自身环境</Tag>
+                <Tag color="blue">{t('apiTest.useCaseOwnEnv')}</Tag>
               </Select.Option>
-              <Select.OptGroup label="统一环境（覆盖所有用例）">
+              <Select.OptGroup label={t('apiTest.unifiedEnv')}>
                 {environments.map(env => (
                   <Select.Option key={env.id} value={env.id}>
                     {env.name} {env.is_active && <Tag color="green">默认</Tag>}
@@ -354,11 +354,11 @@ const CollectionManager: React.FC<Props> = ({ onCollectionChange, onRunSuccess, 
           <p style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>
             {selectedEnvId === USE_CASE_OWN_ENV ? (
               <>
-                🔹 <strong>每个用例</strong>将使用自身保存的环境配置（如果未设置则不应用环境）
+                🔹 {t('apiTest.envHintOwn')}
               </>
             ) : (
               <>
-                🔸 将使用 <strong>{environments.find(e => e.id === selectedEnvId)?.name || '选定环境'}</strong> 覆盖所有用例的环境配置
+                🔸 {t('apiTest.envHintOverride', { env: <strong>{environments.find(e => e.id === selectedEnvId)?.name || ''}</strong> })}
               </>
             )}
           </p>

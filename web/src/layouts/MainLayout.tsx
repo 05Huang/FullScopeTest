@@ -208,7 +208,7 @@ const MainLayout = () => {
   const noticeDisabled = ['off', 'none', 'false', '0'].includes(noticeOverride.toLowerCase())
   const envNotice = noticeDisabled
     ? ''
-    : noticeOverride || '您目前处于线上环境，受限于个人服务器配置，部分功能性能可能会不理想。'
+    : noticeOverride || t('layout.envNotice')
 
   // 用户下拉菜单
   const userMenuItems = [
@@ -269,23 +269,23 @@ const MainLayout = () => {
   const tourSteps: TourProps['steps'] = [
     {
       title: t('sidebar.dashboard'),
-      description: '这是一个简单高效的自动化测试平台。让我们花半分钟了解一下基本功能布局。',
+      description: t('tour.welcome'),
       target: () => document.querySelector('.fst-app-logo') as HTMLElement,
     },
     {
       title: t('sidebar.dashboard'),
-      description: '在这里，您可以直观地查看各类型测试（API/Web/性能）的用例数量与通过率，实时掌握质量状况。',
+      description: t('tour.dashboard'),
       target: () => document.getElementById('tour-step-dashboard-api') as HTMLElement,
     },
     {
       title: t('sidebar.apiTest'),
-      description: '通过左侧菜单，您可以随时切换进入接口测试、Web自动化、性能压测等核心模块。',
+      description: t('tour.navigation'),
       target: () => document.querySelector('.fst-app-menu') as HTMLElement,
       placement: 'right',
     },
     {
       title: t('sidebar.aiInsights'),
-      description: '想要快速找东西？点击这里或使用快捷键 (Ctrl+K / ⌘+K) 即可唤起全局搜索。',
+      description: t('tour.search'),
       target: () => document.getElementById('tour-step-search') as HTMLElement,
     },
   ]
@@ -413,10 +413,10 @@ const MainLayout = () => {
               <div style={{ width: 260, padding: '4px' }}>
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#3D6E66', marginBottom: 4 }}>
-                    联系作者
+                    {t("layout.contactAuthor")}
                   </div>
                   <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-                    全栈测试开发 / 独立开发者
+                    {t("layout.authorRole")}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -446,7 +446,7 @@ const MainLayout = () => {
                         style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
                       />
                     </div>
-                    <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>扫一扫添加微信</div>
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>{t("layout.scanWechat")}</div>
                   </div>
                 </div>
               </div>
@@ -510,7 +510,7 @@ const MainLayout = () => {
             </button>
             <Select
               showSearch
-              placeholder="选择项目"
+              placeholder={t("layout.selectProject")}
               optionFilterProp="label"
               value={currentProjectId}
               onChange={setCurrentProject}
@@ -537,10 +537,10 @@ const MainLayout = () => {
                 <div style={{ width: 260, padding: '4px' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
                     <div style={{ fontSize: 16, fontWeight: 600, color: '#3D6E66', marginBottom: 4 }}>
-                      联系作者
+                      {t("layout.contactAuthor")}
                     </div>
                     <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-                      全栈测试开发 / 独立开发者
+                      {t("layout.authorRole")}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -570,7 +570,7 @@ const MainLayout = () => {
                           style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
                         />
                       </div>
-                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>扫一扫添加微信</div>
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>{t("layout.scanWechat")}</div>
                     </div>
                   </div>
                 </div>
@@ -588,7 +588,7 @@ const MainLayout = () => {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = 'var(--fst-primary)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fst-on-surface-variant)' }}
-                aria-label="联系作者"
+                aria-label={t('layout.contactAuthor')}
               >
                 <CustomerServiceOutlined style={{ fontSize: 18 }} />
               </button>

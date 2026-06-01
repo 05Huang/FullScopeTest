@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import {
   Layout,
@@ -86,8 +87,9 @@ interface ScriptTestResultsProps {
 }
 
 const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }) => {
+  const { t } = useTranslation();
   if (!scriptExecution) {
-    return <Empty description="暂无脚本执行结果" />
+    return <Empty description={t('apiTest.noCases')} />
   }
 
   const { pre_script, post_script } = scriptExecution
@@ -96,20 +98,20 @@ const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }
   const hasExecutedScript = (pre_script?.executed || post_script?.executed)
 
   if (!hasExecutedScript) {
-    return <Empty description="未配置前置/后置脚本" />
+    return <Empty description={t('apiTest.noCases')} />
   }
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       {/* 前置脚本结果 */}
       {pre_script?.executed && (
-        <Card size="small" title={<Space><Text strong>前置脚本</Text></Space>}>
+        <Card size="small" title={<Space><Text strong>{t('apiTest.preScript')}</Text></Space>}>
           <Space direction="vertical" style={{ width: '100%' }} size="small">
             <Space>
               {pre_script.passed ? (
-                <Tag icon={<CheckCircleOutlined />} color="success">执行成功</Tag>
+                <Tag icon={<CheckCircleOutlined />} color="success">{t('apiTest.runSuccess')}</Tag>
               ) : (
-                <Tag icon={<CloseCircleOutlined />} color="error">执行失败</Tag>
+                <Tag icon={<CloseCircleOutlined />} color="error">{t('apiTest.runFailed')}</Tag>
               )}
               {pre_script.duration !== undefined && (
                 <Text type="secondary">耗时: {pre_script.duration}ms</Text>
@@ -124,13 +126,13 @@ const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }
 
       {/* 后置脚本结果 */}
       {post_script?.executed && (
-        <Card size="small" title={<Space><Text strong>后置断言</Text></Space>}>
+        <Card size="small" title={<Space><Text strong>{t('apiTest.postScript')}</Text></Space>}>
           <Space direction="vertical" style={{ width: '100%' }} size="small">
             <Space>
               {post_script.passed ? (
-                <Tag icon={<CheckCircleOutlined />} color="success">全部通过</Tag>
+                <Tag icon={<CheckCircleOutlined />} color="success">{t('common.passed')}</Tag>
               ) : (
-                <Tag icon={<CloseCircleOutlined />} color="error">存在失败</Tag>
+                <Tag icon={<CloseCircleOutlined />} color="error">{t('common.failed')}</Tag>
               )}
               {post_script.duration !== undefined && (
                 <Text type="secondary">耗时: {post_script.duration}ms</Text>
@@ -155,7 +157,7 @@ const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }
                 dataSource={post_script.assertions.details.map((d, i) => ({ ...d, key: i }))}
                 columns={[
                   {
-                    title: '状态',
+                    title: t('common.status'),
                     dataIndex: 'passed',
                     width: 60,
                     render: (passed) => passed ? (
@@ -211,6 +213,7 @@ interface AiExecutionLog {
 }
 
 const ApiTestWorkspace = () => {
+  const { t } = useTranslation();
   const { currentProjectId } = useProjectStore()
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
@@ -802,7 +805,7 @@ const ApiTestWorkspace = () => {
         loadData()
       }
     } catch (error) {
-      message.error('保存失败')
+      message.error(t('common.failed'))
     }
   }
 
@@ -1219,7 +1222,7 @@ const ApiTestWorkspace = () => {
       title: '确认删除',
       content: `确定要删除用例 "${caseName}" 吗？此操作不可恢复。`,
       okText: '确认删除',
-      cancelText: '取消',
+      cancelText: t('common.cancel'),
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
@@ -1828,7 +1831,7 @@ const ApiTestWorkspace = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       width: 80,
       render: (_: any, __: any, index: number) => (
@@ -1875,7 +1878,7 @@ const ApiTestWorkspace = () => {
       ),
     },
     {
-      title: 'Header 值',
+      title: t('apiTest.headers'),
       dataIndex: 'value',
       key: 'value',
       render: (_: any, record: any, index: number) => (
@@ -1892,7 +1895,7 @@ const ApiTestWorkspace = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       width: 80,
       render: (_: any, __: any, index: number) => (
@@ -2060,7 +2063,7 @@ const ApiTestWorkspace = () => {
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
                     />
-                    <Tooltip title="刷新">
+                    <Tooltip title={t('common.refresh')}>
                       <Button icon={<ReloadOutlined />} onClick={loadData} />
                     </Tooltip>
                   </Space.Compact>
@@ -2180,14 +2183,14 @@ const ApiTestWorkspace = () => {
               loading={sending}
               onClick={handleSend}
             >
-              发送
+              {t('copilot.send')}
             </Button>
             <Tooltip title="新建用例（自动保存当前用例）">
               <Button
                 icon={<FileAddOutlined />}
                 onClick={handleNewCase}
               >
-                新建用例
+                {t('apiTest.createCase')}
               </Button>
             </Tooltip>
             <Tooltip title={currentCaseId ? (hasUnsavedChanges ? "保存修改" : "保存") : "保存到用例"}>
@@ -2196,7 +2199,7 @@ const ApiTestWorkspace = () => {
                 icon={<SaveOutlined />}
                 onClick={currentCaseId ? saveCurrentCase : openSaveCaseModal}
               >
-                保存
+                {t('common.save')}
               </Button>
             </Tooltip>
             <Tooltip title={currentCaseId ? "删除当前用例" : "请先选择一个已保存用例"}>
@@ -2379,7 +2382,7 @@ const ApiTestWorkspace = () => {
               },
               {
                 key: 'pre-script',
-                label: '前置脚本',
+                label: t('apiTest.preScript'),
                 children: (
                   <MonacoEditor
                     height={150}
@@ -2498,7 +2501,7 @@ const ApiTestWorkspace = () => {
                                   ),
                                 },
                                 {
-                                  title: '操作',
+                                  title: t('common.actions'),
                                   width: 50,
                                   render: (_: any, __: any, index: number) => (
                                     <Button

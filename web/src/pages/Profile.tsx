@@ -3,11 +3,13 @@ import { Card, Form, Input, Button, message, Typography, Row, Col, Space, Avatar
 import { UserOutlined, MailOutlined, SaveOutlined, LockOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { authService } from '@/services/authService'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 
 const { Title, Text } = Typography
 
 const Profile: React.FC = () => {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuthStore()
   const [profileForm] = Form.useForm()
   const [passwordForm] = Form.useForm()
@@ -31,16 +33,16 @@ const Profile: React.FC = () => {
     try {
       const res = await authService.uploadAvatar(file as File)
       if (res.code === 200 && res.data?.avatar) {
-        message.success('头像上传成功')
+        message.success(t('profile.avatarUploadSuccess'))
         profileForm.setFieldsValue({ avatar: res.data.avatar })
         updateUser({ avatar: res.data.avatar })
         onSuccess?.('ok')
       } else {
-        message.error(res.message || '上传失败')
-        onError?.(new Error(res.message || '上传失败'))
+        message.error(res.message || t('profile.uploadFailed'))
+        onError?.(new Error(res.message || t('profile.uploadFailed')))
       }
     } catch (error: any) {
-      message.error(error.message || '上传失败')
+      message.error(error.message || t('profile.uploadFailed'))
       onError?.(error)
     } finally {
       setUploading(false)
@@ -52,14 +54,14 @@ const Profile: React.FC = () => {
     try {
       const res = await authService.updateProfile(values)
       if (res.code === 200) {
-        message.success('个人信息更新成功')
+        message.success(t('profile.profileUpdateSuccess'))
         // Update user context
         updateUser(res.data)
       } else {
-        message.error(res.message || '更新失败')
+        message.error(res.message || t('profile.updateFailed'))
       }
     } catch (error: any) {
-      message.error(error.message || '更新失败')
+      message.error(error.message || t('profile.updateFailed'))
     } finally {
       setLoading(false)
     }
@@ -67,20 +69,20 @@ const Profile: React.FC = () => {
 
   const handleUpdatePassword = async (values: any) => {
     if (values.new_password !== values.confirm_password) {
-      message.error('两次输入的新密码不一致')
+      message.error(t('profile.passwordMismatch'))
       return
     }
     setPwdLoading(true)
     try {
       const res = await authService.changePassword(values.old_password, values.new_password)
       if (res.code === 200) {
-        message.success('密码修改成功')
+        message.success(t('profile.passwordChangeSuccess'))
         passwordForm.resetFields()
       } else {
-        message.error(res.message || '修改失败')
+        message.error(res.message || t('profile.changeFailed'))
       }
     } catch (error: any) {
-      message.error(error.message || '修改失败')
+      message.error(error.message || t('profile.changeFailed'))
     } finally {
       setPwdLoading(false)
     }
@@ -90,8 +92,8 @@ const Profile: React.FC = () => {
     <div className="fst-page" style={{ maxWidth: 800, margin: '0 auto' }}>
       <div className="fst-page-header fst-animate-in">
         <div>
-          <h1 className="fst-page-title">个人设置</h1>
-          <div className="fst-ios-card-subtitle">管理您的个人基本信息与账号安全</div>
+          <h1 className="fst-page-title">{t('profile.title')}</h1>
+          <div className="fst-ios-card-subtitle">{t('profile.subtitle')}</div>
         </div>
       </div>
 
@@ -101,8 +103,8 @@ const Profile: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="fst-stat-icon fst-stat-icon--primary"><UserOutlined style={{ fontSize: 18 }} /></div>
             <div>
-              <div className="fst-ios-card-title">基本信息</div>
-              <div className="fst-ios-card-subtitle">更新您的头像、用户名和邮箱</div>
+              <div className="fst-ios-card-title">{t('profile.basicInfoTitle')}</div>
+              <div className="fst-ios-card-subtitle">{t('profile.basicInfoSubtitle')}</div>
             </div>
           </div>
         </div>
@@ -131,39 +133,39 @@ const Profile: React.FC = () => {
               </Upload>
             </Spin>
             <div style={{ marginTop: 12, fontSize: 13, color: 'var(--fst-on-surface-muted)' }}>
-              点击头像可直接上传更换
+              {t('profile.avatarUploadHint')}
             </div>
           </div>
 
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
-                label={<span style={{ fontWeight: 600, fontSize: 13 }}>用户名</span>}
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('profile.usernameLabel')}</span>}
                 name="username"
-                rules={[{ required: true, message: '请输入用户名' }, { min: 3, max: 50 }]}
+                rules={[{ required: true, message: t('profile.usernameRequired') }, { min: 3, max: 50 }]}
               >
-                <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
+                <Input prefix={<UserOutlined />} placeholder={t("profile.usernamePlaceholder")} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                label={<span style={{ fontWeight: 600, fontSize: 13 }}>邮箱</span>}
+                label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('profile.emailLabel')}</span>}
                 name="email"
-                rules={[{ required: true, message: '请输入邮箱' }, { type: 'email' }]}
+                rules={[{ required: true, message: t('profile.emailRequired') }, { type: 'email' }]}
               >
-                <Input prefix={<MailOutlined />} placeholder="请输入邮箱" />
+                <Input prefix={<MailOutlined />} placeholder={t("profile.emailPlaceholder")} />
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>头像 URL</span>} name="avatar">
-                <Input placeholder="请输入头像图片的 URL" />
+              <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('profile.avatarUrlLabel')}</span>} name="avatar">
+                <Input placeholder={t("profile.avatarUrlPlaceholder")} />
               </Form.Item>
             </Col>
           </Row>
 
           <div style={{ borderTop: '1px solid var(--fst-outline-soft)', paddingTop: 20 }}>
             <Form.Item style={{ marginBottom: 0 }}>
-              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>保存基本信息</Button>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>{t('profile.saveBasicInfo')}</Button>
             </Form.Item>
           </div>
         </Form>
@@ -175,37 +177,37 @@ const Profile: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="fst-stat-icon fst-stat-icon--tertiary"><LockOutlined style={{ fontSize: 18 }} /></div>
             <div>
-              <div className="fst-ios-card-title">修改密码</div>
-              <div className="fst-ios-card-subtitle">确保您的账号安全</div>
+              <div className="fst-ios-card-title">{t('profile.passwordTitle')}</div>
+              <div className="fst-ios-card-subtitle">{t('profile.passwordSubtitle')}</div>
             </div>
           </div>
         </div>
 
         <Form form={passwordForm} layout="vertical" onFinish={handleUpdatePassword}>
           <Form.Item
-            label={<span style={{ fontWeight: 600, fontSize: 13 }}>原密码</span>}
+            label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('common.password')}</span>}
             name="old_password"
-            rules={[{ required: true, message: '请输入原密码' }]}
+            rules={[{ required: true, message: t('profile.currentPasswordRequired') }]}
           >
-            <Input.Password placeholder="请输入原密码" />
+            <Input.Password placeholder={t("profile.currentPasswordPlaceholder")} />
           </Form.Item>
           <Form.Item
-            label={<span style={{ fontWeight: 600, fontSize: 13 }}>新密码</span>}
+            label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('profile.newPassword')}</span>}
             name="new_password"
-            rules={[{ required: true, message: '请输入新密码' }, { min: 6 }]}
+            rules={[{ required: true, message: t('profile.newPasswordRequired') }, { min: 6 }]}
           >
-            <Input.Password placeholder="请输入新密码" />
+            <Input.Password placeholder={t("profile.newPasswordPlaceholder")} />
           </Form.Item>
           <Form.Item
-            label={<span style={{ fontWeight: 600, fontSize: 13 }}>确认新密码</span>}
+            label={<span style={{ fontWeight: 600, fontSize: 13 }}>{t('profile.confirmPasswordLabel')}</span>}
             name="confirm_password"
-            rules={[{ required: true, message: '请确认新密码' }]}
+            rules={[{ required: true, message: t('profile.confirmPasswordRequired') }]}
           >
-            <Input.Password placeholder="请再次输入新密码" />
+            <Input.Password placeholder={t("profile.confirmPasswordPlaceholder")} />
           </Form.Item>
           <div style={{ borderTop: '1px solid var(--fst-outline-soft)', paddingTop: 20 }}>
             <Form.Item style={{ marginBottom: 0 }}>
-              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={pwdLoading}>更新密码</Button>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={pwdLoading}>{t('profile.updatePassword')}</Button>
             </Form.Item>
           </div>
         </Form>

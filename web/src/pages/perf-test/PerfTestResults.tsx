@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import {
   Card,
@@ -50,6 +51,7 @@ interface TestResult {
 }
 
 const PerfTestResults = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<TestResult[]>([])
   const [selectedResult, setSelectedResult] = useState<TestResult | null>(null)
@@ -216,7 +218,7 @@ const PerfTestResults = () => {
       render: (val) => `${val} req/s`,
     },
     {
-      title: '错误率',
+      title: t('perfTest.errorRate'),
       dataIndex: 'error_rate',
       key: 'error_rate',
       width: 100,
@@ -226,25 +228,25 @@ const PerfTestResults = () => {
       },
     },
     {
-      title: '状态',
+      title: t('common.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
       render: (status) => (
         <Tag color={status === 'passed' ? 'success' : 'error'}>
-          {status === 'passed' ? '通过' : '失败'}
+          {status === 'passed' ? (t('common.passed')) : t('common.failed')}
         </Tag>
       ),
     },
     {
-      title: '执行时间',
+      title: t('reports.executionTime'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 160,
       render: (time) => new Date(time).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       width: 100,
       render: (_, record) => (
@@ -264,7 +266,7 @@ const PerfTestResults = () => {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <RangePicker size="small" />
-          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchResults}><ReloadOutlined /> 刷新</button>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchResults}><ReloadOutlined /> {t('common.refresh')}</button>
         </div>
       </div>
 
@@ -348,7 +350,7 @@ const PerfTestResults = () => {
               type="text"
               onClick={() => setSelectedResult(null)}
             >
-              关闭
+              {t('common.close')}
             </Button>
           }
         >
@@ -380,7 +382,7 @@ const PerfTestResults = () => {
                 <Statistic title="失败请求" value={selectedResult.failed_requests} valueStyle={{ color: '#f5222d' }} />
               </Col>
               <Col span={6}>
-                <Statistic title="持续时间" value={selectedResult.duration} suffix="秒" />
+                <Statistic title={t('reports.duration')} value={selectedResult.duration} suffix="秒" />
               </Col>
               <Col span={6}>
                 <Statistic title="并发用户" value={selectedResult.user_count} />

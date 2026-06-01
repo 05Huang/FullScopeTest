@@ -37,6 +37,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { appTestService } from '@/services/appTestService'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
@@ -73,13 +74,6 @@ interface Collection {
   script_count: number
 }
 
-const statusConfig: Record<string, { color: string; text: string }> = {
-  passed: { color: 'success', text: '通过' },
-  failed: { color: 'error', text: '失败' },
-  pending: { color: 'default', text: '未执行' },
-  running: { color: 'processing', text: '执行中' },
-}
-
 const platformOptions = [
   { value: 'android', label: 'Android' },
   { value: 'ios', label: 'iOS' },
@@ -92,7 +86,15 @@ const automationOptions = [
 ]
 
 const AppTestScripts = () => {
+  const { t } = useTranslation();
   const { currentProjectId } = useProjectStore()
+
+  const statusConfig: Record<string, { color: string; text: string }> = {
+    passed: { color: 'success', text: t('common.passed') },
+    failed: { color: 'error', text: t('common.failed') },
+    pending: { color: 'default', text: '未执行' },
+    running: { color: 'processing', text: t('common.running') },
+  }
   const [loading, setLoading] = useState(false)
   const [scripts, setScripts] = useState<AppTestScript[]>([])
   const [collections, setCollections] = useState<Collection[]>([])
@@ -127,7 +129,7 @@ const AppTestScripts = () => {
         setCollections(collectionsRes.data || [])
       }
     } catch {
-      message.error('加载数据失败')
+      message.error(t('appTest.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -141,7 +143,7 @@ const AppTestScripts = () => {
         project_id: currentProjectId,
       })
       if (res.code === 200 || res.code === 201) {
-        message.success('创建成功')
+        message.success(t('appTest.createSuccess'))
         setIsModalOpen(false)
         form.resetFields()
         loadData()
@@ -156,7 +158,7 @@ const AppTestScripts = () => {
     try {
       const res = await appTestService.updateScript(id, values)
       if (res.code === 200) {
-        message.success('更新成功')
+        message.success(t('appTest.editSuccess'))
         setIsModalOpen(false)
         setEditingScript(null)
         form.resetFields()
@@ -172,11 +174,11 @@ const AppTestScripts = () => {
     try {
       const res = await appTestService.deleteScript(id)
       if (res.code === 200) {
-        message.success('删除成功')
+        message.success(t('appTest.deleteSuccess'))
         loadData()
       }
     } catch {
-      message.error('删除失败')
+      message.error(t('appTest.deleteFailed'))
     }
   }
 
@@ -217,7 +219,7 @@ const AppTestScripts = () => {
         loadData()
       }
     } catch {
-      message.error('执行失败')
+      message.error(t('appTest.runFailed'))
     }
   }
 
@@ -276,7 +278,7 @@ const AppTestScripts = () => {
   // 表格列配置
   const columns: ColumnsType<AppTestScript> = [
     {
-      title: '脚本名称',
+      title: t('appTest.scriptName'),
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
@@ -306,7 +308,7 @@ const AppTestScripts = () => {
       render: (text) => text || '-',
     },
     {
-      title: '状态',
+      title: t('appTest.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -323,12 +325,12 @@ const AppTestScripts = () => {
       render: (text) => text ? new Date(text).toLocaleString('zh-CN') : '-',
     },
     {
-      title: '操作',
+      title: t('appTest.action'),
       key: 'action',
       width: 200,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button
               type="text"
               size="small"
@@ -369,7 +371,7 @@ const AppTestScripts = () => {
             title="确定删除此脚本？"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('common.delete')}>
               <Button
                 type="text"
                 size="small"
@@ -404,16 +406,16 @@ const AppTestScripts = () => {
       <div className="fst-page-header fst-animate-in">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="fst-stat-icon fst-stat-icon--primary"><MobileOutlined style={{ fontSize: 18 }} /></div>
-          <h1 className="fst-page-title">APP 自动化测试</h1>
+          <h1 className="fst-page-title">{t('appTest.title')}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={loadData}><ReloadOutlined /> 刷新</button>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={loadData}><ReloadOutlined /> {t('common.refresh')}</button>
           <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={() => {
             setEditingScript(null)
             form.resetFields()
             setIsModalOpen(true)
           }}>
-            新建脚本
+            {t('webTest.createScript')}
           </button>
           <Dropdown
             menu={{
@@ -473,7 +475,7 @@ const AppTestScripts = () => {
 
       {/* 创建/编辑模态框 */}
       <Modal
-        title={editingScript ? '编辑脚本' : '新建脚本'}
+        title={editingScript ? (t('webTest.editScript')) : t('webTest.createScript')}
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false)
@@ -491,7 +493,7 @@ const AppTestScripts = () => {
           <Form.Item name="name" label="脚本名称" rules={[{ required: true, message: '请输入脚本名称' }]}>
             <Input placeholder="请输入脚本名称" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
+          <Form.Item name="description" label={t('common.description')}>
             <TextArea rows={2} placeholder="请输入描述" />
           </Form.Item>
           <Row gutter={16}>
@@ -529,9 +531,9 @@ const AppTestScripts = () => {
         width={1000}
         footer={
           <Space>
-            <Button onClick={() => setEditorScript(null)}>关闭</Button>
+            <Button onClick={() => setEditorScript(null)}>{t('common.close')}</Button>
             <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveScript}>
-              保存
+              {t('common.save')}
             </Button>
           </Space>
         }

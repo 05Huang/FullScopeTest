@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import i18n from './i18n'
 import { useAuthStore } from './stores/authStore'
 
 // 懒加载页面组件
@@ -36,7 +37,7 @@ const PageLoading = () => (
       minHeight: '60vh',
     }}
   >
-    <Spin size="large" tip="加载中..." />
+    <Spin size="large" tip={i18n.t('common.pageLoading')} />
   </div>
 )
 

@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { environmentService } from '@/services'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
@@ -40,6 +41,7 @@ interface Environment {
 }
 
 const ApiTestEnvironments = () => {
+  const { t } = useTranslation();
   const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(false)
   const [environments, setEnvironments] = useState<Environment[]>([])
@@ -60,7 +62,7 @@ const ApiTestEnvironments = () => {
         setEnvironments(res.data || [])
       }
     } catch (error) {
-      message.error('加载环境列表失败')
+      message.error(t('apiTest.environments.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -75,7 +77,7 @@ const ApiTestEnvironments = () => {
           try {
             processedValues.variables = JSON.parse(processedValues.variables)
           } catch {
-            return message.error('环境变量 JSON 格式错误')
+            return message.error(t('apiTest.environments.jsonError'))
           }
         } else {
           processedValues.variables = {}
@@ -90,15 +92,15 @@ const ApiTestEnvironments = () => {
 
       const res = await environmentService.createEnvironment(processedValues)
       if (res.code === 200 || res.code === 201) {
-        message.success('创建成功')
+        message.success(t('apiTest.environments.createSuccess'))
         setIsModalOpen(false)
         form.resetFields()
         loadData()
       } else {
-        message.error(res.message || '创建失败')
+        message.error(res.message || t('apiTest.environments.createFailed'))
       }
     } catch (error) {
-      message.error('创建失败')
+      message.error(t('apiTest.environments.createFailed'))
     }
   }
 
@@ -111,7 +113,7 @@ const ApiTestEnvironments = () => {
           try {
             processedValues.variables = JSON.parse(processedValues.variables)
           } catch {
-            return message.error('环境变量 JSON 格式错误')
+            return message.error(t('apiTest.environments.jsonError'))
           }
         } else {
           processedValues.variables = {}
@@ -126,16 +128,16 @@ const ApiTestEnvironments = () => {
 
       const res = await environmentService.updateEnvironment(id, processedValues)
       if (res.code === 200) {
-        message.success('更新成功')
+        message.success(t('apiTest.environments.updateSuccess'))
         setIsModalOpen(false)
         setEditingEnv(null)
         form.resetFields()
         loadData()
       } else {
-        message.error(res.message || '更新失败')
+        message.error(res.message || t('apiTest.environments.updateFailed'))
       }
     } catch (error) {
-      message.error('更新失败')
+      message.error(t('apiTest.environments.updateFailed'))
     }
   }
 
@@ -143,13 +145,13 @@ const ApiTestEnvironments = () => {
     try {
       const res = await environmentService.deleteEnvironment(id)
       if (res.code === 200) {
-        message.success('删除成功')
+        message.success(t('apiTest.environments.deleteSuccess'))
         loadData()
       } else {
-        message.error(res.message || '删除失败')
+        message.error(res.message || t('apiTest.environments.deleteFailed'))
       }
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('apiTest.environments.deleteFailed'))
     }
   }
 
@@ -158,24 +160,24 @@ const ApiTestEnvironments = () => {
     try {
       const res = await environmentService.updateEnvironment(id, { is_default: true })
       if (res.code === 200) {
-        message.success('已设为默认环境')
+        message.success(t('apiTest.environments.setDefaultSuccess'))
         loadData()
       }
     } catch (error) {
-      message.error('设置失败')
+      message.error(t('apiTest.environments.setFailed'))
     }
   }
 
   // 表格列配置
   const columns: ColumnsType<Environment> = [
     {
-      title: '环境名称',
+      title: t('apiTest.environments.envName'),
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
         <Space>
           <Text strong>{text}</Text>
-          {record.is_active && <Tag color="blue">默认</Tag>}
+          {record.is_active && <Tag color="blue">{t('apiTest.environments.defaultTag')}</Tag>}
         </Space>
       ),
     },
@@ -186,13 +188,13 @@ const ApiTestEnvironments = () => {
       render: (url) => <Text code>{url || '-'}</Text>,
     },
     {
-      title: '描述',
+      title: t('apiTest.environments.envDescription'),
       dataIndex: 'description',
       key: 'description',
       render: (desc) => <Text type="secondary">{desc || '-'}</Text>,
     },
     {
-      title: '变量数',
+      title: t('apiTest.environments.envVariables'),
       key: 'variables',
       width: 100,
       render: (_, record) => {
@@ -203,20 +205,20 @@ const ApiTestEnvironments = () => {
       },
     },
     {
-      title: '更新时间',
+      title: t('common.updatedAt'),
       dataIndex: 'updated_at',
       key: 'updated_at',
       width: 160,
       render: (time) => time ? new Date(time).toLocaleString() : '-'
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       width: 200,
       render: (_, record) => (
         <Space>
           {!record.is_active && (
-            <Tooltip title="设为默认">
+            <Tooltip title={t('apiTest.environments.setDefault')}>
               <Button
                 type="text"
                 size="small"
@@ -225,7 +227,7 @@ const ApiTestEnvironments = () => {
               />
             </Tooltip>
           )}
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button
               type="text"
               size="small"
@@ -240,24 +242,24 @@ const ApiTestEnvironments = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="复制">
+          <Tooltip title={t('common.copy')}>
             <Button
               type="text"
               size="small"
               icon={<CopyOutlined />}
               onClick={() => {
-                const copyValues = { ...record, name: `${record.name} (副本)`, is_active: false }
+                const copyValues = { ...record, name: `${record.name}${t('apiTest.environments.copyName')}`, is_active: false }
                 delete (copyValues as any).id
                 handleCreate(copyValues)
               }}
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此环境吗？"
+            title={t('apiTest.environments.deleteConfirm')}
             onConfirm={() => handleDelete(record.id)}
             disabled={record.is_active}
           >
-            <Tooltip title={record.is_active ? '默认环境不可删除' : '删除'}>
+            <Tooltip title={record.is_active ? t('apiTest.environments.defaultNoDelete') : t('common.delete')}>
               <Button
                 type="text"
                 size="small"
@@ -275,11 +277,11 @@ const ApiTestEnvironments = () => {
   return (
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">环境配置</h1>
+        <h1 className="fst-page-title">{t("apiTest.environments.title")}</h1>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <Input
-          placeholder="搜索环境..."
+          placeholder={t("apiTest.environments.searchEnv")}
           prefix={<SearchOutlined />}
           style={{ width: 250 }}
             allowClear
@@ -313,7 +315,7 @@ const ApiTestEnvironments = () => {
           loading={loading}
           pagination={{
             total: environments.length,
-            showTotal: (total) => `共 ${total} 条`,
+            showTotal: (total) => `${t('common.total')} ${total}`,
           }}
         />
         </div>
@@ -321,7 +323,7 @@ const ApiTestEnvironments = () => {
 
       {/* 新建/编辑环境弹窗 */}
       <Modal
-        title={editingEnv ? '编辑环境' : '新建环境'}
+        title={editingEnv ? t('apiTest.environments.editEnv') : t('apiTest.environments.newEnv')}
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false)
@@ -342,27 +344,27 @@ const ApiTestEnvironments = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="环境名称"
-            rules={[{ required: true, message: '请输入环境名称' }]}
+            label={t('apiTest.environments.envName')}
+            rules={[{ required: true, message: t('apiTest.environments.envNameRequired') }]}
           >
-            <Input placeholder="请输入环境名称" />
+            <Input placeholder={t("apiTest.environments.envNamePlaceholder")} />
           </Form.Item>
           <Form.Item
             name="base_url"
             label="Base URL"
             rules={[
-              { required: true, message: '请输入 Base URL' },
-              { type: 'url', message: '请输入有效的 URL' },
+              { required: true, message: t('apiTest.environments.envUrlRequired') },
+              { type: 'url', message: t('apiTest.environments.envUrlInvalid') },
             ]}
           >
             <Input placeholder="https://api.example.com" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <TextArea rows={3} placeholder="请输入环境描述" />
+          <Form.Item name="description" label={t('apiTest.environments.envDescription')}>
+            <TextArea rows={3} placeholder={t("apiTest.environments.envDescriptionPlaceholder")} />
           </Form.Item>
           <Form.Item
             name="variables"
-            label="环境变量"
+            label={t('apiTest.environments.envVariables')}
             tooltip='使用 JSON 格式定义变量，例如: {"bearer": "token123", "userId": "456"}'
             validateTrigger={['onChange', 'onBlur']}
             rules={[
@@ -409,7 +411,7 @@ const ApiTestEnvironments = () => {
               placeholder={'{\n  "bearer": "your_token_here",\n  "userId": "123",\n  "apiKey": "abc456"\n}'}
             />
           </Form.Item>
-          <Form.Item name="is_active" label="设为默认" valuePropName="checked">
+          <Form.Item name="is_active" label={t('apiTest.environments.setAsDefault')} valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>

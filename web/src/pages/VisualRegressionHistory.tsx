@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react'
 import { Card, Table, Tag, Typography, Spin, Empty, Row, Col, Image, Button } from 'antd'
 import { LineChartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
@@ -22,6 +23,7 @@ interface HistoryRecord {
 }
 
 const VisualRegressionHistory: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate()
   const { testCaseId } = useParams<{ testCaseId: string }>()
   const [history, setHistory] = useState<HistoryRecord[]>([])
@@ -52,7 +54,7 @@ const VisualRegressionHistory: React.FC = () => {
       render: (id: number) => <Text code>#{id}</Text>,
     },
     {
-      title: '执行时间',
+      title: t('reports.executionTime'),
       dataIndex: 'run_time',
       key: 'run_time',
       render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
@@ -93,7 +95,7 @@ const VisualRegressionHistory: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       render: (_: unknown, record: HistoryRecord) => (
         <Button type="link" size="small" onClick={() => setSelectedRecord(record)}>
@@ -167,7 +169,7 @@ const VisualRegressionHistory: React.FC = () => {
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => navigate(-1)}><ArrowLeftOutlined /> 返回</button>
+          <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => navigate(-1)}><ArrowLeftOutlined /> {t('common.back')}</button>
           <h1 className="fst-page-title" style={{ fontSize: 20 }}>
             <LineChartOutlined /> 视觉回归历史趋势 - 用例 #{testCaseId}
           </h1>
@@ -201,7 +203,7 @@ const VisualRegressionHistory: React.FC = () => {
             <div className="fst-ios-card fst-animate-in fst-animate-in-3" style={{ marginTop: 16 }}>
               <div className="fst-ios-card-header">
                 <div className="fst-ios-card-title">详情 - 执行 #{selectedRecord.test_run_id}</div>
-                <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => setSelectedRecord(null)}>关闭</button>
+                <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={() => setSelectedRecord(null)}>{t('common.close')}</button>
               </div>
               <Row gutter={16}>
                 <Col span={8}>

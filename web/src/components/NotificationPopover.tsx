@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react'
 import { Popover, List, Avatar, Typography, Badge, Button, Spin } from 'antd'
 import {
@@ -18,6 +19,7 @@ dayjs.locale('zh-cn')
 const { Text } = Typography
 
 export const NotificationPopover: React.FC = () => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -159,7 +161,7 @@ export const NotificationPopover: React.FC = () => {
                 />
               </List.Item>
             )}
-            locale={{ emptyText: '暂无通知' }}
+            locale={{ emptyText: t('notification.noNotifications') }}
           />
         </Spin>
       </div>

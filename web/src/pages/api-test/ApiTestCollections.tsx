@@ -30,6 +30,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { apiTestService } from '@/services'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
@@ -64,6 +65,7 @@ const methodColors: Record<string, string> = {
 }
 
 const ApiTestCollections = () => {
+  const { t } = useTranslation();
   const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(false)
   const [cases, setCases] = useState<TestCase[]>([])
@@ -93,7 +95,7 @@ const ApiTestCollections = () => {
         setCollections(collectionsRes.data || [])
       }
     } catch (error) {
-      message.error('加载数据失败')
+      message.error(t('apiTest.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -109,14 +111,14 @@ const ApiTestCollections = () => {
         description: values.description,
       })
       if (res.code === 200 || res.code === 201) {
-        message.success('创建成功')
+        message.success(t('common.success'))
         setIsModalOpen(false)
         setEditingCase(null)
         form.resetFields()
         loadData()
       }
     } catch (error) {
-      message.error('创建失败')
+      message.error(t('common.failed'))
     }
   }
 
@@ -130,21 +132,21 @@ const ApiTestCollections = () => {
         description: values.description,
       })
       if (res.code === 200) {
-        message.success('更新成功')
+        message.success(t('common.success'))
         setIsModalOpen(false)
         setEditingCase(null)
         form.resetFields()
         loadData()
       }
     } catch (error) {
-      message.error('更新失败')
+      message.error(t('common.failed'))
     }
   }
 
   const handleCopy = async (record: TestCase) => {
     try {
       const res = await apiTestService.createCase({
-        name: `${record.name} (副本)`,
+        name: `${record.name}${t('apiTest.copyName')}`,
         method: record.method,
         url: record.url || '',
         collection_id: record.collection_id,
@@ -154,11 +156,11 @@ const ApiTestCollections = () => {
         body: record.body,
       })
       if (res.code === 200 || res.code === 201) {
-        message.success('复制成功')
+        message.success(t('common.success'))
         loadData()
       }
     } catch (error) {
-      message.error('复制失败')
+      message.error(t('common.failed'))
     }
   }
 
@@ -166,11 +168,11 @@ const ApiTestCollections = () => {
     try {
       const res = await apiTestService.deleteCase(id)
       if (res.code === 200) {
-        message.success('删除成功')
+        message.success(t('common.success'))
         loadData()
       }
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('common.failed'))
     }
   }
 
@@ -181,11 +183,11 @@ const ApiTestCollections = () => {
       for (const id of selectedRowKeys) {
         await apiTestService.deleteCase(id as number)
       }
-      message.success('批量删除成功')
+      message.success(t('common.success'))
       setSelectedRowKeys([])
       loadData()
     } catch (error) {
-      message.error('删除失败')
+      message.error(t('common.failed'))
     }
   }
 
@@ -252,18 +254,18 @@ const ApiTestCollections = () => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 
-    message.success(`已导出 ${selectedCases.length} 个用例`)
+    message.success(t('apiTest.exportedCount', {count: selectedCases.length}))
   }
 
   const handleRun = async (id: number) => {
     try {
       const res = await apiTestService.runCase(id)
       if (res.code === 200) {
-        message.success('执行完成')
+        message.success(t('common.success'))
         loadData()
       }
     } catch (error) {
-      message.error('执行失败')
+      message.error(t('common.failed'))
     }
   }
 
@@ -277,7 +279,7 @@ const ApiTestCollections = () => {
   // 表格列配置
   const columns: ColumnsType<TestCase> = [
     {
-      title: '用例名称',
+      title: t('apiTest.caseName'),
       dataIndex: 'name',
       key: 'name',
       render: (text) => (
@@ -288,7 +290,7 @@ const ApiTestCollections = () => {
       ),
     },
     {
-      title: '方法',
+      title: t('apiTest.requestMethod'),
       dataIndex: 'method',
       key: 'method',
       width: 100,
@@ -299,13 +301,13 @@ const ApiTestCollections = () => {
       ),
     },
     {
-      title: '请求路径',
+      title: t('apiTest.requestPath'),
       dataIndex: 'url',
       key: 'url',
       render: (url) => <Text code>{url || '-'}</Text>,
     },
     {
-      title: '所属集合',
+      title: t('apiTest.collection'),
       dataIndex: 'collection_id',
       key: 'collection_id',
       render: (collectionId) => (
@@ -316,19 +318,19 @@ const ApiTestCollections = () => {
       ),
     },
     {
-      title: '更新时间',
+      title: t('common.updatedAt'),
       dataIndex: 'updated_at',
       key: 'updated_at',
       width: 160,
       render: (time) => time ? new Date(time).toLocaleString() : '-'
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'action',
       width: 180,
       render: (_, record) => (
         <Space>
-          <Tooltip title="运行">
+          <Tooltip title={t("apiTest.runScript")}>
             <Button
               type="text"
               size="small"
@@ -336,7 +338,7 @@ const ApiTestCollections = () => {
               onClick={() => handleRun(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t("common.edit")}>
             <Button
               type="text"
               size="small"
@@ -354,7 +356,7 @@ const ApiTestCollections = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="复制">
+          <Tooltip title={t("common.copy")}>
             <Button
               type="text"
               size="small"
@@ -363,10 +365,10 @@ const ApiTestCollections = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此用例吗？"
+            title={t('apiTest.confirmDeleteCase')}
             onConfirm={() => handleDelete(record.id)}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t("common.delete")}>
               <Button
                 type="text"
                 size="small"
@@ -382,20 +384,20 @@ const ApiTestCollections = () => {
 
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
-    { key: 'run', icon: <PlayCircleOutlined />, label: '批量执行' },
-    { key: 'export', icon: <ExportOutlined />, label: '导出用例' },
+    { key: 'run', icon: <PlayCircleOutlined />, label: t('apiTest.batchRun') },
+    { key: 'export', icon: <ExportOutlined />, label: t('apiTest.exportCases') },
     { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: '批量删除', danger: true },
+    { key: 'delete', icon: <DeleteOutlined />, label: t('apiTest.batchDelete'), danger: true },
   ]
 
   return (
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">用例集管理</h1>
+        <h1 className="fst-page-title">{t("apiTest.casesManagement")}</h1>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <Input
-          placeholder="搜索用例..."
+          placeholder={t("apiTest.searchCases")}
           prefix={<SearchOutlined />}
           style={{ width: 250 }}
           allowClear
@@ -421,7 +423,7 @@ const ApiTestCollections = () => {
               }
             }
           }} disabled={selectedRowKeys.length === 0}>
-            <Button icon={<MoreOutlined />}>更多</Button>
+            <Button icon={<MoreOutlined />}>{t("common.more")}</Button>
           </Dropdown>
         </div>
 
@@ -442,7 +444,7 @@ const ApiTestCollections = () => {
           loading={loading}
           pagination={{
             total: cases.length,
-            showTotal: (total) => `共 ${total} 条`,
+            showTotal: (total) => `${t('common.total')} ${total}`,
             showSizeChanger: true,
             showQuickJumper: true,
           }}
@@ -452,7 +454,7 @@ const ApiTestCollections = () => {
 
       {/* 新建/编辑用例弹窗 */}
       <Modal
-        title={editingCase ? "编辑用例" : "新建用例"}
+        title={editingCase ? t('apiTest.editCase') : t('apiTest.newCase')}
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false)
@@ -472,17 +474,17 @@ const ApiTestCollections = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="用例名称"
-            rules={[{ required: true, message: '请输入用例名称' }]}
+            label={t("apiTest.caseName")}
+            rules={[{ required: true, message: t('apiTest.caseRequired') }]}
           >
-            <Input placeholder="请输入用例名称" />
+            <Input placeholder={t("apiTest.caseName")} />
           </Form.Item>
           <Form.Item
             name="collection_id"
-            label="所属集合"
+            label={t("apiTest.collection")}
           >
             <Select
-              placeholder="请选择所属集合"
+              placeholder={t("apiTest.collectionPlaceholder")}
               allowClear
               options={collections.map(c => ({
                 value: c.id,
@@ -490,7 +492,7 @@ const ApiTestCollections = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="method" label="请求方法" initialValue="GET">
+          <Form.Item name="method" label={t("apiTest.requestMethod")} initialValue="GET">
             <Select
               options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({
                 value: m,
@@ -498,11 +500,11 @@ const ApiTestCollections = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="url" label="请求路径">
-            <Input placeholder="请输入请求路径" />
+          <Form.Item name="url" label={t("apiTest.requestPath")}>
+            <Input placeholder={t("apiTest.pathPlaceholder")} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea placeholder="请输入用例描述" rows={3} />
+          <Form.Item name="description" label={t("common.description")}>
+            <Input.TextArea placeholder={t("apiTest.descriptionPlaceholder")} rows={3} />
           </Form.Item>
         </Form>
       </Modal>
