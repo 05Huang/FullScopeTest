@@ -32,19 +32,31 @@ const Dashboard = () => {
     recent_runs: []
   })
   const [dailyTrend, setDailyTrend] = useState<any[]>([])
+  const [trendPeriod, setTrendPeriod] = useState<'week' | 'month'>('month')
+  const trendDays = trendPeriod === 'week' ? 7 : 30
 
   useEffect(() => {
     fetchDashboardData()
   }, [currentProjectId])
+
+  useEffect(() => {
+    fetchTrend()
+  }, [trendPeriod])
 
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
       const dashboardRes = await reportService.getDashboardStats()
       if (dashboardRes.code === 200) setStats(dashboardRes.data)
-      const statsRes = await reportService.getReportStatistics({ days: 7 })
-      if (statsRes.code === 200) setDailyTrend(statsRes.data.daily_trend || [])
+      await fetchTrend()
     } catch { /* silent */ } finally { setLoading(false) }
+  }
+
+  const fetchTrend = async () => {
+    try {
+      const statsRes = await reportService.getReportStatistics({ days: trendDays })
+      if (statsRes.code === 200) setDailyTrend(statsRes.data.daily_trend || [])
+    } catch { /* silent */ }
   }
 
   const getPassRate = (passed: number, total: number) =>
@@ -152,8 +164,18 @@ const Dashboard = () => {
               <div className="fst-ios-card-subtitle">{t('dashboard.trendSubtitle')}</div>
             </div>
             <div className="fst-tabs" style={{ width: 'auto' }}>
-              <button className="fst-tab">{t('dashboard.week')}</button>
-              <button className="fst-tab fst-tab--active">{t('dashboard.month')}</button>
+              <button
+                className={`fst-tab ${trendPeriod === 'week' ? 'fst-tab--active' : ''}`}
+                onClick={() => setTrendPeriod('week')}
+              >
+                {t('dashboard.week')}
+              </button>
+              <button
+                className={`fst-tab ${trendPeriod === 'month' ? 'fst-tab--active' : ''}`}
+                onClick={() => setTrendPeriod('month')}
+              >
+                {t('dashboard.month')}
+              </button>
             </div>
           </div>
           {loading

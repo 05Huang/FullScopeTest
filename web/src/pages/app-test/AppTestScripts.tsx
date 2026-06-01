@@ -92,7 +92,7 @@ const AppTestScripts = () => {
   const statusConfig: Record<string, { color: string; text: string }> = {
     passed: { color: 'success', text: t('common.passed') },
     failed: { color: 'error', text: t('common.failed') },
-    pending: { color: 'default', text: '未执行' },
+    pending: { color: 'default', text: t('appTest.notExecuted') },
     running: { color: 'processing', text: t('common.running') },
   }
   const [loading, setLoading] = useState(false)
@@ -202,11 +202,11 @@ const AppTestScripts = () => {
         project_id: currentProjectId,
       })
       if (res.code === 200 || res.code === 201) {
-        message.success('复制成功')
+        message.success(t('appTest.copySuccess'))
         loadData()
       }
     } catch {
-      message.error('复制失败')
+      message.error(t('appTest.copyFailed'))
     }
   }
 
@@ -231,7 +231,7 @@ const AppTestScripts = () => {
       for (const id of selectedRowKeys) {
         await appTestService.deleteScript(id as number)
       }
-      message.success('批量删除成功')
+      message.success(t('appTest.batchDeleteSuccess'))
       setSelectedRowKeys([])
       loadData()
     } catch {
@@ -285,12 +285,12 @@ const AppTestScripts = () => {
         <Space>
           <MobileOutlined style={{ color: '#1890ff' }} />
           <Text strong>{text}</Text>
-          {!record.is_enabled && <Tag color="default">已禁用</Tag>}
+          {!record.is_enabled && <Tag color="default">{t('appTest.disabled')}</Tag>}
         </Space>
       ),
     },
     {
-      title: '平台',
+      title: t('appTest.platformLabel'),
       dataIndex: 'platform',
       key: 'platform',
       width: 100,
@@ -301,7 +301,7 @@ const AppTestScripts = () => {
       ),
     },
     {
-      title: '设备',
+      title: t('appTest.deviceLabel'),
       dataIndex: 'device_name',
       key: 'device_name',
       width: 150,
@@ -318,7 +318,7 @@ const AppTestScripts = () => {
       },
     },
     {
-      title: '最后执行',
+      title: t('appTest.lastExecution'),
       dataIndex: 'last_run_at',
       key: 'last_run_at',
       width: 180,
@@ -342,7 +342,7 @@ const AppTestScripts = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="脚本编辑器">
+          <Tooltip title={t('appTest.scriptEditor')}>
             <Button
               type="text"
               size="small"
@@ -368,7 +368,7 @@ const AppTestScripts = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此脚本？"
+            title={t('appTest.confirmDeleteScript')}
             onConfirm={() => handleDelete(record.id)}
           >
             <Tooltip title={t('common.delete')}>
@@ -389,7 +389,7 @@ const AppTestScripts = () => {
   const moreMenuItems: MenuProps['items'] = [
     { key: 'export', icon: <ExportOutlined />, label: '导出脚本' },
     { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: '批量删除', danger: true },
+    { key: 'delete', icon: <DeleteOutlined />, label: t('appTest.batchDelete'), danger: true },
   ]
 
   // 筛选后的脚本列表
@@ -424,7 +424,28 @@ const AppTestScripts = () => {
                 if (key === 'delete') {
                   handleBatchDelete()
                 } else if (key === 'export') {
-                  message.info('导出功能开发中')
+                  {
+        const selectedScripts = scripts.filter(s => selectedRowKeys.includes(s.id));
+        const exportData = {
+          version: '1.0',
+          export_time: new Date().toISOString(),
+          scripts: selectedScripts.map(s => ({
+            name: s.name, description: s.description, platform: s.platform,
+            automation_name: s.automation_name, script_content: s.script_content,
+            collection_id: s.collection_id,
+          }))
+        };
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `app-test-scripts-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        message.success(t('appTest.exportScripts'));
+      }
                 }
               }
             }}
@@ -498,7 +519,7 @@ const AppTestScripts = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="platform" label="平台" initialValue="android">
+              <Form.Item name="platform" label={t('appTest.platformLabel')} initialValue="android">
                 <Select options={platformOptions} />
               </Form.Item>
             </Col>
@@ -523,7 +544,7 @@ const AppTestScripts = () => {
         title={
           <Space>
             <SettingOutlined />
-            <span>脚本编辑器 - {editorScript?.name}</span>
+            <span>{t('appTest.scriptEditor')} - {editorScript?.name}</span>
           </Space>
         }
         open={!!editorScript}
@@ -562,7 +583,7 @@ const AppTestScripts = () => {
               <Form.Item name="app_path" label="APP 路径">
                 <Input placeholder="APK/IPA 文件路径或 URL" />
               </Form.Item>
-              <Form.Item name="device_name" label="设备名称">
+              <Form.Item name="device_name" label={t('appTest.deviceName')}>
                 <Input placeholder="emulator-5554 或 iPhone Simulator" />
               </Form.Item>
               <Form.Item name="platform_version" label="系统版本">

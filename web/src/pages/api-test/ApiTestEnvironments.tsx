@@ -36,6 +36,7 @@ interface Environment {
   base_url: string
   description: string
   is_active: boolean
+  is_default?: boolean
   variables?: Record<string, any>
   updated_at: string
 }
@@ -84,12 +85,6 @@ const ApiTestEnvironments = () => {
         }
       }
 
-      // 转换字段名：is_active -> is_default
-      if (processedValues.is_active !== undefined) {
-        processedValues.is_default = processedValues.is_active
-        delete processedValues.is_active
-      }
-
       const res = await environmentService.createEnvironment(processedValues)
       if (res.code === 200 || res.code === 201) {
         message.success(t('apiTest.environments.createSuccess'))
@@ -118,12 +113,6 @@ const ApiTestEnvironments = () => {
         } else {
           processedValues.variables = {}
         }
-      }
-
-      // 转换字段名：is_active -> is_default
-      if (processedValues.is_active !== undefined) {
-        processedValues.is_default = processedValues.is_active
-        delete processedValues.is_active
       }
 
       const res = await environmentService.updateEnvironment(id, processedValues)
@@ -177,7 +166,7 @@ const ApiTestEnvironments = () => {
       render: (text, record) => (
         <Space>
           <Text strong>{text}</Text>
-          {record.is_active && <Tag color="blue">{t('apiTest.environments.defaultTag')}</Tag>}
+          {(record.is_default || record.is_active) && <Tag color="blue">{t('apiTest.environments.defaultTag')}</Tag>}
         </Space>
       ),
     },
@@ -217,7 +206,7 @@ const ApiTestEnvironments = () => {
       width: 200,
       render: (_, record) => (
         <Space>
-          {!record.is_active && (
+          {!(record.is_default || record.is_active) && (
             <Tooltip title={t('apiTest.environments.setDefault')}>
               <Button
                 type="text"
@@ -236,7 +225,7 @@ const ApiTestEnvironments = () => {
                 setEditingEnv(record)
                 form.setFieldsValue({
                   ...record,
-                  is_active: record.is_active
+                  is_default: record.is_default || record.is_active
                 })
                 setIsModalOpen(true)
               }}
@@ -248,7 +237,7 @@ const ApiTestEnvironments = () => {
               size="small"
               icon={<CopyOutlined />}
               onClick={() => {
-                const copyValues = { ...record, name: `${record.name}${t('apiTest.environments.copyName')}`, is_active: false }
+                const copyValues = { ...record, name: `${record.name}${t('apiTest.environments.copyName')}`, is_default: false }
                 delete (copyValues as any).id
                 handleCreate(copyValues)
               }}
@@ -257,15 +246,15 @@ const ApiTestEnvironments = () => {
           <Popconfirm
             title={t('apiTest.environments.deleteConfirm')}
             onConfirm={() => handleDelete(record.id)}
-            disabled={record.is_active}
+            disabled={record.is_default || record.is_active}
           >
-            <Tooltip title={record.is_active ? t('apiTest.environments.defaultNoDelete') : t('common.delete')}>
+            <Tooltip title={(record.is_default || record.is_active) ? t('apiTest.environments.defaultNoDelete') : t('common.delete')}>
               <Button
                 type="text"
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                disabled={record.is_active}
+                disabled={record.is_default || record.is_active}
               />
             </Tooltip>
           </Popconfirm>
@@ -411,7 +400,7 @@ const ApiTestEnvironments = () => {
               placeholder={'{\n  "bearer": "your_token_here",\n  "userId": "123",\n  "apiKey": "abc456"\n}'}
             />
           </Form.Item>
-          <Form.Item name="is_active" label={t('apiTest.environments.setAsDefault')} valuePropName="checked">
+          <Form.Item name="is_default" label={t('apiTest.environments.setAsDefault')} valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>

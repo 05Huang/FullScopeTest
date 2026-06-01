@@ -202,7 +202,7 @@ const Reports = () => {
   const handleExportJson = async (runId: number) => {
     const report = findReportByRunId(runId)
     if (!report) {
-      message.warning('未找到该执行的报告')
+      message.warning(t('reports.reportNotFound'))
       return
     }
 
@@ -409,7 +409,7 @@ const Reports = () => {
           <Tooltip title={t("reports.downloadJson")}>
             <Button type="text" size="small" icon={<DownloadOutlined />} onClick={() => handleExportJson(record.id)} />
           </Tooltip>
-          <Popconfirm title="确定删除该记录吗？" onConfirm={() => handleDelete(record.id)}>
+          <Popconfirm title={t('reports.confirmDeleteRecord')} onConfirm={() => handleDelete(record.id)}>
             <Tooltip title={t("common.delete")}>
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />
             </Tooltip>

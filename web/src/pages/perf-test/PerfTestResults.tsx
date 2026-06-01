@@ -12,6 +12,7 @@ import {
   Empty,
   Button,
   DatePicker,
+  Select,
   message,
 } from 'antd'
 import {
@@ -25,6 +26,7 @@ import {
 import ReactECharts from 'echarts-for-react'
 import type { ColumnsType } from 'antd/es/table'
 import { perfTestService } from '@/services/perfTestService'
+import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -55,6 +57,9 @@ const PerfTestResults = () => {
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<TestResult[]>([])
   const [selectedResult, setSelectedResult] = useState<TestResult | null>(null)
+  const [detailMetrics, setDetailMetrics] = useState<any[]>([])
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null])
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
   const [statistics, setStatistics] = useState({
     total_tests: 0,
     avg_response_time: 0,
@@ -64,42 +69,42 @@ const PerfTestResults = () => {
 
   useEffect(() => {
     fetchResults()
-  }, [])
+  }, [dateRange, statusFilter])
 
   const fetchResults = async () => {
     setLoading(true)
     try {
-      // 从场景列表获取历史数据
-      const result = await perfTestService.getScenarios()
+      const params: any = { per_page: 100 }
+      if (dateRange[0]) params.start_date = dateRange[0].format('YYYY-MM-DD')
+      if (dateRange[1]) params.end_date = dateRange[1].format('YYYY-MM-DD')
+      if (statusFilter) params.status = statusFilter
+
+      const result = await perfTestService.getPerformanceResults(params)
       if (result.code === 200) {
-        // 转换数据格式
-        const scenarios = result.data || []
-        const testResults: TestResult[] = scenarios
-          .filter((s: any) => s.status !== 'pending')
-          .map((s: any) => ({
-            id: s.id,
-            scenario_id: s.id,
-            scenario_name: s.name,
-            user_count: s.user_count,
-            duration: s.duration,
-            avg_response_time: s.avg_response_time || 0,
-            p50_response_time: (s.avg_response_time || 0) * 0.9,
-            p90_response_time: (s.avg_response_time || 0) * 1.2,
-            p95_response_time: (s.avg_response_time || 0) * 1.4,
-            p99_response_time: (s.avg_response_time || 0) * 1.8,
-            min_response_time: (s.avg_response_time || 0) * 0.5,
-            max_response_time: (s.avg_response_time || 0) * 2,
-            throughput: s.throughput || 0,
-            total_requests: (s.throughput || 0) * s.duration,
-            failed_requests: Math.round((s.throughput || 0) * s.duration * (s.error_rate || 0) / 100),
-            error_rate: s.error_rate || 0,
-            status: (s.error_rate || 0) < 5 ? 'passed' : 'failed',
-            created_at: s.last_run_at || s.updated_at || new Date().toISOString(),
-          }))
-        
+        const items = result.data?.items || result.data || []
+        const testResults: TestResult[] = items.map((r: any) => ({
+          id: r.id,
+          scenario_id: r.scenario_id,
+          scenario_name: r.scenario_name || `Scenario #${r.scenario_id}`,
+          user_count: r.user_count || 0,
+          duration: r.duration || 0,
+          avg_response_time: r.avg_response_time || 0,
+          p50_response_time: r.p50_response_time || 0,
+          p90_response_time: r.p90_response_time || 0,
+          p95_response_time: r.p95_response_time || 0,
+          p99_response_time: r.p99_response_time || 0,
+          min_response_time: r.min_response_time || 0,
+          max_response_time: r.max_response_time || 0,
+          throughput: r.throughput || 0,
+          total_requests: r.total_requests || 0,
+          failed_requests: r.failed_requests || 0,
+          error_rate: r.error_rate || 0,
+          status: r.status || ((r.error_rate || 0) < 5 ? 'passed' : 'failed'),
+          created_at: r.created_at || new Date().toISOString(),
+        }))
+
         setResults(testResults)
-        
-        // 计算统计数据
+
         if (testResults.length > 0) {
           setStatistics({
             total_tests: testResults.length,
@@ -113,12 +118,55 @@ const PerfTestResults = () => {
               (testResults.reduce((sum, r) => sum + r.error_rate, 0) / testResults.length).toFixed(2)
             ),
           })
+        } else {
+          setStatistics({ total_tests: 0, avg_response_time: 0, avg_throughput: 0, avg_error_rate: 0 })
         }
       }
     } catch (error) {
-      message.error('获取测试结果失败')
+      // Fallback: try getScenarios if getPerformanceResults fails
+      try {
+        const result = await perfTestService.getScenarios()
+        if (result.code === 200) {
+          const scenarios = result.data || []
+          const testResults: TestResult[] = scenarios
+            .filter((s: any) => s.status !== 'pending')
+            .map((s: any) => ({
+              id: s.id, scenario_id: s.id, scenario_name: s.name,
+              user_count: s.user_count || 0, duration: s.duration || 0,
+              avg_response_time: s.avg_response_time || 0,
+              p50_response_time: 0, p90_response_time: 0, p95_response_time: 0, p99_response_time: 0,
+              min_response_time: 0, max_response_time: 0,
+              throughput: s.throughput || 0, total_requests: 0, failed_requests: 0,
+              error_rate: s.error_rate || 0,
+              status: (s.error_rate || 0) < 5 ? 'passed' : 'failed',
+              created_at: s.last_run_at || s.updated_at || new Date().toISOString(),
+            }))
+          setResults(testResults)
+          if (testResults.length > 0) {
+            setStatistics({
+              total_tests: testResults.length,
+              avg_response_time: Math.round(testResults.reduce((sum, r) => sum + r.avg_response_time, 0) / testResults.length),
+              avg_throughput: Math.round(testResults.reduce((sum, r) => sum + r.throughput, 0) / testResults.length),
+              avg_error_rate: parseFloat((testResults.reduce((sum, r) => sum + r.error_rate, 0) / testResults.length).toFixed(2)),
+            })
+          }
+        }
+      } catch {
+        message.error(t('perfTest.loadFailed'))
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchDetailMetrics = async (resultId: number) => {
+    try {
+      const res = await perfTestService.getPerformanceResultMetrics(resultId, 100)
+      if (res.code === 200) {
+        setDetailMetrics(res.data?.items || res.data || [])
+      }
+    } catch {
+      setDetailMetrics([])
     }
   }
 
@@ -173,12 +221,12 @@ const PerfTestResults = () => {
         data: [
           {
             value: result.total_requests - result.failed_requests,
-            name: '成功请求',
+            name: t('perfTest.successRequests'),
             itemStyle: { color: '#52c41a' },
           },
           {
             value: result.failed_requests,
-            name: '失败请求',
+            name: t('perfTest.failedRequests'),
             itemStyle: { color: '#f5222d' },
           },
         ],
@@ -188,17 +236,17 @@ const PerfTestResults = () => {
 
   const columns: ColumnsType<TestResult> = [
     {
-      title: '场景名称',
+      title: t('perfTest.scenarioNameCol'),
       dataIndex: 'scenario_name',
       key: 'scenario_name',
       render: (text) => <Text strong>{text}</Text>,
     },
     {
-      title: '并发数',
+      title: t('perfTest.userCountCol'),
       dataIndex: 'user_count',
       key: 'user_count',
       width: 100,
-      render: (val) => `${val} 用户`,
+      render: (val) => `${val} ${t('perfTest.concurrentUsers')}`,
     },
     {
       title: t('perfTest.avgResponseTime'),
@@ -251,7 +299,7 @@ const PerfTestResults = () => {
       width: 100,
       render: (_, record) => (
         <Button type="link" onClick={() => setSelectedResult(record)}>
-          详情
+          {t('perfTest.viewDetail')}
         </Button>
       ),
     },
@@ -265,7 +313,24 @@ const PerfTestResults = () => {
           <h1 className="fst-page-title">{t('perfTest.resultAnalysis')}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <RangePicker size="small" />
+          <Select
+            placeholder={t('perfTest.allStatus')}
+            size="small"
+            style={{ width: 120 }}
+            allowClear
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            options={[
+              { value: 'passed', label: t('common.passed') },
+              { value: 'failed', label: t('common.failed') },
+            ]}
+          />
+          <RangePicker
+            size="small"
+            onChange={(dates) => {
+              setDateRange(dates ? [dates[0], dates[1]] : [null, null])
+            }}
+          />
           <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={fetchResults}><ReloadOutlined /> {t('common.refresh')}</button>
         </div>
       </div>
@@ -332,7 +397,7 @@ const PerfTestResults = () => {
             loading={loading}
             pagination={{
               total: results.length,
-              showTotal: (total) => `共 ${total} 条`,
+              showTotal: (total) => `${t('common.total')} ${total}`,
               showSizeChanger: true,
             }}
           />
@@ -344,11 +409,11 @@ const PerfTestResults = () => {
       {/* 详情分析 */}
       {selectedResult && (
         <Card
-          title={`详细分析 - ${selectedResult.scenario_name}`}
+          title={`${t('perfTest.resultAnalysis')} - ${selectedResult.scenario_name}`}
           extra={
             <Button
               type="text"
-              onClick={() => setSelectedResult(null)}
+              onClick={() => { setSelectedResult(null); setDetailMetrics([]) }}
             >
               {t('common.close')}
             </Button>
@@ -356,7 +421,7 @@ const PerfTestResults = () => {
         >
           <Row gutter={16}>
             <Col span={16}>
-              <Card title="响应时间分布" size="small">
+              <Card title={t('perfTest.responseTimeDistribution')} size="small">
                 <ReactECharts
                   option={getResponseTimeDistribution(selectedResult)}
                   style={{ height: 300 }}
@@ -364,7 +429,7 @@ const PerfTestResults = () => {
               </Card>
             </Col>
             <Col span={8}>
-              <Card title="请求统计" size="small">
+              <Card title={t('perfTest.requestStats')} size="small">
                 <ReactECharts
                   option={getRequestsPie(selectedResult)}
                   style={{ height: 300 }}
@@ -373,19 +438,19 @@ const PerfTestResults = () => {
             </Col>
           </Row>
 
-          <Card title="详细指标" size="small" style={{ marginTop: 16 }}>
+          <Card title={t('perfTest.detailedMetrics')} size="small" style={{ marginTop: 16 }}>
             <Row gutter={[16, 16]}>
               <Col span={6}>
-                <Statistic title="总请求数" value={selectedResult.total_requests} />
+                <Statistic title={t('perfTest.totalRequestsCol')} value={selectedResult.total_requests} />
               </Col>
               <Col span={6}>
-                <Statistic title="失败请求" value={selectedResult.failed_requests} valueStyle={{ color: '#f5222d' }} />
+                <Statistic title={t('perfTest.failedRequestsCol')} value={selectedResult.failed_requests} valueStyle={{ color: '#f5222d' }} />
               </Col>
               <Col span={6}>
-                <Statistic title={t('reports.duration')} value={selectedResult.duration} suffix="秒" />
+                <Statistic title={t('perfTest.durationSec')} value={selectedResult.duration} suffix="s" />
               </Col>
               <Col span={6}>
-                <Statistic title="并发用户" value={selectedResult.user_count} />
+                <Statistic title={t('perfTest.concurrentUsersCol')} value={selectedResult.user_count} />
               </Col>
               <Col span={4}>
                 <Statistic title="Min" value={selectedResult.min_response_time} suffix="ms" />

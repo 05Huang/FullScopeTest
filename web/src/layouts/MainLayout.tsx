@@ -351,6 +351,7 @@ const MainLayout = () => {
       { label: t('sidebar.monitor'), path: '/perf-test/monitor' },
       { label: t('sidebar.results'), path: '/perf-test/results' },
       { label: t('sidebar.perfDashboard'), path: '/perf-test/dashboard' },
+      { label: t('sidebar.alertRules'), path: '/perf-test/alerts' },
     ]},
     { icon: <BarChartOutlined />, label: t('sidebar.reports'), path: '/reports' },
     { icon: <DotChartOutlined />, label: t('sidebar.aiInsights'), path: '/ai-insights' },
@@ -457,7 +458,7 @@ const MainLayout = () => {
                     href="https://huangxuan.chat/resume"
                     target="_blank"
                   >
-                    查看个人主页 & 简历
+                    {t('layout.viewProfile')}
                   </Button>
                   <div style={{ background: '#f6f8f8', padding: '12px', borderRadius: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
@@ -622,7 +623,7 @@ const MainLayout = () => {
                       href="https://huangxuan.chat/resume"
                       target="_blank"
                     >
-                      查看个人主页 & 简历
+                      {t('layout.viewProfile')}
                     </Button>
                     <div style={{ background: '#f6f8f8', padding: '12px', borderRadius: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
@@ -740,7 +741,7 @@ const MainLayout = () => {
                   style={{ backgroundColor: 'var(--fst-primary)' }}
                 />
                 <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--fst-on-surface)' }}>
-                  {user?.username || '用户'}
+                  {user?.username || t('layout.user')}
                 </span>
               </div>
             </Dropdown>

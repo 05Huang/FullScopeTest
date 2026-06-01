@@ -151,7 +151,7 @@ const WebTestScripts = () => {
   const statusConfig: Record<string, { color: string; text: string }> = {
     passed: { color: 'success', text: t('common.passed') },
     failed: { color: 'error', text: t('common.failed') },
-    pending: { color: 'default', text: '未执行' },
+    pending: { color: 'default', text: t('webTest.notExecuted') },
     running: { color: 'processing', text: t('common.running') },
   }
   const [loading, setLoading] = useState(false)
@@ -160,6 +160,7 @@ const WebTestScripts = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false)
+  const [editingCollection, setEditingCollection] = useState<WebTestCollection | null>(null)
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false)
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
   const [currentScript, setCurrentScript] = useState<WebTestScript | null>(null)
@@ -372,7 +373,7 @@ const WebTestScripts = () => {
         
         // 创建一个新脚本并打开代码编辑器
         const createRes = await webTestService.createScript({
-          name: 'AI 生成脚本 - ' + new Date().toLocaleString(),
+          name: t('webTest.aiGenerate') + ' - ' + new Date().toLocaleString(),
           collection_id: selectedCollectionId,
           browser: 'chromium',
           script_content: res.data.script_content,
@@ -628,7 +629,7 @@ const WebTestScripts = () => {
       const result = await webTestService.runScript(id, true)  // headless = true
       if (result.code === 200 && result.data?.task_id) {
         if (!silent) {
-          message.success('脚本已提交，正在后台执行')
+          message.success(t('webTest.scriptSubmitted'))
         }
         loadScripts()
         return true
@@ -780,7 +781,7 @@ const WebTestScripts = () => {
       const failedCount = ids.length - successCount
 
       if (failedCount === 0) {
-        message.success('批量删除成功')
+        message.success(t('webTest.batchDeleteSuccess'))
       } else {
         message.warning(`批量删除完成，成功 ${successCount}，失败 ${failedCount}`)
       }
@@ -860,25 +861,40 @@ const WebTestScripts = () => {
         message.error(result.message || '批量执行失败')
       }
     } catch (error) {
-      message.error('批量执行失败')
+      message.error(t('webTest.batchRunComplete'))
     }
   }
 
   const handleCreateCollection = async (values: any) => {
     try {
-      const result = await webTestService.createCollection({
-        name: values.name,
-        description: values.description,
-      })
-      if (result.code === 200 || result.code === 201) {
-        message.success('用例集创建成功')
-        collectionForm.resetFields()
-        loadCollections()
+      if (editingCollection) {
+        const result = await webTestService.updateCollection(editingCollection.id, {
+          name: values.name,
+          description: values.description,
+        })
+        if (result.code === 200) {
+          message.success(t('webTest.collectionEditSuccess'))
+          setEditingCollection(null)
+          collectionForm.resetFields()
+          loadCollections()
+        } else {
+          message.error(result.message || t('webTest.collectionCreateFailed'))
+        }
       } else {
-        message.error(result.message || '创建用例集失败')
+        const result = await webTestService.createCollection({
+          name: values.name,
+          description: values.description,
+        })
+        if (result.code === 200 || result.code === 201) {
+          message.success(t('webTest.collectionCreateSuccess'))
+          collectionForm.resetFields()
+          loadCollections()
+        } else {
+          message.error(result.message || t('webTest.collectionCreateFailed'))
+        }
       }
     } catch (error) {
-      message.error('创建用例集失败')
+      message.error(t('webTest.collectionCreateFailed'))
     }
   }
 
@@ -886,17 +902,17 @@ const WebTestScripts = () => {
     try {
       const result = await webTestService.deleteCollection(id)
       if (result.code === 200) {
-        message.success('用例集已删除')
+        message.success(t('webTest.collectionDeleted'))
         if (selectedCollectionId === id) {
           setSelectedCollectionId(undefined)
         }
         loadCollections()
         loadScripts()
       } else {
-        message.error(result.message || '删除用例集失败')
+        message.error(result.message || t('webTest.collectionDeleteFailed'))
       }
     } catch (error) {
-      message.error('删除用例集失败')
+      message.error(t('webTest.collectionDeleteFailed'))
     }
   }
 
@@ -1003,7 +1019,7 @@ const WebTestScripts = () => {
               onClick={() => handleRun(record.id)}
             />
           </Tooltip>
-          <Tooltip title="查看代码">
+          <Tooltip title={t('webTest.viewCode')}>
             <Button
               type="text"
               size="small"
@@ -1011,7 +1027,7 @@ const WebTestScripts = () => {
               onClick={() => handleViewCode(record)}
             />
           </Tooltip>
-          <Tooltip title="执行日志">
+          <Tooltip title={t('webTest.executionLog')}>
             <Button
               type="text"
               size="small"
@@ -1039,7 +1055,7 @@ const WebTestScripts = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此脚本吗？"
+            title={t('webTest.confirmDeleteScript')}
             onConfirm={() => handleDelete(record.id)}
           >
             <Tooltip title={t('common.delete')}>
@@ -1058,16 +1074,16 @@ const WebTestScripts = () => {
 
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
-    { key: 'run', icon: <PlayCircleOutlined />, label: '批量执行' },
-    { key: 'export', icon: <ExportOutlined />, label: '导出脚本' },
+    { key: 'run', icon: <PlayCircleOutlined />, label: t('webTest.batchRun') },
+    { key: 'export', icon: <ExportOutlined />, label: t('webTest.exportScripts') },
     { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: '批量删除', danger: true },
+    { key: 'delete', icon: <DeleteOutlined />, label: t('webTest.batchDelete'), danger: true },
   ]
 
   return (
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">脚本管理</h1>
+        <h1 className="fst-page-title">{t('webTest.scriptManagement')}</h1>
         <Space>
           <Select
             placeholder="按用例集筛选"
@@ -1182,10 +1198,11 @@ const WebTestScripts = () => {
       </div>
 
       <Modal
-        title="用例集管理"
+        title={t('webTest.collectionManagement')}
         open={isCollectionModalOpen}
         onCancel={() => {
           setIsCollectionModalOpen(false)
+          setEditingCollection(null)
           collectionForm.resetFields()
         }}
         footer={null}
@@ -1199,17 +1216,17 @@ const WebTestScripts = () => {
         >
           <Form.Item
             name="name"
-            rules={[{ required: true, message: '请输入用例集名称' }]}
+            rules={[{ required: true, message: t('apiTest.collectionNameRequired') }]}
             style={{ flex: 1 }}
           >
-            <Input placeholder="新建用例集名称" />
+            <Input placeholder={t('webTest.newCollectionName')} />
           </Form.Item>
           <Form.Item name="description" style={{ flex: 1 }}>
-            <Input placeholder="描述（可选）" />
+            <Input placeholder={t('webTest.collectionDescPlaceholder')} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">
-              新建
+              {editingCollection ? t('common.save') : t('common.create')}
             </Button>
           </Form.Item>
         </Form>
@@ -1230,7 +1247,7 @@ const WebTestScripts = () => {
                 <div>
                   <Text strong>{collection.name}</Text>
                   <Text type="secondary" style={{ marginLeft: 8 }}>
-                    ({collection.script_count || 0} 脚本)
+                    ({collection.script_count || 0})
                   </Text>
                   {collection.description ? (
                     <div>
@@ -1238,18 +1255,29 @@ const WebTestScripts = () => {
                     </div>
                   ) : null}
                 </div>
-                <Popconfirm
-                  title="删除该用例集？其下脚本会保留并移到未分组"
-                  onConfirm={() => handleDeleteCollection(collection.id)}
-                >
-                  <Button danger size="small" icon={<DeleteOutlined />}>
-                    {t('common.delete')}
-                  </Button>
-                </Popconfirm>
+                <Space>
+                  <Button
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                      setEditingCollection(collection)
+                      collectionForm.setFieldsValue({
+                        name: collection.name,
+                        description: collection.description || '',
+                      })
+                    }}
+                  />
+                  <Popconfirm
+                    title={t('webTest.deleteCollectionConfirm')}
+                    onConfirm={() => handleDeleteCollection(collection.id)}
+                  >
+                    <Button danger size="small" icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </Space>
               </div>
             ))
           ) : (
-            <Text type="secondary">暂无用例集</Text>
+            <Text type="secondary">{t('webTest.noCollections')}</Text>
           )}
         </div>
       </Modal>
@@ -1722,7 +1750,7 @@ const WebTestScripts = () => {
           value={
             isEditingCode
               ? codeContent
-              : currentScript?.script_content || '# 暂无脚本内容'
+              : currentScript?.script_content || `# ${t('webTest.noScriptContent')}`
           }
           onChange={(value) => {
             if (isEditingCode) {
@@ -1935,7 +1963,7 @@ const WebTestScripts = () => {
             )}
           </div>
         ) : (
-          <Text type="secondary">该脚本尚未执行</Text>
+          <Text type="secondary">{t('webTest.scriptNotExecuted')}</Text>
         )}
       </Modal>
 

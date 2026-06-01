@@ -49,7 +49,7 @@ const WebTestRecorder = () => {
   const [targetUrl, setTargetUrl] = useState('')
   const [browser, setBrowser] = useState('chromium')
   const [steps, setSteps] = useState<RecordedStep[]>([])
-  const [elapsedTime] = useState(0)
+  const [elapsedTime, setElapsedTime] = useState(0)
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
   const [, setRecordingPid] = useState<number | null>(null)
   const [form] = Form.useForm()
@@ -61,11 +61,8 @@ const WebTestRecorder = () => {
         try {
           const res = await webTestService.getRecordingStatus()
           if (res.code === 200 && !res.data.is_recording) {
-            // 录制已停止
             setIsRecording(false)
             setRecordingPid(null)
-            
-            // 显示详细的退出信息
             if (res.data.exit_code !== undefined) {
               message.warning({
                 content: `录制器已关闭（退出码: ${res.data.exit_code}）`,
@@ -78,15 +75,25 @@ const WebTestRecorder = () => {
         } catch (error) {
           console.error('检查录制状态失败:', error)
         }
-      }, 3000) // 每3秒检查一次
+      }, 3000)
 
       return () => clearInterval(timer)
     }
   }, [isRecording])
 
+  // 录制计时器
+  useEffect(() => {
+    if (isRecording && !isPaused) {
+      const timer = setInterval(() => {
+        setElapsedTime((prev) => prev + 1000)
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [isRecording, isPaused])
+
   const handleStartRecording = async () => {
     if (!targetUrl) {
-      message.warning('请输入目标 URL')
+      message.warning(t('recorder.enterTargetUrl'))
       return
     }
     
@@ -103,6 +110,7 @@ const WebTestRecorder = () => {
       if (res.code === 200) {
         setIsRecording(true)
         setIsPaused(false)
+        setElapsedTime(0)
         setRecordingPid(res.data.pid)
         
         message.success({
@@ -146,23 +154,23 @@ const WebTestRecorder = () => {
         setIsRecording(false)
         setIsPaused(false)
         setRecordingPid(null)
-        message.success('录制已停止')
+        message.success(t('recorder.recorderStopped'))
       } else {
         message.error(res.message || '停止录制失败')
       }
     } catch (error: any) {
-      message.error('停止录制失败')
+      message.error(t('recorder.stopRecordFailed'))
     }
   }
 
   const handleClearSteps = () => {
     setSteps([])
-    message.success('已清空录制步骤')
+    message.success(t('recorder.stepCleared'))
   }
 
   const handleSaveScript = () => {
     if (steps.length === 0) {
-      message.warning('没有可保存的录制步骤')
+      message.warning(t('recorder.noStepsToSave'))
       return
     }
     
@@ -190,7 +198,7 @@ const WebTestRecorder = () => {
       })
       
       if (result.code === 200 || result.code === 201) {
-        message.success('脚本保存成功')
+        message.success(t('recorder.scriptSaved'))
         setIsSaveModalOpen(false)
         form.resetFields()
         // 清空录制步骤
@@ -200,7 +208,7 @@ const WebTestRecorder = () => {
         message.error(result.message || '保存失败')
       }
     } catch (error: any) {
-      message.error('保存脚本失败')
+      message.error(t('recorder.scriptSaveFailed'))
     }
   }
   
@@ -290,7 +298,7 @@ if __name__ == "__main__":
 
   const handleDeleteStep = (stepId: number) => {
     setSteps(steps.filter(s => s.id !== stepId))
-    message.success('已删除步骤')
+    message.success(t('recorder.stepDeleted'))
   }
 
   const getActionColor = (action: string) => {
@@ -330,7 +338,7 @@ if __name__ == "__main__":
       </div>
 
       <Alert
-        message="功能说明"
+        message={t('recorder.featureDesc')}
         description={
           <div>
             <p>点击"开始录制"后，系统会在本地启动 Playwright Inspector 和浏览器窗口。</p>
@@ -361,7 +369,7 @@ if __name__ == "__main__":
         <Row gutter={16}>
           <Col span={12}>
             <div style={{ marginBottom: 16 }}>
-              <Text strong>目标 URL</Text>
+              <Text strong>{t('recorder.targetUrl')}</Text>
               <Input
                 placeholder="https://example.com"
                 value={targetUrl}
@@ -373,7 +381,7 @@ if __name__ == "__main__":
           </Col>
           <Col span={6}>
             <div style={{ marginBottom: 16 }}>
-              <Text strong>浏览器</Text>
+              <Text strong>{t('recorder.browser')}</Text>
               <Select
                 value={browser}
                 onChange={setBrowser}
@@ -393,12 +401,12 @@ if __name__ == "__main__":
               <div style={{ marginTop: 8 }}>
                 {isRecording ? (
                   isPaused ? (
-                    <Tag color="warning" style={{ padding: '4px 12px' }}>已暂停</Tag>
+                    <Tag color="warning" style={{ padding: '4px 12px' }}>{t('recorder.paused')}</Tag>
                   ) : (
-                    <Tag color="processing" style={{ padding: '4px 12px' }}>录制中...</Tag>
+                    <Tag color="processing" style={{ padding: '4px 12px' }}>{t('recorder.recording')}</Tag>
                   )
                 ) : (
-                  <Tag color="default" style={{ padding: '4px 12px' }}>未开始</Tag>
+                  <Tag color="default" style={{ padding: '4px 12px' }}>{t('recorder.notStarted')}</Tag>
                 )}
               </div>
             </div>
@@ -486,16 +494,16 @@ if __name__ == "__main__":
             renderItem={(step, index) => (
               <List.Item
                 actions={[
-                  <Tooltip title="查看详情" key="view">
+                  <Tooltip title={t('recorder.stepDetail')} key="view">
                     <Button type="text" size="small" icon={<EyeOutlined />} />
                   </Tooltip>,
                   <Popconfirm
-                    title="确认删除此步骤？"
+                    title={t('recorder.confirmDeleteStep')}
                     onConfirm={() => handleDeleteStep(step.id)}
                     okText={t('common.confirm')}
                     cancelText={t('common.cancel')}
                   >
-                    <Tooltip title={t('common.delete')} key="delete">
+                    <Tooltip title={t('recorder.deleteStep')} key="delete">
                       <Button
                         type="text"
                         size="small"
@@ -540,7 +548,7 @@ if __name__ == "__main__":
               <span>
                 暂无录制步骤
                 <br />
-                <Text type="secondary">点击"开始录制"并在浏览器中操作</Text>
+                <Text type="secondary">{t('recorder.noStepsHint')}</Text>
               </span>
             }
           />
@@ -568,7 +576,7 @@ if __name__ == "__main__":
             label="脚本名称"
             rules={[{ required: true, message: '请输入脚本名称' }]}
           >
-            <Input placeholder="请输入脚本名称" />
+            <Input placeholder={t('recorder.scriptNamePlaceholder')} />
           </Form.Item>
           <Form.Item name="description" label={t('common.description')}>
             <TextArea rows={2} placeholder="请输入脚本描述" />

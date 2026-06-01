@@ -17,14 +17,6 @@ METRIC_FIELD_MAP = {
     "max_response_time": "max_response_time",
 }
 
-# 运算符映射
-OPERATOR_MAP = {
-    ">": lambda a, b: a > b,
-    "<": lambda a, b: a < b,
-    ">=": lambda a, b: a >= b,
-    "<=": lambda a, b: a <= b,
-}
-
 
 class PerformanceAlertService:
     """性能告警服务"""
@@ -39,106 +31,131 @@ class PerformanceAlertService:
             logger.warning("评估告警规则失败：测试结果不存在", test_result_id=test_result_id)
             return []
 
-        rules = PerformanceAlertRule.query.filter_by(is_enabled=True).all()
+        rules = PerformanceAlertRule.query.filter_by(enabled=True).all()
         triggered_alerts = []
 
         for rule in rules:
             try:
-                alert = self._evaluate_single_rule(rule, test_result)
-                if alert:
-                    triggered_alerts.append(alert)
+                alerts = self._evaluate_single_rule(rule, test_result)
+                triggered_alerts.extend(alerts)
             except Exception as e:
                 logger.error("评估告警规则失败", rule_id=rule.id, rule_name=rule.name, error=str(e))
 
         return triggered_alerts
 
     def _evaluate_single_rule(self, rule, test_result):
-        """评估单个告警规则"""
+        """评估单个告警规则，返回触发的告警列表"""
         from ..models.perf_test_alert import PerformanceAlertLog
 
         if rule.scenario_id and rule.scenario_id != test_result.scenario_id:
-            return None
+            return []
 
-        triggered = False
-        current_value = None
-        threshold_value = None
-        message = ""
-        severity = "warning"
+        alerts = []
 
-        if rule.condition_type == "absolute":
-            metric_field = METRIC_FIELD_MAP.get(rule.metric_name)
+        # 绝对值告警检查
+        absolute_checks = [
+            ("p95_response_time", rule.p95_threshold, ">"),
+            ("p99_response_time", rule.p99_threshold, ">"),
+            ("error_rate", rule.error_rate_threshold, ">"),
+            ("rps", rule.rps_min_threshold, "<"),
+        ]
+
+        for metric_name, threshold, operator in absolute_checks:
+            if threshold is None:
+                continue
+            metric_field = METRIC_FIELD_MAP.get(metric_name)
             if not metric_field:
-                return None
+                continue
             current_value = getattr(test_result, metric_field, None)
             if current_value is None:
-                return None
-            threshold_value = rule.threshold_value
-            operator_func = OPERATOR_MAP.get(rule.operator)
-            if not operator_func:
-                return None
-            triggered = operator_func(current_value, threshold_value)
-            message = f"{rule.metric_name} ({current_value}) {rule.operator} {threshold_value}"
+                continue
 
-        elif rule.condition_type == "relative":
-            metric_field = METRIC_FIELD_MAP.get(rule.relative_metric)
-            if not metric_field:
-                return None
-            current_value = getattr(test_result, metric_field, None)
-            if current_value is None:
-                return None
-            previous_result = self._get_previous_result(test_result.scenario_id, test_result.id)
-            if not previous_result:
-                return None
-            previous_value = getattr(previous_result, metric_field, None)
-            if previous_value is None or previous_value == 0:
-                return None
-            degradation_pct = ((current_value - previous_value) / previous_value) * 100
-            threshold_value = rule.degradation_percentage
-            triggered = degradation_pct > threshold_value
-            message = f"{rule.relative_metric} 劣化 {degradation_pct:.1f}% (当前: {current_value}, 上次: {previous_value})"
-            current_value = degradation_pct
+            triggered = False
+            if operator == ">":
+                triggered = current_value > threshold
+            elif operator == "<":
+                triggered = current_value < threshold
 
-        if not triggered:
-            return None
+            if triggered:
+                alert_log = PerformanceAlertLog(
+                    rule_id=rule.id,
+                    result_id=test_result.id,
+                    alert_type="absolute",
+                    metric_name=metric_name,
+                    threshold_value=threshold,
+                    actual_value=current_value,
+                    message=f"[{rule.name}] {metric_name} ({current_value}) {operator} {threshold}",
+                    notification_sent=False,
+                )
+                db.session.add(alert_log)
+                alerts.append(alert_log)
 
-        if rule.condition_type == "absolute" and rule.metric_name in ("p99_response_time", "error_rate"):
-            severity = "critical"
-        elif rule.condition_type == "relative" and rule.degradation_percentage and rule.degradation_percentage > 50:
-            severity = "critical"
+        # 相对劣化告警检查
+        relative_checks = [
+            ("p95_response_time", rule.relative_p95_degradation),
+            ("rps", rule.relative_rps_degradation),
+            ("error_rate", rule.relative_error_rate_degradation),
+        ]
 
-        alert_log = PerformanceAlertLog(
-            rule_id=rule.id,
-            test_result_id=test_result.id,
-            metric_name=rule.metric_name or rule.relative_metric,
-            current_value=current_value,
-            threshold_value=threshold_value,
-            message=f"[{rule.name}] {message}",
-            severity=severity,
-            notification_sent=False,
-        )
-        db.session.add(alert_log)
-        db.session.flush()
+        previous_result = self._get_previous_result(test_result.scenario_id, test_result.id)
+        if previous_result:
+            for metric_name, degradation_threshold in relative_checks:
+                if degradation_threshold is None:
+                    continue
+                metric_field = METRIC_FIELD_MAP.get(metric_name)
+                if not metric_field:
+                    continue
+                current_value = getattr(test_result, metric_field, None)
+                previous_value = getattr(previous_result, metric_field, None)
+                if current_value is None or previous_value is None or previous_value == 0:
+                    continue
 
-        if rule.notify_webhook:
-            try:
-                self._send_webhook_notification(alert_log, rule.notify_webhook)
-                alert_log.notification_sent = True
-            except Exception as e:
-                alert_log.notification_error = str(e)
+                degradation_pct = ((current_value - previous_value) / previous_value) * 100
+                if degradation_pct > degradation_threshold:
+                    alert_log = PerformanceAlertLog(
+                        rule_id=rule.id,
+                        result_id=test_result.id,
+                        alert_type="relative",
+                        metric_name=metric_name,
+                        threshold_value=degradation_threshold,
+                        actual_value=round(degradation_pct, 2),
+                        message=f"[{rule.name}] {metric_name} 劣化 {degradation_pct:.1f}% (当前: {current_value}, 上次: {previous_value})",
+                        notification_sent=False,
+                    )
+                    db.session.add(alert_log)
+                    alerts.append(alert_log)
 
-        db.session.commit()
+        if alerts:
+            db.session.flush()
 
-        return {
-            "id": alert_log.id,
-            "rule_id": rule.id,
-            "rule_name": rule.name,
-            "metric": rule.metric_name or rule.relative_metric,
-            "current_value": current_value,
-            "threshold_value": threshold_value,
-            "message": alert_log.message,
-            "severity": severity,
-            "notification_sent": alert_log.notification_sent,
-        }
+            # 更新规则统计
+            rule.last_triggered_at = db.func.now()
+            rule.trigger_count = (rule.trigger_count or 0) + len(alerts)
+
+            # 发送通知
+            if rule.notify_webhook:
+                for alert_log in alerts:
+                    try:
+                        self._send_webhook_notification(alert_log, rule.notify_webhook)
+                        alert_log.notification_sent = True
+                    except Exception as e:
+                        alert_log.notification_error = str(e)
+
+            db.session.commit()
+
+        return [
+            {
+                "id": a.id,
+                "rule_id": rule.id,
+                "rule_name": rule.name,
+                "metric": a.metric_name,
+                "alert_type": a.alert_type,
+                "current_value": a.actual_value,
+                "threshold_value": a.threshold_value,
+                "message": a.message,
+            }
+            for a in alerts
+        ]
 
     def _get_previous_result(self, scenario_id, current_result_id):
         """获取上一次测试运行的结果"""
@@ -155,20 +172,20 @@ class PerformanceAlertService:
         payload = {
             "msgtype": "markdown",
             "markdown": {
-                "title": f"性能测试告警 - {alert_log.severity.upper()}",
+                "title": f"性能测试告警",
                 "text": (
                     f"**告警规则**: {alert_log.rule.name}\n"
                     f"**指标**: {alert_log.metric_name}\n"
-                    f"**当前值**: {alert_log.current_value}\n"
+                    f"**当前值**: {alert_log.actual_value}\n"
                     f"**阈值**: {alert_log.threshold_value}\n"
-                    f"**严重程度**: {alert_log.severity}\n"
+                    f"**类型**: {alert_log.alert_type}\n"
                     f"**消息**: {alert_log.message}"
                 ),
             },
         }
         response = requests.post(webhook_url, json=payload, timeout=10)
         response.raise_for_status()
-        logger.info("告警通知已发送", webhook=webhook_url, severity=alert_log.severity)
+        logger.info("告警通知已发送", webhook=webhook_url)
 
 
 alert_service = PerformanceAlertService()

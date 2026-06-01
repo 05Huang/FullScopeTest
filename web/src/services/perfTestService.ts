@@ -111,6 +111,54 @@ export const getAlertRules = (params?: {
   return api.get('/perf-test/alert-rules', { params }) as Promise<ApiResponse>
 }
 
+export const getAlertRule = (id: number): Promise<ApiResponse> => {
+  return api.get(`/perf-test/alert-rules/${id}`) as Promise<ApiResponse>
+}
+
+export const createAlertRule = (data: {
+  name: string
+  description?: string
+  scenario_id?: number
+  p95_threshold?: number
+  p99_threshold?: number
+  error_rate_threshold?: number
+  rps_min_threshold?: number
+  relative_p95_degradation?: number
+  relative_rps_degradation?: number
+  relative_error_rate_degradation?: number
+  notify_webhook?: string
+  notify_email?: string
+  enabled?: boolean
+}): Promise<ApiResponse> => {
+  return api.post('/perf-test/alert-rules', data) as Promise<ApiResponse>
+}
+
+export const updateAlertRule = (id: number, data: {
+  name?: string
+  description?: string
+  scenario_id?: number
+  p95_threshold?: number
+  p99_threshold?: number
+  error_rate_threshold?: number
+  rps_min_threshold?: number
+  relative_p95_degradation?: number
+  relative_rps_degradation?: number
+  relative_error_rate_degradation?: number
+  notify_webhook?: string
+  notify_email?: string
+  enabled?: boolean
+}): Promise<ApiResponse> => {
+  return api.put(`/perf-test/alert-rules/${id}`, data) as Promise<ApiResponse>
+}
+
+export const deleteAlertRule = (id: number): Promise<ApiResponse> => {
+  return api.delete(`/perf-test/alert-rules/${id}`) as Promise<ApiResponse>
+}
+
+export const evaluateAlertRule = (id: number, test_result_id: number): Promise<ApiResponse> => {
+  return api.post(`/perf-test/alert-rules/${id}/evaluate`, { test_result_id }) as Promise<ApiResponse>
+}
+
 export const getAlertLogs = (params?: {
   page?: number
   per_page?: number
@@ -143,6 +191,11 @@ export const perfTestService = {
   getPerformanceResultMetrics,
   comparePerformanceRuns,
   getAlertRules,
+  getAlertRule,
+  createAlertRule,
+  updateAlertRule,
+  deleteAlertRule,
+  evaluateAlertRule,
   getAlertLogs,
   generateScriptAI,
 }

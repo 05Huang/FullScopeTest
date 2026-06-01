@@ -216,14 +216,14 @@ const CICD: React.FC = () => {
 
   const scheduleColumns = [
     { title: t('cicd.taskName'), dataIndex: 'name', key: 'name' },
-    { title: 'Cron 表达式', dataIndex: 'cron_expression', key: 'cron_expression', render: (text: string) => <Tag>{text}</Tag> },
+    { title: t('cicd.cronExpression'), dataIndex: 'cron_expression', key: 'cron_expression', render: (text: string) => <Tag>{text}</Tag> },
     { 
       title: t('cicd.targetType'), 
       dataIndex: 'target_type', 
       key: 'target_type',
       render: (text: string) => <Tag color="blue">{getTargetTypeName(text)}</Tag>
     },
-    { title: '状态', key: 'is_active', render: (_: any, record: ScheduledTask) => (
+    { title: t('cicd.statusLabel'), key: 'is_active', render: (_: any, record: ScheduledTask) => (
       <Switch checked={record.is_active} onChange={(checked) => handleToggleSchedule(record, checked)} />
     )},
     {
@@ -262,10 +262,10 @@ const CICD: React.FC = () => {
       <div className="fst-ios-card fst-animate-in fst-animate-in-1">
         <div className="fst-tabs" style={{ marginBottom: 20 }}>
           <button className={`fst-tab ${activeTab === 'webhooks' ? 'fst-tab--active' : ''}`} onClick={() => setActiveTab('webhooks')}>
-            <ApiOutlined style={{ marginRight: 6 }} /> Webhook 触发器
+            <ApiOutlined style={{ marginRight: 6 }} /> {t('cicd.webhookTab')}
           </button>
           <button className={`fst-tab ${activeTab === 'schedules' ? 'fst-tab--active' : ''}`} onClick={() => setActiveTab('schedules')}>
-            <ClockCircleOutlined style={{ marginRight: 6 }} /> 定时任务
+            <ClockCircleOutlined style={{ marginRight: 6 }} /> {t('cicd.scheduleTab')}
           </button>
         </div>
 
@@ -275,7 +275,7 @@ const CICD: React.FC = () => {
               <div />
               <div className="fst-toolbar-right">
                 <button className="fst-btn fst-btn--primary fst-btn--sm" onClick={() => setWebhookModalVisible(true)}>
-                  <PlusOutlined /> 新建 Webhook
+                  <PlusOutlined /> {t('cicd.newWebhook')}
                 </button>
               </div>
             </div>
@@ -293,7 +293,7 @@ const CICD: React.FC = () => {
                   scheduleForm.resetFields()
                   setScheduleModalVisible(true)
                 }}>
-                  <PlusOutlined /> 新建定时任务
+                  <PlusOutlined /> {t('cicd.newSchedule')}
                 </button>
               </div>
             </div>

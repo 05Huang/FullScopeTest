@@ -82,7 +82,7 @@ const PerfTestScenarios = () => {
   const statusConfig: Record<string, { color: string; text: string }> = {
     passed: { color: 'success', text: t('common.passed') },
     failed: { color: 'error', text: t('common.failed') },
-    pending: { color: 'default', text: '未执行' },
+    pending: { color: 'default', text: t('perfTest.notExecuted') },
     running: { color: 'processing', text: t('common.running') },
   }
   const navigate = useNavigate()
@@ -122,7 +122,7 @@ const PerfTestScenarios = () => {
         message.error(result.message || '加载失败')
       }
     } catch (error: any) {
-      message.error('加载场景列表失败')
+      message.error(t('perfTest.loadScenariosFailed'))
     } finally {
       setLoading(false)
     }
@@ -146,7 +146,7 @@ const PerfTestScenarios = () => {
         try {
           headers = JSON.parse(values.headers)
         } catch (e) {
-          message.error('Headers 格式错误，请输入有效的 JSON')
+          message.error(t('perfTest.headersFormatError'))
           return
         }
       }
@@ -155,7 +155,7 @@ const PerfTestScenarios = () => {
         try {
           body = JSON.parse(values.body)
         } catch (e) {
-          message.error('Body 格式错误，请输入有效的 JSON')
+          message.error(t('perfTest.bodyFormatError'))
           return
         }
       }
@@ -184,7 +184,7 @@ const PerfTestScenarios = () => {
         message.error(result.message || '创建失败')
       }
     } catch (error: any) {
-      message.error('创建场景失败')
+      message.error(t('perfTest.createScenarioFailed'))
     }
   }
 
@@ -203,7 +203,7 @@ const PerfTestScenarios = () => {
         setAiPrompt('')
         
         const createRes = await perfTestService.createScenario({
-          name: 'AI 生成场景 - ' + new Date().toLocaleString(),
+          name: t('perfTest.aiGenerate') + ' - ' + new Date().toLocaleString(),
           target_url: 'http://localhost',
           method: 'GET',
           user_count: 10,
@@ -218,10 +218,10 @@ const PerfTestScenarios = () => {
           handleViewCode(createRes.data)
         }
       } else {
-        message.error(res.message || '生成失败')
+        message.error(res.message || t('perfTest.aiGenerateFailed'))
       }
     } catch (e: any) {
-      message.error(e.response?.data?.message || '生成失败')
+      message.error(e.response?.data?.message || t('perfTest.aiGenerateFailed'))
     } finally {
       setAiGenerating(false)
     }
@@ -243,7 +243,7 @@ const PerfTestScenarios = () => {
         script_content: codeContent,
       } as any)
       if (result.code === 200) {
-        message.success('脚本代码已更新')
+        message.success(t('perfTest.scriptUpdated'))
         const updatedScenario = result.data
         if (updatedScenario) {
           setScenarios((prev) =>
@@ -255,10 +255,10 @@ const PerfTestScenarios = () => {
         }
         setIsEditingCode(false)
       } else {
-        message.error(result.message || '更新脚本代码失败')
+        message.error(result.message || t('perfTest.scriptUpdateFailed'))
       }
     } catch (error: any) {
-      message.error('更新脚本代码失败')
+      message.error(t('perfTest.scriptUpdateFailed'))
     } finally {
       setSavingCode(false)
     }
@@ -275,7 +275,7 @@ const PerfTestScenarios = () => {
         try {
           headers = JSON.parse(values.headers)
         } catch (e) {
-          message.error('Headers 格式错误，请输入有效的 JSON')
+          message.error(t('perfTest.headersFormatError'))
           return
         }
       }
@@ -284,7 +284,7 @@ const PerfTestScenarios = () => {
         try {
           body = JSON.parse(values.body)
         } catch (e) {
-          message.error('Body 格式错误，请输入有效的 JSON')
+          message.error(t('perfTest.bodyFormatError'))
           return
         }
       }
@@ -313,7 +313,7 @@ const PerfTestScenarios = () => {
         message.error(result.message || '更新失败')
       }
     } catch (error: any) {
-      message.error('更新场景失败')
+      message.error(t('perfTest.updateScenarioFailed'))
     }
   }
 
@@ -338,7 +338,7 @@ const PerfTestScenarios = () => {
       const failedCount = ids.length - successCount
 
       if (failedCount === 0) {
-        message.success('批量删除成功')
+        message.success(t('perfTest.batchDeleteSuccess'))
       } else {
         message.warning(`批量删除完成，成功 ${successCount}，失败 ${failedCount}`)
       }
@@ -424,13 +424,13 @@ const PerfTestScenarios = () => {
       })
       if (result.code === 200) {
         if (!silent) {
-          message.success('性能测试已启动')
+          message.success(t('perfTest.testStarted'))
         }
         loadScenarios()
         return true
       } else {
         if (!silent) {
-          message.error(result.message || '启动失败')
+          message.error(result.message || t('perfTest.startFailed'))
         }
         setRunningIds((prev) => prev.filter((i) => i !== id))
         return false
@@ -451,7 +451,7 @@ const PerfTestScenarios = () => {
     const ids = selectedRowKeys.map((id) => id as number)
     const scenarioMap = new Map(scenarios.map((scenario) => [scenario.id, scenario]))
 
-    message.info(`正在执行 ${ids.length} 个场景，并发度 ${BATCH_ACTION_CONCURRENCY}`)
+    message.info(`${t('perfTest.batchRun')}: ${ids.length}`)
     const results = await runWithConcurrency(
       ids,
       BATCH_ACTION_CONCURRENCY,
@@ -479,14 +479,14 @@ const PerfTestScenarios = () => {
     try {
       const result = await perfTestService.stopScenario(id)
       if (result.code === 200) {
-        message.success('测试已停止')
+        message.success(t('perfTest.testStopped'))
         setRunningIds((prev) => prev.filter((i) => i !== id))
         loadScenarios()
       } else {
         message.error(result.message || '停止失败')
       }
     } catch (error: any) {
-      message.error('停止测试失败')
+      message.error(t('perfTest.stopFailed'))
     }
   }
 
@@ -521,7 +521,7 @@ const PerfTestScenarios = () => {
         <Space direction="vertical" size={0}>
           <Text>
             <UserOutlined style={{ marginRight: 4 }} />
-            {record.user_count} 并发
+            {record.user_count} {t('perfTest.concurrency')}
           </Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
             <ClockCircleOutlined style={{ marginRight: 4 }} />
@@ -529,7 +529,7 @@ const PerfTestScenarios = () => {
           </Text>
           {record.step_load_enabled && (
             <Text type="secondary" style={{ fontSize: 12 }}>
-              阶梯: +{record.step_users} / {record.step_duration}s
+              {t('perfTest.stepLoad')}: +{record.step_users} / {record.step_duration}s
             </Text>
           )}
         </Space>
@@ -605,7 +605,7 @@ const PerfTestScenarios = () => {
         return (
           <Space>
             {isRunning ? (
-              <Tooltip title="停止">
+              <Tooltip title={t('perfTest.stop')}>
                 <Button
                   type="text"
                   size="small"
@@ -615,7 +615,7 @@ const PerfTestScenarios = () => {
                 />
               </Tooltip>
             ) : (
-              <Tooltip title="运行">
+              <Tooltip title={t('perfTest.run')}>
                 <Button
                   type="text"
                   size="small"
@@ -658,7 +658,7 @@ const PerfTestScenarios = () => {
                 }}
               />
             </Tooltip>
-            <Tooltip title="查看代码">
+            <Tooltip title={t('perfTest.viewCode')}>
               <Button
                 type="text"
                 size="small"
@@ -667,7 +667,7 @@ const PerfTestScenarios = () => {
               />
             </Tooltip>
             <Popconfirm
-              title="确定删除此场景吗？"
+              title={t('perfTest.confirmDeleteScenario')}
               onConfirm={() => handleDelete(record.id)}
             >
               <Tooltip title={t('common.delete')}>
@@ -687,16 +687,16 @@ const PerfTestScenarios = () => {
 
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
-    { key: 'run', icon: <PlayCircleOutlined />, label: '批量执行' },
-    { key: 'export', icon: <ExportOutlined />, label: '导出配置' },
+    { key: 'run', icon: <PlayCircleOutlined />, label: t('perfTest.batchRun') },
+    { key: 'export', icon: <ExportOutlined />, label: t('perfTest.exportConfig') },
     { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: '批量删除', danger: true },
+    { key: 'delete', icon: <DeleteOutlined />, label: t('perfTest.batchDelete'), danger: true },
   ]
 
   return (
     <div className="fst-page">
       <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">场景管理</h1>
+        <h1 className="fst-page-title">{t('perfTest.scenarioManagement')}</h1>
         <Space>
           <Input
             placeholder={t('perfTest.searchScenarios')}
@@ -718,7 +718,7 @@ const PerfTestScenarios = () => {
             icon={<RobotOutlined />}
             onClick={() => setIsAiModalOpen(true)}
           >
-            AI 生成
+            {t('perfTest.aiGenerate')}
           </Button>
           <Button
             type="primary"
@@ -746,7 +746,7 @@ const PerfTestScenarios = () => {
             }}
             disabled={selectedRowKeys.length === 0}
           >
-            <Button icon={<MoreOutlined />}>更多</Button>
+            <Button icon={<MoreOutlined />}>{t('common.more')}</Button>
           </Dropdown>
         </Space>
       </div>
@@ -779,7 +779,7 @@ const PerfTestScenarios = () => {
 
       {/* 新建/编辑场景弹窗 */}
       <Modal
-        title={editingScenario ? "编辑性能测试场景" : "新建性能测试场景"}
+        title={editingScenario ? t('perfTest.editScenarioTitle') : t('perfTest.newScenarioTitle')}
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false)
@@ -800,23 +800,23 @@ const PerfTestScenarios = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="场景名称"
-            rules={[{ required: true, message: '请输入场景名称' }]}
+            label={t('perfTest.scenarioName')}
+            rules={[{ required: true, message: t('perfTest.scenarioName') }]}
           >
-            <Input placeholder="请输入场景名称" />
+            <Input placeholder={t('perfTest.scenarioName')} />
           </Form.Item>
-          <Form.Item name="description" label={t('common.description')}>
-            <TextArea rows={2} placeholder="请输入场景描述" />
+          <Form.Item name="description" label={t('perfTest.scenarioDesc')}>
+            <TextArea rows={2} placeholder={t('perfTest.scenarioDesc')} />
           </Form.Item>
           <Form.Item
             name="targetUrl"
-            label="目标 URL"
+            label={t('perfTest.targetUrl')}
             rules={[
-              { required: true, message: '请输入目标 URL' },
-              { type: 'url', message: '请输入有效的 URL（需包含 http/https）' },
+              { required: true, message: t('perfTest.targetUrlRequired') },
+              { type: 'url', message: t('perfTest.targetUrlRequired') },
             ]}
           >
-            <Input placeholder="https://api.example.com/endpoint" />
+            <Input placeholder={t('perfTest.targetUrlPlaceholder')} />
           </Form.Item>
           <Row gutter={16}>
             <Col span={8}>
@@ -832,7 +832,7 @@ const PerfTestScenarios = () => {
             <Col span={8}>
               <Form.Item
                 name="duration"
-                label="持续时间（秒）"
+                label={t('perfTest.duration')}
                 initialValue={60}
                 rules={[{ required: true }]}
               >
@@ -842,7 +842,7 @@ const PerfTestScenarios = () => {
             <Col span={8}>
               <Form.Item
                 name="spawnRate"
-                label="用户生成速率（用户/秒）"
+                label={t('perfTest.rps')}
                 initialValue={1}
                 rules={[{ required: true }]}
                 tooltip="每秒启动多少个用户"
@@ -853,7 +853,7 @@ const PerfTestScenarios = () => {
           </Row>
           <Form.Item
             name="stepLoadEnabled"
-            label="开启阶梯加压"
+            label={t('perfTest.rampUp')}
             valuePropName="checked"
             initialValue={false}
           >
@@ -870,9 +870,9 @@ const PerfTestScenarios = () => {
                   <Col span={12}>
                     <Form.Item
                       name="stepUsers"
-                      label="每步新增用户数"
+                      label={t('perfTest.stepUsers')}
                       initialValue={10}
-                      rules={[{ required: true, message: '请输入每步新增用户数' }]}
+                      rules={[{ required: true, message: t('perfTest.stepUsers') }]}
                     >
                       <InputNumber min={1} max={PERF_MAX_USERS} style={{ width: '100%' }} />
                     </Form.Item>
@@ -880,9 +880,9 @@ const PerfTestScenarios = () => {
                   <Col span={12}>
                     <Form.Item
                       name="stepDuration"
-                      label="每步时长（秒）"
+                      label={t('perfTest.stepDuration')}
                       initialValue={30}
-                      rules={[{ required: true, message: '请输入每步时长' }]}
+                      rules={[{ required: true, message: t('perfTest.stepDuration') }]}
                     >
                       <InputNumber min={1} max={3600} style={{ width: '100%' }} />
                     </Form.Item>
@@ -899,7 +899,7 @@ const PerfTestScenarios = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="headers" label="请求 Headers (可选)">
+          <Form.Item name="headers" label={t('perfTest.requestHeaders')}>
             <TextArea
               rows={3}
               placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
@@ -910,7 +910,7 @@ const PerfTestScenarios = () => {
               const method = getFieldValue('method')
               if (['POST', 'PUT', 'PATCH'].includes(method)) {
                 return (
-                  <Form.Item name="body" label="请求 Body (可选)">
+                  <Form.Item name="body" label={t('perfTest.requestBody')}>
                     <TextArea
                       rows={4}
                       placeholder='{"username": "test", "password": "REDACTED_PASSWORD"}'
@@ -929,7 +929,7 @@ const PerfTestScenarios = () => {
         title={
           <Space>
             <RobotOutlined style={{ color: '#722ed1' }} />
-            <span>AI 辅助生成测试场景</span>
+            <span>{t('perfTest.aiGenerateTitle')}</span>
           </Space>
         }
         open={isAiModalOpen}
@@ -941,16 +941,16 @@ const PerfTestScenarios = () => {
         }}
         onOk={handleAiGenerate}
         confirmLoading={aiGenerating}
-        okText="生成并预览"
+        okText={t('perfTest.generateAndPreview')}
       >
         <div style={{ marginBottom: 16 }}>
           <Text type="secondary">
-            请输入自然语言描述，AI 将自动生成对应的 Locust 性能测试脚本。
+            {t('perfTest.aiGenerateDesc')}
           </Text>
         </div>
         <TextArea
           rows={6}
-          placeholder="例如：创建一个电商下单场景，用户需要先登录，获取 token，然后并发请求下单接口，要求并发100，持续5分钟。"
+          placeholder={t('perfTest.aiGeneratePlaceholder')}
           value={aiPrompt}
           onChange={(e) => setAiPrompt(e.target.value)}
           disabled={aiGenerating}
@@ -959,7 +959,7 @@ const PerfTestScenarios = () => {
 
       {/* 查看代码弹窗 */}
       <Modal
-        title={currentScenario ? `脚本代码 - ${currentScenario.name}` : '脚本代码'}
+        title={currentScenario ? `${t('perfTest.scriptCode')} - ${currentScenario.name}` : t('perfTest.scriptCode')}
         open={isCodeModalOpen}
         onCancel={() => {
           setIsCodeModalOpen(false)
@@ -987,7 +987,7 @@ const PerfTestScenarios = () => {
                   loading={savingCode}
                   onClick={handleUpdateScriptContent}
                 >
-                  保存脚本
+                  {t('perfTest.saveScript')}
                 </Button>,
               ]
             : [
@@ -997,11 +997,11 @@ const PerfTestScenarios = () => {
                   onClick={() => {
                     if (currentScenario?.script_content) {
                       navigator.clipboard.writeText(currentScenario.script_content)
-                      message.success('已复制到剪贴板')
+                      message.success(t('perfTest.copiedToClipboard'))
                     }
                   }}
                 >
-                  复制代码
+                  {t('perfTest.copyCode')}
                 </Button>,
                 <Button
                   key="edit"
@@ -1014,7 +1014,7 @@ const PerfTestScenarios = () => {
                     }
                   }}
                 >
-                  {t('webTest.editScript')}
+                  {t('common.edit')}
                 </Button>,
               ]
         }
@@ -1027,7 +1027,7 @@ const PerfTestScenarios = () => {
           value={
             isEditingCode
               ? codeContent
-              : currentScenario?.script_content || '# 暂无脚本内容'
+              : currentScenario?.script_content || `# ${t('perfTest.noScriptContent')}`
           }
           onChange={(value) => {
             if (isEditingCode) {

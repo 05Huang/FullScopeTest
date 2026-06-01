@@ -713,16 +713,22 @@ def get_performance_results():
     查询参数:
         project_id: 按项目过滤
         scenario_id: 按场景过滤
-        status: 按状态过滤（completed/failed/stopped）
+        status: 按状态过滤（passed/completed/failed/stopped）
+        start_date: 开始日期（YYYY-MM-DD）
+        end_date: 结束日期（YYYY-MM-DD）
         page: 页码（默认 1）
         per_page: 每页数量（默认 20）
     """
+    from datetime import datetime as dt
+
     user_id = get_current_user_id()
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     project_id = request.args.get('project_id', type=int)
     scenario_id = request.args.get('scenario_id', type=int)
     status = request.args.get('status', '').strip()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
 
     query = PerformanceTestResult.query.join(PerfTestScenario).filter(
         PerfTestScenario.user_id == user_id
@@ -733,7 +739,22 @@ def get_performance_results():
     if scenario_id:
         query = query.filter(PerformanceTestResult.scenario_id == scenario_id)
     if status:
-        query = query.filter(PerformanceTestResult.status == status)
+        # 前端传递 passed/failed，后端存储 completed/failed
+        status_map = {'passed': 'completed', 'failed': 'failed'}
+        db_status = status_map.get(status, status)
+        query = query.filter(PerformanceTestResult.status == db_status)
+    if start_date:
+        try:
+            start_dt = dt.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(PerformanceTestResult.created_at >= start_dt)
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            end_dt = dt.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            query = query.filter(PerformanceTestResult.created_at <= end_dt)
+        except ValueError:
+            pass
 
     pagination = query.order_by(PerformanceTestResult.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False

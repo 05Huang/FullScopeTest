@@ -18,6 +18,7 @@ const AppTestScripts = lazy(() => import('./pages/app-test/AppTestScripts'))
 const PerfTestScenarios = lazy(() => import('./pages/perf-test/PerfTestScenarios'))
 const PerfTestMonitor = lazy(() => import('./pages/perf-test/PerfTestMonitor'))
 const PerfTestResults = lazy(() => import('./pages/perf-test/PerfTestResults'))
+const PerfTestAlertRules = lazy(() => import('./pages/perf-test/PerfTestAlertRules'))
 const PerformanceDashboard = lazy(() => import('./pages/perf-test/PerformanceDashboard'))
 const Reports = lazy(() => import('./pages/Reports'))
 const CICD = lazy(() => import('./pages/CICD'))
@@ -178,6 +179,14 @@ function App() {
             element={
               <Suspense fallback={<PageLoading />}>
                 <PerformanceDashboard />
+              </Suspense>
+            }
+          />
+          <Route
+            path="alerts"
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <PerfTestAlertRules />
               </Suspense>
             }
           />
