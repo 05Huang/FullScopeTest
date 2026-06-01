@@ -46,7 +46,7 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
-      const dashboardRes = await reportService.getDashboardStats()
+      const dashboardRes = await reportService.getDashboardStats(currentProjectId)
       if (dashboardRes.code === 200) setStats(dashboardRes.data)
       await fetchTrend()
     } catch { /* silent */ } finally { setLoading(false) }
@@ -54,7 +54,7 @@ const Dashboard = () => {
 
   const fetchTrend = async () => {
     try {
-      const statsRes = await reportService.getReportStatistics({ days: trendDays })
+      const statsRes = await reportService.getReportStatistics({ days: trendDays, project_id: currentProjectId })
       if (statsRes.code === 200) setDailyTrend(statsRes.data.daily_trend || [])
     } catch { /* silent */ }
   }

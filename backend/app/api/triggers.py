@@ -63,10 +63,16 @@ def create_webhook():
 @jwt_required()
 def delete_webhook(webhook_id):
     """删除 Webhook"""
+    user_id = get_current_user_id()
     webhook = WebhookToken.query.get(webhook_id)
     if not webhook:
         return error_response(404, 'Webhook 不存在')
-        
+
+    # 校验权限：Webhook 所属项目必须属于当前用户
+    project = Project.query.filter_by(id=webhook.project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(403, '无权删除该 Webhook')
+
     db.session.delete(webhook)
     db.session.commit()
     return success_response(message='Webhook 删除成功')
@@ -234,10 +240,16 @@ def create_schedule():
 @jwt_required()
 def update_schedule(task_id):
     """更新定时任务"""
+    user_id = get_current_user_id()
     task = ScheduledTask.query.get(task_id)
     if not task:
         return error_response(404, '任务不存在')
-        
+
+    # 校验权限
+    project = Project.query.filter_by(id=task.project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(403, '无权修改该定时任务')
+
     data = request.get_json()
     if 'name' in data: task.name = data['name']
     if 'cron_expression' in data: task.cron_expression = data['cron_expression']
@@ -261,10 +273,16 @@ def update_schedule(task_id):
 @jwt_required()
 def delete_schedule(task_id):
     """删除定时任务"""
+    user_id = get_current_user_id()
     task = ScheduledTask.query.get(task_id)
     if not task:
         return error_response(404, '任务不存在')
-        
+
+    # 校验权限
+    project = Project.query.filter_by(id=task.project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(403, '无权删除该定时任务')
+
     db.session.delete(task)
     db.session.commit()
     

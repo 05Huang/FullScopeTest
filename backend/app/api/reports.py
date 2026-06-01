@@ -321,66 +321,42 @@ def get_report_statistics():
 def get_dashboard_stats():
     """
     获取仪表盘统计数据
+
+    查询参数:
+        project_id: 项目 ID (可选，指定后只统计该项目)
     """
     user_id = get_current_user_id()
-    
+    project_id = request.args.get('project_id', type=int)
+
     # 获取用户的所有项目 ID
-    project_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
-    
-    # API 测试统计
-    api_total = ApiTestCase.query.filter(
-        or_(ApiTestCase.project_id.in_(project_ids), ApiTestCase.user_id == user_id) if project_ids else ApiTestCase.user_id == user_id
-    ).count()
-    
-    api_passed = ApiTestCase.query.filter(
-        or_(ApiTestCase.project_id.in_(project_ids), ApiTestCase.user_id == user_id) if project_ids else ApiTestCase.user_id == user_id,
-        ApiTestCase.last_status == 'passed'
-    ).count()
-    
-    api_failed = ApiTestCase.query.filter(
-        or_(ApiTestCase.project_id.in_(project_ids), ApiTestCase.user_id == user_id) if project_ids else ApiTestCase.user_id == user_id,
-        ApiTestCase.last_status == 'failed'
-    ).count()
-    
-    # Web 测试统计
-    web_total = WebTestScript.query.filter(
-        or_(WebTestScript.project_id.in_(project_ids), WebTestScript.user_id == user_id) if project_ids else WebTestScript.user_id == user_id
-    ).count()
-    
-    web_passed = WebTestScript.query.filter(
-        or_(WebTestScript.project_id.in_(project_ids), WebTestScript.user_id == user_id) if project_ids else WebTestScript.user_id == user_id,
-        WebTestScript.status == 'passed'
-    ).count()
-    
-    web_failed = WebTestScript.query.filter(
-        or_(WebTestScript.project_id.in_(project_ids), WebTestScript.user_id == user_id) if project_ids else WebTestScript.user_id == user_id,
-        WebTestScript.status == 'failed'
-    ).count()
-    
-    # 性能测试统计
-    perf_total = PerfTestScenario.query.filter(
-        or_(PerfTestScenario.project_id.in_(project_ids), PerfTestScenario.user_id == user_id) if project_ids else PerfTestScenario.user_id == user_id
-    ).count()
-    
-    perf_running = PerfTestScenario.query.filter(
-        or_(PerfTestScenario.project_id.in_(project_ids), PerfTestScenario.user_id == user_id) if project_ids else PerfTestScenario.user_id == user_id,
-        PerfTestScenario.status == 'running'
-    ).count()
-    
-    # 最近执行记录
-    recent_runs_query = TestRun.query
-    if project_ids:
-        recent_runs_query = recent_runs_query.filter(
-            or_(
-                TestRun.project_id.in_(project_ids),
-                TestRun.triggered_user_id == user_id
-            )
-        )
+    all_project_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+
+    # 如果指定了 project_id，只统计该项目（需验证归属）
+    if project_id:
+        if project_id not in all_project_ids:
+            return error_response(403, '无权访问该项目')
+        scope_filter = lambda model: model.project_id == project_id
+        run_scope = TestRun.project_id == project_id
     else:
-        recent_runs_query = recent_runs_query.filter(
-            TestRun.triggered_user_id == user_id
-        )
-    recent_runs = recent_runs_query.order_by(TestRun.created_at.desc()).limit(10).all()
+        scope_filter = lambda model: or_(model.project_id.in_(all_project_ids), model.user_id == user_id) if all_project_ids else model.user_id == user_id
+        run_scope = or_(TestRun.project_id.in_(all_project_ids), TestRun.triggered_user_id == user_id) if all_project_ids else TestRun.triggered_user_id == user_id
+
+    # API 测试统计
+    api_total = ApiTestCase.query.filter(scope_filter(ApiTestCase)).count()
+    api_passed = ApiTestCase.query.filter(scope_filter(ApiTestCase), ApiTestCase.last_status == 'passed').count()
+    api_failed = ApiTestCase.query.filter(scope_filter(ApiTestCase), ApiTestCase.last_status == 'failed').count()
+
+    # Web 测试统计
+    web_total = WebTestScript.query.filter(scope_filter(WebTestScript)).count()
+    web_passed = WebTestScript.query.filter(scope_filter(WebTestScript), WebTestScript.status == 'passed').count()
+    web_failed = WebTestScript.query.filter(scope_filter(WebTestScript), WebTestScript.status == 'failed').count()
+
+    # 性能测试统计
+    perf_total = PerfTestScenario.query.filter(scope_filter(PerfTestScenario)).count()
+    perf_running = PerfTestScenario.query.filter(scope_filter(PerfTestScenario), PerfTestScenario.status == 'running').count()
+
+    # 最近执行记录
+    recent_runs = TestRun.query.filter(run_scope).order_by(TestRun.created_at.desc()).limit(10).all()
     
     return success_response(data={
         'api_tests': {
@@ -611,7 +587,7 @@ def get_test_report(report_id):
     ).first()
     
     if not report:
-        return error_response(message='报告不存在', code=404)
+        return error_response(404, '报告不存在')
     
     return success_response(data=report.to_detail_dict())
 
@@ -628,7 +604,7 @@ def get_test_report_html(report_id):
     ).first()
     
     if not report:
-        return error_response(message='报告不存在', code=404)
+        return error_response(404, '报告不存在')
     
     # 如果没有 HTML 报告，生成一个
     if not report.report_html:
@@ -767,7 +743,7 @@ def delete_test_report(report_id):
     ).first()
 
     if not report:
-        return error_response(message='报告不存在或无权访问', code=404)
+        return error_response(404, '报告不存在或无权访问')
 
     try:
         # 使用原始 SQL DELETE，绕过 ORM 的关系处理
@@ -779,5 +755,5 @@ def delete_test_report(report_id):
         return success_response(message='删除成功')
     except Exception as e:
         db.session.rollback()
-        return error_response(message=f'删除失败: {str(e)}', code=500)
+        return error_response(500, f'删除失败: {str(e)}')
 

@@ -383,8 +383,8 @@ def create_collection():
     
     error = validate_required(data, ['name'])
     if error:
-        return error_response(message=error)
-    
+        return error_response(400, error)
+
     collection = ApiTestCollection(
         name=data['name'],
         description=data.get('description', ''),
@@ -406,7 +406,7 @@ def update_collection(collection_id):
     collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
     
     if not collection:
-        return error_response(message='集合不存在', code=404)
+        return error_response(404, '集合不存在')
     
     data = request.get_json()
     if 'name' in data:
@@ -427,7 +427,7 @@ def delete_collection(collection_id):
     collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
     
     if not collection:
-        return error_response(message='集合不存在', code=404)
+        return error_response(404, '集合不存在')
     
     db.session.delete(collection)
     db.session.commit()
@@ -504,7 +504,7 @@ def get_case(case_id):
     case = ApiTestCase.query.filter_by(id=case_id, user_id=user_id).first()
     
     if not case:
-        return error_response(message='用例不存在', code=404)
+        return error_response(404, '用例不存在')
     
     return success_response(data=case.to_dict())
 
@@ -517,7 +517,7 @@ def update_case(case_id):
     case = ApiTestCase.query.filter_by(id=case_id, user_id=user_id).first()
     
     if not case:
-        return error_response(message='用例不存在', code=404)
+        return error_response(404, '用例不存在')
     
     data = request.get_json()
     
@@ -588,7 +588,7 @@ def delete_case(case_id):
     case = ApiTestCase.query.filter_by(id=case_id, user_id=user_id).first()
     
     if not case:
-        return error_response(message='用例不存在', code=404)
+        return error_response(404, '用例不存在')
     
     db.session.delete(case)
     db.session.commit()
@@ -612,7 +612,7 @@ def execute_request():
 
     error = validate_required(data, ['method', 'url'])
     if error:
-        return error_response(message=error)
+        return error_response(400, error)
 
     method = data['method'].upper()
     url = data['url']
@@ -631,9 +631,6 @@ def execute_request():
         env = Environment.query.filter_by(id=env_id).first()
         if env:
             env_vars = env.variables or {}
-            # 合并环境的 headers
-            env_headers = env.headers or {}
-            headers = {**env_headers, **headers}
 
     # ========== 前置脚本执行 ==========
     script_execution = {
@@ -697,6 +694,10 @@ def execute_request():
         url = replace_variables(url, env_vars)
         headers = replace_variables_in_dict(headers, env_vars)
         params = replace_variables_in_dict(params, env_vars)
+
+    # 合并环境 headers（与 run_case 保持一致）
+    if env_id:
+        headers = merge_headers_with_env(headers, env_id, db)
 
     # 如果前端传来了 mock_enabled 参数并开启了 Mock，直接返回 Mock 数据
     if data.get('mock_enabled'):
@@ -868,7 +869,7 @@ def run_case(case_id):
     case = ApiTestCase.query.filter_by(id=case_id, user_id=user_id).first()
 
     if not case:
-        return error_response(message='用例不存在', code=404)
+        return error_response(404, '用例不存在')
 
     # 获取环境ID（从请求参数中）
     env_id = request.args.get('env_id', type=int)
@@ -1003,7 +1004,7 @@ def run_case(case_id):
             'allow_redirects': True
         }
 
-        if case.body and case.method in ['POST', 'PUT', 'PATCH']:
+        if body is not None and case.method in ['POST', 'PUT', 'PATCH']:
             if case.body_type == 'json':
                 request_kwargs['json'] = body
             else:
@@ -1085,7 +1086,7 @@ def run_collection(collection_id):
     collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
 
     if not collection:
-        return error_response(message='集合不存在', code=404)
+        return error_response(404, '集合不存在')
 
     # 防御性校验：确认集合确实属于当前用户（已在上方校验，此处双重保险）
     if collection.user_id != user_id:
@@ -1097,7 +1098,7 @@ def run_collection(collection_id):
     cases = ApiTestCase.query.filter_by(collection_id=collection_id, is_enabled=True).all()
 
     if not cases:
-        return error_response(message='集合中没有可执行的用例')
+        return error_response(400, '集合中没有可执行的用例')
     
     # 获取环境ID（从请求体或参数中）
     # None 表示使用各用例自身的 environment_id，而非统一环境
@@ -1134,8 +1135,14 @@ def run_collection(collection_id):
                 if case_env:
                     project_id = case_env.project_id
 
+    # 最终兜底：如果 project_id 仍为 None，使用用户拥有的第一个项目
+    if not project_id:
+        user_project = Project.query.filter_by(owner_id=user_id).first()
+        if user_project:
+            project_id = user_project.id
+
     test_run = TestRun(
-        project_id=project_id,  # 使用获取到的 project_id
+        project_id=project_id,
         test_type='api',
         test_object_id=collection_id,
         test_object_name=collection.name,

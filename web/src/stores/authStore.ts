@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import axios from 'axios'
 
 interface User {
   id: number
@@ -13,7 +14,7 @@ interface AuthState {
   refreshToken: string | null
   user: User | null
   isAuthenticated: boolean
-  
+
   // Actions
   setAuth: (token: string, refreshToken: string, user: User) => void
   logout: () => void
@@ -27,7 +28,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       isAuthenticated: false,
-      
+
       setAuth: (token, refreshToken, user) => {
         set({
           token,
@@ -36,13 +37,13 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
         })
       },
-      
+
       logout: () => {
         // 通知后端注销 Token（异步，不阻塞本地清理）
+        // 使用独立 axios 实例避免与 api.ts 的循环依赖
         const token = useAuthStore.getState().token
         if (token) {
-          fetch('/api/v1/auth/logout', {
-            method: 'POST',
+          axios.post('/api/v1/auth/logout', null, {
             headers: { Authorization: `Bearer ${token}` },
           }).catch(() => {})
         }
@@ -53,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         })
       },
-      
+
       updateUser: (userData) => {
         set((state) => ({
           user: state.user ? { ...state.user, ...userData } : null,

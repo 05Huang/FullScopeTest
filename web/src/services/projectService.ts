@@ -8,8 +8,8 @@ export interface Project {
   updated_at: string
 }
 
-export const getProjects = (): Promise<ApiResponse> => {
-  return api.get('/projects') as Promise<ApiResponse>
+export const getProjects = (params?: { page?: number; per_page?: number; keyword?: string }): Promise<ApiResponse> => {
+  return api.get('/projects', { params: { per_page: 100, ...params } }) as Promise<ApiResponse>
 }
 
 export const getProject = (id: number): Promise<ApiResponse> => {

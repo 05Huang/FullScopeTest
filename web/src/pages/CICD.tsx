@@ -100,11 +100,15 @@ const CICD: React.FC = () => {
   }
 
   const handleCreateWebhook = async () => {
+    if (!currentProjectId) {
+      message.warning(t('cicd.selectProjectFirst', '请先选择一个项目'))
+      return
+    }
     try {
       const values = await webhookForm.validateFields()
       await cicdService.createWebhook({
         ...values,
-        project_id: currentProjectId || 1
+        project_id: currentProjectId
       })
       message.success(t('cicd.createSuccess'))
       setWebhookModalVisible(false)
@@ -133,9 +137,13 @@ const CICD: React.FC = () => {
         await cicdService.updateSchedule(editingSchedule.id, values)
         message.success(t('cicd.updateSuccess'))
       } else {
+        if (!currentProjectId) {
+          message.warning(t('cicd.selectProjectFirst', '请先选择一个项目'))
+          return
+        }
         await cicdService.createSchedule({
           ...values,
-          project_id: currentProjectId || 1,
+          project_id: currentProjectId,
           is_active: true
         })
         message.success(t('cicd.createSuccess'))

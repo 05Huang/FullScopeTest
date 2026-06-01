@@ -112,8 +112,8 @@ export const getReportStatistics = (params?: {
 }
 
 // 获取仪表盘统计数据
-export const getDashboardStats = (): Promise<ApiResponse<DashboardStats>> => {
-  return api.get('/reports/dashboard') as Promise<ApiResponse<DashboardStats>>
+export const getDashboardStats = (projectId?: number): Promise<ApiResponse<DashboardStats>> => {
+  return api.get('/reports/dashboard', { params: { project_id: projectId } }) as Promise<ApiResponse<DashboardStats>>
 }
 
 // ==================== 报告导出 ====================

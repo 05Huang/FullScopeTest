@@ -213,7 +213,7 @@ def _release_live_view_session(session: dict):
 def _get_collection_or_404(collection_id: int, user_id: int):
     collection = WebTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
     if not collection:
-        return None, error_response(message='用例集不存在', code=404)
+        return None, error_response(404, '用例集不存在')
     return collection, None
 
 
@@ -520,7 +520,7 @@ def run_web_collection(collection_id):
         is_enabled=True
     ).all()
     if not scripts:
-        return error_response(message='用例集内没有可执行脚本')
+        return error_response(400, '用例集内没有可执行脚本')
 
     submitted = []
     skipped = []
@@ -582,7 +582,7 @@ def create_script():
     
     error = validate_required(data, ['name'])
     if error:
-        return error_response(message=error)
+        return error_response(400, error)
     
     # 默认的 Playwright 脚本模板
     default_code = '''"""
@@ -749,8 +749,8 @@ def run_script(script_id):
     script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
     
     if not script:
-        return error_response(message='脚本不存在', code=404)
-    
+        return error_response(404, '脚本不存在')
+
     # 检查是否已在运行
     if script.status == 'running':
         return error_response(400, '脚本正在运行中')
@@ -846,9 +846,9 @@ def start_recording():
         })
         
     except FileNotFoundError:
-        return error_response(message='Playwright 未安装，请先运行: pip install playwright && playwright install')
+        return error_response(500, 'Playwright 未安装，请先运行: pip install playwright && playwright install')
     except Exception as e:
-        return error_response(message=f'启动录制失败: {str(e)}')
+        return error_response(500, f'启动录制失败: {str(e)}')
 
 
 @api_bp.route('/web-test/record/stop', methods=['POST'])
@@ -860,7 +860,7 @@ def stop_recording():
     user_id = get_current_user_id()
     
     if user_id not in recording_processes:
-        return error_response(message='没有正在运行的录制进程')
+        return error_response(400, '没有正在运行的录制进程')
     
     process = recording_processes[user_id]
     
@@ -875,7 +875,7 @@ def stop_recording():
         return success_response(message='录制已停止')
         
     except Exception as e:
-        return error_response(message=f'停止录制失败: {str(e)}')
+        return error_response(500, f'停止录制失败: {str(e)}')
 
 
 @api_bp.route('/web-test/record/status', methods=['GET'])

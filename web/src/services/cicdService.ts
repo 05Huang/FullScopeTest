@@ -1,4 +1,4 @@
-import api from './api'
+import api, { ApiResponse } from './api'
 
 export interface WebhookToken {
   id: number
@@ -27,32 +27,32 @@ export interface ScheduledTask {
 
 export const cicdService = {
   // Webhooks
-  getWebhooks: (projectId: number) => {
-    return api.get<any, WebhookToken[]>('/webhooks', { params: { project_id: projectId } })
+  getWebhooks: (projectId: number): Promise<ApiResponse<WebhookToken[]>> => {
+    return api.get('/webhooks', { params: { project_id: projectId } }) as Promise<ApiResponse<WebhookToken[]>>
   },
-  
-  createWebhook: (data: Partial<WebhookToken>) => {
-    return api.post<any, WebhookToken>('/webhooks', data)
+
+  createWebhook: (data: Partial<WebhookToken>): Promise<ApiResponse<WebhookToken>> => {
+    return api.post('/webhooks', data) as Promise<ApiResponse<WebhookToken>>
   },
-  
-  deleteWebhook: (id: number) => {
-    return api.delete(`/webhooks/${id}`)
+
+  deleteWebhook: (id: number): Promise<ApiResponse> => {
+    return api.delete(`/webhooks/${id}`) as Promise<ApiResponse>
   },
-  
+
   // Schedules
-  getSchedules: (projectId: number) => {
-    return api.get<any, ScheduledTask[]>('/schedules', { params: { project_id: projectId } })
+  getSchedules: (projectId: number): Promise<ApiResponse<ScheduledTask[]>> => {
+    return api.get('/schedules', { params: { project_id: projectId } }) as Promise<ApiResponse<ScheduledTask[]>>
   },
-  
-  createSchedule: (data: Partial<ScheduledTask>) => {
-    return api.post<any, ScheduledTask>('/schedules', data)
+
+  createSchedule: (data: Partial<ScheduledTask>): Promise<ApiResponse<ScheduledTask>> => {
+    return api.post('/schedules', data) as Promise<ApiResponse<ScheduledTask>>
   },
-  
-  updateSchedule: (id: number, data: Partial<ScheduledTask>) => {
-    return api.put<any, ScheduledTask>(`/schedules/${id}`, data)
+
+  updateSchedule: (id: number, data: Partial<ScheduledTask>): Promise<ApiResponse<ScheduledTask>> => {
+    return api.put(`/schedules/${id}`, data) as Promise<ApiResponse<ScheduledTask>>
   },
-  
-  deleteSchedule: (id: number) => {
-    return api.delete(`/schedules/${id}`)
+
+  deleteSchedule: (id: number): Promise<ApiResponse> => {
+    return api.delete(`/schedules/${id}`) as Promise<ApiResponse>
   }
 }
