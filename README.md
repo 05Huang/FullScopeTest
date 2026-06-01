@@ -1,48 +1,78 @@
-<div align="center">
-  <img src="images/fullscopetest_logo.png" alt="FullScopeTest Logo" width="400" />
-</div>
-
-# FullScopeTest —— AI一站式自动化测试平台
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69bfd011e4b01ee6a7b76b33.png" alt="FullScopeTest Banner" width="100%" />
-
-
-  <br />
-
-  **AI-Native 全链路自动化测试平台**
-  <br />
+<p align="center"><img src="images/fullscopetest_logo.png" alt="FullScopeTest" width="400" /></p>
+<h3 align="center">AI-Native 全链路自动化测试平台</h3>
+<p align="center">
   AI 编排 · API 测试 · Web 自动化 · APP 测试 · 性能压测 · 智能报告
-
+</p>
+<p align="center">
   <a href="README.md">中文</a> | <a href="README_EN.md">English</a>
-
-  [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-  [![Python](https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-  [![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![React](https://img.shields.io/badge/react-18-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
-  [![Vite](https://img.shields.io/badge/vite-6-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
-  [![Flask](https://img.shields.io/badge/flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-  [![SQLAlchemy](https://img.shields.io/badge/sqlalchemy-ORM-D71F00?style=flat&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
-  [![Ant Design](https://img.shields.io/badge/ant--design-5-0170FE?style=flat&logo=antdesign&logoColor=white)](https://ant.design/)
-  [![Playwright](https://img.shields.io/badge/playwright-e2e-2EAD33?style=flat&logo=playwright)](https://playwright.dev/)
-  [![Celery](https://img.shields.io/badge/celery-task--queue-37814A?style=flat&logo=celery&logoColor=white)](https://docs.celeryq.dev/)
-  [![Redis](https://img.shields.io/badge/redis-broker-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io/)
-  [![PostgreSQL](https://img.shields.io/badge/postgresql-15-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-  [![Docker](https://img.shields.io/badge/docker-compose-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-  [![Vitest](https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev/)
-
-  <h2>🔥 在线演示地址: <a href="http://test.huangxuan.chat">test.huangxuan.chat</a> 🔥</h2>
-</div>
+</p>
+<p align="center">
+  <a href="https://github.com/05Huang/FullScopeTest/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/typescript-5.x-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/react-18-61DAFB?style=flat&logo=react&logoColor=black" alt="React"></a>
+  <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/vite-6-646CFF?style=flat&logo=vite&logoColor=white" alt="Vite"></a>
+  <a href="https://flask.palletsprojects.com/"><img src="https://img.shields.io/badge/flask-3.0-000000?style=flat&logo=flask&logoColor=white" alt="Flask"></a>
+  <a href="https://www.sqlalchemy.org/"><img src="https://img.shields.io/badge/sqlalchemy-ORM-D71F00?style=flat&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy"></a>
+  <a href="https://ant.design/"><img src="https://img.shields.io/badge/ant--design-5-0170FE?style=flat&logo=antdesign&logoColor=white" alt="Ant Design"></a>
+  <a href="https://playwright.dev/"><img src="https://img.shields.io/badge/playwright-e2e-2EAD33?style=flat&logo=playwright" alt="Playwright"></a>
+  <a href="https://docs.celeryq.dev/"><img src="https://img.shields.io/badge/celery-task--queue-37814A?style=flat&logo=celery&logoColor=white" alt="Celery"></a>
+  <a href="https://redis.io/"><img src="https://img.shields.io/badge/redis-broker-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a>
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/postgresql-15-4169E1?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/docker-compose-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
+  <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest" alt="Vitest"></a>
+</p>
+<p align="center">
+  <h3>🔥 在线演示: <a href="http://test.huangxuan.chat">test.huangxuan.chat</a> 🔥</h3>
+</p>
+<hr />
 
 ## 📖 项目简介
 
 **FullScopeTest** 是一个 AI 驱动的全链路自动化测试平台，覆盖 API 接口测试、Web UI 自动化、APP 移动端测试和性能压测四大领域。平台以 **AI-Native** 为核心设计理念，提供自然语言编排、脚本自动生成、智能错误分析与自愈等能力，降低测试编写与维护门槛。
+
+- **AI 赋能**：内置 AI Copilot，支持自然语言编排、脚本自动生成、智能错误分析与自愈
+- **接口测试**：完整的 HTTP/REST API 测试工作台，支持环境变量、前置/后置脚本、断言、cURL 导入导出
+- **Web 自动化**：基于 Playwright，支持在线编写、录制、视觉回归测试
+- **性能压测**：基于 Locust，支持分布式压测、实时监控、历史对比
+- **APP 测试**：基于 Appium，支持 Android / iOS 双平台
+- **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
 
 <div align="center">
   <img src="https://res.huangxuan.chat/thrivex/album/69c01107e4b01ee6a7b76b3a.png" alt="Dashboard 预览" width="80%" />
   <p><em>平台总览控制台</em></p>
 </div>
 
+## 🚀 快速开始
+
+### 环境要求
+
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL 15+
+- Redis 7+
+- Docker & Docker Compose
+
+### 一键启动
+
+```bash
+# 克隆项目
+git clone https://github.com/05Huang/FullScopeTest.git
+cd FullScopeTest
+
+# 启动开发环境
+./start_dev.sh
+```
+
+启动后访问：
+- 前端：http://localhost:3001
+- 后端：http://localhost:5000
+
+### Docker 部署
+
+```bash
+docker-compose up -d
+```
 
 ---
 
@@ -1119,6 +1149,17 @@ jobs:
     <img src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png" alt="微信二维码" width="150px" />
     <p><em>扫码添加作者微信</em></p>
   </div>
+
+---
+
+## 🛠 技术栈
+
+- **前端**: [React 18](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/) + [Ant Design 5](https://ant.design/)
+- **后端**: [Flask 3.0](https://flask.palletsprojects.com/) + [SQLAlchemy ORM](https://www.sqlalchemy.org/)
+- **数据库**: [PostgreSQL 15](https://www.postgresql.org/) + [Redis 7](https://redis.io/)
+- **测试引擎**: [Playwright](https://playwright.dev/) (Web) + [Locust](https://locust.io/) (性能) + [Appium](https://appium.io/) (APP)
+- **异步任务**: [Celery](https://docs.celeryq.dev/) + [APScheduler](https://apscheduler.readthedocs.io/)
+- **基础设施**: [Docker Compose](https://www.docker.com/)
 
 ---
 
