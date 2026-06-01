@@ -514,7 +514,7 @@ const PerfTestScenarios = () => {
       ),
     },
     {
-      title: '配置',
+      title: t('perfTest.configuration'),
       key: 'config',
       width: 180,
       render: (_, record) => (
@@ -562,7 +562,7 @@ const PerfTestScenarios = () => {
       },
     },
     {
-      title: '吞吐量',
+      title: t('perfTest.throughput'),
       dataIndex: 'throughput',
       key: 'throughput',
       width: 120,
@@ -590,7 +590,7 @@ const PerfTestScenarios = () => {
       },
     },
     {
-      title: '最后执行',
+      title: t('perfTest.lastRun'),
       dataIndex: 'last_run_at',
       key: 'last_run_at',
       width: 160,

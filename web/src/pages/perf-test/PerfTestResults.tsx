@@ -201,7 +201,7 @@ const PerfTestResults = () => {
       render: (val) => `${val} 用户`,
     },
     {
-      title: '平均响应时间',
+      title: t('perfTest.avgResponseTime'),
       dataIndex: 'avg_response_time',
       key: 'avg_response_time',
       width: 130,
@@ -211,7 +211,7 @@ const PerfTestResults = () => {
       },
     },
     {
-      title: '吞吐量',
+      title: t('perfTest.throughput'),
       dataIndex: 'throughput',
       key: 'throughput',
       width: 120,
@@ -262,7 +262,7 @@ const PerfTestResults = () => {
       <div className="fst-page-header fst-animate-in">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="fst-stat-icon fst-stat-icon--info"><BarChartOutlined style={{ fontSize: 18 }} /></div>
-          <h1 className="fst-page-title">结果分析</h1>
+          <h1 className="fst-page-title">{t('perfTest.resultAnalysis')}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <RangePicker size="small" />
@@ -275,7 +275,7 @@ const PerfTestResults = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="测试总数"
+              title={t('perfTest.totalTests')}
               value={statistics.total_tests}
               prefix={<BarChartOutlined style={{ color: '#1890ff' }} />}
             />
@@ -284,7 +284,7 @@ const PerfTestResults = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="平均响应时间"
+              title={t('perfTest.avgResponseTime')}
               value={statistics.avg_response_time}
               suffix="ms"
               prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
@@ -294,7 +294,7 @@ const PerfTestResults = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="平均吞吐量"
+              title={t('perfTest.avgThroughput')}
               value={statistics.avg_throughput}
               suffix="req/s"
               prefix={<ThunderboltOutlined style={{ color: '#52c41a' }} />}
@@ -304,7 +304,7 @@ const PerfTestResults = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="平均错误率"
+              title={t('perfTest.avgErrorRate')}
               value={statistics.avg_error_rate}
               suffix="%"
               valueStyle={{
@@ -323,7 +323,7 @@ const PerfTestResults = () => {
       </Row>
 
       {/* 测试结果列表 */}
-      <Card title="测试结果列表" style={{ marginBottom: 24 }}>
+      <Card title={t('perfTest.resultsList')} style={{ marginBottom: 24 }}>
         {results.length > 0 ? (
           <Table
             columns={columns}
@@ -337,7 +337,7 @@ const PerfTestResults = () => {
             }}
           />
         ) : (
-          <Empty description="暂无测试结果" />
+          <Empty description={t('perfTest.noResults')} />
         )}
       </Card>
 

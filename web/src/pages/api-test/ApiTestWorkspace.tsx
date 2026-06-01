@@ -167,12 +167,12 @@ const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }
                     ),
                   },
                   {
-                    title: '断言描述',
+                    title: t('apiTest.assertionDesc'),
                     dataIndex: 'name',
                     ellipsis: true,
                   },
                   {
-                    title: '错误信息',
+                    title: t('apiTest.errorMessage'),
                     dataIndex: 'error',
                     render: (error) => error ? (
                       <Text type="danger" style={{ fontSize: 12 }}>{error}</Text>
@@ -570,7 +570,7 @@ const ApiTestWorkspace = () => {
     const ungroupedCases = casesData.filter(c => !c.collection_id)
     if (ungroupedCases.length > 0) {
       tree.push({
-        title: '未分组',
+        title: t('apiTest.ungrouped'),
         key: 'ungrouped',
         icon: <FolderOutlined />,
         children: ungroupedCases.map(c => ({
@@ -603,10 +603,10 @@ const ApiTestWorkspace = () => {
       // 检查是否有未保存的修改
       if (hasUnsavedChanges && currentCaseId) {
         Modal.confirm({
-          title: '未保存的修改',
-          content: '当前用例有未保存的修改，是否保存后切换？',
-          okText: '保存并切换',
-          cancelText: '放弃修改',
+          title: t('apiTest.unsavedChanges'),
+          content: t('apiTest.unsavedChangesContent'),
+          okText: t('common.save'),
+          cancelText: t('common.cancel'),
           onOk: async () => {
             await saveCurrentCase()
             loadCase(newCaseId)
@@ -658,10 +658,10 @@ const ApiTestWorkspace = () => {
 
       if (hasUnsavedChanges && currentCaseId) {
         Modal.confirm({
-          title: '未保存的修改',
-          content: '当前用例有未保存的修改，是否保存后切换？',
-          okText: '保存并切换',
-          cancelText: '放弃修改',
+          title: t('apiTest.unsavedChanges'),
+          content: t('apiTest.unsavedChangesContent'),
+          okText: t('common.save'),
+          cancelText: t('common.cancel'),
           onOk: async () => {
             const saved = await saveCurrentCaseSafely()
             if (saved) {
@@ -1219,16 +1219,16 @@ const ApiTestWorkspace = () => {
   // 删除用例
   const handleDeleteCase = async (caseId: number, caseName: string) => {
     Modal.confirm({
-      title: '确认删除',
-      content: `确定要删除用例 "${caseName}" 吗？此操作不可恢复。`,
-      okText: '确认删除',
+      title: t('common.confirm'),
+      content: t('apiTest.confirmDeleteContent', { name: caseName }),
+      okText: t('common.confirm'),
       cancelText: t('common.cancel'),
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
           const res = await apiTestService.deleteCase(caseId)
           if (res.code === 200) {
-            message.success('用例删除成功')
+            message.success(t('common.success'))
             setContextMenuState({ ...contextMenuState, visible: false })
             if (caseId === currentCaseId) {
               setCurrentCaseId(null)
@@ -1788,7 +1788,7 @@ const ApiTestWorkspace = () => {
   // 参数表格列
   const paramsColumns = [
     {
-      title: '序号',
+      title: t('apiTest.index'),
       key: 'index',
       width: 60,
       align: 'center' as const,
@@ -1797,12 +1797,12 @@ const ApiTestWorkspace = () => {
       ),
     },
     {
-      title: '参数名',
+      title: t('apiTest.paramName'),
       dataIndex: 'key',
       key: 'key',
       render: (_: any, record: any, index: number) => (
         <Input
-          placeholder="参数名"
+          placeholder={t('apiTest.paramName')}
           size="small"
           value={record.key}
           onChange={(e) => {
@@ -1814,12 +1814,12 @@ const ApiTestWorkspace = () => {
       ),
     },
     {
-      title: '参数值',
+      title: t('apiTest.paramValue'),
       dataIndex: 'value',
       key: 'value',
       render: (_: any, record: any, index: number) => (
         <Input
-          placeholder="参数值"
+          placeholder={t('apiTest.paramValue')}
           size="small"
           value={record.value}
           onChange={(e) => {
@@ -1852,7 +1852,7 @@ const ApiTestWorkspace = () => {
   // 请求头表格列
   const headersColumns = [
     {
-      title: '序号',
+      title: t('apiTest.index'),
       key: 'index',
       width: 60,
       align: 'center' as const,
@@ -1861,12 +1861,12 @@ const ApiTestWorkspace = () => {
       ),
     },
     {
-      title: 'Header 名',
+      title: t('apiTest.headerName'),
       dataIndex: 'key',
       key: 'key',
       render: (_: any, record: any, index: number) => (
         <Input
-          placeholder="Header 名"
+          placeholder={t('apiTest.headerName')}
           size="small"
           value={record.key}
           onChange={(e) => {
@@ -1883,7 +1883,7 @@ const ApiTestWorkspace = () => {
       key: 'value',
       render: (_: any, record: any, index: number) => (
         <Input
-          placeholder="Header 值"
+          placeholder={t('apiTest.headerValue')}
           size="small"
           value={record.value}
           onChange={(e) => {

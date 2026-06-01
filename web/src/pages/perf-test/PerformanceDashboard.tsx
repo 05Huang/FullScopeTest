@@ -538,7 +538,7 @@ const PerformanceDashboard = () => {
       width: 80,
     },
     {
-      title: '并发数',
+      title: t('perfTest.concurrentUsers'),
       dataIndex: 'user_count',
       key: 'user_count',
       width: 80,
@@ -552,7 +552,7 @@ const PerformanceDashboard = () => {
       render: (val: number) => val?.toFixed(1) ?? '-',
     },
     {
-      title: '平均 RT',
+      title: t('perfTest.avgRT'),
       dataIndex: 'avg_response_time',
       key: 'avg_response_time',
       width: 100,
@@ -640,18 +640,18 @@ const PerformanceDashboard = () => {
       {/* 筛选栏 */}
       <Card size="small" style={{ marginBottom: 16 }}>
         <Space wrap>
-          <span>状态：</span>
+          <span>{t('common.status')}:</span>
           <Select
             allowClear
-            placeholder="全部状态"
+            placeholder={t('perfTest.allStatus')}
             style={{ width: 140 }}
             value={statusFilter}
             onChange={(v) => setStatusFilter(v)}
             options={[
-              { value: 'completed', label: '完成' },
+              { value: 'completed', label: t('common.success') },
               { value: 'failed', label: t('common.failed') },
-              { value: 'stopped', label: '已停止' },
-              { value: 'running', label: '运行中' },
+              { value: 'stopped', label: t('common.cancelled') },
+              { value: 'running', label: t('common.running') },
             ]}
           />
           <Button
@@ -670,7 +670,7 @@ const PerformanceDashboard = () => {
         {/* ====== 左侧：测试结果列表 ====== */}
         <Col xs={24} lg={compareMode ? 24 : 10} xl={compareMode ? 24 : 8}>
           <Card
-            title={compareMode ? '选择要对比的测试结果（多选）' : '测试结果历史'}
+            title={compareMode ? t('perfTest.selectToCompare') : t('perfTest.historyComparison')}
             size="small"
             style={{ marginBottom: 16 }}
             bodyStyle={{ padding: 0 }}
@@ -754,12 +754,12 @@ const PerformanceDashboard = () => {
             <div>
               {compareData.length === 0 ? (
                 <Card>
-                  <Empty description="请在左侧选择至少 1 个测试结果进行对比" />
+                  <Empty description={t('perfTest.selectAtLeastOne')} />
                 </Card>
               ) : (
                 <>
                   {/* 对比汇总表 */}
-                  <Card title={`对比汇总（${compareData.length} 次运行）`} size="small" style={{ marginBottom: 16 }}>
+                  <Card title={t('perfTest.compareSummary', { count: compareData.length })} size="small" style={{ marginBottom: 16 }}>
                     <Table
                       dataSource={compareData}
                       rowKey="id"
@@ -785,7 +785,7 @@ const PerformanceDashboard = () => {
                           render: (v: number) => v?.toFixed(1) ?? '-',
                         },
                         {
-                          title: '平均 RT (ms)',
+                          title: t('perfTest.avgRT') + ' (ms)',
                           dataIndex: 'avg_response_time',
                           width: 100,
                           render: (v: number) => v?.toFixed(0) ?? '-',
@@ -856,12 +856,12 @@ const PerformanceDashboard = () => {
             <div>
               {!selectedResultId ? (
                 <Card>
-                  <Empty description="请在左侧选择一个测试结果查看详细大盘" />
+                  <Empty description={t('perfTest.selectResult')} />
                 </Card>
               ) : metricsLoading ? (
                 <Card>
                   <div style={{ textAlign: 'center', padding: 40 }}>
-                    <Spin size="large" tip="加载指标数据..." />
+                    <Spin size="large" tip={t('common.loading')} />
                   </div>
                 </Card>
               ) : (

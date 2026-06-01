@@ -925,14 +925,14 @@ const WebTestScripts = () => {
       ),
     },
     {
-      title: '用例集',
+      title: t('webTest.collection'),
       dataIndex: 'collection_name',
       key: 'collection_name',
       width: 140,
       render: (value) => value ? <Tag color="geekblue">{value}</Tag> : '-',
     },
     {
-      title: '浏览器',
+      title: t('webTest.browser'),
       dataIndex: 'browser',
       key: 'browser',
       width: 110,
@@ -943,7 +943,7 @@ const WebTestScripts = () => {
       ),
     },
     {
-      title: '步骤数',
+      title: t('webTest.stepCount'),
       dataIndex: 'step_count',
       key: 'step_count',
       width: 80,
@@ -974,7 +974,7 @@ const WebTestScripts = () => {
       },
     },
     {
-      title: '最后执行',
+      title: t('webTest.lastRun'),
       dataIndex: 'last_run_at',
       key: 'last_run_at',
       width: 160,
@@ -1432,12 +1432,12 @@ const WebTestScripts = () => {
                     rowKey="id"
                     columns={[
                       {
-                        title: '时间',
+                        title: t('common.time'),
                         dataIndex: 'started_at',
                         width: 160,
                         render: (value) => new Date(value).toLocaleString(),
                       },
-                      { title: '起始 URL', dataIndex: 'start_url', ellipsis: true },
+                      { title: t('webTest.startUrl'), dataIndex: 'start_url', ellipsis: true },
                       {
                         title: t('common.status'),
                         width: 100,
@@ -1448,7 +1448,7 @@ const WebTestScripts = () => {
                         ),
                       },
                       {
-                        title: '错误数',
+                        title: t('webTest.errorCount'),
                         width: 80,
                         render: (_, record: ExploreHistoryItem) => String(record.report?.errors_found?.length || 0),
                       },
@@ -1609,7 +1609,7 @@ const WebTestScripts = () => {
                   columns={[
                     { title: t('common.type'), dataIndex: 'type', width: 120, render: (t) => <Tag color="red">{t}</Tag> },
                     {
-                      title: '等级',
+                      title: t('webTest.level'),
                       dataIndex: 'severity',
                       width: 100,
                       render: (s) => (
@@ -1618,9 +1618,9 @@ const WebTestScripts = () => {
                         </Tag>
                       ),
                     },
-                    { title: '分类', dataIndex: 'category', width: 120, render: (c) => <Tag>{c || '-'}</Tag> },
-                    { title: '错误信息', dataIndex: 'text', ellipsis: true },
-                    { title: '页面 URL', dataIndex: 'url', ellipsis: true },
+                    { title: t('webTest.category'), dataIndex: 'category', width: 120, render: (c) => <Tag>{c || '-'}</Tag> },
+                    { title: t('webTest.errorMessage'), dataIndex: 'text', ellipsis: true },
+                    { title: t('webTest.pageUrl'), dataIndex: 'url', ellipsis: true },
                   ]}
                   pagination={false}
                   rowKey={(_, i) => String(i)}
@@ -1636,10 +1636,10 @@ const WebTestScripts = () => {
                   size="small"
                   dataSource={exploreReport.actions_taken}
                   columns={[
-                    { title: '步数', dataIndex: 'step', width: 60 },
-                    { title: '动作', dataIndex: 'type', width: 80, render: (t) => <Tag color="blue">{t}</Tag> },
-                    { title: '目标', dataIndex: 'target_id' },
-                    { title: '原因', dataIndex: 'reason', ellipsis: true },
+                    { title: t('webTest.step'), dataIndex: 'step', width: 60 },
+                    { title: t('webTest.action'), dataIndex: 'type', width: 80, render: (val) => <Tag color="blue">{val}</Tag> },
+                    { title: t('webTest.target'), dataIndex: 'target_id' },
+                    { title: t('webTest.reason'), dataIndex: 'reason', ellipsis: true },
                   ]}
                   pagination={false}
                   rowKey={(_, i) => String(i)}

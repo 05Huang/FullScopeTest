@@ -311,9 +311,9 @@ const PerfTestMonitor = () => {
           <Empty
             description={
               <span>
-                暂无运行中的性能测试
+                {t('perfTest.noRunningTests')}
                 <br />
-                <Text type="secondary">在"场景管理"中启动测试后，可在此查看实时监控数据</Text>
+                <Text type="secondary">{t('perfTest.noRunningHint')}</Text>
               </span>
             }
           />
