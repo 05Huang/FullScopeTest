@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="images/fullscopetest_logo.png" alt="FullScopeTest Logo" width="400" />
+</div>
+
 # FullScopeTest —— AI一站式自动化测试平台
 
 <div align="center">
