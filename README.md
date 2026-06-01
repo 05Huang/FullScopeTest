@@ -76,115 +76,26 @@ docker-compose up -d
 
 ---
 
-## ✨ 核心特性
+## 🖥 UI 展示
 
-### AI 能力 (AI-Native)
-
-#### 1. AI 自动编排
-
-输入自然语言测试目标，AI 自动解析意图并生成结构化执行计划（Plan），随后调用平台 API 自动创建环境、集合、用例并执行。前端面板支持运行时动态配置 `base_url` / `model` / `api_key`，兼容 OpenAI、DeepSeek 等主流 LLM。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3b.png" alt="AI 自动编排 — 输入测试目标" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3c.png" alt="AI 自动编排 — 自动生成并执行" width="45%" />
-  <p><em>自然语言 → 结构化计划 → 自动执行</em></p>
-</div>
-
-#### 2. NL2Script — 自然语言生成测试脚本
-
-输入自然语言描述（如"登录系统，进入控制台，创建用户，验证成功提示"），AI Agent 将其转换为可执行的 Playwright Web 测试脚本或 Locust 性能测试脚本。生成结果在 Monaco Editor 中高亮展示，支持在线编辑与审查。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b41.png" alt="NL2Script — 自然语言生成测试脚本" width="80%" />
-</div>
-
-#### 3. 智能错误分析与自愈
-
-测试失败时自动触发 AI 诊断：分析错误日志、API 响应体或 DOM 结构，定位根因（如选择器变更、字段缺失）。支持一键修复 — AI 自动修正断言或选择器后重新执行，降低用例维护成本。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b42.png" alt="智能错误分析" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b43.png" alt="一键自愈修复" width="45%" />
-  <p><em>错误定位 → AI 诊断 → 一键修复</em></p>
-</div>
-
-#### 4. 智能测试数据生成与用例裂变
-
-基于 API 定义或已有用例，AI 自动推断字段语义，批量生成边界值、空值、注入攻击等异常测试数据，将单条用例裂变为覆盖多种场景的测试集，提升测试覆盖率。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b44.png" alt="AI 数据生成" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b45.png" alt="用例裂变" width="45%" />
-  <p><em>单条用例 → AI 裂变 → 多场景覆盖</em></p>
-</div>
-
-#### 5. 探索性测试 Agent
-
-给定起始 URL 和测试目标，AI Agent 自主遍历页面 — 解析 DOM、点击按钮、填写表单、记录异常。结合 Vision 模型进行视觉验证，最终输出探索测试报告（JS 错误、404 死链、安全风险）。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b46.png" alt="探索性测试 Agent" width="80%" />
-</div>
-
-#### 6. 全局 Copilot
-
-统一的 AI 对话入口，支持通过自然语言指令操作平台："创建性能测试场景，并发 100 持续 5 分钟"、"查询昨日失败的 Web 测试"。后端通过 Function Calling 解析意图，直接调用平台 API 执行操作。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b47.png" alt="全局 Copilot" width="80%" />
-</div>
-
----
-
-### 测试工作台 (Core Workspace)
-
-#### API 接口测试
-
-完整的 HTTP/REST API 测试工作台，支持环境变量 `{variable}` 替换、前置/后置脚本引擎、变量提取与断言、一键 cURL 导入导出。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c011b3e4b01ee6a7b76b3d.png" alt="API 接口测试工作台" width="80%" />
-</div>
-
-#### Web 自动化测试 (Playwright)
-
-内置 Playwright 引擎，支持在线编写、编辑、执行 Python 测试脚本。可通过 `playwright codegen` 录制交互操作自动生成脚本。任务通过 Celery 异步执行，支持实时状态跟踪与错误定位。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png" alt="Web 自动化测试" width="80%" />
-</div>
-
-#### 性能测试 (Locust)
-
-基于 Locust 的分布式压测，支持并发用户数配置与阶梯加压（Step load）。实时采集并可视化响应时间、吞吐量 (RPS)、错误率等核心指标。
-
-<div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png" alt="性能测试看板" width="80%" />
-</div>
-
-#### APP 移动端测试 (Appium)
-
-基于 Appium 的移动应用自动化测试，支持 Android / iOS 双平台。通过配置 package/activity（Android）或 bundle_id（iOS）连接真机或模拟器，在线编写 Appium Python 脚本并通过 Celery 异步执行。
-
-#### 测试报告中心
-
-聚合 API、Web、APP、性能四类测试的执行结果，提供按类型统计、每日趋势、成功率等可视化指标。支持 HTML 和 JSON 格式导出，Dashboard 首页展示全局测试概览。
-
-#### 环境变量管理
-
-独立的环境管理模块，支持创建多套环境（开发/测试/预发/生产），每套环境包含自定义变量与请求头。API 测试中通过 `{variable}` 语法自动替换，支持设置默认环境。
-
-#### 测试文档管理
-
-内置测试文档管理，支持 Markdown 编辑、分类检索与关键词搜索。提供测试计划、测试用例、API 文档等内置模板，支持导出为 Markdown / HTML。
-
-#### Mock Server
-
-API 用例级别 Mock，启用后直接返回预设响应（状态码、响应体、响应头、延迟时间），无需依赖真实后端服务，便于前端并行开发与联调。
-
-#### Webhook 触发器与定时任务
-
-支持创建 Webhook 触发器（HMAC-SHA256 签名验证），通过 HTTP 请求触发测试集合执行。定时任务支持 Cron 表达式调度，基于 APScheduler 实现，文件锁保证多进程安全。
+<table style="border-collapse: collapse; border: 1px solid black;">
+  <tr>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c01107e4b01ee6a7b76b3a.png" alt="Dashboard" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c011b3e4b01ee6a7b76b3d.png" alt="API 测试" /></td>
+  </tr>
+  <tr>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png" alt="Web 自动化" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png" alt="性能测试" /></td>
+  </tr>
+  <tr>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3b.png" alt="AI 编排" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b41.png" alt="NL2Script" /></td>
+  </tr>
+  <tr>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b46.png" alt="探索性测试" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b47.png" alt="全局 Copilot" /></td>
+  </tr>
+</table>
 
 ---
 
