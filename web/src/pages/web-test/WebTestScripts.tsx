@@ -42,6 +42,8 @@ import {
   EyeOutlined,
 } from '@ant-design/icons'
 import VisualDiffViewer from '@/components/VisualDiffViewer'
+import LogViewerModal from './components/LogViewerModal'
+import AiExploreModal from './components/AiExploreModal'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
