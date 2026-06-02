@@ -144,6 +144,8 @@ backend/.deps/
 
 # Ralph runtime files
 .ralph/
+.ralphrc
+*Zone.Identifier*
 
 # 设计稿/原型图
 示例原型图-首页/
