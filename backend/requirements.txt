@@ -36,6 +36,7 @@ Werkzeug==3.0.1
 markdown==3.5.1
 Flask-APScheduler==1.13.1
 APScheduler==3.10.4
+structlog==24.1.0
 
 # 安全
 Flask-Limiter==3.5.0

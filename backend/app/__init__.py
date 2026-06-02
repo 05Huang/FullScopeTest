@@ -8,11 +8,12 @@ import os
 from dotenv import load_dotenv
 
 # Ensure .env is loaded before evaluating config
+# override=False: Docker/compose env vars take precedence over .env file values
 env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
 if os.path.exists(env_path):
-    load_dotenv(env_path, override=True)
+    load_dotenv(env_path, override=False)
 else:
-    load_dotenv(override=True)
+    load_dotenv(override=False)
 
 from flask import Flask
 from flask_cors import CORS

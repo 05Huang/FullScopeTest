@@ -27,7 +27,7 @@ def upgrade():
         sa.Column('owner_id', sa.Integer(), sa.ForeignKey('users.id'), nullable=False, comment='创建者 ID'),
         sa.Column('avatar', sa.String(500), nullable=True, comment='组织头像 URL'),
         sa.Column('settings', sa.JSON(), server_default='{}', comment='组织设置'),
-        sa.Column('is_active', sa.Boolean(), server_default='1', comment='是否激活'),
+        sa.Column('is_active', sa.Boolean(), server_default='true', comment='是否激活'),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), comment='创建时间'),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), comment='更新时间'),
     )
@@ -42,7 +42,7 @@ def upgrade():
         sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id'), nullable=False, comment='用户 ID'),
         sa.Column('role', sa.String(20), server_default='member', comment='角色: owner/admin/member/viewer'),
         sa.Column('invited_by', sa.Integer(), sa.ForeignKey('users.id'), nullable=True, comment='邀请人 ID'),
-        sa.Column('is_active', sa.Boolean(), server_default='1', comment='是否激活'),
+        sa.Column('is_active', sa.Boolean(), server_default='true', comment='是否激活'),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), comment='加入时间'),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), comment='更新时间'),
         sa.UniqueConstraint('organization_id', 'user_id', name='uq_org_member'),

@@ -32,7 +32,14 @@ def _get_redis():
     global _redis
     if _redis is None:
         redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-        _redis = redis.from_url(redis_url, decode_responses=True)
+        _redis = redis.from_url(redis_url, decode_responses=True, socket_timeout=2, socket_connect_timeout=2)
+    # 验证连接有效，失效则重建
+    try:
+        _redis.ping()
+    except Exception:
+        _redis = None
+        redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+        _redis = redis.from_url(redis_url, decode_responses=True, socket_timeout=2, socket_connect_timeout=2)
     return _redis
 
 
@@ -55,37 +62,54 @@ def sliding_window_rate_limit(
         bool: True 表示允许，False 表示被限流
     """
     if redis_client is None:
-        redis_client = _get_redis()
+        try:
+            redis_client = _get_redis()
+        except Exception as exc:
+            logger.warning('Redis unavailable for rate limiting, allowing request', error=str(exc))
+            return True
 
     now = time.time()
     window_start = now - window
 
-    # 使用 Redis sorted set 实现滑动窗口
-    pipe = redis_client.pipeline()
-    pipe.zremrangebyscore(key, 0, window_start)
-    pipe.zadd(key, {str(now): now})
-    pipe.zcard(key)
-    pipe.expire(key, window)
-    results = pipe.execute()
+    try:
+        # 使用 Redis sorted set 实现滑动窗口
+        pipe = redis_client.pipeline()
+        pipe.zremrangebyscore(key, 0, window_start)
+        pipe.zadd(key, {str(now): now})
+        pipe.zcard(key)
+        pipe.expire(key, window)
+        results = pipe.execute()
 
-    current_count = results[2]
-    return current_count <= limit
+        current_count = results[2]
+        return current_count <= limit
+    except Exception as exc:
+        logger.warning('Redis rate limit check failed, allowing request', error=str(exc))
+        return True
 
 
 def get_rate_limit_headers(key: str, limit: int, window: int = 60, redis_client=None) -> Dict[str, str]:
     """获取限流响应头"""
     if redis_client is None:
-        redis_client = _get_redis()
+        try:
+            redis_client = _get_redis()
+        except Exception:
+            redis_client = None
 
     now = time.time()
-    window_start = now - window
 
-    pipe = redis_client.pipeline()
-    pipe.zremrangebyscore(key, 0, window_start)
-    pipe.zcard(key)
-    results = pipe.execute()
+    if redis_client:
+        try:
+            window_start = now - window
+            pipe = redis_client.pipeline()
+            pipe.zremrangebyscore(key, 0, window_start)
+            pipe.zcard(key)
+            results = pipe.execute()
+            remaining = max(0, limit - results[1])
+        except Exception:
+            remaining = 0
+    else:
+        remaining = 0
 
-    remaining = max(0, limit - results[1])
     reset_time = int(now + window)
 
     return {
