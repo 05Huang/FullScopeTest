@@ -53,7 +53,7 @@ class PerformanceTestResult(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
 
     # 关联关系
-    scenario = db.relationship('PerfTestScenario', backref='test_results')
+    scenario = db.relationship('PerfTestScenario', backref=db.backref('test_results', cascade='all, delete-orphan'))
     project = db.relationship('Project', backref='perf_test_results')
     metric_samples = db.relationship('PerformanceMetricSample', backref='test_result', cascade='all, delete-orphan')
 

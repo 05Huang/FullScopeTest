@@ -57,38 +57,33 @@ export interface PromptVersionComparison {
 // AI 统计服务
 export const aiStatsService = {
   // 获取概览统计
-  getOverview: async (): Promise<ApiResponse<AIStatsOverview>> => {
-    const response = await api.get('/ai/stats/overview')
-    return response.data
+  getOverview: (): Promise<ApiResponse<AIStatsOverview>> => {
+    return api.get('/ai/stats/overview') as Promise<ApiResponse<AIStatsOverview>>
   },
 
   // 获取成功率趋势
-  getSuccessRateTrend: async (days: number = 30, feature?: string): Promise<ApiResponse<SuccessRateTrend[]>> => {
+  getSuccessRateTrend: (days: number = 30, feature?: string): Promise<ApiResponse<SuccessRateTrend[]>> => {
     const params: any = { days }
     if (feature) params.feature = feature
-    const response = await api.get('/ai/stats/success-rate-trend', { params })
-    return response.data
+    return api.get('/ai/stats/success-rate-trend', { params }) as Promise<ApiResponse<SuccessRateTrend[]>>
   },
 
   // 获取延迟趋势
-  getLatencyTrend: async (days: number = 30, feature?: string): Promise<ApiResponse<LatencyTrend[]>> => {
+  getLatencyTrend: (days: number = 30, feature?: string): Promise<ApiResponse<LatencyTrend[]>> => {
     const params: any = { days }
     if (feature) params.feature = feature
-    const response = await api.get('/ai/stats/latency-trend', { params })
-    return response.data
+    return api.get('/ai/stats/latency-trend', { params }) as Promise<ApiResponse<LatencyTrend[]>>
   },
 
   // 获取 Token 消耗统计
-  getTokenConsumption: async (days: number = 30): Promise<ApiResponse<TokenConsumption[]>> => {
-    const response = await api.get('/ai/stats/token-consumption', { params: { days } })
-    return response.data
+  getTokenConsumption: (days: number = 30): Promise<ApiResponse<TokenConsumption[]>> => {
+    return api.get('/ai/stats/token-consumption', { params: { days } }) as Promise<ApiResponse<TokenConsumption[]>>
   },
 
   // 获取 Prompt 版本效果对比
-  getPromptVersionsComparison: async (feature?: string): Promise<ApiResponse<PromptVersionComparison[]>> => {
+  getPromptVersionsComparison: (feature?: string): Promise<ApiResponse<PromptVersionComparison[]>> => {
     const params: any = {}
     if (feature) params.feature = feature
-    const response = await api.get('/ai/stats/prompt-versions-comparison', { params })
-    return response.data
+    return api.get('/ai/stats/prompt-versions-comparison', { params }) as Promise<ApiResponse<PromptVersionComparison[]>>
   },
 }

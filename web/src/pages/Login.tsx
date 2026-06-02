@@ -154,8 +154,8 @@ const Login = () => {
 
     if (!isRegister && !autoFilled.current) {
       loginForm.setFieldsValue({
-        username: 'admin',
-        password: 'admin123'
+        username: 'huangxuan',
+        password: 'Test@123456'
       })
 
       message.open({

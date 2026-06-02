@@ -53,11 +53,37 @@ class PerformanceAlertRule(db.Model):
     scenario = db.relationship('PerfTestScenario', backref='alert_rules')
 
     def to_dict(self):
+        # Derive metric and threshold for frontend display
+        metric = 'P95 Response Time'
+        threshold = self.p95_threshold
+        operator = '<='
+        if self.p99_threshold:
+            metric = 'P99 Response Time'
+            threshold = self.p99_threshold
+            operator = '<='
+        if self.error_rate_threshold:
+            metric = 'Error Rate'
+            threshold = self.error_rate_threshold
+            operator = '<='
+        if self.rps_min_threshold:
+            metric = 'RPS'
+            threshold = self.rps_min_threshold
+            operator = '>='
+        if self.relative_p95_degradation:
+            metric = 'P95 Degradation'
+            threshold = self.relative_p95_degradation
+            operator = '<='
+
         return {
             'id': self.id,
             'name': self.name,
             'description': self.description,
             'scenario_id': self.scenario_id,
+            'scenario_name': self.scenario.name if self.scenario else None,
+            'metric': metric,
+            'threshold': threshold,
+            'operator': operator,
+            'is_active': self.enabled,
             'p95_threshold': self.p95_threshold,
             'p99_threshold': self.p99_threshold,
             'error_rate_threshold': self.error_rate_threshold,

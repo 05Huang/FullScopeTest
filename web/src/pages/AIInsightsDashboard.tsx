@@ -51,15 +51,30 @@ const AIInsightsDashboard = () => {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [o, s, l, t, v] = await Promise.all([
+      const results = await Promise.allSettled([
         aiStatsService.getOverview(), aiStatsService.getSuccessRateTrend(days, featureFilter),
         aiStatsService.getLatencyTrend(days, featureFilter), aiStatsService.getTokenConsumption(days),
         aiStatsService.getPromptVersionsComparison(featureFilter),
       ])
-      if (o.code === 200) setOverview(o.data); if (s.code === 200) setSuccessTrend(s.data || []);
-      if (l.code === 200) setLatencyTrend(l.data || []); if (t.code === 200) setTokenConsumption(t.data || []);
-      if (v.code === 200) setPromptVersions(v.data || []);
-    } catch { /* silent */ } finally { setLoading(false); }
+
+      const getValue = (r: PromiseSettledResult<any>) => r.status === 'fulfilled' ? r.value : null
+
+      const o = getValue(results[0])
+      const s = getValue(results[1])
+      const l = getValue(results[2])
+      const t = getValue(results[3])
+      const v = getValue(results[4])
+
+      if (o?.code === 200) setOverview(o.data)
+      if (s?.code === 200) setSuccessTrend(s.data || [])
+      if (l?.code === 200) setLatencyTrend(l.data || [])
+      if (t?.code === 200) setTokenConsumption(t.data || [])
+      if (v?.code === 200) setPromptVersions(v.data || [])
+    } catch (err) {
+      console.error('[AIInsights] fetchData error:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [days, featureFilter])
 
   useEffect(() => { fetchData() }, [fetchData])

@@ -167,6 +167,8 @@ _gen_doc.py
 grafana-custom.ini
 start_dev.sh
 scripts/add_i18n_keys.py
+scripts/test.py
+scripts/test.txt
 backend/seed_data.py
 
 # i18n 临时文件
