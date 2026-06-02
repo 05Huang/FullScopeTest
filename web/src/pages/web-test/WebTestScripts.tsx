@@ -1750,204 +1750,26 @@ const WebTestScripts = () => {
       </Modal>
 
       {/* 执行日志模态框 */}
-      <Modal
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 24 }}>
-            <span>执行日志 - {currentScript?.name}</span>
-            {currentScript?.last_result && !currentScript.last_result.success && (
-              <Button 
-                type="primary" 
-                danger 
-                icon={<BugOutlined />} 
-                onClick={() => handleAiHeal()}
-                loading={aiHealing}
-              >
-                AI 智能诊断
-              </Button>
-            )}
-          </div>
-        }
+      <LogViewerModal
         open={isLogModalOpen}
-        onCancel={() => {
+        scriptName={currentScript?.name || ''}
+        scriptId={currentScript?.id}
+        scriptResult={currentScript?.last_result}
+        aiHealing={aiHealing}
+        aiAnalysisResult={aiAnalysisResult}
+        token={token || ''}
+        onClose={() => {
           setIsLogModalOpen(false)
           setCurrentScript(null)
           setAiAnalysisResult(null)
         }}
-        footer={null}
-        width={800}
-      >
-        {aiAnalysisResult && (
-          <div style={{ marginBottom: 24, padding: 16, backgroundColor: '#f9f0ff', border: '1px solid #d9d9d9', borderRadius: 8 }}>
-            <Title level={5} style={{ color: '#722ed1', marginTop: 0 }}>
-              <RobotOutlined style={{ marginRight: 8 }} /> AI 诊断结果
-            </Title>
-            <div style={{ whiteSpace: 'pre-wrap', marginBottom: 16 }}>
-              {aiAnalysisResult.analysis}
-            </div>
-            {aiAnalysisResult.fixed_script && (
-              <Button 
-                type="primary" 
-                icon={<CheckCircleOutlined />} 
-                onClick={handleApplyFix}
-              >
-                一键修复脚本
-              </Button>
-            )}
-          </div>
-        )}
-
-        {currentScript?.last_result ? (
-          <div style={{ fontFamily: 'monospace' }}>
-            <div style={{ marginBottom: 16 }}>
-              <Tag color={currentScript.last_result.success ? 'success' : 'error'}>
-                {currentScript.last_result.success ? '执行成功' : '执行失败'}
-              </Tag>
-              {currentScript.last_result.duration && (
-                <Text type="secondary">
-                  耗时: {currentScript.last_result.duration.toFixed(2)}ms
-                </Text>
-              )}
-              {currentScript.last_result.return_code !== undefined && (
-                <Text type="secondary" style={{ marginLeft: 16 }}>
-                  返回码: {currentScript.last_result.return_code}
-                </Text>
-              )}
-            </div>
-
-            {currentScript.last_result.stdout && (
-              <div style={{ marginBottom: 16 }}>
-                <Text strong>标准输出 (stdout):</Text>
-                <pre
-                  style={{
-                    background: '#f5f5f5',
-                    padding: 12,
-                    borderRadius: 4,
-                    maxHeight: 300,
-                    overflow: 'auto',
-                    marginTop: 8,
-                  }}
-                >
-                  {currentScript.last_result.stdout}
-                </pre>
-              </div>
-            )}
-
-            {currentScript.last_result.vision_results && currentScript.last_result.vision_results.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <Text strong>视觉回归测试结果 (Visual Regression):</Text>
-                {currentScript.last_result.vision_results.map((vr, idx) => (
-                  <Card key={idx} size="small" style={{ marginTop: 8 }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <Text strong style={{ marginRight: 8 }}>{vr.name}</Text>
-                      <Tag color={vr.status === 'passed' ? 'success' : vr.status === 'failed' ? 'error' : 'processing'}>
-                        {vr.status === 'passed' ? '匹配通过' : vr.status === 'failed' ? '匹配失败' : '新基线'}
-                      </Tag>
-                      {vr.status !== 'new' && (
-                        <Text type="secondary">差异率: {(vr.mismatch_ratio * 100).toFixed(2)}% ({vr.mismatch_pixels} pixels)</Text>
-                      )}
-                      {vr.status === 'failed' && (
-                        <Button
-                          size="small"
-                          icon={<EyeOutlined />}
-                          onClick={() => {
-                            setSelectedVisualDiff({
-                              testCaseId: currentScript.id,
-                              baselineId: vr.baseline_id,
-                              baselineImagePath: vr.baseline_image_path,
-                              currentImagePath: vr.current_image_path,
-                              diffPercentage: vr.mismatch_ratio * 100,
-                              status: vr.status,
-                            })
-                            setIsVisualDiffModalOpen(true)
-                          }}
-                        >
-                          查看对比
-                        </Button>
-                      )}
-                    </div>
-                    {vr.status === 'failed' && (
-                      <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-                        <div style={{ flex: 1 }}>
-                          <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>预期 (Baseline)</Text>
-                          <Image
-                            src={`/api/v1/web-test/scripts/${currentScript.id}/snapshots/baseline/${vr.name}?token=${token}`}
-                            width="100%"
-                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-                          />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>实际 (Actual)</Text>
-                          <Image
-                            src={`/api/v1/web-test/scripts/${currentScript.id}/snapshots/actual/${vr.name}?token=${token}`}
-                            width="100%"
-                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-                          />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>差异 (Diff)</Text>
-                          <Image
-                            src={`/api/v1/web-test/scripts/${currentScript.id}/snapshots/diff/${vr.name}?token=${token}`}
-                            width="100%"
-                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {currentScript.last_result.stderr && (
-              <div>
-                <Text strong style={{ color: '#f5222d' }}>
-                  标准错误 (stderr):
-                </Text>
-                <pre
-                  style={{
-                    background: '#fff2f0',
-                    padding: 12,
-                    borderRadius: 4,
-                    maxHeight: 300,
-                    overflow: 'auto',
-                    marginTop: 8,
-                    color: '#f5222d',
-                  }}
-                >
-                  {currentScript.last_result.stderr}
-                </pre>
-              </div>
-            )}
-
-            {currentScript.last_result.error && (
-              <div>
-                <Text strong style={{ color: '#f5222d' }}>
-                  错误信息:
-                </Text>
-                <pre
-                  style={{
-                    background: '#fff2f0',
-                    padding: 12,
-                    borderRadius: 4,
-                    maxHeight: 300,
-                    overflow: 'auto',
-                    marginTop: 8,
-                    color: '#f5222d',
-                  }}
-                >
-                  {currentScript.last_result.error}
-                </pre>
-              </div>
-            )}
-
-            {!currentScript.last_result.stdout && !currentScript.last_result.stderr && !currentScript.last_result.error && (
-              <Text type="secondary">无输出信息</Text>
-            )}
-          </div>
-        ) : (
-          <Text type="secondary">{t('webTest.scriptNotExecuted')}</Text>
-        )}
-      </Modal>
+        onAiHeal={handleAiHeal}
+        onApplyFix={handleApplyFix}
+        onViewVisualDiff={(diff) => {
+          setSelectedVisualDiff(diff)
+          setIsVisualDiffModalOpen(true)
+        }}
+      />
 
       {/* Visual Diff Viewer Modal */}
       <Modal
