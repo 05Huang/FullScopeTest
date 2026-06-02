@@ -31,3 +31,6 @@ export const PERF_MAX_USERS = 2000
 
 /** 探索历史上限 */
 export const EXPLORE_HISTORY_LIMIT = 20
+
+/** @deprecated 使用 HTTP_METHOD_COLORS */
+export const methodColors = HTTP_METHOD_COLORS

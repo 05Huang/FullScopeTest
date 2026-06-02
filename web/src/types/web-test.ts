@@ -2,7 +2,7 @@
  * Web 测试相关类型定义
  */
 
-export type TestStatus = 'passed' | 'failed' | 'pending' | 'running'
+export type WebTestStatus = 'passed' | 'failed' | 'pending' | 'running'
 
 export type BrowserType = 'chromium' | 'firefox' | 'webkit'
 
@@ -14,7 +14,7 @@ export interface WebTestScript {
   collection_name?: string
   target_url?: string
   browser: string
-  status: TestStatus
+  status: WebTestStatus
   step_count: number
   last_run_at: string
   last_run_duration?: number

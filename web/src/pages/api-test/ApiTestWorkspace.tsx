@@ -54,6 +54,10 @@ import { useProjectStore } from '@/stores/projectStore'
 import CollectionManager from './CollectionManager'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
 import ScriptTestResults from './components/ScriptTestResults'
+import SaveCaseModal from './components/SaveCaseModal'
+import AiSynthesizeModal from './components/AiSynthesizeModal'
+import AiReviewModal from './components/AiReviewModal'
+import AiAssistantDrawer from './components/AiAssistantDrawer'
 import { useAiAssistant } from './hooks/useAiAssistant'
 
 const { Sider, Content } = Layout
@@ -2489,298 +2493,67 @@ const ApiTestWorkspace = () => {
       </Content>
 
       {/* AI Assistant 弹窗 */}
-      <Drawer
-        title={
-          <Space>
-            <RobotOutlined style={{ color: '#3D6E66' }} />
-            <span style={{ color: '#3D6E66', fontWeight: 600 }}>AI Assistant (依赖全局系统设置)</span>
-          </Space>
-        }
-        placement="right"
-        width={520}
+      <AiAssistantDrawer
         open={aiDrawerOpen}
         onClose={() => setAiDrawerOpen(false)}
-      >
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          <Alert
-            type="info"
-            showIcon
-            message="AI 将通过调用平台现有的 API 来创建或更新环境、集合、用例，并执行测试。"
-          />
+        loadingConfig={loadingConfig}
+        globalAiConfig={globalAiConfig}
+        aiBaseUrl={aiBaseUrl}
+        setAiBaseUrl={setAiBaseUrl}
+        aiModel={aiModel}
+        setAiModel={setAiModel}
+        aiApiKey={aiApiKey}
+        setAiApiKey={setAiApiKey}
+        aiVisionBaseUrl={aiVisionBaseUrl}
+        setAiVisionBaseUrl={setAiVisionBaseUrl}
+        aiVisionModel={aiVisionModel}
+        setAiVisionModel={setAiVisionModel}
+        aiVisionApiKey={aiVisionApiKey}
+        setAiVisionApiKey={setAiVisionApiKey}
+        aiPrompt={aiPrompt}
+        setAiPrompt={setAiPrompt}
+        aiAutoRun={aiAutoRun}
+        setAiAutoRun={setAiAutoRun}
+        aiRunning={aiRunning}
+        aiSummary={aiSummary}
+        aiPlanSource={aiPlanSource}
+        aiPlanOperations={aiPlanOperations}
+        aiExecutionLogs={aiExecutionLogs}
+        onExecute={handleAiExecute}
+      />
 
-          <Card size="small" title="模型配置" loading={loadingConfig}>
-            <Form layout="vertical">
-              <Form.Item label="Base URL" style={{ marginBottom: 12 }}>
-                <Input
-                  placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"}
-                  value={aiBaseUrl}
-                  onChange={(e) => setAiBaseUrl(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Model" style={{ marginBottom: 12 }}>
-                <Input
-                  placeholder={globalAiConfig?.model || "gpt-4o-mini"}
-                  value={aiModel}
-                  onChange={(e) => setAiModel(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="API Key" style={{ marginBottom: 0 }}>
-                <Input.Password
-                  placeholder={globalAiConfig?.api_key || "请输入模型提供商的 API Key"}
-                  value={aiApiKey}
-                  onChange={(e) => setAiApiKey(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Vision Base URL" style={{ marginTop: 12, marginBottom: 12 }}>
-                <Input
-                  placeholder={globalAiConfig?.vision_base_url || globalAiConfig?.base_url || "https://api.openai.com/v1"}
-                  value={aiVisionBaseUrl}
-                  onChange={(e) => setAiVisionBaseUrl(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Vision Model" style={{ marginBottom: 12 }}>
-                <Input
-                  placeholder={globalAiConfig?.vision_model || "gpt-4o-mini"}
-                  value={aiVisionModel}
-                  onChange={(e) => setAiVisionModel(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Vision API Key" style={{ marginBottom: 0 }}>
-                <Input.Password
-                  placeholder={globalAiConfig?.vision_api_key || "请输入视觉模型 API Key"}
-                  value={aiVisionApiKey}
-                  onChange={(e) => setAiVisionApiKey(e.target.value)}
-                />
-              </Form.Item>
-            </Form>
-          </Card>
-
-          <TextArea
-            rows={8}
-            placeholder="请用自然语言描述您的需求。例如：创建一个登录接口集合，包含3个测试用例，创建对应的测试环境，然后运行该集合。"
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Space>
-              <Text type="secondary">自动运行测试</Text>
-              <Switch checked={aiAutoRun} onChange={setAiAutoRun} />
-            </Space>
-            <Button type="primary" icon={<RobotOutlined />} loading={aiRunning} onClick={handleAiExecute}>
-              执行 AI 指令
-            </Button>
-          </div>
-
-          {aiSummary && <Alert type="success" showIcon message={aiSummary} />}
-
-          {aiPlanSource && (
-            <Tag color={aiPlanSource === 'llm' ? 'blue' : 'orange'}>
-              来源: {aiPlanSource}
-            </Tag>
-          )}
-
-          {aiPlanOperations.length > 0 && (
-            <Card size="small" title={`计划执行的操作 (${aiPlanOperations.length})`}>
-              <div style={{ maxHeight: 180, overflow: 'auto' }}>
-                {aiPlanOperations.map((op, index) => (
-                  <div key={`${op.type}-${index}`} style={{ marginBottom: 6 }}>
-                    <Text code>{`${index + 1}. ${op.type}`}</Text>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          <Divider style={{ margin: '8px 0' }} />
-
-          <Card size="small" title="执行日志">
-            {aiExecutionLogs.length === 0 ? (
-              <Empty description="暂无日志" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            ) : (
-              <div style={{ maxHeight: 220, overflow: 'auto' }}>
-                {aiExecutionLogs.map((log, index) => (
-                  <div key={`${log.status}-${index}`} style={{ marginBottom: 8 }}>
-                    <Tag
-                      color={
-                        log.status === 'success'
-                          ? 'success'
-                          : log.status === 'error'
-                            ? 'error'
-                            : 'default'
-                      }
-                    >
-                      {log.status.toUpperCase()}
-                    </Tag>
-                    <Text>{log.message}</Text>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </Space>
-      </Drawer>
-
-      <Modal
-        title="保存到用例"
+      <SaveCaseModal
         open={saveModalOpen}
+        caseName={saveCaseName}
+        method={method}
+        url={url}
+        selectedCollectionId={selectedCollectionId}
+        collections={collections}
+        onCaseNameChange={setSaveCaseName}
+        onCollectionChange={setSelectedCollectionId}
+        onSave={handleSaveCase}
         onCancel={() => {
           setSaveModalOpen(false)
           setSaveCaseName('')
           setSelectedCollectionId(activeCollectionId)
         }}
-        onOk={handleSaveCase}
-      >
-        <Form layout="vertical">
-          <Form.Item label="用例名称" required>
-            <Input
-              placeholder="请输入用例名称"
-              value={saveCaseName}
-              onChange={(e) => setSaveCaseName(e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label="所属集合">
-            <Select
-              placeholder="选择集合（可选）"
-              allowClear
-              value={selectedCollectionId}
-              onChange={setSelectedCollectionId}
-              options={collections.map(c => ({
-                value: c.id,
-                label: c.name
-              }))}
-            />
-          </Form.Item>
-          <Form.Item label="请求信息">
-            <Card size="small">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div>
-                  <Text type="secondary">方法:</Text> <Tag color={methodColors[method]}>{method}</Tag>
-                </div>
-                <div>
-                  <Text type="secondary">URL:</Text> <Text code>{url || '未设置'}</Text>
-                </div>
-              </Space>
-            </Card>
-          </Form.Item>
-        </Form>
-      </Modal>
+      />
 
       {/* AI 扩充用例弹窗 */}
-      <Modal
-        title={
-          <Space>
-            <ExperimentOutlined style={{ color: '#3D6E66' }} />
-            <span>AI 智能测试数据生成与用例裂变</span>
-          </Space>
-        }
+      <AiSynthesizeModal
         open={aiSynthesizeModalOpen}
-        onCancel={() => {
-          if (!aiSynthesizing) {
-            setAiSynthesizeModalOpen(false)
-            setSynthesizedCases([])
-          }
-        }}
-        width={800}
-        footer={
-          synthesizedCases.length > 0 ? (
-            <Space>
-              <Button onClick={() => setSynthesizedCases([])}>重新生成</Button>
-              <Button type="primary" onClick={handleSaveSynthesizedCases}>
-                保存全部用例
-              </Button>
-            </Space>
-          ) : (
-            <Button
-              type="primary"
-              onClick={handleAiSynthesize}
-              loading={aiSynthesizing}
-            >
-              生成测试用例
-            </Button>
-          )
-        }
-      >
-        {!synthesizedCases.length ? (
-          <div style={{ padding: '20px 0' }}>
-            <Alert
-              type="info"
-              showIcon
-              message="基于当前 API 定义自动生成异常和边界测试用例"
-              description="AI 将自动分析当前的请求 URL、Headers、Params 和 Body，并生成包含边界值、非法注入、空值等异常测试用例，极大提升测试覆盖率。"
-              style={{ marginBottom: 24 }}
-            />
-            <Form layout="vertical">
-              <Form.Item label="生成数量">
-                <Select
-                  value={aiSynthesizeCount}
-                  onChange={setAiSynthesizeCount}
-                  style={{ width: 120 }}
-                  options={[
-                    { value: 3, label: '3 个' },
-                    { value: 5, label: '5 个' },
-                    { value: 10, label: '10 个' },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item label="保存目标分组">
-                <Select
-                  value={synthesizeTargetCollectionId}
-                  onChange={setSynthesizeTargetCollectionId}
-                  placeholder="选择用例集合（默认未分组）"
-                  allowClear
-                  options={collections.map(c => ({
-                    value: c.id,
-                    label: c.name
-                  }))}
-                />
-              </Form.Item>
-            </Form>
-          </div>
-        ) : (
-          <div style={{ maxHeight: 500, overflow: 'auto' }}>
-            <Alert 
-              type="success" 
-              message={`成功生成 ${synthesizedCases.length} 个测试用例，您可以预览并一键保存到左侧用例树中。`} 
-              style={{ marginBottom: 16 }}
-            />
-            {synthesizedCases.map((c, idx) => (
-              <Card 
-                key={idx} 
-                size="small" 
-                title={<Space><Tag color={methodColors[c.method] || 'blue'}>{c.method}</Tag><Text strong>{c.name}</Text></Space>}
-                style={{ marginBottom: 16 }}
-              >
-                <div style={{ marginBottom: 8 }}>
-                  <Text type="secondary" style={{ width: 60, display: 'inline-block' }}>URL:</Text>
-                  <Text code>{c.url}</Text>
-                </div>
-                {c.params && Object.keys(c.params).length > 0 && (
-                  <div style={{ marginBottom: 8 }}>
-                    <Text type="secondary" style={{ width: 60, display: 'inline-block' }}>Params:</Text>
-                    <Text code>{JSON.stringify(c.params)}</Text>
-                  </div>
-                )}
-                {c.body && Object.keys(c.body).length > 0 && (
-                  <div style={{ marginBottom: 8 }}>
-                    <Text type="secondary" style={{ width: 60, display: 'inline-block', verticalAlign: 'top' }}>Body:</Text>
-                    <pre style={{ 
-                      display: 'inline-block', 
-                      margin: 0, 
-                      padding: '4px 8px', 
-                      background: '#f5f5f5', 
-                      borderRadius: 4,
-                      width: 'calc(100% - 70px)'
-                    }}>
-                      {JSON.stringify(c.body, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </Card>
-            ))}
-          </div>
-        )}
-      </Modal>
+        loading={aiSynthesizing}
+        synthesizedCases={synthesizedCases}
+        synthesizeCount={aiSynthesizeCount}
+        targetCollectionId={synthesizeTargetCollectionId}
+        collections={collections}
+        onSynthesize={handleAiSynthesize}
+        onSaveAll={handleSaveSynthesizedCases}
+        onCancel={() => setAiSynthesizeModalOpen(false)}
+        onCountChange={setAiSynthesizeCount}
+        onTargetCollectionChange={setSynthesizeTargetCollectionId}
+        onReset={() => setSynthesizedCases([])}
+      />
 
       {/* 右键菜单 */}
       {contextMenuState.visible && (
@@ -2810,97 +2583,19 @@ const ApiTestWorkspace = () => {
       )}
 
       {/* AI 集合评审弹窗 */}
-      <Modal
-        title={
-          <Space>
-            <RobotOutlined style={{ color: '#1890ff' }} />
-            <span>AI 智能用例评审与补全</span>
-          </Space>
-        }
+      <AiReviewModal
         open={aiReviewModalOpen}
-        onCancel={() => {
-          if (!aiReviewing) {
-            setAiReviewModalOpen(false)
-            setReviewSummary('')
-            setReviewSuggestedCases([])
-          }
+        loading={aiReviewing}
+        reviewSummary={reviewSummary}
+        suggestedCases={reviewSuggestedCases}
+        onStartReview={handleAiReviewCollection}
+        onSaveCases={handleSaveReviewCases}
+        onCancel={() => setAiReviewModalOpen(false)}
+        onReset={() => {
+          setReviewSummary('')
+          setReviewSuggestedCases([])
         }}
-        width={900}
-        footer={
-          reviewSuggestedCases.length > 0 ? (
-            <Space>
-              <Button onClick={() => {
-                setReviewSummary('')
-                setReviewSuggestedCases([])
-              }}>重新评审</Button>
-              <Button type="primary" onClick={handleSaveReviewCases}>
-                一键保存所有补充用例
-              </Button>
-            </Space>
-          ) : (
-            <Button
-              type="primary"
-              onClick={handleAiReviewCollection}
-              loading={aiReviewing}
-            >
-              开始智能评审
-            </Button>
-          )
-        }
-      >
-        {!reviewSummary && !aiReviewing ? (
-          <div style={{ padding: '20px 0' }}>
-            <Alert
-              type="info"
-              showIcon
-              message="基于当前集合自动评审并补充用例"
-              description="AI 将自动分析当前集合内的所有用例，指出哪些边界条件、异常场景或安全漏洞没有被覆盖，并提供一键生成补充用例的功能。"
-              style={{ marginBottom: 24 }}
-            />
-          </div>
-        ) : (
-          <Spin spinning={aiReviewing} tip="AI 正在深度评审当前集合...">
-            {reviewSummary && (
-              <div style={{ padding: '10px 0' }}>
-                <Alert
-                  type="success"
-                  showIcon
-                  message="评审总结"
-                  description={<div style={{ whiteSpace: 'pre-wrap' }}>{reviewSummary}</div>}
-                  style={{ marginBottom: 24 }}
-                />
-                
-                {reviewSuggestedCases.length > 0 && (
-                  <div>
-                    <div style={{ marginBottom: 12, fontWeight: 500 }}>
-                      AI 建议补充的测试用例 ({reviewSuggestedCases.length} 个):
-                    </div>
-                    <div style={{ maxHeight: 400, overflow: 'auto', paddingRight: 8 }}>
-                      {reviewSuggestedCases.map((c, i) => (
-                        <Card key={i} size="small" style={{ marginBottom: 12 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Space>
-                              <Tag color={methodColors[c.method] || 'default'}>{c.method}</Tag>
-                              <Text strong>{c.name}</Text>
-                            </Space>
-                          </div>
-                          <div style={{ marginBottom: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 13 }}>URL: </Text>
-                            <Text code>{c.url}</Text>
-                          </div>
-                          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
-                            {c.description}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </Spin>
-        )}
-      </Modal>
+      />
     </Layout>
   )
 }
