@@ -1,5 +1,13 @@
 import api from './api'
 
+// 通用 API 响应类型
+export interface ApiResponse<T = any> {
+  code: number
+  message: string
+  data: T
+  timestamp?: string
+}
+
 // AI 统计相关类型定义
 export interface AIStatsOverview {
   total_invocations: number
