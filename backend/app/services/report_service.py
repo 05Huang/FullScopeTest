@@ -29,9 +29,9 @@ class ReportService(BaseService):
             query = query.filter_by(status=status)
 
         total = query.count()
-        runs = query.order_by(TestRun.created_at.desc())
-            .offset((page - 1) * per_page)
-            .limit(per_page)
+        runs = query.order_by(TestRun.created_at.desc()) \
+            .offset((page - 1) * per_page) \
+            .limit(per_page) \
             .all()
 
         return {

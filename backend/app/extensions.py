@@ -2,15 +2,16 @@
 Flask 扩展实例
 
 集中管理所有 Flask 扩展，避免循环导入
+
+数据库模块已迁移到 database.py，支持 Flask 和 FastAPI 双框架。
 """
 
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from celery import Celery
 
-# 数据库 ORM
-db = SQLAlchemy()
+# 数据库 ORM（从独立模块导入，不再依赖 Flask-SQLAlchemy）
+from .database import db
 
 # 数据库迁移
 migrate = Migrate()

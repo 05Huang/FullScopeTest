@@ -190,6 +190,21 @@ def init_extensions(app):
     if app.config.get('WTF_CSRF_ENABLED', False):
         csrf.init_app(app)
 
+    # 数据库会话生命周期管理（替代 Flask-SQLAlchemy 的自动管理）
+    # 会话在首次访问 db.session 时自动创建（scoped_session）
+    # 请求结束时提交或回滚，然后释放会话
+    @app.teardown_appcontext
+    def _db_session_teardown(exc=None):
+        try:
+            if exc is None:
+                db.session.commit()
+            else:
+                db.session.rollback()
+        except Exception:
+            db.session.rollback()
+        finally:
+            db.session.remove()
+
 
 def register_blueprints(app):
     """注册 API 蓝图"""

@@ -1,11 +1,9 @@
 /**
- * API 测试相关常量
+ * API 测试共享常量
  */
 
-import type { HttpMethod } from '@/types'
-
-// HTTP 方法颜色映射
-export const METHOD_COLORS: Record<HttpMethod, string> = {
+/** HTTP 方法颜色映射 */
+export const HTTP_METHOD_COLORS: Record<string, string> = {
   GET: '#52c41a',
   POST: '#1890ff',
   PUT: '#faad14',
@@ -15,72 +13,21 @@ export const METHOD_COLORS: Record<HttpMethod, string> = {
   OPTIONS: '#8c8c8c',
 }
 
-// HTTP 方法选项
-export const HTTP_METHODS: { label: string; value: HttpMethod }[] = [
-  { label: 'GET', value: 'GET' },
-  { label: 'POST', value: 'POST' },
-  { label: 'PUT', value: 'PUT' },
-  { label: 'DELETE', value: 'DELETE' },
-  { label: 'PATCH', value: 'PATCH' },
-  { label: 'HEAD', value: 'HEAD' },
-  { label: 'OPTIONS', value: 'OPTIONS' },
-]
-
-// 请求体类型选项
-export const BODY_TYPE_OPTIONS = [
-  { label: 'JSON', value: 'json' },
-  { label: 'Form Data', value: 'form' },
-  { label: 'Raw', value: 'raw' },
-  { label: 'None', value: 'none' },
-]
-
-// 常用请求头
-export const COMMON_HEADERS = [
-  'Content-Type',
-  'Authorization',
-  'Accept',
-  'User-Agent',
-  'Cache-Control',
-  'X-Requested-With',
-  'X-API-Key',
-  'Cookie',
-]
-
-// 常用 Content-Type
-export const CONTENT_TYPES = [
-  'application/json',
-  'application/x-www-form-urlencoded',
-  'multipart/form-data',
-  'text/plain',
-  'text/html',
-  'application/xml',
-]
-
-// 默认空键值对
-export const DEFAULT_KEY_VALUE_PAIR = { key: '', value: '' }
-
-// 默认 Mock 配置
-export const DEFAULT_MOCK_CONFIG = {
-  enabled: false,
-  response_code: 200,
-  response_body: '{\n  "success": true,\n  "data": {}\n}',
-  response_headers: [{ key: 'Content-Type', value: 'application/json' }],
-  delay_ms: 0,
+/** 浏览器配置 */
+export const BROWSER_CONFIG: Record<string, { color: string; name: string }> = {
+  chromium: { color: 'blue', name: 'Chromium' },
+  firefox: { color: 'orange', name: 'Firefox' },
+  webkit: { color: 'purple', name: 'WebKit' },
 }
 
-// AI 执行日志类型颜色
-export const LOG_TYPE_COLORS = {
-  info: '#1890ff',
-  success: '#52c41a',
-  error: '#ff4d4f',
-  warning: '#faad14',
-}
+/** 批量操作并发数 */
+export const BATCH_ACTION_CONCURRENCY = 5
 
-// 草稿自动保存延迟 (毫秒)
-export const DRAFT_SAVE_DELAY = 2000
+/** AI 探索历史存储键前缀 */
+export const EXPLORE_HISTORY_STORAGE_PREFIX = 'web-test-ai-explore-history'
 
-// 请求超时时间 (毫秒)
-export const REQUEST_TIMEOUT = 30000
+/** 性能测试最大用户数 */
+export const PERF_MAX_USERS = 2000
 
-// AI 请求超时时间 (毫秒)
-export const AI_REQUEST_TIMEOUT = 120000
+/** 探索历史上限 */
+export const EXPLORE_HISTORY_LIMIT = 20
