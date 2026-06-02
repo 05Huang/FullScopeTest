@@ -1478,10 +1478,10 @@ body {
   border-radius: var(--fst-radius-xl);
   border: 1px solid var(--fst-glass-border);
   box-shadow: var(--fst-shadow-sm);
-  padding: 20px 24px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   transition: all 250ms ease;
   position: relative;
   overflow: hidden;
@@ -1507,7 +1507,7 @@ body {
 }
 
 .fst-stat-icon {
-  width: 44px; height: 44px;
+  width: 48px; height: 48px;
   border-radius: var(--fst-radius-md);
   display: grid; place-items: center;
   font-size: 20px;
@@ -1603,7 +1603,7 @@ body {
 }
 
 /* ── Grid ── */
-.fst-grid { display: grid; gap: 24px; }
+.fst-grid { display: grid; gap: 28px; }
 .fst-grid--4 { grid-template-columns: repeat(4, 1fr); }
 .fst-grid--3 { grid-template-columns: repeat(3, 1fr); }
 .fst-grid--2 { grid-template-columns: repeat(2, 1fr); }
@@ -1760,7 +1760,7 @@ body {
 .fst-stat-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 @media (min-width: 1024px) {
   .fst-stat-row { grid-template-columns: repeat(4, 1fr); }
