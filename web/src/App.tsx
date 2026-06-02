@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import ErrorBoundary from './components/ErrorBoundary'
 import i18n from './i18n'
 import { useAuthStore } from './stores/authStore'
 
@@ -55,24 +56,25 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <Routes>
-      {/* 公开路由 */}
-      <Route element={<Login />}>
-        <Route path="/login" element={<></>} />
-        <Route path="/register" element={<></>} />
-      </Route>
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+    <ErrorBoundary>
+      <Routes>
+        {/* 公开路由 */}
+        <Route element={<Login />}>
+          <Route path="/login" element={<></>} />
+          <Route path="/register" element={<></>} />
+        </Route>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* 受保护的路由 */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
+        {/* 受保护的路由 */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route
           path="dashboard"
@@ -251,7 +253,8 @@ function App() {
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </ErrorBoundary>
   )
 }
 

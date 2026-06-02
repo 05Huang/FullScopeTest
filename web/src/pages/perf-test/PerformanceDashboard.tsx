@@ -28,6 +28,7 @@ import {
   ApartmentOutlined,
 } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
+import { usePerformanceComparison } from './hooks/usePerformanceComparison'
 import type { ColumnsType } from 'antd/es/table'
 import { perfTestService } from '@/services/perfTestService'
 
@@ -115,11 +116,19 @@ const PerformanceDashboard = () => {
   const [currentMetrics, setCurrentMetrics] = useState<MetricSample[]>([])
   const [currentResult, setCurrentResult] = useState<PerformanceTestResultItem | null>(null)
 
-  /* 历史对比 */
-  const [compareMode, setCompareMode] = useState(false)
-  const [compareIds, setCompareIds] = useState<number[]>([])
-  const [compareData, setCompareData] = useState<PerformanceTestResultItem[]>([])
-  const [compareMetricsMap, setCompareMetricsMap] = useState<Record<number, MetricSample[]>>({})
+  /* 历史对比 (使用自定义 hook) */
+  const {
+    compareMode,
+    compareIds,
+    compareData,
+    compareMetricsMap,
+    toggleCompareMode,
+    toggleCompareId,
+    addCompareData,
+    addCompareMetrics,
+    clearCompare,
+    setCompareMode,
+  } = usePerformanceComparison()
 
   /* 筛选 */
   const [scenarioFilter, setScenarioFilter] = useState<number | undefined>(undefined)
@@ -173,64 +182,31 @@ const PerformanceDashboard = () => {
   const handleSelectResult = useCallback((resultId: number) => {
     setSelectedResultId(resultId)
     setCompareMode(false)
-    setCompareIds([])
-    setCompareData([])
-    setCompareMetricsMap({})
+    clearCompare()
     fetchMetrics(resultId)
-  }, [fetchMetrics])
-
-  /* ---------- 对比模式 ---------- */
-  const toggleCompareMode = useCallback(() => {
-    setCompareMode(prev => !prev)
-    if (compareMode) {
-      setCompareIds([])
-      setCompareData([])
-      setCompareMetricsMap({})
-      if (selectedResultId) {
-        fetchMetrics(selectedResultId)
-      }
-    } else {
-      setCurrentMetrics([])
-      setCurrentResult(null)
-    }
-  }, [compareMode, selectedResultId, fetchMetrics])
+  }, [fetchMetrics, setCompareMode, clearCompare])
 
   const handleCompareSelect = useCallback(async (resultIds: number[]) => {
     if (resultIds.length < 1) {
-      setCompareIds([])
-      setCompareData([])
-      setCompareMetricsMap({})
+      clearCompare()
       return
     }
-    setCompareIds(resultIds)
+    resultIds.forEach(id => toggleCompareId(id))
 
     /* 获取每个结果的指标 */
-    const allData: PerformanceTestResultItem[] = []
-    const metricsMap: Record<number, MetricSample[]> = {}
-
     await Promise.all(
       resultIds.map(async (id) => {
         try {
           const res = await perfTestService.getPerformanceResultMetrics(id)
           if (res.code === 200) {
-            allData.push(res.data?.result)
-            metricsMap[id] = res.data?.metrics || []
+            addCompareData(res.data?.result)
+            addCompareMetrics(id, res.data?.metrics || [])
           }
         } catch {
           /* 静默 */
         }
       })
     )
-
-    /* 按创建时间排序 */
-    allData.sort((a, b) => {
-      const ta = a.created_at ? new Date(a.created_at).getTime() : 0
-      const tb = b.created_at ? new Date(b.created_at).getTime() : 0
-      return ta - tb
-    })
-
-    setCompareData(allData)
-    setCompareMetricsMap(metricsMap)
   }, [])
 
   /* ---------- 初始化 & 轮询 ---------- */

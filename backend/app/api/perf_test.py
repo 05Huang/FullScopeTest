@@ -15,8 +15,16 @@ from ..utils.validators import validate_required, is_valid_url, is_valid_http_me
 from ..utils import get_current_user_id
 from ..tasks import run_perf_test_task
 from ..utils.ai_script_generator import generate_test_script
+from ..services.perf_test_service import PerfTestService
+from ..utils.exceptions import NotFoundError, ValidationError
+from ..core.logging import get_logger
 import json
 from datetime import datetime
+
+logger = get_logger(__name__)
+
+# 初始化 Service
+perf_test_service = PerfTestService()
 
 
 # ==================== URL 解析工具 ====================
@@ -237,14 +245,12 @@ def get_scenarios():
     """获取性能测试场景列表"""
     user_id = get_current_user_id()
     project_id = request.args.get('project_id', type=int)
-    
-    query = PerfTestScenario.query.filter_by(user_id=user_id)
-    if project_id:
-        query = query.filter_by(project_id=project_id)
-    
-    scenarios = query.order_by(PerfTestScenario.created_at.desc()).all()
-    
-    return success_response(data=[s.to_dict() for s in scenarios])
+    try:
+        data = perf_test_service.get_scenarios(user_id, project_id)
+        return success_response(data=data)
+    except Exception as exc:
+        logger.error("get perf scenarios failed", error=str(exc))
+        return error_response(500, f"获取场景失败: {str(exc)}")
 
 
 @api_bp.route('/perf-test/scenarios', methods=['POST'])
@@ -323,12 +329,14 @@ def create_scenario():
 def get_scenario(scenario_id):
     """获取场景详情"""
     user_id = get_current_user_id()
-    scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
-    
-    if not scenario:
-        return error_response(404, '场景不存在')
-    
-    return success_response(data=scenario.to_dict())
+    try:
+        result = perf_test_service.get_scenario(scenario_id, user_id)
+        return success_response(data=result)
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("get perf scenario failed", error=str(exc))
+        return error_response(500, f"获取场景失败: {str(exc)}")
 
 
 @api_bp.route('/perf-test/scenarios/<int:scenario_id>', methods=['PUT'])
@@ -429,21 +437,23 @@ def update_scenario(scenario_id):
 def delete_scenario(scenario_id):
     """删除性能测试场景"""
     user_id = get_current_user_id()
-    scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
-    
-    if not scenario:
-        return error_response(404, '场景不存在')
-    
-    # 如果正在运行，先停止
-    if scenario.status == 'running':
-        try:
-            task_id = f'perf_test_{scenario_id}_{user_id}'
-            celery.control.revoke(task_id, terminate=True)
-        except:
-            pass
-    
-    db.session.delete(scenario)
-    db.session.commit()
+    try:
+        # 如果正在运行，先停止
+        scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
+        if scenario and scenario.status == 'running':
+            try:
+                task_id = f'perf_test_{scenario_id}_{user_id}'
+                celery.control.revoke(task_id, terminate=True)
+            except Exception as exc:
+                logger.warning("Failed to revoke celery task", task_id=task_id, error=str(exc))
+
+        perf_test_service.delete_scenario(scenario_id, user_id)
+        return success_response(message='删除成功')
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("delete perf scenario failed", error=str(exc))
+        return error_response(500, f"删除场景失败: {str(exc)}")
     
     return success_response(message='删除成功')
 

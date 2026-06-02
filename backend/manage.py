@@ -64,5 +64,55 @@ def drop_db():
         click.echo('✅ 所有数据库表已删除！')
 
 
+@cli.command()
+def seed():
+    """初始化默认数据（Prompt 版本等）"""
+    from sqlalchemy import inspect as sa_inspect
+    from app.models.prompt_version import PromptVersion
+    from app.services.ai.script_generator import (
+        DEFAULT_WEB_SYSTEM_PROMPT,
+        DEFAULT_PERF_SYSTEM_PROMPT,
+    )
+
+    # 检查表是否存在
+    try:
+        inspector = sa_inspect(db.engine)
+        if not inspector.has_table("prompt_versions"):
+            click.echo('❌ prompt_versions 表不存在，请先运行 init_db')
+            return
+    except Exception as e:
+        click.echo(f'❌ 数据库连接失败: {e}')
+        return
+
+    defaults = [
+        ('script_gen_web', 'baseline', DEFAULT_WEB_SYSTEM_PROMPT),
+        ('script_gen_perf', 'baseline', DEFAULT_PERF_SYSTEM_PROMPT),
+    ]
+
+    seeded_count = 0
+    for feature, name, system_prompt in defaults:
+        existing = PromptVersion.query.filter_by(feature=feature, version=1).first()
+        if not existing:
+            pv = PromptVersion(
+                feature=feature,
+                name=name,
+                version=1,
+                is_active=True,
+                system_prompt=system_prompt,
+                temperature=0.2,
+                traffic_weight=1.0,
+                change_notes='Initial baseline prompt',
+            )
+            db.session.add(pv)
+            seeded_count += 1
+            click.echo(f'  ✅ 创建 {feature} baseline prompt')
+
+    if seeded_count > 0:
+        db.session.commit()
+        click.echo(f'✅ 成功初始化 {seeded_count} 个默认 Prompt 版本')
+    else:
+        click.echo('ℹ️ 所有默认 Prompt 版本已存在，无需初始化')
+
+
 if __name__ == '__main__':
     cli()

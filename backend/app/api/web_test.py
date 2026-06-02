@@ -18,6 +18,8 @@ from ..utils.ai_script_generator import generate_test_script
 from ..utils.ai_script_healer import analyze_test_error
 from ..utils.ai_web_explorer import run_exploration_task
 from ..core.logging import get_logger
+from ..services.web_test_service import WebTestService
+from ..utils.exceptions import NotFoundError, ValidationError
 import requests
 import subprocess
 import sys
@@ -28,6 +30,9 @@ from queue import Queue, Empty
 from datetime import datetime
 from urllib.parse import quote_plus
 import uuid
+
+# 初始化 Service
+web_test_service = WebTestService()
 
 logger = get_logger(__name__)
 
@@ -392,13 +397,12 @@ def get_web_collections():
     """获取 Web 用例集列表"""
     user_id = get_current_user_id()
     project_id = request.args.get('project_id', type=int)
-
-    query = WebTestCollection.query.filter_by(user_id=user_id)
-    if project_id:
-        query = query.filter_by(project_id=project_id)
-
-    collections = query.order_by(WebTestCollection.created_at.desc()).all()
-    return success_response(data=[c.to_dict() for c in collections])
+    try:
+        data = web_test_service.get_collections(user_id, project_id)
+        return success_response(data=data)
+    except Exception as exc:
+        logger.error("get web collections failed", error=str(exc))
+        return error_response(500, f"获取集合失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/collections', methods=['POST'])
@@ -407,22 +411,14 @@ def create_web_collection():
     """创建 Web 用例集"""
     user_id = get_current_user_id()
     data = request.get_json() or {}
-
-    error = validate_required(data, ['name'])
-    if error:
-        return error_response(400, error)
-
-    collection = WebTestCollection(
-        name=data['name'],
-        description=data.get('description', ''),
-        project_id=data.get('project_id'),
-        sort_order=data.get('sort_order', 0),
-        user_id=user_id,
-    )
-    db.session.add(collection)
-    db.session.commit()
-
-    return success_response(data=collection.to_dict(), message='创建成功')
+    try:
+        result = web_test_service.create_collection(user_id, data)
+        return success_response(data=result, message='创建成功')
+    except ValidationError as exc:
+        return error_response(400, str(exc))
+    except Exception as exc:
+        logger.error("create web collection failed", error=str(exc))
+        return error_response(500, f"创建集合失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/collections/<int:collection_id>', methods=['PUT'])
@@ -430,17 +426,15 @@ def create_web_collection():
 def update_web_collection(collection_id):
     """更新 Web 用例集"""
     user_id = get_current_user_id()
-    collection, err = _get_collection_or_404(collection_id, user_id)
-    if err:
-        return err
-
     data = request.get_json() or {}
-    for field in ['name', 'description', 'sort_order']:
-        if field in data:
-            setattr(collection, field, data[field])
-
-    db.session.commit()
-    return success_response(data=collection.to_dict(), message='更新成功')
+    try:
+        result = web_test_service.update_collection(collection_id, user_id, data)
+        return success_response(data=result, message='更新成功')
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("update web collection failed", error=str(exc))
+        return error_response(500, f"更新集合失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/collections/<int:collection_id>', methods=['DELETE'])
@@ -448,17 +442,14 @@ def update_web_collection(collection_id):
 def delete_web_collection(collection_id):
     """删除 Web 用例集"""
     user_id = get_current_user_id()
-    collection, err = _get_collection_or_404(collection_id, user_id)
-    if err:
-        return err
-
-    WebTestScript.query.filter_by(collection_id=collection.id, user_id=user_id).update(
-        {'collection_id': None},
-        synchronize_session=False
-    )
-    db.session.delete(collection)
-    db.session.commit()
-    return success_response(message='删除成功')
+    try:
+        web_test_service.delete_collection(collection_id, user_id)
+        return success_response(message='删除成功')
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("delete web collection failed", error=str(exc))
+        return error_response(500, f"删除集合失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/collections/<int:collection_id>/run', methods=['POST'])
@@ -517,16 +508,12 @@ def get_scripts():
     user_id = get_current_user_id()
     project_id = request.args.get('project_id', type=int)
     collection_id = request.args.get('collection_id', type=int)
-    
-    query = WebTestScript.query.filter_by(user_id=user_id)
-    if project_id:
-        query = query.filter_by(project_id=project_id)
-    if collection_id is not None:
-        query = query.filter_by(collection_id=collection_id)
-    
-    scripts = query.order_by(WebTestScript.created_at.desc()).all()
-    
-    return success_response(data=[s.to_dict() for s in scripts])
+    try:
+        data = web_test_service.get_scripts(user_id, collection_id, project_id)
+        return success_response(data=data)
+    except Exception as exc:
+        logger.error("get web scripts failed", error=str(exc))
+        return error_response(500, f"获取脚本失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/scripts', methods=['POST'])
@@ -610,12 +597,14 @@ if __name__ == "__main__":
 def get_script(script_id):
     """获取脚本详情"""
     user_id = get_current_user_id()
-    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
-    
-    if not script:
-        return error_response(404, '脚本不存在')
-    
-    return success_response(data=script.to_dict())
+    try:
+        result = web_test_service.get_script(script_id, user_id)
+        return success_response(data=result)
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("get web script failed", error=str(exc))
+        return error_response(500, f"获取脚本失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/scripts/<int:script_id>', methods=['PUT'])
@@ -623,34 +612,15 @@ def get_script(script_id):
 def update_script(script_id):
     """更新 Web 测试脚本"""
     user_id = get_current_user_id()
-    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
-    
-    if not script:
-        return error_response(404, '脚本不存在')
-    
     data = request.get_json()
-
-    if 'collection_id' in data:
-        collection_id = data.get('collection_id')
-        if collection_id is None:
-            script.collection_id = None
-        else:
-            collection, err = _get_collection_or_404(collection_id, user_id)
-            if err:
-                return err
-            if script.project_id and collection.project_id and script.project_id != collection.project_id:
-                return error_response(400, 'collection_id 与脚本项目不匹配')
-            script.collection_id = collection.id
-            if script.project_id is None:
-                script.project_id = collection.project_id
-    
-    for field in ['name', 'description', 'script_content', 'target_url', 'browser', 'headless', 'timeout']:
-        if field in data:
-            setattr(script, field, data[field])
-    
-    db.session.commit()
-    
-    return success_response(data=script.to_dict(), message='更新成功')
+    try:
+        result = web_test_service.update_script(script_id, user_id, data)
+        return success_response(data=result, message='更新成功')
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("update web script failed", error=str(exc))
+        return error_response(500, f"更新脚本失败: {str(exc)}")
 
 
 @api_bp.route('/web-test/scripts/<int:script_id>', methods=['DELETE'])
@@ -658,15 +628,14 @@ def update_script(script_id):
 def delete_script(script_id):
     """删除 Web 测试脚本"""
     user_id = get_current_user_id()
-    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
-    
-    if not script:
-        return error_response(404, '脚本不存在')
-    
-    db.session.delete(script)
-    db.session.commit()
-    
-    return success_response(message='删除成功')
+    try:
+        web_test_service.delete_script(script_id, user_id)
+        return success_response(message='删除成功')
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("delete web script failed", error=str(exc))
+        return error_response(500, f"删除脚本失败: {str(exc)}")
 
 
 # ==================== 执行脚本 ====================

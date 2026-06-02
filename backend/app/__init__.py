@@ -93,8 +93,9 @@ def create_app(config_name='development'):
     # 初始化定时任务
     init_scheduler(app)
 
-    # 初始化默认 Prompt 版本（如果数据库中没有）
-    _seed_default_prompt_versions(app)
+    # 可选：启动时自动 seed 默认数据（通过环境变量控制）
+    if os.environ.get('AUTO_SEED', '').lower() == 'true':
+        _seed_default_prompt_versions(app)
 
     # 初始化 Prometheus 指标采集
     try:
@@ -207,19 +208,25 @@ def register_blueprints(app):
 def register_error_handlers(app):
     """注册全局错误处理器"""
     from .utils.response import error_response
-    
+    from .utils.exceptions import AppError
+
+    @app.errorhandler(AppError)
+    def handle_app_error(e):
+        """统一处理自定义异常"""
+        return error_response(e.code, e.message, errors=e.errors)
+
     @app.errorhandler(400)
     def bad_request(e):
         return error_response(400, '请求参数错误')
-    
+
     @app.errorhandler(401)
     def unauthorized(e):
         return error_response(401, '未授权访问')
-    
+
     @app.errorhandler(404)
     def not_found(e):
         return error_response(404, '资源不存在')
-    
+
     @app.errorhandler(500)
     def internal_error(e):
         return error_response(500, '服务器内部错误')

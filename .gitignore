@@ -174,3 +174,5 @@ backend/seed_data.py
 # i18n 临时文件
 chinese_*.txt
 remaining_chinese.txt
+# 重构计划文档（本地跟踪）
+REFACTOR_PLAN.md

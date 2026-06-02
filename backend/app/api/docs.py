@@ -289,7 +289,7 @@ def generate_doc_html(doc):
     # 将 Markdown 转换为 HTML
     try:
         content_html = markdown.markdown(doc.content or '', extensions=['tables', 'fenced_code'])
-    except:
+    except Exception:
         content_html = doc.content or ''
     
     html = f'''<!DOCTYPE html>

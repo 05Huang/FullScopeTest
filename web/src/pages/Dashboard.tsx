@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactECharts from 'echarts-for-react'
 import { reportService } from '@/services'
+import type { DashboardStats } from '@/services/reportService'
 import { useProjectStore } from '@/stores/projectStore'
 import {
   ApiOutlined,
@@ -14,11 +15,10 @@ import {
   ArrowUpOutlined,
 } from '@ant-design/icons'
 
-interface DashboardStats {
-  api_tests: { total: number; passed: number; failed: number }
-  web_tests: { total: number; passed: number; failed: number }
-  perf_tests: { total: number; running: number }
-  recent_runs: any[]
+interface DailyTrend {
+  date: string
+  passed: number
+  failed: number
 }
 
 const Dashboard = () => {
@@ -31,7 +31,7 @@ const Dashboard = () => {
     perf_tests: { total: 0, running: 0 },
     recent_runs: []
   })
-  const [dailyTrend, setDailyTrend] = useState<any[]>([])
+  const [dailyTrend, setDailyTrend] = useState<DailyTrend[]>([])
   const [trendPeriod, setTrendPeriod] = useState<'week' | 'month'>('month')
   const trendDays = trendPeriod === 'week' ? 7 : 30
 

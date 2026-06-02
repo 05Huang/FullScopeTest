@@ -61,7 +61,7 @@ def build_post_script_context(
     elif isinstance(body, str):
         try:
             body_json = json.loads(body)
-        except:
+        except (json.JSONDecodeError, ValueError):
             pass
 
     return {

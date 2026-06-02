@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAiScriptGenerator } from './hooks/useAiScriptGenerator'
 import {
   Card,
   Table,
@@ -102,10 +103,20 @@ const PerfTestScenarios = () => {
   const [codeContent, setCodeContent] = useState('')
   const [savingCode, setSavingCode] = useState(false)
 
-  // AI Script Generation State
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
-  const [aiPrompt, setAiPrompt] = useState('')
-  const [aiGenerating, setAiGenerating] = useState(false)
+  // AI Script Generation State (使用自定义 hook)
+  const {
+    isAiModalOpen,
+    aiPrompt,
+    aiGenerating,
+    generatedScript,
+    setIsAiModalOpen,
+    setAiPrompt,
+    openModal: openAiModal,
+    closeModal: closeAiModal,
+    startGeneration,
+    completeGeneration,
+    failGeneration,
+  } = useAiScriptGenerator()
 
   // 加载场景列表
   const loadScenarios = async () => {
@@ -194,13 +205,13 @@ const PerfTestScenarios = () => {
       message.warning('请输入描述内容')
       return
     }
-    setAiGenerating(true)
+    startGeneration()
     try {
       const res = await perfTestService.generateScriptAI({ prompt: aiPrompt })
       if (res.code === 200 && res.data?.script_content) {
         message.success('AI 脚本生成成功')
-        setIsAiModalOpen(false)
-        setAiPrompt('')
+        completeGeneration(res.data.script_content)
+        closeAiModal()
         
         const createRes = await perfTestService.createScenario({
           name: t('perfTest.aiGenerate') + ' - ' + new Date().toLocaleString(),
@@ -222,8 +233,7 @@ const PerfTestScenarios = () => {
       }
     } catch (e: any) {
       message.error(e.response?.data?.message || t('perfTest.aiGenerateFailed'))
-    } finally {
-      setAiGenerating(false)
+      failGeneration()
     }
   }
 

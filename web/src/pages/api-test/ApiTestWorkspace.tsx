@@ -53,148 +53,12 @@ import { environmentService } from '@/services/environmentService'
 import { useProjectStore } from '@/stores/projectStore'
 import CollectionManager from './CollectionManager'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
+import ScriptTestResults from './components/ScriptTestResults'
+import { useAiAssistant } from './hooks/useAiAssistant'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
 const { TextArea } = Input
-
-// 脚本测试结果展示组件
-interface ScriptTestResultsProps {
-  scriptExecution?: {
-    pre_script?: {
-      executed: boolean
-      passed?: boolean
-      error?: string
-      duration?: number
-    }
-    post_script?: {
-      executed: boolean
-      passed?: boolean
-      error?: string
-      duration?: number
-      assertions?: {
-        total: number
-        passed: number
-        failed: number
-        details?: Array<{
-          name: string
-          passed: boolean
-          error?: string
-        }>
-      }
-    }
-  }
-}
-
-const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }) => {
-  const { t } = useTranslation();
-  if (!scriptExecution) {
-    return <Empty description={t('apiTest.noCases')} />
-  }
-
-  const { pre_script, post_script } = scriptExecution
-
-  // 检查是否有任何脚本被执行
-  const hasExecutedScript = (pre_script?.executed || post_script?.executed)
-
-  if (!hasExecutedScript) {
-    return <Empty description={t('apiTest.noCases')} />
-  }
-
-  return (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
-      {/* 前置脚本结果 */}
-      {pre_script?.executed && (
-        <Card size="small" title={<Space><Text strong>{t('apiTest.preScript')}</Text></Space>}>
-          <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <Space>
-              {pre_script.passed ? (
-                <Tag icon={<CheckCircleOutlined />} color="success">{t('apiTest.runSuccess')}</Tag>
-              ) : (
-                <Tag icon={<CloseCircleOutlined />} color="error">{t('apiTest.runFailed')}</Tag>
-              )}
-              {pre_script.duration !== undefined && (
-                <Text type="secondary">耗时: {pre_script.duration}ms</Text>
-              )}
-            </Space>
-            {pre_script.error && (
-              <Text type="danger">{pre_script.error}</Text>
-            )}
-          </Space>
-        </Card>
-      )}
-
-      {/* 后置脚本结果 */}
-      {post_script?.executed && (
-        <Card size="small" title={<Space><Text strong>{t('apiTest.postScript')}</Text></Space>}>
-          <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <Space>
-              {post_script.passed ? (
-                <Tag icon={<CheckCircleOutlined />} color="success">{t('common.passed')}</Tag>
-              ) : (
-                <Tag icon={<CloseCircleOutlined />} color="error">{t('common.failed')}</Tag>
-              )}
-              {post_script.duration !== undefined && (
-                <Text type="secondary">耗时: {post_script.duration}ms</Text>
-              )}
-            </Space>
-
-            {/* 断言统计 */}
-            {post_script.assertions && (
-              <Space>
-                <Text>总计: <Text strong>{post_script.assertions.total}</Text></Text>
-                <Text type="success">通过: <Text strong>{post_script.assertions.passed}</Text></Text>
-                {post_script.assertions.failed > 0 && (
-                  <Text type="danger">失败: <Text strong>{post_script.assertions.failed}</Text></Text>
-                )}
-              </Space>
-            )}
-
-            {/* 断言详情 */}
-            {post_script.assertions?.details && post_script.assertions.details.length > 0 && (
-              <Table
-                size="small"
-                dataSource={post_script.assertions.details.map((d, i) => ({ ...d, key: i }))}
-                columns={[
-                  {
-                    title: t('common.status'),
-                    dataIndex: 'passed',
-                    width: 60,
-                    render: (passed) => passed ? (
-                      <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                    ) : (
-                      <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                    ),
-                  },
-                  {
-                    title: t('apiTest.assertionDesc'),
-                    dataIndex: 'name',
-                    ellipsis: true,
-                  },
-                  {
-                    title: t('apiTest.errorMessage'),
-                    dataIndex: 'error',
-                    render: (error) => error ? (
-                      <Text type="danger" style={{ fontSize: 12 }}>{error}</Text>
-                    ) : (
-                      <Text type="secondary">-</Text>
-                    ),
-                  },
-                ]}
-                pagination={false}
-                showHeader={false}
-              />
-            )}
-
-            {post_script.error && (
-              <Text type="danger">{post_script.error}</Text>
-            )}
-          </Space>
-        </Card>
-      )}
-    </Space>
-  )
-}
 
 // HTTP 方法颜色
 const methodColors: Record<string, string> = {
@@ -252,59 +116,38 @@ const ApiTestWorkspace = () => {
   const [currentEnv, setCurrentEnv] = useState<any>(null)
   const [sidebarTab, setSidebarTab] = useState<string>('cases') // 侧边栏标签页
   const [hasLoadedData, setHasLoadedData] = useState(false) // 标记数据是否已加载
-  const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
-  const [aiPrompt, setAiPrompt] = useState('')
-  const [aiBaseUrl, setAiBaseUrl] = useState('')
-  const [aiModel, setAiModel] = useState('')
-  const [aiApiKey, setAiApiKey] = useState('')
-  const [aiVisionBaseUrl, setAiVisionBaseUrl] = useState('')
-  const [aiVisionModel, setAiVisionModel] = useState('')
-  const [aiVisionApiKey, setAiVisionApiKey] = useState('')
-  const [aiAutoRun, setAiAutoRun] = useState(true)
-  const [aiRunning, setAiRunning] = useState(false)
-  const [aiSummary, setAiSummary] = useState('')
-  const [aiPlanSource, setAiPlanSource] = useState<'llm' | 'fallback' | ''>('')
-  const [aiPlanOperations, setAiPlanOperations] = useState<AiPlanOperation[]>([])
-  const [aiExecutionLogs, setAiExecutionLogs] = useState<AiExecutionLog[]>([])
 
-  // 全局配置加载
-  const [globalAiConfig, setGlobalAiConfig] = useState<{
-    base_url: string
-    model: string
-    api_key: string
-    vision_base_url: string
-    vision_model: string
-    vision_api_key: string
-  } | null>(null)
-  const [loadingConfig, setLoadingConfig] = useState(false)
-
-  // Fetch global AI config when drawer opens
-  useEffect(() => {
-    if (aiDrawerOpen && !globalAiConfig && !loadingConfig) {
-      setLoadingConfig(true)
-      apiTestService.getAiConfig()
-        .then(res => {
-          if (res.code === 200 && res.data) {
-            setGlobalAiConfig(res.data)
-          }
-        })
-        .catch(err => console.error('Failed to load global AI config', err))
-        .finally(() => setLoadingConfig(false))
-    }
-  }, [aiDrawerOpen])
-
-  // AI Synthesizer State
-  const [aiSynthesizeModalOpen, setAiSynthesizeModalOpen] = useState(false)
-  const [aiSynthesizeCount, setAiSynthesizeCount] = useState(5)
-  const [aiSynthesizing, setAiSynthesizing] = useState(false)
-  const [synthesizedCases, setSynthesizedCases] = useState<any[]>([])
-  const [synthesizeTargetCollectionId, setSynthesizeTargetCollectionId] = useState<number | undefined>()
-
-  // AI Reviewer State
-  const [aiReviewModalOpen, setAiReviewModalOpen] = useState(false)
-  const [aiReviewing, setAiReviewing] = useState(false)
-  const [reviewSummary, setReviewSummary] = useState('')
-  const [reviewSuggestedCases, setReviewSuggestedCases] = useState<any[]>([])
+  // AI 助手状态（使用自定义 hook）
+  const {
+    aiDrawerOpen, setAiDrawerOpen,
+    aiPrompt, setAiPrompt,
+    aiBaseUrl, setAiBaseUrl,
+    aiModel, setAiModel,
+    aiApiKey, setAiApiKey,
+    aiVisionBaseUrl, setAiVisionBaseUrl,
+    aiVisionModel, setAiVisionModel,
+    aiVisionApiKey, setAiVisionApiKey,
+    aiAutoRun, setAiAutoRun,
+    aiRunning, setAiRunning,
+    aiSummary, setAiSummary,
+    aiPlanSource, setAiPlanSource,
+    aiPlanOperations, setAiPlanOperations,
+    aiExecutionLogs, setAiExecutionLogs,
+    globalAiConfig, setGlobalAiConfig,
+    loadingConfig,
+    aiSynthesizeModalOpen, setAiSynthesizeModalOpen,
+    aiSynthesizeCount, setAiSynthesizeCount,
+    aiSynthesizing, setAiSynthesizing,
+    synthesizedCases, setSynthesizedCases,
+    synthesizeTargetCollectionId, setSynthesizeTargetCollectionId,
+    aiReviewModalOpen, setAiReviewModalOpen,
+    aiReviewing, setAiReviewing,
+    reviewSummary, setReviewSummary,
+    reviewSuggestedCases, setReviewSuggestedCases,
+    loadGlobalConfig,
+    appendAiLog,
+    clearAiLogs,
+  } = useAiAssistant()
 
   // 获取当前项目选择的环境存储键（按项目分别持久化）
   const getEnvStorageKey = (projectId?: number) => {
@@ -1415,10 +1258,6 @@ const ApiTestWorkspace = () => {
     setReviewSuggestedCases([])
     setReviewSummary('')
     loadData() // 刷新左侧列表
-  }
-
-  const appendAiLog = (status: AiLogStatus, logMessage: string) => {
-    setAiExecutionLogs(prev => [...prev, { status, message: logMessage }])
   }
 
   const normalizeAiObject = (value: any): Record<string, any> => {

@@ -131,6 +131,10 @@ class DevelopmentConfig(BaseConfig):
     """开发环境配置"""
 
     DEBUG = True
+    # 开发环境使用默认密钥（生产环境必须通过环境变量设置）
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-secret-key-change-in-production')
+
     # 使用 PostgreSQL 数据库
     _raw_db_url = os.environ.get(
         'DATABASE_URL',
@@ -150,6 +154,10 @@ class TestingConfig(BaseConfig):
     """测试环境配置"""
 
     TESTING = True
+    # 测试环境使用默认密钥
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'test-secret-key')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'test-jwt-secret-key')
+
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',
         'postgresql://localhost:5432/fullscopetest_test'

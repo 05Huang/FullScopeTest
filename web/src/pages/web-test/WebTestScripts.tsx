@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react'
+import { useWebExplorer } from './hooks/useWebExplorer'
 import {
   Card,
   Table,
@@ -183,22 +184,27 @@ const WebTestScripts = () => {
   const [aiHealing, setAiHealing] = useState(false)
   const [aiAnalysisResult, setAiAnalysisResult] = useState<{ analysis: string; fixed_script: string | null } | null>(null)
 
-  // AI Web Explorer State
-  const [isExploreModalOpen, setIsExploreModalOpen] = useState(false)
-  const [exploreStartUrl, setExploreStartUrl] = useState('')
-  const [exploreObjective, setExploreObjective] = useState('尽可能多地点击不同页面并寻找报错')
-  const [exploreMaxSteps, setExploreMaxSteps] = useState(10)
-  const [exploring, setExploring] = useState(false)
-  const [exploreReport, setExploreReport] = useState<any>(null)
-  const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
-  const [exploreHistory, setExploreHistory] = useState<ExploreHistoryItem[]>([])
-  const [exploreLivePreview, setExploreLivePreview] = useState('')
-  const [exploreLiveViewUrl, setExploreLiveViewUrl] = useState('')
-  const [exploreLiveUrl, setExploreLiveUrl] = useState('')
-  const [exploreLiveAction, setExploreLiveAction] = useState('')
-  const [exploreLiveStep, setExploreLiveStep] = useState(0)
-  const [exploreLiveMaxSteps, setExploreLiveMaxSteps] = useState(0)
-  const exploreAbortRef = useRef<AbortController | null>(null)
+  // AI Web Explorer State (使用自定义 hook)
+  const {
+    isExploreModalOpen, setIsExploreModalOpen,
+    exploreStartUrl, setExploreStartUrl,
+    exploreObjective, setExploreObjective,
+    exploreMaxSteps, setExploreMaxSteps,
+    exploreRunning: exploring, setExploreRunning: setExploring,
+    exploreReport, setExploreReport,
+    exploreConsoleLines, setExploreConsoleLines,
+    exploreHistory,
+    exploreLivePreview, setExploreLivePreview,
+    exploreLiveViewUrl, setExploreLiveViewUrl,
+    exploreLiveUrl, setExploreLiveUrl,
+    exploreLiveAction, setExploreLiveAction,
+    exploreLiveStep, setExploreLiveStep,
+    exploreLiveMaxSteps, setExploreLiveMaxSteps,
+    exploreAbortRef,
+    resetExploreState,
+    addToHistory: addExploreHistory,
+    clearHistory: clearExploreHistory,
+  } = useWebExplorer(user?.id)
 
   // Visual Diff State
   const [isVisualDiffModalOpen, setIsVisualDiffModalOpen] = useState(false)
@@ -268,31 +274,16 @@ const WebTestScripts = () => {
     }
   }, [])
 
-  useEffect(() => {
-    setExploreHistory(loadExploreHistory(user?.id))
-  }, [user?.id])
-
-  const resetExploreResultState = () => {
-    setExploreReport(null)
-    setExploreConsoleLines([])
-    setExploreLivePreview('')
-    setExploreLiveViewUrl('')
-    setExploreLiveUrl('')
-    setExploreLiveAction('')
-    setExploreLiveStep(0)
-    setExploreLiveMaxSteps(0)
-  }
-
   const openExploreModal = () => {
     if (exploring) return
-    resetExploreResultState()
+    resetExploreState()
     setIsExploreModalOpen(true)
   }
 
   const closeExploreModal = () => {
     if (exploring) return
     setIsExploreModalOpen(false)
-    resetExploreResultState()
+    resetExploreState()
   }
 
   const appendExploreHistory = (payload: {
@@ -302,28 +293,17 @@ const WebTestScripts = () => {
     report: any
     console_lines: string[]
   }) => {
-    setExploreHistory((prev) => {
-      const next: ExploreHistoryItem[] = [
-        {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          started_at: new Date().toISOString(),
-          start_url: payload.start_url,
-          objective: payload.objective,
-          max_steps: payload.max_steps,
-          report: trimExploreReport(payload.report),
-          console_lines: payload.console_lines.slice(-300),
-        },
-        ...prev,
-      ].slice(0, EXPLORE_HISTORY_LIMIT)
-      localStorage.setItem(getExploreHistoryStorageKey(user?.id), JSON.stringify(next))
-      return next
+    addExploreHistory({
+      started_at: new Date().toISOString(),
+      start_url: payload.start_url,
+      objective: payload.objective,
+      max_steps: payload.max_steps,
+      report: trimExploreReport(payload.report),
+      console_lines: payload.console_lines.slice(-300),
     })
   }
 
-  const clearExploreHistory = () => {
-    setExploreHistory([])
-    localStorage.removeItem(getExploreHistoryStorageKey(user?.id))
-  }
+  // clearExploreHistory is now from the hook
 
   // 创建脚本
   const handleCreate = async (values: any) => {

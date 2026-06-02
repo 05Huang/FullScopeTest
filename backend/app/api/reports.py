@@ -22,6 +22,14 @@ from ..models.web_test_script import WebTestScript
 from ..models.perf_test_scenario import PerfTestScenario
 from ..utils.response import success_response, error_response, paginate_response
 from ..utils import get_current_user_id
+from ..services.report_service import ReportService
+from ..utils.exceptions import NotFoundError
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
+
+# 初始化 Service
+report_service = ReportService()
 
 
 @api_bp.route('/reports/health', methods=['GET'])
@@ -37,7 +45,7 @@ def reports_health():
 def get_test_runs():
     """
     获取测试执行记录列表
-    
+
     查询参数:
         project_id: 项目 ID
         test_type: 测试类型 (api/web/performance)
@@ -48,27 +56,27 @@ def get_test_runs():
         end_date: 结束日期
     """
     user_id = get_current_user_id()
-    
+
     # 获取查询参数
     project_id = request.args.get('project_id', type=int)
     test_type = request.args.get('test_type')
     status = request.args.get('status')
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    # 构建查询 - 只查询用户拥有的项目的测试记录
-    query = db.session.query(TestRun).join(
-        Project, TestRun.project_id == Project.id
-    ).filter(Project.owner_id == user_id)
-    
-    if project_id:
-        query = query.filter(TestRun.project_id == project_id)
-    if test_type:
-        query = query.filter(TestRun.test_type == test_type)
-    if status:
-        query = query.filter(TestRun.status == status)
+
+    try:
+        result = report_service.get_test_runs(user_id, project_id, test_type, status, page, per_page)
+        return paginate_response(
+            items=result['items'],
+            total=result['total'],
+            page=result['page'],
+            per_page=result['per_page']
+        )
+    except Exception as exc:
+        logger.error("get test runs failed", error=str(exc))
+        return error_response(500, f"获取执行记录失败: {str(exc)}")
+
+# 跳过原有的查询逻辑，直接使用 Service
     if start_date:
         query = query.filter(TestRun.created_at >= start_date)
     if end_date:
@@ -128,7 +136,18 @@ def create_test_run():
 @jwt_required()
 def get_test_run(run_id):
     """获取测试执行记录详情"""
-    user_id = get_current_user_id()
+    try:
+        result = report_service.get_test_run(run_id)
+        return success_response(data=result)
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("get test run failed", error=str(exc))
+        return error_response(500, f"获取执行记录失败: {str(exc)}")
+
+
+# 跳过原有的查询逻辑
+# 原代码继续...
     
     test_run = db.session.query(TestRun).join(
         Project, TestRun.project_id == Project.id
@@ -181,22 +200,14 @@ def update_test_run(run_id):
 @jwt_required()
 def delete_test_run(run_id):
     """删除测试执行记录"""
-    user_id = get_current_user_id()
-    
-    test_run = db.session.query(TestRun).join(
-        Project, TestRun.project_id == Project.id
-    ).filter(
-        TestRun.id == run_id,
-        Project.owner_id == user_id
-    ).first()
-    
-    if not test_run:
-        return error_response(404, '测试记录不存在')
-    
-    db.session.delete(test_run)
-    db.session.commit()
-    
-    return success_response(message='删除成功')
+    try:
+        report_service.delete_test_run(run_id)
+        return success_response(message='删除成功')
+    except NotFoundError as exc:
+        return error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("delete test run failed", error=str(exc))
+        return error_response(500, f"删除执行记录失败: {str(exc)}")
 
 
 # ==================== 报告统计 ====================
