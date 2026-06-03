@@ -408,9 +408,9 @@ const MainLayout = () => {
           minWidth: 0,
         }}>
           {collapsed ? (
-            <img src="/logo-icon.png" alt="FST" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
+            <img src="/logo-icon.webp" alt="FST" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
           ) : (
-            <img src="/logo-full.png" alt="FullScopeTest" style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <img src="/logo-full.webp" alt="FullScopeTest" style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }} />
           )}
         </div>
 

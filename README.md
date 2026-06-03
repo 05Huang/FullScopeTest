@@ -39,7 +39,7 @@
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01107e4b01ee6a7b76b3a.png" alt="Dashboard 预览" width="80%" />
+  <img src="images/docs/dashboard.webp" alt="Dashboard 预览" width="80%" />
   <p><em>平台总览控制台</em></p>
 </div>
 
@@ -80,20 +80,27 @@ docker-compose up -d
 
 <table style="border-collapse: collapse; border: 1px solid black;">
   <tr>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c01107e4b01ee6a7b76b3a.png" alt="Dashboard" /></td>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c011b3e4b01ee6a7b76b3d.png" alt="API 测试" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-01.webp" alt="登录页" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-02.webp" alt="工作台" /></td>
   </tr>
   <tr>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png" alt="Web 自动化" /></td>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png" alt="性能测试" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-03.webp" alt="用例集管理" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-04.webp" alt="环境管理" /></td>
   </tr>
   <tr>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3b.png" alt="AI 编排" /></td>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b41.png" alt="NL2Script" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-05.webp" alt="Web自动化" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-06.webp" alt="APP测试" /></td>
   </tr>
   <tr>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b46.png" alt="探索性测试" /></td>
-    <td style="padding: 5px;background-color:#fff;"><img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b47.png" alt="全局 Copilot" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-07.webp" alt="性能测试" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-08.webp" alt="测试报告" /></td>
+  </tr>
+  <tr>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-09.webp" alt="AI统计看板" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-10.webp" alt="CI/CD" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" style="padding: 5px;background-color:#fff;text-align:center;"><img src="images/ui演示/ui-11.webp" alt="测试文档" /></td>
   </tr>
 </table>
 
@@ -1057,7 +1064,7 @@ jobs:
 - **微信**：
   
   <div align="left">
-    <img src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png" alt="微信二维码" width="150px" />
+    <img src="images/docs/wechat-qr.webp" alt="微信二维码" width="150px" />
     <p><em>扫码添加作者微信</em></p>
   </div>
 

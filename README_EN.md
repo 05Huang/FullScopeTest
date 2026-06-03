@@ -1,7 +1,7 @@
 # FullScopeTest — AI-Nowered Full-Stack Automated Testing Platform
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69bfd011e4b01ee6a7b76b33.png" alt="FullScopeTest Banner" width="100%" />
+  <img src="images/docs/banner.webp" alt="FullScopeTest Banner" width="100%" />
 
   <br />
 
@@ -34,7 +34,7 @@
 **FullScopeTest** is an AI-driven end-to-end automated testing platform covering API testing, Web UI automation, mobile APP testing, and performance testing. Built with an **AI-Native** design philosophy, it provides natural language orchestration, automatic script generation, intelligent error analysis and self-healing to lower the barrier of test authoring and maintenance.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01107e4b01ee6a7b76b3a.png" alt="Dashboard Preview" width="80%" />
+  <img src="images/docs/dashboard.webp" alt="Dashboard Preview" width="80%" />
   <p><em>Platform Dashboard</em></p>
 </div>
 
@@ -49,8 +49,8 @@
 Input a natural language test goal — the AI parses intent, generates a structured execution plan, then calls platform APIs to automatically create environments, collections, and test cases before running them. The frontend panel supports runtime configuration of `base_url` / `model` / `api_key`, compatible with OpenAI, DeepSeek, and other major LLMs.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3b.png" alt="AI Orchestration — Input" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c01159e4b01ee6a7b76b3c.png" alt="AI Orchestration — Execution" width="45%" />
+  <img src="images/docs/ai-orchestration.webp" alt="AI Orchestration — Input" width="45%" />
+  <img src="images/docs/ai-orchestration-exec.webp" alt="AI Orchestration — Execution" width="45%" />
   <p><em>Natural Language → Structured Plan → Auto Execution</em></p>
 </div>
 
@@ -59,7 +59,7 @@ Input a natural language test goal — the AI parses intent, generates a structu
 Input a natural language description (e.g. "Log in, navigate to dashboard, create a user, verify success message"), and the AI Agent converts it into executable Playwright web test scripts or Locust performance test scripts. Generated code is displayed in Monaco Editor with syntax highlighting for review and editing.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b41.png" alt="NL2Script" width="80%" />
+  <img src="images/docs/nl2script.webp" alt="NL2Script" width="80%" />
 </div>
 
 #### 3. Intelligent Error Analysis & Self-Healing
@@ -67,8 +67,8 @@ Input a natural language description (e.g. "Log in, navigate to dashboard, creat
 When a test fails, AI diagnosis is triggered automatically: analyzing error logs, API responses, or DOM structure to identify root causes (e.g. selector changes, missing fields). Supports one-click fix — the AI automatically corrects assertions or selectors and re-executes, reducing test maintenance cost.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ae4b01ee6a7b76b42.png" alt="Error Analysis" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b43.png" alt="Self-Healing" width="45%" />
+  <img src="images/docs/error-analysis.webp" alt="Error Analysis" width="45%" />
+  <img src="images/docs/self-healing.webp" alt="Self-Healing" width="45%" />
   <p><em>Error Detection → AI Diagnosis → One-Click Fix</em></p>
 </div>
 
@@ -77,8 +77,8 @@ When a test fails, AI diagnosis is triggered automatically: analyzing error logs
 Based on API definitions or existing test cases, the AI infers field semantics and batch-generates boundary values, empty values, injection attacks, and other abnormal test data — fissioning a single case into a multi-scenario test set to improve coverage.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b44.png" alt="AI Data Generation" width="45%" />
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144be4b01ee6a7b76b45.png" alt="Case Fission" width="45%" />
+  <img src="images/docs/ai-data-gen.webp" alt="AI Data Generation" width="45%" />
+  <img src="images/docs/case-fission.webp" alt="Case Fission" width="45%" />
   <p><em>Single Case → AI Fission → Multi-Scenario Coverage</em></p>
 </div>
 
@@ -87,7 +87,7 @@ Based on API definitions or existing test cases, the AI infers field semantics a
 Given a starting URL and test objective, the AI Agent autonomously traverses pages — parsing DOM, clicking buttons, filling forms, recording anomalies. Combined with Vision models for visual verification, it outputs an exploration test report (JS errors, 404 dead links, security risks).
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b46.png" alt="Exploratory Testing Agent" width="80%" />
+  <img src="images/docs/exploratory-testing.webp" alt="Exploratory Testing Agent" width="80%" />
 </div>
 
 #### 6. Global Copilot
@@ -95,7 +95,7 @@ Given a starting URL and test objective, the AI Agent autonomously traverses pag
 A unified AI conversation interface that supports natural language commands: "Create a performance test scenario with 100 concurrent users for 5 minutes", "Show yesterday's failed Web tests". The backend uses Function Calling to parse intent and directly invoke platform APIs.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c0144ce4b01ee6a7b76b47.png" alt="Global Copilot" width="80%" />
+  <img src="images/docs/global-copilot.webp" alt="Global Copilot" width="80%" />
 </div>
 
 ---
@@ -107,7 +107,7 @@ A unified AI conversation interface that supports natural language commands: "Cr
 A complete HTTP/REST API testing workspace supporting `{variable}` environment substitution, pre/post script engines, variable extraction and assertions, and one-click cURL import/export.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c011b3e4b01ee6a7b76b3d.png" alt="API Testing Workspace" width="80%" />
+  <img src="images/docs/api-testing.webp" alt="API Testing Workspace" width="80%" />
 </div>
 
 #### Web Automation (Playwright)
@@ -115,7 +115,7 @@ A complete HTTP/REST API testing workspace supporting `{variable}` environment s
 Built-in Playwright engine for writing, editing, and executing Python test scripts online. Supports `playwright codegen` for recording interactions and auto-generating scripts. Tasks execute asynchronously via Celery with real-time status tracking and error localization.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69c011e4e4b01ee6a7b76b3e.png" alt="Web Automation" width="80%" />
+  <img src="images/docs/web-automation.webp" alt="Web Automation" width="80%" />
 </div>
 
 #### Performance Testing (Locust)
@@ -123,7 +123,7 @@ Built-in Playwright engine for writing, editing, and executing Python test scrip
 Locust-based distributed load testing with configurable concurrent users and step load patterns. Real-time collection and visualization of response time, throughput (RPS), error rate, and other key metrics.
 
 <div align="center">
-  <img src="https://res.huangxuan.chat/thrivex/album/69bfd012e4b01ee6a7b76b35.png" alt="Performance Dashboard" width="80%" />
+  <img src="images/docs/performance.webp" alt="Performance Dashboard" width="80%" />
 </div>
 
 #### APP Mobile Testing (Appium)
@@ -961,7 +961,7 @@ For deployment issues, usage questions, or business inquiries:
 - **WeChat**:
 
   <div align="left">
-    <img src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png" alt="WeChat QR Code" width="150px" />
+    <img src="images/docs/wechat-qr.webp" alt="WeChat QR Code" width="150px" />
   </div>
 
 ---

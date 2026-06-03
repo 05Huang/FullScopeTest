@@ -222,7 +222,7 @@ const Login = () => {
       <div className="fst-login-left">
         <img
           className="fst-login-left-img"
-          src="/login-left.png"
+          src="/login-left.webp"
           alt="FullScopeTest Dashboard"
           draggable={false}
         />
@@ -235,7 +235,7 @@ const Login = () => {
           <div className="fst-login-right-brand">
             <img
               className="fst-login-right-logo"
-              src="/logo-full.png"
+              src="/logo-full.webp"
               alt="FullScopeTest"
               draggable={false}
             />
