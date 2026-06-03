@@ -124,6 +124,7 @@ images/Snipaste_*.png
 images/**/Snipaste_*.png
 images/登录页面*.png
 images/示例原型图-*
+images/docs/*.png
 Jenkinsfile
 DEPLOY.md
 package-lock.json

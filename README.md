@@ -1,5 +1,5 @@
 <p align="center"><img src="images/fullscopetest_logo.png" alt="FullScopeTest" width="400" /></p>
-<h3 align="center">AI-Native 全链路自动化测试平台</h3>
+<h2 align="center" style="font-weight: 600; font-size: 1.5rem;">AI-Native 全链路自动化测试平台</h2>
 <p align="center">
   AI 编排 · API 测试 · Web 自动化 · APP 测试 · 性能压测 · 智能报告
 </p>
@@ -11,7 +11,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/typescript-5.x-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a>
   <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/react-18-61DAFB?style=flat&logo=react&logoColor=black" alt="React"></a>
-  <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/vite-6-646CFF?style=flat&logo=vite&logoColor=white" alt="Vite"></a>
+  <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/vite-5-646CFF?style=flat&logo=vite&logoColor=white" alt="Vite"></a>
   <a href="https://flask.palletsprojects.com/"><img src="https://img.shields.io/badge/flask-3.0-000000?style=flat&logo=flask&logoColor=white" alt="Flask"></a>
   <a href="https://www.sqlalchemy.org/"><img src="https://img.shields.io/badge/sqlalchemy-ORM-D71F00?style=flat&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy"></a>
   <a href="https://ant.design/"><img src="https://img.shields.io/badge/ant--design-5-0170FE?style=flat&logo=antdesign&logoColor=white" alt="Ant Design"></a>
@@ -22,8 +22,8 @@
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/docker-compose-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest" alt="Vitest"></a>
 </p>
-<p align="center">
-  <h3>🔥 在线演示: <a href="http://test.huangxuan.chat">test.huangxuan.chat</a> 🔥</h3>
+<p align="center" style="font-size: 1.4rem; font-weight: 700; color: #ff4500; margin: 16px 0;">
+  🔥 在线演示: <a href="http://test.huangxuan.chat" style="text-decoration: none; color: #ff4500;">test.huangxuan.chat</a> 🔥
 </p>
 <hr />
 
@@ -38,10 +38,6 @@
 - **APP 测试**：基于 Appium，支持 Android / iOS 双平台
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
 
-<div align="center">
-  <img src="images/docs/dashboard.webp" alt="Dashboard 预览" width="80%" />
-  <p><em>平台总览控制台</em></p>
-</div>
 
 ## 🚀 快速开始
 
@@ -80,29 +76,32 @@ docker-compose up -d
 
 <table style="border-collapse: collapse; border: 1px solid black;">
   <tr>
-    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-01.webp" alt="登录页" /></td>
+    <td colspan="2" style="padding: 5px;background-color:#fff;text-align:center;">
+      <img src="images/ui演示/ui-01.webp" alt="登录页" />
+    </td>
+  </tr>
+  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-02.webp" alt="工作台" /></td>
-  </tr>
-  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-03.webp" alt="用例集管理" /></td>
+  </tr>
+  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-04.webp" alt="环境管理" /></td>
-  </tr>
-  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-05.webp" alt="Web自动化" /></td>
+  </tr>
+  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-06.webp" alt="APP测试" /></td>
-  </tr>
-  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-07.webp" alt="性能测试" /></td>
+  </tr>
+  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-08.webp" alt="测试报告" /></td>
-  </tr>
-  <tr>
     <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-09.webp" alt="AI统计看板" /></td>
-    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-10.webp" alt="CI/CD" /></td>
   </tr>
   <tr>
-    <td colspan="2" style="padding: 5px;background-color:#fff;text-align:center;"><img src="images/ui演示/ui-11.webp" alt="测试文档" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-10.webp" alt="CI/CD" /></td>
+    <td style="padding: 5px;background-color:#fff;"><img src="images/ui演示/ui-11.webp" alt="测试文档" /></td>
   </tr>
 </table>
+
 
 ---
 
@@ -171,29 +170,29 @@ graph LR
         Browser["浏览器"]
     end
 
-    subgraph Nginx / OpenResty
+    subgraph Nginx_OpenResty
         Static["静态资源<br/>(React SPA)"]
         Proxy["反向代理<br/>/api → :5000(Dev)<br/>/api → :8000(Prod)"]
         WS["WebSocket<br/>(Live View)"]
     end
 
-    subgraph Flask Backend :5000(Dev) / :8000(Prod)
-        API["API 蓝图层<br/>12 个模块"]
+    subgraph Flask_Backend
+        API["API 蓝图层<br/>25 个模块"]
         Auth["JWT 认证<br/>+ RBAC 权限"]
-        ORM["SQLAlchemy ORM<br/>15 个数据模型"]
+        ORM["SQLAlchemy ORM<br/>31 个数据模型"]
     end
 
-    subgraph Async Workers
+    subgraph Async_Workers
         Celery["Celery Worker<br/>(Web / Perf 测试)"]
         Scheduler["APScheduler<br/>(定时任务)"]
     end
 
-    subgraph AI Layer
+    subgraph AI_Layer
         Copilot["AI Copilot"]
         Agent["AI Agent<br/>(编排 / 脚本生成)"]
     end
 
-    subgraph Data Stores
+    subgraph Data_Stores
         PG["PostgreSQL"]
         Redis["Redis<br/>(消息队列 + 缓存)"]
     end
@@ -293,7 +292,7 @@ graph TD
 
 ### API 模块划分
 
-所有 API 路由挂载在统一的 `api_bp` 蓝图下（前缀 `/api/v1`），按功能域划分为 12 个模块：
+所有 API 路由挂载在统一的 `api_bp` 蓝图下（前缀 `/api/v1`），按功能域划分为 25 个模块：
 
 | 模块 | 路由前缀 | 核心功能 |
 |------|---------|---------|
@@ -789,15 +788,15 @@ AI_ASSISTANT_API_KEY=your_api_key_here
 FullScopeTest/
 ├── backend/                    # Flask 后端核心服务
 │   ├── app/
-│   │   ├── api/                # API 路由层 (12 个功能模块)
-│   │   ├── models/             # SQLAlchemy 数据模型 (15 个模型)
+│   │   ├── api/                # API 路由层 (25 个功能模块)
+│   │   ├── models/             # SQLAlchemy 数据模型 (31 个模型)
 │   │   ├── tasks/              # Celery 异步任务
 │   │   ├── utils/              # 工具类 (响应格式化、校验器、安全)
 │   │   ├── __init__.py         # 应用工厂 create_app()
 │   │   ├── config.py           # 多环境配置 (Dev / Test / Prod)
 │   │   └── extensions.py       # 扩展初始化 (db, jwt, celery, migrate)
 │   ├── migrations/             # Alembic 数据库迁移脚本
-│   ├── tests/                  # Pytest 自动化测试 (112+ 用例)
+│   ├── tests/                  # Pytest 自动化测试 (470+ 用例)
 │   ├── app.py                  # 后端启动入口
 │   ├── init_db.py              # 数据库初始化 (含 admin 账号)
 │   └── requirements.txt        # Python 依赖
@@ -805,8 +804,8 @@ FullScopeTest/
 │   ├── src/
 │   │   ├── pages/              # 页面组件 (按模块组织)
 │   │   ├── components/         # 共享组件 (GlobalCopilot, GlobalSearch 等)
-│   │   ├── services/           # API 服务层 (11 个 Service)
-│   │   ├── stores/             # Zustand 状态管理 (5 个 Store)
+│   │   ├── services/           # API 服务层 (14 个 Service)
+│   │   ├── stores/             # Zustand 状态管理 (6 个 Store)
 │   │   ├── hooks/              # 自定义 Hooks
 │   │   ├── layouts/            # 布局组件 (MainLayout)
 │   │   └── test/               # Vitest 测试配置与用例
@@ -964,7 +963,7 @@ cd web && npx tsc --noEmit
    ```bash
    python init_db.py
    ```
-</details>
+   </details>
 
 ---
 

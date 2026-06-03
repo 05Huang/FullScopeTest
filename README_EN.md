@@ -15,7 +15,7 @@
   [![Python](https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
   [![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/react-18-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
-  [![Vite](https://img.shields.io/badge/vite-6-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+  [![Vite](https://img.shields.io/badge/vite-5-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
   [![Flask](https://img.shields.io/badge/flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
   [![SQLAlchemy](https://img.shields.io/badge/sqlalchemy-ORM-D71F00?style=flat&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
   [![Ant Design](https://img.shields.io/badge/ant--design-5-0170FE?style=flat&logo=antdesign&logoColor=white)](https://ant.design/)
@@ -169,9 +169,9 @@ graph LR
     end
 
     subgraph Flask Backend :5000(Dev) / :8000(Prod)
-        API["API Blueprint Layer<br/>12 Modules"]
+        API["API Blueprint Layer<br/>25 Modules"]
         Auth["JWT Auth<br/>+ RBAC"]
-        ORM["SQLAlchemy ORM<br/>15 Models"]
+        ORM["SQLAlchemy ORM<br/>31 Models"]
     end
 
     subgraph Async Workers
@@ -284,7 +284,7 @@ graph TD
 
 ### API Modules
 
-All API routes are mounted under a single `api_bp` blueprint (prefix `/api/v1`), organized into 12 functional modules:
+All API routes are mounted under a single `api_bp` blueprint (prefix `/api/v1`), organized into 25 functional modules:
 
 | Module | Route Prefix | Core Functions |
 |--------|-------------|----------------|
@@ -761,15 +761,15 @@ AI_ASSISTANT_API_KEY=your_api_key_here
 FullScopeTest/
 ├── backend/                    # Flask backend
 │   ├── app/
-│   │   ├── api/                # API routes (12 modules)
-│   │   ├── models/             # SQLAlchemy models (15 models)
+│   │   ├── api/                # API routes (25 modules)
+│   │   ├── models/             # SQLAlchemy models (31 models)
 │   │   ├── tasks/              # Celery async tasks
 │   │   ├── utils/              # Utilities (response, validators, security)
 │   │   ├── __init__.py         # Application factory create_app()
 │   │   ├── config.py           # Multi-env config (Dev / Test / Prod)
 │   │   └── extensions.py       # Extension init (db, jwt, celery, migrate)
 │   ├── migrations/             # Alembic database migrations
-│   ├── tests/                  # Pytest automated tests (112+ cases)
+│   ├── tests/                  # Pytest automated tests (470+ cases)
 │   ├── app.py                  # Backend entry point
 │   ├── init_db.py              # Database initialization
 │   └── requirements.txt        # Python dependencies
