@@ -56,7 +56,7 @@ Execute API test
 
 ## WebSocket Protocol
 
-ws://localhost:5000/ws/api-test-logs/{run_id}
+ws://localhost:5000/ws/api-test-logs/{run_id} (Docker) 或 ws://localhost:5211/ws/api-test-logs/{run_id} (手动)
 
 ## Error Codes
 

@@ -141,7 +141,7 @@
 ### 如何运行基准测试
 
 ```bash
-# 运行完整基准测试
+# 运行完整基准测试 (Docker 环境用 5000，手动启动用 5211)
 ./benchmark/run_benchmark.sh http://localhost:5000 10 2 60
 
 # 参数说明:
@@ -154,7 +154,7 @@
 ### Locust Web UI
 
 ```bash
-# 启动 Locust Web UI
+# 启动 Locust Web UI (Docker 环境用 5000，手动启动用 5211)
 locust -f benchmark/locustfile.py --host=http://localhost:5000
 
 # 然后访问 http://localhost:8089 进行可视化测试

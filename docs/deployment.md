@@ -67,7 +67,9 @@ docker compose ps
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| Flask 后端 | 5000 | 主 API 端口 |
+| Flask 后端 (Docker) | 5000 | 主 API 端口 |
+| Flask 后端 (手动) | 5211 | 手动启动时的端口 |
+| 前端 Vite Dev Server | 3001 | `npm run dev` 启动 |
 | PostgreSQL | 5432 | 数据库 |
 | Redis | 6379 | 缓存/消息队列 |
 | Prometheus | 9090 | 指标监控 |
@@ -75,8 +77,8 @@ docker compose ps
 
 ### 2.3 访问地址
 
-- **前端应用**：http://localhost:5000
-- **API 健康检查**：http://localhost:5000/api/v1/api-test/health
+- **前端应用**：http://localhost:3001（Vite Dev Server）
+- **API 健康检查**：http://localhost:5000/api/v1/api-test/health（Docker）或 http://localhost:5211/api/v1/api-test/health（手动）
 - **Grafana**：http://localhost:3001（默认账号 admin/admin）
 - **Prometheus**：http://localhost:9090
 
@@ -147,7 +149,7 @@ vi .env  # 填入密钥和配置
 
 ```bash
 DATABASE_URL=postgresql://fullscopetest:YOUR_PASSWORD@postgres:5432/fullscopetest_prod
-REDIS_URL=redis://redis:6379/0
+REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
 SECRET_KEY=GENERATED_SECRET_KEY
 JWT_SECRET_KEY=GENERATED_JWT_KEY
 FLASK_ENV=production
@@ -166,7 +168,7 @@ docker exec -it postgres-shared psql -U fullscopetest -c "CREATE DATABASE fullsc
 
 DATABASE_URL: `postgresql://fullscopetest:YOUR_PASSWORD@host.docker.internal:5432/fullscopetest_prod`
 
-> **注意**：生产环境 Redis 无密码，REDIS_URL 不能包含密码。
+> **注意**：生产环境 Redis 使用 `REDIS_PASSWORD` 环境变量设密码，`REDIS_URL` 格式为 `redis://:${REDIS_PASSWORD}@redis:6379/0`。
 
 **方案 B**：编辑 docker-compose.prod.yml 取消注释 PostgreSQL 服务。
 
@@ -221,7 +223,7 @@ curl -I http://YOUR_DOMAIN
 | SECRET_KEY | Flask 应用密钥 | 无（必填） |
 | JWT_SECRET_KEY | JWT 签名密钥 | 无（必填） |
 | DATABASE_URL | 数据库连接 URL | 无（生产必填） |
-| REDIS_URL | Redis 连接 URL | redis://redis:6379/0 |
+| REDIS_URL | Redis 连接 URL | redis://:${REDIS_PASSWORD}@redis:6379/0 |
 
 ### 5.2 数据库配置
 
