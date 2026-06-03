@@ -38,38 +38,6 @@
 - **APP 测试**：基于 Appium，支持 Android / iOS 双平台
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
 
-
-## 🚀 快速开始
-
-### 环境要求
-
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
-- Docker & Docker Compose
-
-### 一键启动
-
-```bash
-# 克隆项目
-git clone https://github.com/05Huang/FullScopeTest.git
-cd FullScopeTest
-
-# 启动开发环境
-./start_dev.sh
-```
-
-启动后访问：
-- 前端：http://localhost:3001
-- 后端：http://localhost:5000
-
-### Docker 部署
-
-```bash
-docker-compose up -d
-```
-
 ---
 
 ## 🖥 UI 展示
