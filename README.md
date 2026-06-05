@@ -1,7 +1,7 @@
 <p align="center"><img src="images/fullscopetest_logo.png" alt="FullScopeTest" width="400" /></p>
 <h2 align="center" style="font-weight: 600; font-size: 1.5rem;">AI-Native 全链路自动化测试平台</h2>
 <p align="center">
-  AI 编排 · API 测试 · Web 自动化 · APP 测试 · 性能压测 · 智能报告
+  <strong>AI 编排 · API 测试 · Web 自动化 · APP 测试 · 性能压测 · 智能报告</strong>
 </p>
 <p align="center">
   <a href="README.md">中文</a> | <a href="README_EN.md">English</a>
@@ -23,7 +23,7 @@
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest" alt="Vitest"></a>
 </p>
 <p align="center" style="font-size: 1.4rem; font-weight: 700; color: #ff4500; margin: 16px 0;">
-  🔥 在线演示: <a href="http://test.huangxuan.chat" style="text-decoration: none; color: #ff4500;">test.huangxuan.chat</a> 🔥
+  <strong>🔥 在线演示环境: <a href="http://test.huangxuan.chat" style="text-decoration: none; color: #ff4500;">test.huangxuan.chat</a> 🔥</strong>
 </p>
 <hr />
 
