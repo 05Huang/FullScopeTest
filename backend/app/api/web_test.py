@@ -20,6 +20,13 @@ from ..utils.ai_script_healer import analyze_test_error
 from ..utils.ai_web_explorer import run_exploration_task
 from ..core.logging import get_logger
 from ..services.web_test_service import WebTestService
+from ..services.session_store import (
+    get_session_store,
+    RECORDING_KEY_PREFIX,
+    LIVE_VIEW_KEY_PREFIX,
+    RECORDING_TTL,
+    LIVE_VIEW_TTL,
+)
 from ..utils.exceptions import NotFoundError, ValidationError
 import requests
 import subprocess
@@ -38,9 +45,8 @@ web_test_service = WebTestService()
 logger = get_logger(__name__)
 
 
-# 存储录制进程（录制功能仍使用进程方式）
-recording_processes = {}
-live_view_sessions = {}
+# 录制进程对象（subprocess.Popen 无法序列化，仅在本地持有引用）
+_recording_process_objects = {}
 
 
 def _build_runtime_ai_config(data: dict) -> dict:
@@ -116,14 +122,20 @@ def _allocate_internal_live_view_session(start_url: str, objective: str, max_ste
     url = _build_internal_live_view_url(start_url, session_id)
     if not url:
         return {}
-    live_view_sessions[session_id] = {
-        'session_id': session_id,
-        'user_id': user_id,
-        'start_url': start_url,
-        'objective': objective,
-        'max_steps': max_steps,
-        'created_at': time.time(),
-    }
+    # 存入 SessionStore（Redis 或内存），TTL 30 分钟
+    store = get_session_store()
+    store.set(
+        f'{LIVE_VIEW_KEY_PREFIX}{session_id}',
+        {
+            'session_id': session_id,
+            'user_id': user_id,
+            'start_url': start_url,
+            'objective': objective,
+            'max_steps': max_steps,
+            'created_at': time.time(),
+        },
+        ttl=LIVE_VIEW_TTL,
+    )
     return {
         'url': url,
         'source': 'internal',
@@ -195,8 +207,10 @@ def _release_live_view_session(session: dict):
     if not isinstance(session, dict):
         return
     session_id = str(session.get('session_id') or '').strip()
-    if session_id and session_id in live_view_sessions:
-        live_view_sessions.pop(session_id, None)
+    # 从 SessionStore 删除会话记录
+    if session_id:
+        store = get_session_store()
+        store.delete(f'{LIVE_VIEW_KEY_PREFIX}{session_id}')
     release_url = str(session.get('release_url') or '').strip()
     if not release_url and session_id:
         release_template = str(
@@ -732,12 +746,19 @@ def start_recording():
     if not safe:
         return error_response(400, reason)
 
-    # 检查是否已有录制进程在运行
-    if user_id in recording_processes:
-        old_process = recording_processes[user_id]
-        if old_process.poll() is None:
+    # 检查是否已有录制进程在运行（优先查 SessionStore 元数据）
+    rec_key = f'{RECORDING_KEY_PREFIX}{user_id}'
+    store = get_session_store()
+    existing_rec = store.get(rec_key)
+    if existing_rec:
+        # 检查本地进程对象是否仍在运行
+        local_proc = _recording_process_objects.get(user_id)
+        if local_proc is not None and local_proc.poll() is None:
             return error_response(400, '已有录制进程在运行，请先停止')
-    
+        # 本地进程已结束或不存在，清理残留记录
+        store.delete(rec_key)
+        _recording_process_objects.pop(user_id, None)
+
     try:
         # 获取当前 Python 解释器路径（支持虚拟环境）
         python_path = sys.executable
@@ -775,10 +796,18 @@ def start_recording():
         time.sleep(1)
         if process.poll() is not None:
             return error_response(500, '录制器启动失败，进程立即退出，请检查 Playwright 是否正确安装')
-        
-        # 保存进程
-        recording_processes[user_id] = process
-        
+
+        # 保存进程元数据到 SessionStore（TTL 1 小时）
+        store.set(rec_key, {
+            'user_id': user_id,
+            'pid': process.pid,
+            'browser': browser,
+            'url': url,
+            'started_at': time.time(),
+        }, ttl=RECORDING_TTL)
+        # 本地持有进程对象引用（subprocess 无法序列化）
+        _recording_process_objects[user_id] = process
+
         return success_response(data={
             'message': '录制器已启动，请在打开的浏览器窗口中进行操作',
             'pid': process.pid,
@@ -799,22 +828,27 @@ def stop_recording():
     停止 Playwright 录制
     """
     user_id = get_current_user_id()
-    
-    if user_id not in recording_processes:
+
+    # 先查 SessionStore 元数据，确认是否有录制
+    rec_key = f'{RECORDING_KEY_PREFIX}{user_id}'
+    store = get_session_store()
+    if not store.exists(rec_key):
         return error_response(400, '没有正在运行的录制进程')
-    
-    process = recording_processes[user_id]
-    
+
+    process = _recording_process_objects.get(user_id)
+
     try:
         # 终止进程
-        process.terminate()
-        process.wait(timeout=5)
-        
-        # 清理
-        del recording_processes[user_id]
-        
+        if process is not None:
+            process.terminate()
+            process.wait(timeout=5)
+
+        # 清理：本地进程对象 + SessionStore 元数据
+        _recording_process_objects.pop(user_id, None)
+        store.delete(rec_key)
+
         return success_response(message='录制已停止')
-        
+
     except Exception as e:
         return error_response(500, f'停止录制失败: {str(e)}')
 
@@ -826,29 +860,33 @@ def recording_status():
     获取录制状态
     """
     user_id = get_current_user_id()
-    
-    if user_id not in recording_processes:
+    rec_key = f'{RECORDING_KEY_PREFIX}{user_id}'
+    store = get_session_store()
+    rec_meta = store.get(rec_key)
+
+    if not rec_meta:
         return success_response(data={
             'is_recording': False,
             'python_path': sys.executable
         })
-    
-    process = recording_processes[user_id]
-    is_running = process.poll() is None
-    
+
+    # 通过本地进程对象检查实际运行状态
+    process = _recording_process_objects.get(user_id)
+    is_running = process is not None and process.poll() is None
+
     if not is_running:
-        # 进程已结束，获取退出码
-        exit_code = process.returncode
-        # 清理
-        del recording_processes[user_id]
-        
+        # 进程已结束，获取退出码并清理
+        exit_code = process.returncode if process is not None else None
+        _recording_process_objects.pop(user_id, None)
+        store.delete(rec_key)
+
         return success_response(data={
             'is_recording': False,
             'exit_code': exit_code,
             'message': f'进程已退出，退出码: {exit_code}',
             'python_path': sys.executable
         })
-    
+
     return success_response(data={
         'is_recording': is_running,
         'pid': process.pid,
