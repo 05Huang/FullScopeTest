@@ -183,8 +183,8 @@ const Login = () => {
       if (response.code !== 200) {
         throw new Error(response.message || t('login.loginFailed'))
       }
-      const { user, access_token, refresh_token } = response.data
-      setAuth(access_token, refresh_token, user || { id: 0, username: values.username, email: '' })
+      const { user } = response.data
+      setAuth(user || { id: 0, username: values.username, email: '' })
       message.success(t('login.loginSuccess'))
       navigate('/dashboard')
     } catch (error: any) {

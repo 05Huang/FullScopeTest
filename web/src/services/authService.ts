@@ -12,8 +12,6 @@ export interface RegisterParams {
 }
 
 export interface AuthData {
-  access_token: string
-  refresh_token: string
   user?: {
     id: number
     username: string

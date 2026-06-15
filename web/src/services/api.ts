@@ -11,28 +11,30 @@ export interface ApiResponse<T = any> {
 }
 
 // 创建 axios 实例
+// withCredentials: true 使浏览器自动携带 httpOnly Cookie
 const api = axios.create({
   baseURL: '/api/v1',
   timeout: 30000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-let refreshPromise: Promise<string> | null = null
+let refreshPromise: Promise<void> | null = null
 
-const refreshAccessToken = (refreshToken: string) => {
+/**
+ * 刷新 Access Token
+ * 后端通过 httpOnly Cookie 设置新的 access_token，前端无需处理 token 明文
+ */
+const refreshAccessToken = () => {
   if (!refreshPromise) {
     refreshPromise = axios
       .post('/api/v1/auth/refresh', null, {
-        headers: { Authorization: `Bearer ${refreshToken}` },
+        withCredentials: true,
       })
-      .then((response) => {
-        const token = response.data?.data?.access_token
-        if (!token) {
-          throw new Error('Missing access token')
-        }
-        return token
+      .then(() => {
+        // 后端已通过 Set-Cookie 更新 access_token_cookie
       })
       .finally(() => {
         refreshPromise = null
@@ -42,13 +44,9 @@ const refreshAccessToken = (refreshToken: string) => {
   return refreshPromise
 }
 
-// 请求拦截器
+// 请求拦截器（httpOnly Cookie 由浏览器自动携带，无需手动添加 Authorization header）
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = useAuthStore.getState().token
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
     return config
   },
   (error) => {
@@ -70,37 +68,22 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
 
-    // 401 错误，尝试刷新 token
+    // 401 错误，尝试刷新 token（通过 httpOnly Cookie）
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      const refreshToken = useAuthStore.getState().refreshToken
+      // 如果刷新接口本身返回 401，说明 refresh token 也已失效
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
+        return Promise.reject(error)
+      }
 
-      if (refreshToken) {
-        if (originalRequest.url?.includes('/auth/refresh')) {
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
-          return Promise.reject(error)
-        }
-
-        originalRequest._retry = true
-        try {
-          const accessToken = await refreshAccessToken(refreshToken)
-          useAuthStore.getState().setAuth(
-            accessToken,
-            refreshToken,
-            useAuthStore.getState().user!
-          )
-
-          // 重试原请求
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`
-          }
-          return api(originalRequest)
-        } catch {
-          // 刷新失败，登出
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
-        }
-      } else {
+      originalRequest._retry = true
+      try {
+        await refreshAccessToken()
+        // 刷新成功，重试原请求（新的 access_token_cookie 已由浏览器自动携带）
+        return api(originalRequest)
+      } catch {
+        // 刷新失败，登出
         useAuthStore.getState().logout()
         window.location.href = '/login'
       }

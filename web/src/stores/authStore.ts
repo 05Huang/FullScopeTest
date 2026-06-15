@@ -10,13 +10,11 @@ interface User {
 }
 
 interface AuthState {
-  token: string | null
-  refreshToken: string | null
   user: User | null
   isAuthenticated: boolean
 
   // Actions
-  setAuth: (token: string, refreshToken: string, user: User) => void
+  setAuth: (user: User) => void
   logout: () => void
   updateUser: (user: Partial<User>) => void
 }
@@ -24,32 +22,23 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
-      refreshToken: null,
       user: null,
       isAuthenticated: false,
 
-      setAuth: (token, refreshToken, user) => {
+      setAuth: (user) => {
         set({
-          token,
-          refreshToken,
           user,
           isAuthenticated: true,
         })
       },
 
       logout: () => {
-        // 通知后端注销 Token（异步，不阻塞本地清理）
+        // 通知后端注销 Token（通过 httpOnly Cookie 认证）
         // 使用独立 axios 实例避免与 api.ts 的循环依赖
-        const token = useAuthStore.getState().token
-        if (token) {
-          axios.post('/api/v1/auth/logout', null, {
-            headers: { Authorization: `Bearer ${token}` },
-          }).catch(() => {})
-        }
+        axios.post('/api/v1/auth/logout', null, {
+          withCredentials: true,
+        }).catch(() => {})
         set({
-          token: null,
-          refreshToken: null,
           user: null,
           isAuthenticated: false,
         })
@@ -63,6 +52,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'fullscopetest-auth',
+      // 仅持久化 user 和 isAuthenticated，不存储 token
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 )

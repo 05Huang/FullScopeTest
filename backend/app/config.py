@@ -46,7 +46,23 @@ class BaseConfig:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    JWT_TOKEN_LOCATION = ['headers']
+    JWT_TOKEN_LOCATION = ['headers', 'cookies']
+
+    # Cookie 安全配置
+    # Secure 标志：生产环境默认开启，开发环境通过 COOKIE_SECURE 环境变量控制
+    COOKIE_SECURE = os.environ.get('COOKIE_SECURE', '').lower() == 'true'
+    COOKIE_SAMESITE = os.environ.get('COOKIE_SAMESITE', 'Lax')  # Lax / Strict / None
+    COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN', '')  # 留空则不设置 domain
+
+    # Flask-JWT-Extended Cookie 配置
+    JWT_ACCESS_COOKIE_NAME = 'access_token_cookie'
+    JWT_REFRESH_COOKIE_NAME = 'refresh_token_cookie'
+    JWT_COOKIE_SECURE = COOKIE_SECURE
+    JWT_COOKIE_SAMESITE = COOKIE_SAMESITE
+    JWT_COOKIE_HTTP_ONLY = True
+    JWT_COOKIE_CSRF_PROTECT = False  # 使用 SameSite 替代 CSRF double-submit
+    JWT_ACCESS_COOKIE_PATH = '/'
+    JWT_REFRESH_COOKIE_PATH = '/'
 
     # 文件上传配置
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
@@ -176,6 +192,10 @@ class ProductionConfig(BaseConfig):
     # 生产环境必须设置密钥
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+
+    # 生产环境 Cookie 默认启用 Secure
+    COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'true').lower() == 'true'
+    JWT_COOKIE_SECURE = COOKIE_SECURE
 
     # 生产环境 CORS 必须显式配置，不允许默认 localhost
     _cors_raw = os.environ.get('CORS_ORIGINS', '')

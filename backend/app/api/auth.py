@@ -7,11 +7,14 @@
 import secrets
 from datetime import datetime, timedelta
 
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
-    jwt_required
+    jwt_required,
+    set_access_cookies,
+    set_refresh_cookies,
+    unset_jwt_cookies,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -113,19 +116,28 @@ def login():
     
     # 更新最后登录时间
     user.update_last_login()
-    
+
     # 生成 Token (identity 需要是字符串)
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
-    
-    return success_response(
+
+    # 构建响应
+    # Token 同时在 body 中返回（兼容 API 客户端和测试）和 httpOnly Cookie 中设置（前端安全使用）
+    from flask import make_response
+    response = make_response(success_response(
         data={
             'access_token': access_token,
             'refresh_token': refresh_token,
             'user': user.to_dict()
         },
         message='登录成功'
-    )
+    ))
+
+    # 设置 httpOnly Cookie（XSS 无法窃取，前端优先使用 Cookie 认证）
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+
+    return response
 
 
 @api_bp.route('/auth/me', methods=['GET'])
@@ -211,10 +223,15 @@ def refresh_token():
     user_id = get_current_user_id()
     access_token = create_access_token(identity=str(user_id))
 
-    return success_response(
+    # 通过 httpOnly Cookie 设置新的 access_token，同时在 body 中返回（兼容性）
+    from flask import make_response
+    response = make_response(success_response(
         data={'access_token': access_token},
         message='Token 刷新成功'
-    )
+    ))
+    set_access_cookies(response, access_token)
+
+    return response
 
 
 @api_bp.route('/auth/logout', methods=['POST'])
@@ -224,6 +241,7 @@ def logout():
     登出 - 注销当前 Token
 
     将当前 Access Token 加入黑名单，使其立即失效。
+    清除 httpOnly Cookie。
     """
     from flask_jwt_extended import get_jwt
     from ..services.token_blacklist import blacklist_token
@@ -238,7 +256,13 @@ def logout():
         blacklist_token(jti, expires_at)
 
     logger.info('User logged out', user_id=get_current_user_id())
-    return success_response(message='已成功登出')
+
+    # 清除 httpOnly Cookie
+    from flask import make_response
+    response = make_response(success_response(message='已成功登出'))
+    unset_jwt_cookies(response)
+
+    return response
 
 
 @api_bp.route('/auth/password', methods=['PUT'])
