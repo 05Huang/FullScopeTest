@@ -1,0 +1,98 @@
+﻿# FullScopeTest Prometheus 告警规则
+#
+# 使用方式：
+#   1. 在 prometheus.yml 中添加 rule_files 指向此文件
+#   2. 配置 AlertManager（见 alertmanager.yml）
+#   3. 重启 Prometheus 使规则生效
+
+groups:
+  - name: fullscopetest_api
+    rules:
+      # API 5xx 错误率 > 5%（持续 5 分钟）
+      - alert: HighAPIErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: fullscopetest
+        annotations:
+          summary: "API 5xx 错误率超过 5%"
+          description: "当前 5xx 错误率: {{ $value | humanizePercentage }}，持续 5 分钟以上。"
+          runbook: "检查后端日志排查 500 错误根因"
+
+      # API P99 延迟 > 5 秒（持续 5 分钟）
+      - alert: HighAPIP99Latency
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: fullscopetest
+        annotations:
+          summary: "API P99 延迟超过 5 秒"
+          description: "当前 P99 延迟: {{ $value | humanizeDuration }}。"
+          runbook: "检查数据库查询性能、外部 API 调用延迟"
+
+  - name: fullscopetest_celery
+    rules:
+      # Celery 任务失败率 > 10%（持续 10 分钟）
+      - alert: HighCeleryTaskFailureRate
+        expr: |
+          (
+            sum(rate(celery_task_failed_total[10m]))
+            /
+            sum(rate(celery_task_total[10m]))
+          ) > 0.10
+        for: 10m
+        labels:
+          severity: critical
+          service: fullscopetest
+        annotations:
+          summary: "Celery 任务失败率超过 10%"
+          description: "当前任务失败率: {{ $value | humanizePercentage }}。"
+          runbook: "检查 Celery worker 日志，排查任务失败原因"
+
+  - name: fullscopetest_infra
+    rules:
+      # 数据库连接池耗尽
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          sqlalchemy_pool_connections{state="checked_out"} >= sqlalchemy_pool_connections{state="max"}
+        for: 2m
+        labels:
+          severity: critical
+          service: fullscopetest
+        annotations:
+          summary: "数据库连接池已耗尽"
+          description: "所有数据库连接已被占用，新请求将被阻塞。"
+          runbook: "检查是否有慢查询或连接泄漏，考虑增大 DB_POOL_SIZE"
+
+      # Redis 连接失败
+      - alert: RedisConnectionFailed
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: fullscopetest
+        annotations:
+          summary: "Redis 连接失败"
+          description: "Redis 实例不可用，影响缓存、限流、Celery。"
+          runbook: "检查 Redis 服务状态和网络连通性"
+
+      # 磁盘使用率 > 85%
+      - alert: HighDiskUsage
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          service: fullscopetest
+        annotations:
+          summary: "磁盘使用率超过 85%"
+          description: "根分区剩余空间: {{ $value | humanizePercentage }}。"
+          runbook: "清理日志文件、临时文件，或扩容磁盘"

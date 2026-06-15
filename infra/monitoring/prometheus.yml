@@ -5,6 +5,17 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# 告警规则文件
+rule_files:
+  - "alerts/alert_rules.yml"
+
+# AlertManager 配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+
 scrape_configs:
   # FullScopeTest 后端应用 (Docker 环境)
   - job_name: "fullscopetest-backend"

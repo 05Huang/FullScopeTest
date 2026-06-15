@@ -166,6 +166,28 @@ services:
     networks:
       - fullscopetest_network
 
+  # AlertManager 告警管理（生产环境）
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: fullscopetest_alertmanager
+    restart: always
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./infra/monitoring/alerts/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    environment:
+      - ALERTMANAGER_WEBHOOK_URL=${ALERTMANAGER_WEBHOOK_URL:-http://localhost:5001/webhook}
+      - ALERTMANAGER_CRITICAL_WEBHOOK_URL=${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://localhost:5001/webhook/critical}
+    depends_on:
+      - prometheus
+    networks:
+      - fullscopetest_network
+
 networks:
   fullscopetest_network:
     driver: bridge
@@ -175,4 +197,5 @@ volumes:
   backend_uploads:
   backend_reports:
   prometheus_data:
+  alertmanager_data:
   grafana_data:
