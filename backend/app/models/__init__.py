@@ -29,6 +29,7 @@ from .organization import Organization, OrganizationMember
 from .api_token import ApiToken
 from .audit_log import AuditLog
 from .quota import Quota
+from .notification_config import NotificationConfig
 
 __all__ = [
     'User',
@@ -63,4 +64,5 @@ __all__ = [
     'ApiToken',
     'AuditLog',
     'Quota',
+    'NotificationConfig',
 ]
