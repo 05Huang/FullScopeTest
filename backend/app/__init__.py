@@ -113,6 +113,10 @@ def create_app(config_name='development'):
     from .middleware.rate_limit import rate_limit_middleware
     rate_limit_middleware(app)
 
+    # 初始化安全响应头中间件
+    from .middleware.security_headers import security_headers_middleware
+    security_headers_middleware(app)
+
     return app
 
 
