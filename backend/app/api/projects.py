@@ -13,6 +13,7 @@ from ..models.project import Project
 from ..utils.response import success_response, error_response, paginate_response
 from ..utils.validators import validate_json
 from ..utils import get_current_user_id
+from ..services.cache_service import get_cache_service, projects_key, PROJECTS_TTL
 
 
 @api_bp.route('/projects', methods=['GET'])
@@ -31,17 +32,38 @@ def get_projects():
     per_page = min(request.args.get('per_page', 20, type=int), 100)
     keyword = request.args.get('keyword', '').strip()
     
+    # 仅首页无搜索关键词时使用缓存
+    cache = get_cache_service()
+    if cache and page == 1 and not keyword:
+        cached = cache.get(projects_key(user_id))
+        if cached is not None:
+            return success_response(data=cached)
+
     query = Project.query.filter_by(owner_id=user_id)
-    
+
     if keyword:
         query = query.filter(Project.name.ilike(f'%{keyword}%'))
-    
+
     pagination = query.order_by(Project.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
+
+    result = {
+        'items': [p.to_dict() for p in pagination.items],
+        'pagination': {
+            'total': pagination.total,
+            'page': page,
+            'per_page': per_page,
+            'pages': pagination.pages,
+        }
+    }
+
+    # 写入缓存
+    if cache and page == 1 and not keyword:
+        cache.set(projects_key(user_id), result, ttl=PROJECTS_TTL)
+
     return paginate_response(
-        items=[p.to_dict() for p in pagination.items],
+        items=result['items'],
         total=pagination.total,
         page=page,
         per_page=per_page
@@ -82,7 +104,12 @@ def create_project():
     
     db.session.add(project)
     db.session.commit()
-    
+
+    # 失效项目列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.delete(projects_key(user_id))
+
     return success_response(
         data=project.to_dict(),
         message='创建成功',
@@ -138,7 +165,12 @@ def update_project(project_id):
         project.settings = data['settings']
     
     db.session.commit()
-    
+
+    # 失效项目列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.delete(projects_key(user_id))
+
     return success_response(
         data=project.to_dict(),
         message='更新成功'
@@ -157,5 +189,10 @@ def delete_project(project_id):
     
     db.session.delete(project)
     db.session.commit()
-    
+
+    # 失效项目列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.delete(projects_key(user_id))
+
     return success_response(message='删除成功')

@@ -14,6 +14,7 @@ from ..models.environment import Environment
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_json
 from ..utils import get_current_user_id
+from ..services.cache_service import get_cache_service, environments_key, ENVIRONMENTS_TTL
 
 
 @api_bp.route('/environments', methods=['GET'])
@@ -22,22 +23,34 @@ def get_all_environments():
     """获取用户所有环境列表"""
     user_id = get_current_user_id()
     project_id = request.args.get('project_id', type=int)
-    
+
+    # 检查缓存（仅无 project_id 过滤时）
+    cache = get_cache_service()
+    if cache and not project_id:
+        cached = cache.get(environments_key(user_id))
+        if cached is not None:
+            return success_response(data=cached)
+
     # 获取用户所有项目
     user_projects = Project.query.filter_by(owner_id=user_id).all()
     project_ids = [p.id for p in user_projects]
-    
+
     if not project_ids:
         return success_response(data=[])
-    
+
     query = Environment.query.filter(Environment.project_id.in_(project_ids))
-    
+
     if project_id:
         query = query.filter_by(project_id=project_id)
-    
+
     environments = query.all()
-    
-    return success_response(data=[e.to_dict() for e in environments])
+    result = [e.to_dict() for e in environments]
+
+    # 写入缓存
+    if cache and not project_id:
+        cache.set(environments_key(user_id), result, ttl=ENVIRONMENTS_TTL)
+
+    return success_response(data=result)
 
 
 @api_bp.route('/environments', methods=['POST'])
@@ -102,7 +115,12 @@ def create_global_environment():
     
     db.session.add(env)
     db.session.commit()
-    
+
+    # 失效环境列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.invalidate_pattern(f"envs:user:{user_id}")
+
     return success_response(
         data=env.to_dict(),
         message='创建成功',
@@ -173,7 +191,12 @@ def create_environment(project_id):
     
     db.session.add(env)
     db.session.commit()
-    
+
+    # 失效环境列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.invalidate_pattern(f"envs:user:{user_id}")
+
     return success_response(
         data=env.to_dict(),
         message='创建成功',
@@ -255,7 +278,12 @@ def update_environment(env_id):
         env.is_default = True
     
     db.session.commit()
-    
+
+    # 失效环境列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.invalidate_pattern(f"envs:user:{user_id}")
+
     return success_response(
         data=env.to_dict(),
         message='更新成功'
@@ -279,7 +307,12 @@ def delete_environment(env_id):
     
     db.session.delete(env)
     db.session.commit()
-    
+
+    # 失效环境列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.invalidate_pattern(f"envs:user:{user_id}")
+
     return success_response(message='删除成功')
 
 
