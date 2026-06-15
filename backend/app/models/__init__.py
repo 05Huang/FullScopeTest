@@ -28,6 +28,7 @@ from .quality_gate import QualityGate, QualityGateEvaluation
 from .organization import Organization, OrganizationMember
 from .api_token import ApiToken
 from .audit_log import AuditLog
+from .quota import Quota
 
 __all__ = [
     'User',
@@ -61,4 +62,5 @@ __all__ = [
     'OrganizationMember',
     'ApiToken',
     'AuditLog',
+    'Quota',
 ]
