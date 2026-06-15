@@ -22,6 +22,8 @@ import queue
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
+from app.utils.sandbox import execute_script, check_script_safety
+
 logger = get_logger(__name__)
 
 
@@ -411,26 +413,23 @@ def run_web_test_task(self, script_id, user_id):
             # 准备工作目录
             work_dir = os.path.join(os.path.dirname(_get_flask_app().root_path), 'data', 'web_tests', str(script_id))
             os.makedirs(work_dir, exist_ok=True)
-            
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8', dir=work_dir) as f:
-                f.write(script.script_content)
-                temp_file = f.name
+
+            # 通过沙箱执行脚本（AST 检查 + 子进程隔离 + 审计日志）
+            sandbox_result = execute_script(
+                script_content=script.script_content,
+                user_id=user_id,
+                timeout=int(script.timeout / 1000) if script.timeout else 300,
+                work_dir=work_dir,
+                script_id=script_id,
+                script_type="web",
+            )
 
             try:
-                start_time = time.time()
-                env = os.environ.copy()
-                env['PYTHONPATH'] = os.path.dirname(_get_flask_app().root_path) + os.pathsep + env.get('PYTHONPATH', '')
-                
-                result = subprocess.run(
-                    [sys.executable, temp_file],
-                    capture_output=True,
-                    text=True,
-                    timeout=script.timeout / 1000,
-                    cwd=work_dir,
-                    env=env
-                )
-                duration = time.time() - start_time
-                success = result.returncode == 0
+                duration = sandbox_result['duration']
+                success = sandbox_result['success']
+                result_stdout = sandbox_result['stdout']
+                result_stderr = sandbox_result['stderr']
+                result_returncode = sandbox_result.get('return_code', 1)
 
                 vision_results_path = os.path.join(work_dir, 'vision_results.json')
                 vision_data = None
@@ -457,9 +456,9 @@ def run_web_test_task(self, script_id, user_id):
                 run_payload = {
                     'success': success,
                     'duration': duration,
-                    'stdout': result.stdout,
-                    'stderr': result.stderr,
-                    'return_code': result.returncode,
+                    'stdout': result_stdout,
+                    'stderr': result_stderr,
+                    'return_code': result_returncode,
                     'vision_results': vision_data,
                     'visual_diff_summaries': visual_diff_summaries,
                     'timestamp': datetime.utcnow().isoformat(),
@@ -483,87 +482,55 @@ def run_web_test_task(self, script_id, user_id):
                     'test_run_id': test_run_id,
                     'report_id': report_id,
                     'duration': duration,
-                    'stdout': result.stdout,
-                    'stderr': result.stderr,
-                    'return_code': result.returncode,
+                    'stdout': result_stdout,
+                    'stderr': result_stderr,
+                    'return_code': result_returncode,
                 }
-            finally:
-                try:
-                    os.unlink(temp_file)
-                except Exception:
-                    pass
 
-        except subprocess.TimeoutExpired:
-            if script:
-                vision_data = None
-                try:
-                    if work_dir:
-                        vision_results_path = os.path.join(work_dir, 'vision_results.json')
-                        if os.path.exists(vision_results_path):
-                            with open(vision_results_path, 'r', encoding='utf-8') as f:
-                                vision_data = json.load(f)
-                except Exception:
-                    pass
+            except Exception as e:
+                if script:
+                    vision_data = None
+                    try:
+                        if work_dir:
+                            vision_results_path = os.path.join(work_dir, 'vision_results.json')
+                            if os.path.exists(vision_results_path):
+                                with open(vision_results_path, 'r', encoding='utf-8') as f:
+                                    vision_data = json.load(f)
+                    except Exception:
+                        pass
 
-                timeout_seconds = script.timeout / 1000 if script.timeout else 0
-                run_payload = {
-                    'success': False,
-                    'error': 'Execution timeout',
-                    'vision_results': vision_data,
-                    'timestamp': datetime.utcnow().isoformat(),
-                }
-                test_run_id, report_id = _finalize_web_test_run(
-                    script=script,
-                    test_run=test_run,
-                    success=False,
-                    duration=timeout_seconds,
-                    result_payload=run_payload,
-                )
-            else:
-                test_run_id, report_id = None, None
+                    is_timeout = 'timeout' in str(e).lower() or 'TimeoutExpired' in type(e).__name__
+                    run_payload = {
+                        'success': False,
+                        'error': str(e),
+                        'vision_results': vision_data,
+                        'timestamp': datetime.utcnow().isoformat(),
+                    }
+                    timeout_seconds = script.timeout / 1000 if script.timeout else 0
+                    test_run_id, report_id = _finalize_web_test_run(
+                        script=script,
+                        test_run=test_run,
+                        success=False,
+                        duration=timeout_seconds if is_timeout else 0,
+                        result_payload=run_payload,
+                    )
+                else:
+                    test_run_id, report_id = None, None
 
-            record_task_failure('run_web_test', time.time() - task_start_time)
-            return {
-                'success': False,
-                'error': 'Execution timeout',
-                'test_run_id': test_run_id,
-                'report_id': report_id,
-            }
-
-        except Exception as e:
-            if script:
-                vision_data = None
-                try:
-                    if work_dir:
-                        vision_results_path = os.path.join(work_dir, 'vision_results.json')
-                        if os.path.exists(vision_results_path):
-                            with open(vision_results_path, 'r', encoding='utf-8') as f:
-                                vision_data = json.load(f)
-                except Exception:
-                    pass
-
-                run_payload = {
+                record_task_failure('run_web_test', time.time() - task_start_time)
+                return {
                     'success': False,
                     'error': str(e),
-                    'vision_results': vision_data,
-                    'timestamp': datetime.utcnow().isoformat(),
+                    'test_run_id': test_run_id,
+                    'report_id': report_id,
                 }
-                test_run_id, report_id = _finalize_web_test_run(
-                    script=script,
-                    test_run=test_run,
-                    success=False,
-                    duration=0,
-                    result_payload=run_payload,
-                )
-            else:
-                test_run_id, report_id = None, None
 
+        except Exception as outer_e:
+            logger.error("Web 测试任务异常", error=str(outer_e), script_id=script_id)
             record_task_failure('run_web_test', time.time() - task_start_time)
             return {
                 'success': False,
-                'error': str(e),
-                'test_run_id': test_run_id,
-                'report_id': report_id,
+                'error': str(outer_e),
             }
 
 
@@ -657,6 +624,19 @@ def run_perf_test_task(
             temp_dir = tempfile.mkdtemp()
             locustfile = os.path.join(temp_dir, 'locustfile.py')
             csv_prefix = os.path.join(temp_dir, 'rt')
+
+            # AST 安全检查：在执行前验证脚本安全性
+            safe, safety_reason = check_script_safety(scenario.script_content)
+            if not safe:
+                scenario.status = 'failed'
+                scenario.last_result = {
+                    'success': False,
+                    'error': f'脚本安全检查未通过: {safety_reason}',
+                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                }
+                db.session.commit()
+                record_task_failure('run_perf_test', time.time() - task_start_time)
+                return {'success': False, 'error': f'脚本安全检查未通过: {safety_reason}'}
 
             # 替换脚本中的占位符
             script_content = scenario.script_content.replace('{{endpoint_path}}', endpoint_path)
@@ -1007,60 +987,49 @@ def run_app_test_task(self, script_id, user_id):
             work_dir = os.path.join(os.path.dirname(_get_flask_app().root_path), 'data', 'app_tests', str(script_id))
             os.makedirs(work_dir, exist_ok=True)
 
-            # 写入临时脚本文件
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8', dir=work_dir) as f:
-                f.write(script.script_content)
-                temp_file = f.name
+            # 通过沙箱执行脚本（AST 检查 + 子进程隔离 + 审计日志）
+            sandbox_result = execute_script(
+                script_content=script.script_content,
+                user_id=user_id,
+                timeout=300,  # 5 分钟超时
+                work_dir=work_dir,
+                script_id=script_id,
+                script_type="app",
+            )
 
-            try:
-                start_time = time.time()
-                env = os.environ.copy()
-                env['PYTHONPATH'] = os.path.dirname(_get_flask_app().root_path) + os.pathsep + env.get('PYTHONPATH', '')
+            duration = sandbox_result['duration']
+            success = sandbox_result['success']
 
-                # 执行 Appium 脚本
-                result = subprocess.run(
-                    [sys.executable, temp_file],
-                    capture_output=True,
-                    text=True,
-                    timeout=300,  # 5 分钟超时
-                    cwd=work_dir,
-                    env=env
-                )
-                duration = time.time() - start_time
-                success = result.returncode == 0
+            # 更新脚本状态
+            script.status = 'passed' if success else 'failed'
+            script.last_result = {
+                'success': success,
+                'duration': duration,
+                'stdout': sandbox_result['stdout'],
+                'stderr': sandbox_result['stderr'],
+                'return_code': sandbox_result.get('return_code'),
+                'error': sandbox_result.get('error'),
+                'script_hash': sandbox_result.get('script_hash'),
+                'timestamp': datetime.utcnow().isoformat(),
+            }
+            db.session.commit()
 
-                # 更新脚本状态
-                script.status = 'passed' if success else 'failed'
-                script.last_result = {
-                    'success': success,
-                    'duration': duration,
-                    'stdout': result.stdout,
-                    'stderr': result.stderr,
-                    'return_code': result.returncode,
-                    'timestamp': datetime.utcnow().isoformat(),
-                }
-                db.session.commit()
+            if success:
+                record_task_success('run_app_test', time.time() - task_start_time)
+            else:
+                record_task_failure('run_app_test', time.time() - task_start_time)
 
-                if success:
-                    record_task_success('run_app_test', time.time() - task_start_time)
-                else:
-                    record_task_failure('run_app_test', time.time() - task_start_time)
-
-                return {
-                    'success': success,
-                    'script_id': script_id,
-                    'duration': duration,
-                    'stdout': result.stdout,
-                    'stderr': result.stderr,
-                    'return_code': result.returncode,
-                }
-            finally:
-                try:
-                    os.unlink(temp_file)
-                except Exception:
-                    pass
+            return {
+                'success': success,
+                'script_id': script_id,
+                'duration': duration,
+                'stdout': sandbox_result['stdout'],
+                'stderr': sandbox_result['stderr'],
+                'return_code': sandbox_result.get('return_code'),
+            }
 
         except subprocess.TimeoutExpired:
+            # 安全网：sandbox 内部已处理超时，此处为防御性代码
             if script:
                 script.status = 'failed'
                 script.last_result = {
