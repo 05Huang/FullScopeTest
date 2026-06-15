@@ -48,6 +48,20 @@ def app():
 
 
 @pytest.fixture()
+def no_rate_limit(monkeypatch):
+    """按需禁用限流的 fixture
+
+    在需要避免限流干扰的测试中显式使用：
+        def test_xxx(client, no_rate_limit):
+            ...
+    """
+    monkeypatch.setattr(
+        "app.middleware.rate_limit.sliding_window_rate_limit",
+        lambda key, limit, **kw: True,
+    )
+
+
+@pytest.fixture()
 def client(app):
     return app.test_client()
 

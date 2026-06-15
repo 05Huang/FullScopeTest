@@ -26,6 +26,9 @@ def rate_limit_middleware(app):
 
     @app.before_request
     def check_rate_limit():
+        # 尊重 RATELIMIT_ENABLED 配置（测试环境默认关闭）
+        if not app.config.get('RATELIMIT_ENABLED', True):
+            return None
         """检查请求是否超过限流"""
         try:
             from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
