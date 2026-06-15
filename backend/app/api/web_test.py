@@ -12,6 +12,7 @@ from ..models.web_test_collection import WebTestCollection
 from ..models.web_test_script import WebTestScript
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
+from ..utils.url_safety import is_safe_url
 from ..utils import get_current_user_id
 from ..tasks import run_web_test_task
 from ..utils.ai_script_generator import generate_test_script
@@ -288,10 +289,15 @@ def explore_web_app():
     start_url = data.get('start_url')
     objective = data.get('objective', '尽可能多地点击不同页面并寻找报错')
     max_steps = int(data.get('max_steps', 10))
-    
+
     if not start_url:
         return error_response(400, 'start_url is required')
-        
+
+    # SSRF 防护：校验目标 URL
+    safe, reason = is_safe_url(start_url)
+    if not safe:
+        return error_response(400, reason)
+
     try:
         runtime_config = _build_runtime_ai_config(data)
 
@@ -313,6 +319,11 @@ def explore_web_app_stream():
 
     if not start_url:
         return error_response(400, 'start_url is required')
+
+    # SSRF 防护：校验目标 URL
+    safe, reason = is_safe_url(start_url)
+    if not safe:
+        return error_response(400, reason)
 
     runtime_config = _build_runtime_ai_config(data)
     live_view_session = _allocate_live_view_session(data, start_url, objective, max_steps, user_id)
@@ -715,7 +726,12 @@ def start_recording():
     data = request.get_json() or {}
     url = data.get('url', 'https://example.com')
     browser = data.get('browser', 'chromium')
-    
+
+    # SSRF 防护：校验目标 URL
+    safe, reason = is_safe_url(url)
+    if not safe:
+        return error_response(400, reason)
+
     # 检查是否已有录制进程在运行
     if user_id in recording_processes:
         old_process = recording_processes[user_id]

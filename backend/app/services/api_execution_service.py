@@ -17,6 +17,7 @@ from ..models.project import Project
 from ..models.test_run import TestRun
 from ..models.test_report import TestReport
 from ..utils.exceptions import NotFoundError, ValidationError
+from ..utils.url_safety import is_safe_url
 from ..utils.env_variables import (
     replace_variables, replace_variables_in_dict,
     get_environment_variables, merge_headers_with_env
@@ -113,6 +114,11 @@ class ApiExecutionService(BaseService):
             if case and case.mock_enabled:
                 return self._handle_case_mock(case, script_execution)
 
+        # SSRF 防护：校验最终 URL
+        safe, reason = is_safe_url(url)
+        if not safe:
+            return {'success': False, 'error': reason, 'script_execution': script_execution}
+
         # 执行真实请求
         return self._send_request(method, url, headers, params, body, body_type, timeout, script_execution, post_script, env_vars)
 
@@ -202,6 +208,14 @@ class ApiExecutionService(BaseService):
 
         if env_id:
             headers = merge_headers_with_env(headers, env_id, db)
+
+        # SSRF 防护：校验最终 URL
+        safe, reason = is_safe_url(url)
+        if not safe:
+            case.last_run_at = datetime.utcnow()
+            case.last_status = 'failed'
+            db.session.commit()
+            return {'success': False, 'error': reason, 'script_execution': script_execution}
 
         # 执行请求
         start_time = time.time()
@@ -666,6 +680,21 @@ class ApiExecutionService(BaseService):
                     headers = merge_headers_with_env(headers, effective_env_id, db)
                 except Exception as e:
                     self.logger.error('合并请求头失败', error=str(e))
+
+            # SSRF 防护：校验最终 URL
+            safe, reason = is_safe_url(url)
+            if not safe:
+                elapsed_time = (time.time() - case_start_time) * 1000
+                case.last_run_at = datetime.utcnow()
+                case.last_status = 'failed'
+                db.session.commit()
+                return {'result': {
+                    'case_id': case.id, 'name': case.name, 'method': case.method, 'url': url,
+                    'passed': False, 'status_code': None, 'response_time': round(elapsed_time, 2),
+                    'script_execution': script_execution,
+                    'error': reason,
+                    'environment_id': effective_env_id, 'environment_name': effective_env_name
+                }, 'passed': False}
 
             # 发送请求
             request_kwargs = {

@@ -12,6 +12,7 @@ from ..models.perf_test_scenario import PerfTestScenario
 from ..models.perf_test_result import PerformanceTestResult, PerformanceMetricSample
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required, is_valid_url, is_valid_http_method
+from ..utils.url_safety import is_safe_url
 from ..utils import get_current_user_id
 from ..tasks import run_perf_test_task
 from ..utils.ai_script_generator import generate_test_script
@@ -268,6 +269,11 @@ def create_scenario():
     if not is_valid_url(target_url):
         return error_response(400, 'target_url must be a valid http/https URL')
 
+    # SSRF 防护：校验目标地址
+    safe, reason = is_safe_url(target_url)
+    if not safe:
+        return error_response(400, reason)
+
     method = data.get('method', 'GET').upper()
     if not is_valid_http_method(method):
         return error_response(400, 'method must be a valid HTTP method')
@@ -361,6 +367,10 @@ def update_scenario(scenario_id):
     if 'target_url' in data:
         if not is_valid_url(data['target_url']):
             return error_response(400, 'target_url must be a valid http/https URL')
+        # SSRF 防护：校验目标地址
+        safe, reason = is_safe_url(data['target_url'])
+        if not safe:
+            return error_response(400, reason)
         scenario.target_url = data['target_url']
 
     if 'method' in data:
