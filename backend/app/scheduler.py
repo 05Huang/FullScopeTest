@@ -82,6 +82,9 @@ def init_scheduler(app):
         # 将 scheduler 对象置于静默状态，提供空实现以防调用报错
         _patch_dummy_scheduler(scheduler)
 
+    # 注册内置定时任务：数据归档清理（每天凌晨 3:00）
+    _register_builtin_jobs(app)
+
 def _patch_dummy_scheduler(sched):
     """提供空实现，防止其他没有拿到锁的进程调用 scheduler.add_job 时报错"""
     sched.get_job = lambda *args, **kwargs: None
@@ -159,11 +162,11 @@ def send_notification(task, status, task_id=None, error=None):
     """发送 Webhook 通知 (如钉钉/飞书)"""
     if not task.notify_webhook:
         return
-        
+
     # 判断是否需要通知
     if task.notify_events != 'all' and status != task.notify_events:
         return
-        
+
     try:
         # 构建通知内容
         title = f"定时任务: {task.name} 执行状态 - {status}"
@@ -172,7 +175,7 @@ def send_notification(task, status, task_id=None, error=None):
             content += f"\n**任务ID:** {task_id}"
         if error:
             content += f"\n**错误信息:** {error}"
-            
+
         payload = {
             "msgtype": "markdown",
             "markdown": {
@@ -180,9 +183,39 @@ def send_notification(task, status, task_id=None, error=None):
                 "text": content
             }
         }
-        
+
         headers = {'Content-Type': 'application/json'}
         response = requests.post(task.notify_webhook, json=payload, headers=headers, timeout=5)
         logger.info("通知发送结果", status_code=response.status_code)
     except Exception as e:
         logger.error("发送通知失败", error=str(e))
+
+
+def _register_builtin_jobs(app):
+    """注册内置定时任务（数据归档等）"""
+    try:
+        from apscheduler.triggers.cron import CronTrigger as CT
+
+        # 数据归档清理：每天凌晨 3:00 执行
+        if not scheduler.get_job("builtin_data_retention"):
+            scheduler.add_job(
+                id="builtin_data_retention",
+                func=_run_data_retention,
+                args=[app],
+                trigger=CT.from_crontab("0 3 * * *"),
+                replace_existing=True,
+            )
+            logger.info("已注册内置任务: 数据归档清理 (每天 03:00)")
+    except Exception as exc:
+        logger.warning("注册内置定时任务失败", error=str(exc))
+
+
+def _run_data_retention(app):
+    """执行数据归档清理（在调度器线程中运行）"""
+    with app.app_context():
+        try:
+            from .services.data_retention_service import run_full_cleanup
+            results = run_full_cleanup()
+            logger.info("定时数据归档完成", results=results)
+        except Exception as exc:
+            logger.error("定时数据归档失败", error=str(exc))
