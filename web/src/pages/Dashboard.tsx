@@ -132,14 +132,15 @@ const Dashboard = () => {
   const typeLabels: Record<string, string> = { api: 'API', web: 'Web', performance: t('dashboard.perfTest'), perf: t('dashboard.perfTest') }
 
   return (
-    <div className="fst-page">
+    <div className="fst-page" role="main" aria-label={t('dashboard.title')}>
       <div className="fst-page-header fst-animate-in">
         <h1 className="fst-page-title">{t('dashboard.title')}</h1>
       </div>
 
-      <div id="tour-step-dashboard-api" className="fst-stat-row fst-animate-in fst-animate-in-1">
+      <div id="tour-step-dashboard-api" className="fst-stat-row fst-animate-in fst-animate-in-1"
+           role="region" aria-label={t('dashboard.title') + ' - 统计概览'} aria-live="polite">
         {statCards.map((card, i) => (
-          <div key={i} className="fst-stat-card">
+          <div key={i} className="fst-stat-card" aria-label={`${card.label}: ${loading ? '加载中' : card.value}`}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div className="fst-stat-label">{card.label}</div>
@@ -157,7 +158,7 @@ const Dashboard = () => {
       </div>
 
       <div className="fst-grid fst-animate-in fst-animate-in-2" style={{ gridTemplateColumns: '2fr 1fr' }}>
-        <div className="fst-ios-card">
+        <div className="fst-ios-card" role="region" aria-label={t('dashboard.testTrend')}>
           <div className="fst-ios-card-header">
             <div>
               <div className="fst-ios-card-title">{t('dashboard.testTrend')}</div>

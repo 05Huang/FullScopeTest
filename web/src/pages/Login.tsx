@@ -217,7 +217,7 @@ const Login = () => {
   }
 
   return (
-    <div className="fst-login-split">
+    <div className="fst-login-split" role="main" aria-label={isRegister ? t('login.registerBtn') : t('login.loginBtn')}>
       {/* ─── Left: Product showcase image ─── */}
       <div className="fst-login-left">
         <img

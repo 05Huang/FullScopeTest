@@ -1859,10 +1859,11 @@ const ApiTestWorkspace = () => {
   }
 
   return (
-    <Layout style={{ height: 'calc(100vh - 160px)', background: 'transparent' }}>
+    <Layout style={{ height: 'calc(100vh - 160px)', background: 'transparent' }} role="main" aria-label="接口测试工作区">
       {/* 左侧用例树和集合管理 */}
       <Sider
         width={320}
+        aria-label="用例导航"
         style={{
           background: 'var(--fst-surface-card)',
           borderRadius: 'var(--fst-radius-xl)',

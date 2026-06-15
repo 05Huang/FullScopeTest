@@ -415,7 +415,7 @@ const MainLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        <nav role="navigation" aria-label={t('layout.mainNavigation') || '主导航'} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           {sidebarNav.map(item => (
             <SidebarItem
               key={item.path}
