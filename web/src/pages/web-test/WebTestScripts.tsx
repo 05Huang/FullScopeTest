@@ -15,30 +15,22 @@ import {
   message,
   Popconfirm,
   Tooltip,
-  Dropdown,
   Badge,
   Alert,
   Image,
 } from 'antd'
 import {
   PlusOutlined,
-  SearchOutlined,
   PlayCircleOutlined,
   EditOutlined,
   DeleteOutlined,
-  MoreOutlined,
   CodeOutlined,
   CopyOutlined,
   ExportOutlined,
-  ReloadOutlined,
   FileTextOutlined,
-  FolderOpenOutlined,
-  FolderAddOutlined,
   SaveOutlined,
-  RobotOutlined,
   BugOutlined,
   CheckCircleOutlined,
-  GlobalOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
 import VisualDiffViewer from '@/components/VisualDiffViewer'
@@ -49,6 +41,7 @@ import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { webTestService } from '@/services/webTestService'
 import { runWithConcurrency } from '@/utils/runWithConcurrency'
+import ScriptList from './ScriptList'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -1064,120 +1057,25 @@ const WebTestScripts = () => {
 
   return (
     <div className="fst-page">
-      <div className="fst-page-header fst-animate-in">
-        <h1 className="fst-page-title">{t('webTest.scriptManagement')}</h1>
-        <Space>
-          <Select
-            placeholder="按用例集筛选"
-            allowClear
-            style={{ width: 220 }}
-            value={selectedCollectionId}
-            onChange={(value) => setSelectedCollectionId(value)}
-            options={collections.map((c) => ({
-              value: c.id,
-              label: `${c.name} (${c.script_count || 0})`,
-            }))}
-          />
-          <Input
-            placeholder={t('webTest.searchScripts')}
-            prefix={<SearchOutlined />}
-            style={{ width: 250 }}
-            allowClear
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadScripts}
-            loading={loading}
-          >
-            {t('common.refresh')}
-          </Button>
-          <Button
-            icon={<FolderAddOutlined />}
-            onClick={() => setIsCollectionModalOpen(true)}
-          >
-            用例集
-          </Button>
-          <Button
-            icon={<FolderOpenOutlined />}
-            disabled={!selectedCollectionId}
-            onClick={handleRunCollection}
-          >
-            运行用例集
-          </Button>
-          <Button
-            type="primary"
-            icon={<RobotOutlined />}
-            onClick={() => setIsAiModalOpen(true)}
-          >
-            AI 生成
-          </Button>
-          <Button
-            type="default"
-            icon={<GlobalOutlined />}
-            onClick={openExploreModal}
-          >
-            探索测试
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingScript(null)
-              form.resetFields()
-              form.setFieldsValue({
-                collection_id: selectedCollectionId,
-              })
-              setIsModalOpen(true)
-            }}
-          >
-            {t('webTest.createScript')}
-          </Button>
-          <Dropdown
-            menu={{ 
-              items: moreMenuItems,
-              onClick: ({ key }) => {
-                if (key === 'delete') {
-                  handleBatchDelete()
-                } else if (key === 'run') {
-                  handleBatchRun()
-                } else if (key === 'export') {
-                  handleExport()
-                }
-              }
-            }}
-            disabled={selectedRowKeys.length === 0}
-          >
-            <Button icon={<MoreOutlined />}>更多</Button>
-          </Dropdown>
-        </Space>
-      </div>
-
-      <div className="fst-ios-card fst-animate-in fst-animate-in-1">
-        <div className="fst-table-wrap">
-          <Table
-            rowSelection={{
-              selectedRowKeys,
-              onChange: setSelectedRowKeys,
-            }}
-            columns={columns}
-            dataSource={scripts.filter(s =>
-              !searchText ||
-              s.name.toLowerCase().includes(searchText.toLowerCase()) ||
-              s.description?.toLowerCase().includes(searchText.toLowerCase())
-            )}
-            rowKey="id"
-            loading={loading}
-            pagination={{
-              total: scripts.length,
-              showTotal: (total) => `共 ${total} 条`,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-          />
-        </div>
-      </div>
+      <ScriptList
+        scripts={scripts} columns={columns} loading={loading}
+        searchText={searchText} setSearchText={setSearchText}
+        selectedCollectionId={selectedCollectionId} setSelectedCollectionId={setSelectedCollectionId}
+        collections={collections}
+        selectedRowKeys={selectedRowKeys} setSelectedRowKeys={setSelectedRowKeys}
+        onRefresh={loadScripts}
+        onCreateCollection={() => setIsCollectionModalOpen(true)}
+        onRunCollection={handleRunCollection}
+        onAiGenerate={() => setIsAiModalOpen(true)}
+        onExplore={openExploreModal}
+        onCreateScript={() => { setEditingScript(null); form.resetFields(); form.setFieldsValue({ collection_id: selectedCollectionId }); setIsModalOpen(true) }}
+        moreMenuItems={moreMenuItems}
+        onMoreClick={({ key }) => {
+          if (key === 'delete') handleBatchDelete()
+          else if (key === 'run') handleBatchRun()
+          else if (key === 'export') handleExport()
+        }}
+      />
 
       <Modal
         title={t('webTest.collectionManagement')}

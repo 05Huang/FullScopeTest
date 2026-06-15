@@ -1,52 +1,33 @@
-import { useTranslation } from 'react-i18next';
+﻿import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import {
   Layout,
-  Card,
   Tree,
   Input,
   Button,
   Tabs,
   Select,
-  Form,
   Space,
-  Table,
   Tag,
-  Dropdown,
   Typography,
   Empty,
   Tooltip,
   message,
-  Modal,
-  Drawer,
-  Switch,
-  Alert,
-  Divider,
-  InputNumber,
-  Badge,
   Spin,
 } from 'antd'
 import {
   PlusOutlined,
   FolderOutlined,
   FileOutlined,
-  FileAddOutlined,
-  SendOutlined,
-  SaveOutlined,
   DeleteOutlined,
   CopyOutlined,
-  MoreOutlined,
   SearchOutlined,
   ReloadOutlined,
-  InfoCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  RobotOutlined,
-  ExperimentOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import type { MenuProps } from 'antd'
-import MonacoEditor from '@monaco-editor/react'
 import { apiTestService } from '@/services/apiTestService'
 import type { AiPlanOperation } from '@/services/apiTestService'
 import { environmentService } from '@/services/environmentService'
@@ -59,6 +40,10 @@ import AiSynthesizeModal from './components/AiSynthesizeModal'
 import AiReviewModal from './components/AiReviewModal'
 import AiAssistantDrawer from './components/AiAssistantDrawer'
 import { useAiAssistant } from './hooks/useAiAssistant'
+import RequestEditor from './RequestEditor'
+import ResponseViewer from './ResponseViewer'
+import EnvironmentSelector from './EnvironmentSelector'
+import TestRunner from './TestRunner'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
@@ -1977,519 +1962,40 @@ const ApiTestWorkspace = () => {
 
       {/* 右侧工作区 */}
       <Content style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* 请求区域 */}
-        <Card
-          size="small"
-          style={{ borderRadius: 8 }}
-          bodyStyle={{ padding: 12 }}
-        >
-          {/* 请求名称输入栏 */}
-          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Input
-              placeholder="请输入请求名称（可选）"
-              value={requestName}
-              onChange={(e) => setRequestName(e.target.value)}
-              prefix={<Text type="secondary" style={{ fontSize: 12 }}>名称:</Text>}
-              allowClear
-              style={{ flex: 1 }}
-            />
-            <Tooltip title="表单内容会自动保存为草稿，切换页面不会丢失">
-              <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                <InfoCircleOutlined /> 自动保存草稿
-              </Text>
-            </Tooltip>
-          </div>
-          {/* URL 输入栏 */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <Select
-              value={method}
-              onChange={setMethod}
-              style={{ width: 100 }}
-              options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({
-                value: m,
-                label: (
-                  <span style={{ color: methodColors[m], fontWeight: 600 }}>
-                    {m}
-                  </span>
-                ),
-              }))}
-            />
-            <Input
-              placeholder="请输入请求 URL，例如：https://api.example.com/users"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              loading={sending}
-              onClick={handleSend}
-            >
-              {t('copilot.send')}
-            </Button>
-            <Tooltip title="新建用例（自动保存当前用例）">
-              <Button
-                icon={<FileAddOutlined />}
-                onClick={handleNewCase}
-              >
-                {t('apiTest.createCase')}
-              </Button>
-            </Tooltip>
-            <Tooltip title={currentCaseId ? (hasUnsavedChanges ? "保存修改" : "保存") : "保存到用例"}>
-              <Button
-                type={currentCaseId && hasUnsavedChanges ? "primary" : "default"}
-                icon={<SaveOutlined />}
-                onClick={currentCaseId ? saveCurrentCase : openSaveCaseModal}
-              >
-                {t('common.save')}
-              </Button>
-            </Tooltip>
-            <Tooltip title={currentCaseId ? "删除当前用例" : "请先选择一个已保存用例"}>
-              <Button
-                danger
-                disabled={!currentCaseId}
-                icon={<DeleteOutlined />}
-                onClick={() => currentCaseId && handleDeleteCase(currentCaseId, requestName || `ID:${currentCaseId}`)}
-              >
-                删除用例
-              </Button>
-            </Tooltip>
-            <Tooltip title="AI Assistant">
-              <Button
-                icon={<RobotOutlined />}
-                onClick={() => setAiDrawerOpen(true)}
-              >
-                AI Assistant
-              </Button>
-            </Tooltip>
-            <Tooltip title="AI 扩充用例">
-              <Button
-                type="default"
-                icon={<ExperimentOutlined />}
-                onClick={() => {
-                  setSynthesizeTargetCollectionId(selectedCollectionId || activeCollectionId)
-                  setAiSynthesizeModalOpen(true)
-                }}
-              >
-                AI 扩充用例
-              </Button>
-            </Tooltip>
-            <Tooltip title="AI 集合评审">
-              <Button
-                type="dashed"
-                icon={<RobotOutlined />}
-                onClick={() => {
-                  if (!(selectedCollectionId || activeCollectionId)) {
-                    message.warning('请先在左侧选择一个用例集合')
-                    return
-                  }
-                  setAiReviewModalOpen(true)
-                }}
-              >
-                AI 集合评审
-              </Button>
-            </Tooltip>
-            <Dropdown menu={{ items: moreMenuItems }}>
-              <Button icon={<MoreOutlined />} />
-            </Dropdown>
-          </div>
+        {/* 请求区域 — 使用提取的 RequestEditor 组件 */}
+        <RequestEditor
+          requestName={requestName} setRequestName={setRequestName}
+          method={method} setMethod={setMethod}
+          url={url} setUrl={setUrl}
+          sending={sending} onSend={handleSend}
+          currentCaseId={currentCaseId} hasUnsavedChanges={hasUnsavedChanges}
+          onNewCase={handleNewCase} onSaveCase={saveCurrentCase} onOpenSaveModal={openSaveCaseModal}
+          onDeleteCase={handleDeleteCase}
+          environments={environments} selectedEnvId={selectedEnvId} onSelectEnv={handleSelectEnv}
+          currentEnv={currentEnv} onApplyEnv={applyEnvironment}
+          activeTab={activeTab} setActiveTab={setActiveTab}
+          params={params} setParams={setParams} paramsColumns={paramsColumns}
+          headers={headers} setHeaders={setHeaders} headersColumns={headersColumns}
+          bodyType={bodyType} setBodyType={setBodyType}
+          requestBody={requestBody} setRequestBody={setRequestBody}
+          preScript={preScript} setPreScript={setPreScript}
+          postScript={postScript} setPostScript={setPostScript}
+          mockEnabled={mockEnabled} setMockEnabled={setMockEnabled}
+          mockResponseCode={mockResponseCode} setMockResponseCode={setMockResponseCode}
+          mockResponseBody={mockResponseBody} setMockResponseBody={setMockResponseBody}
+          mockResponseHeaders={mockResponseHeaders} setMockResponseHeaders={setMockResponseHeaders}
+          mockDelayMs={mockDelayMs} setMockDelayMs={setMockDelayMs}
+          onOpenAiDrawer={() => setAiDrawerOpen(true)}
+          onOpenSynthesize={() => { setSynthesizeTargetCollectionId(selectedCollectionId || activeCollectionId); setAiSynthesizeModalOpen(true) }}
+          onOpenReview={() => setAiReviewModalOpen(true)}
+          selectedCollectionId={selectedCollectionId} activeCollectionId={activeCollectionId}
+          moreMenuItems={moreMenuItems}
+          response={response}
+        />
 
-          {/* 环境选择栏 */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-            <Text type="secondary" style={{ fontSize: 12, minWidth: 50 }}>环境:</Text>
-            <Select
-              placeholder="选择测试环境"
-              allowClear
-              style={{ flex: 1, maxWidth: 300 }}
-              value={selectedEnvId}
-              onChange={handleSelectEnv}
-              options={environments.map(env => ({
-                value: env.id,
-                label: env.name
-              }))}
-            />
-            {currentEnv && (
-              <>
-                <Tag color="blue">{currentEnv.name}</Tag>
-                <Button
-                  type="dashed"
-                  size="small"
-                  onClick={applyEnvironment}
-                >
-                  应用配置
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* 环境变量提示 */}
-          {selectedEnvId && (
-            <div style={{ marginBottom: 12 }}>
-              <EnvironmentVariableHint envId={selectedEnvId} showUsage={true} />
-            </div>
-          )}
-
-          {/* 请求配置 Tabs */}
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            size="small"
-            items={[
-              {
-                key: 'params',
-                label: 'Params',
-                children: (
-                  <Table
-                    size="small"
-                    rowKey="rowKey"
-                    columns={paramsColumns}
-                    dataSource={params.map((p, i) => ({ ...p, rowKey: String(i) }))}
-                    pagination={false}
-                    footer={() => (
-                      <Button
-                        type="dashed"
-                        size="small"
-                        icon={<PlusOutlined />}
-                        block
-                        onClick={() => setParams([...params, { key: '', value: '' }])}
-                      >
-                        添加参数
-                      </Button>
-                    )}
-                  />
-                ),
-              },
-              {
-                key: 'headers',
-                label: 'Headers',
-                children: (
-                  <Table
-                    size="small"
-                    rowKey="rowKey"
-                    columns={headersColumns}
-                    dataSource={headers.map((h, i) => ({ ...h, rowKey: String(i) }))}
-                    pagination={false}
-                    footer={() => (
-                      <Button
-                        type="dashed"
-                        size="small"
-                        icon={<PlusOutlined />}
-                        block
-                        onClick={() => setHeaders([...headers, { key: '', value: '' }])}
-                      >
-                        添加请求头
-                      </Button>
-                    )}
-                  />
-                ),
-              },
-              {
-                key: 'body',
-                label: 'Body',
-                children: (
-                  <div>
-                    <Space style={{ marginBottom: 8 }}>
-                      <Select
-                        value={bodyType}
-                        onChange={setBodyType}
-                        size="small"
-                        options={[
-                          { value: 'none', label: 'none' },
-                          { value: 'json', label: 'JSON' },
-                          { value: 'form', label: 'form-data' },
-                          { value: 'urlencoded', label: 'x-www-form-urlencoded' },
-                          { value: 'raw', label: 'raw' },
-                        ]}
-                  />
-                  {response?.is_mock && (
-                    <Tag color="purple" style={{ marginLeft: 8 }}>Mock 数据</Tag>
-                  )}
-                </Space>
-                <MonacoEditor
-                      height={150}
-                      language={bodyType === 'json' ? 'json' : 'plaintext'}
-                      theme="vs-light"
-                      value={requestBody}
-                      onChange={(value) => setRequestBody(value || '{}')}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        lineNumbers: 'on',
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                      }}
-                    />
-                  </div>
-                ),
-              },
-              {
-                key: 'pre-script',
-                label: t('apiTest.preScript'),
-                children: (
-                  <MonacoEditor
-                    height={150}
-                    language="javascript"
-                    theme="vs-light"
-                    value={preScript}
-                    onChange={(value) => setPreScript(value || '')}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 13,
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                    }}
-                  />
-                ),
-              },
-              {
-                key: 'tests',
-                label: '断言脚本',
-                children: (
-                  <MonacoEditor
-                    height={150}
-                    language="javascript"
-                    theme="vs-light"
-                    value={postScript}
-                    onChange={(value) => setPostScript(value || '')}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 13,
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                    }}
-                  />
-                ),
-              },
-              {
-                key: 'mock',
-                label: (
-                  <Space size={4}>
-                    <span>Mock</span>
-                    {mockEnabled && <Badge status="success" />}
-                  </Space>
-                ),
-                children: (
-                  <div style={{ padding: '8px 0' }}>
-                    <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <Space>
-                          <Text>启用 Mock:</Text>
-                          <Switch checked={mockEnabled} onChange={setMockEnabled} size="small" />
-                        </Space>
-                        <Space>
-                          <Text>状态码:</Text>
-                          <InputNumber 
-                            value={mockResponseCode} 
-                            onChange={(val) => setMockResponseCode(val || 200)} 
-                            size="small" 
-                            style={{ width: 80 }} 
-                          />
-                        </Space>
-                        <Space>
-                          <Text>延迟(ms):</Text>
-                          <InputNumber 
-                            value={mockDelayMs} 
-                            onChange={(val) => setMockDelayMs(val || 0)} 
-                            size="small" 
-                            style={{ width: 80 }} 
-                            min={0}
-                          />
-                        </Space>
-                        {currentCaseId && (
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            Mock 地址: <Text code copyable>{`${window.location.origin}/api/v1/api-test/mock/${currentCaseId}`}</Text>
-                          </Text>
-                        )}
-                      </div>
-                      
-                      <div style={{ display: 'flex', gap: 16, height: 200 }}>
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                          <Text type="secondary" style={{ marginBottom: 4 }}>响应头 (Headers):</Text>
-                          <div style={{ flex: 1, overflow: 'auto', border: '1px solid #d9d9d9', borderRadius: 4 }}>
-                            <Table
-                              size="small"
-                              rowKey="rowKey"
-                              columns={[
-                                {
-                                  title: 'Header 名',
-                                  dataIndex: 'key',
-                                  render: (_: any, record: any, index: number) => (
-                                    <Input
-                                      placeholder="Content-Type"
-                                      size="small"
-                                      value={record.key}
-                                      onChange={(e) => {
-                                        const newHeaders = [...mockResponseHeaders]
-                                        newHeaders[index].key = e.target.value
-                                        setMockResponseHeaders(newHeaders)
-                                      }}
-                                    />
-                                  ),
-                                },
-                                {
-                                  title: 'Header 值',
-                                  dataIndex: 'value',
-                                  render: (_: any, record: any, index: number) => (
-                                    <Input
-                                      placeholder="application/json"
-                                      size="small"
-                                      value={record.value}
-                                      onChange={(e) => {
-                                        const newHeaders = [...mockResponseHeaders]
-                                        newHeaders[index].value = e.target.value
-                                        setMockResponseHeaders(newHeaders)
-                                      }}
-                                    />
-                                  ),
-                                },
-                                {
-                                  title: t('common.actions'),
-                                  width: 50,
-                                  render: (_: any, __: any, index: number) => (
-                                    <Button
-                                      type="text"
-                                      danger
-                                      size="small"
-                                      icon={<DeleteOutlined />}
-                                      onClick={() => {
-                                        const newHeaders = mockResponseHeaders.filter((_, i) => i !== index)
-                                        setMockResponseHeaders(newHeaders.length > 0 ? newHeaders : [{ key: '', value: '' }])
-                                      }}
-                                    />
-                                  ),
-                                },
-                              ]}
-                              dataSource={mockResponseHeaders.map((h, i) => ({ ...h, rowKey: String(i) }))}
-                              pagination={false}
-                              footer={() => (
-                                <Button
-                                  type="dashed"
-                                  size="small"
-                                  icon={<PlusOutlined />}
-                                  block
-                                  onClick={() => setMockResponseHeaders([...mockResponseHeaders, { key: '', value: '' }])}
-                                >
-                                  添加 Header
-                                </Button>
-                              )}
-                            />
-                          </div>
-                        </div>
-                        
-                        <div style={{ flex: 2, display: 'flex', flexDirection: 'column' }}>
-                          <Text type="secondary" style={{ marginBottom: 4 }}>响应体 (Body):</Text>
-                          <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: 4, overflow: 'hidden' }}>
-                            <MonacoEditor
-                              language="json"
-                              theme="vs-light"
-                              value={mockResponseBody}
-                              onChange={(value) => setMockResponseBody(value || '')}
-                              options={{
-                                minimap: { enabled: false },
-                                fontSize: 13,
-                                scrollBeyondLastLine: false,
-                                automaticLayout: true,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </Space>
-                {response?.is_mock && (
-                  <Tag color="purple" style={{ marginLeft: 16 }}>Mock 数据</Tag>
-                )}
-              </div>
-                ),
-              },
-            ]}
-          />
-        </Card>
-
-        {/* 响应区域 */}
-        <Card
-          size="small"
-          style={{ borderRadius: 8, flex: 1 }}
-          bodyStyle={{ padding: 12, height: '100%' }}
-          title={
-            response ? (
-              <Space>
-                <Tag color={response.status < 400 ? 'success' : 'error'}>
-                  {response.status} {response.statusText}
-                </Tag>
-                <Text type="secondary">Time: {response.time}ms</Text>
-                <Text type="secondary">Size: {response.size}</Text>
-              </Space>
-            ) : (
-              '响应'
-            )
-          }
-        >
-          {response ? (
-            <Tabs
-              activeKey={responseTab}
-              onChange={setResponseTab}
-              size="small"
-              items={[
-                {
-                  key: 'body',
-                  label: 'Body',
-                  children: (
-                    <MonacoEditor
-                      height={250}
-                      language="json"
-                      theme="vs-light"
-                      value={JSON.stringify(response.data, null, 2)}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                      }}
-                    />
-                  ),
-                },
-                {
-                  key: 'headers',
-                  label: 'Headers',
-                  children: (
-                    <Table
-                      size="small"
-                      dataSource={Object.entries(response.headers).map(
-                        ([key, value]) => ({ key, value })
-                      )}
-                      columns={[
-                        { title: 'Key', dataIndex: 'key', key: 'key' },
-                        { title: 'Value', dataIndex: 'value', key: 'value' },
-                      ]}
-                      pagination={false}
-                    />
-                  ),
-                },
-                {
-                  key: 'cookies',
-                  label: 'Cookies',
-                  children: <Empty description="暂无 Cookie" />,
-                },
-                {
-                  key: 'test-results',
-                  label: '测试结果',
-                  children: (
-                    <ScriptTestResults
-                      scriptExecution={response?.script_execution}
-                    />
-                  ),
-                },
-              ]}
-            />
-          ) : (
-            <Empty
-              description="发送请求查看响应"
-              style={{ marginTop: 60 }}
-            />
-          )}
-        </Card>
+        {/* 响应区域 — 使用提取的 ResponseViewer 组件 */}
+        <TestRunner sending={sending} onResend={handleSend} response={response} />
+        <ResponseViewer response={response} />
       </Content>
 
       {/* AI Assistant 弹窗 */}
