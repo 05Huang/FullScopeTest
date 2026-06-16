@@ -30,11 +30,14 @@ import {
   SafetyOutlined,
   BellOutlined,
   LinkOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { projectService } from '@/services/projectService'
+import { useThemeStore } from '@/stores/themeStore'
 import GlobalCopilot from '../components/GlobalCopilot'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
@@ -167,6 +170,7 @@ const MainLayout = () => {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
+  const { resolvedTheme, toggle: toggleTheme } = useThemeStore()
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDesc, setNewProjectDesc] = useState('')
@@ -732,6 +736,23 @@ const MainLayout = () => {
                 <TranslationOutlined style={{ fontSize: 18 }} />
               </button>
             </Dropdown>
+
+            {/* 主题切换按钮 */}
+            <button
+              onClick={toggleTheme}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                border: 'none', background: 'transparent',
+                display: 'grid', placeItems: 'center',
+                cursor: 'pointer', color: 'var(--fst-on-surface-variant)',
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = 'var(--fst-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fst-on-surface-variant)' }}
+              aria-label={resolvedTheme === 'dark' ? t('layout.switchToLight') : t('layout.switchToDark')}
+            >
+              {resolvedTheme === 'dark' ? <SunOutlined style={{ fontSize: 18 }} /> : <MoonOutlined style={{ fontSize: 18 }} />}
+            </button>
 
             <div style={{ width: 1, height: 20, background: 'var(--fst-outline-soft)', margin: '0 4px' }} />
 

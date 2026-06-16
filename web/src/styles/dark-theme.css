@@ -1,0 +1,113 @@
+/**
+ * 暗色主题 CSS 变量
+ *
+ * 通过 [data-theme="dark"] 选择器覆盖亮色主题变量。
+ * 所有颜色均从 --fst-* 变量体系派生，保持设计一致性。
+ */
+[data-theme="dark"] {
+  /* ─── 主色调（暗色模式下略微提亮） ─── */
+  --fst-primary: #4A9E96;
+  --fst-primary-light: #6BC4BC;
+  --fst-primary-dark: #2D6A64;
+  --fst-primary-container: #1A3A37;
+  --fst-secondary: #7AB5AF;
+  --fst-tertiary: #E8CFA0;
+  --fst-tertiary-light: #3D3528;
+
+  /* ─── 语义色 ─── */
+  --fst-success: #4A9E96;
+  --fst-warning: #E8CFA0;
+  --fst-error: #E8706C;
+  --fst-info: #7AAED4;
+
+  /* ─── 表面色 ─── */
+  --fst-surface: #1A1D1E;
+  --fst-surface-variant: #242728;
+  --fst-surface-container: #1E2122;
+  --fst-on-surface: #E2E2E0;
+  --fst-on-surface-variant: #A0A0A0;
+  --fst-on-surface-muted: #707070;
+
+  /* ─── 边框与分割线 ─── */
+  --fst-outline: #3A3D3E;
+  --fst-outline-soft: #2A2D2E;
+
+  /* ─── 毛玻璃效果 ─── */
+  --fst-glass-bg: rgba(26, 29, 30, 0.85);
+  --fst-glass-border: rgba(58, 61, 62, 0.6);
+  --fst-glass-blur: blur(20px);
+
+  /* ─── 阴影 ─── */
+  --fst-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --fst-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --fst-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* ─── Ant Design 暗色主题覆盖 ─── */
+  color-scheme: dark;
+}
+
+/* 暗色模式下全局背景 */
+[data-theme="dark"] body {
+  background: var(--fst-surface);
+  color: var(--fst-on-surface);
+}
+
+/* 暗色模式下侧边栏 */
+[data-theme="dark"] .fst-app-root aside {
+  background: var(--fst-glass-bg);
+}
+
+/* 暗色模式下顶栏 */
+[data-theme="dark"] header {
+  background: rgba(26, 29, 30, 0.6) !important;
+}
+
+/* 暗色模式下卡片 */
+[data-theme="dark"] .ant-card {
+  background: var(--fst-surface-variant);
+  border-color: var(--fst-outline-soft);
+}
+
+/* 暗色模式下表格 */
+[data-theme="dark"] .ant-table {
+  background: var(--fst-surface-variant);
+}
+
+[data-theme="dark"] .ant-table-thead > tr > th {
+  background: var(--fst-surface-container);
+  border-bottom-color: var(--fst-outline-soft);
+}
+
+/* 暗色模式下输入框 */
+[data-theme="dark"] .ant-input,
+[data-theme="dark"] .ant-input-affix-wrapper,
+[data-theme="dark"] .ant-select-selector {
+  background: var(--fst-surface-container);
+  border-color: var(--fst-outline);
+  color: var(--fst-on-surface);
+}
+
+/* 暗色模式下弹窗 */
+[data-theme="dark"] .ant-modal-content {
+  background: var(--fst-surface-variant);
+}
+
+[data-theme="dark"] .ant-modal-header {
+  background: var(--fst-surface-variant);
+  border-bottom-color: var(--fst-outline-soft);
+}
+
+/* 暗色模式下下拉菜单 */
+[data-theme="dark"] .ant-dropdown-menu {
+  background: var(--fst-surface-variant);
+  border: 1px solid var(--fst-outline-soft);
+}
+
+/* 暗色模式下页脚 */
+[data-theme="dark"] .fst-app-footer {
+  border-top-color: var(--fst-outline-soft);
+}
+
+[data-theme="dark"] .fst-site-footer-link {
+  color: var(--fst-on-surface-variant);
+}

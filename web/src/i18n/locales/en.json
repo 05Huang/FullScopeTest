@@ -779,7 +779,9 @@
     "deleteProjectSuccess": "Project deleted successfully",
     "deleteProjectFailed": "Failed to delete project",
     "user": "User",
-    "envNotice": "You are in the production environment. Some features may be slower due to personal server limitations."
+    "envNotice": "You are in the production environment. Some features may be slower due to personal server limitations.",
+    "switchToLight": "Switch to Light Mode",
+    "switchToDark": "Switch to Dark Mode"
   },
   "tour": {
     "welcome": "This is a simple and efficient automated testing platform. Let us take 30 seconds to explore the basic layout.",

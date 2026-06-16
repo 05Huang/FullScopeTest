@@ -779,7 +779,9 @@
     "deleteProjectSuccess": "项目删除成功",
     "deleteProjectFailed": "项目删除失败",
     "user": "用户",
-    "envNotice": "您目前处于线上环境，受限于个人服务器配置，部分功能性能可能会不理想。"
+    "envNotice": "您目前处于线上环境，受限于个人服务器配置，部分功能性能可能会不理想。",
+    "switchToLight": "切换到亮色模式",
+    "switchToDark": "切换到暗色模式"
   },
   "tour": {
     "welcome": "这是一个简单高效的自动化测试平台。让我们花半分钟了解一下基本功能布局。",
