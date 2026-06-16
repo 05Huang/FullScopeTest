@@ -202,7 +202,11 @@
     "auditLogs": "审计日志",
     "apiTokens": "API Token",
     "testPlans": "测试计划",
-    "qualityGates": "质量门禁"
+    "qualityGates": "质量门禁",
+    "cicdMain": "CI/CD 与定时任务",
+    "triggerRules": "触发规则",
+    "notifications": "通知设置",
+    "teamMetrics": "团队效能"
   },
   "header": {
     "logout": "退出登录",
@@ -995,5 +999,59 @@
     "inactive": "禁用",
     "evaluate": "评估",
     "evaluateHint": "评估需要指定测试运行 ID，请通过 API 触发"
+  },
+  "triggerRules": {
+    "title": "触发规则",
+    "create": "创建规则",
+    "edit": "编辑规则",
+    "noRules": "暂无触发规则",
+    "fetchFailed": "获取规则失败",
+    "createSuccess": "规则创建成功",
+    "updateSuccess": "规则更新成功",
+    "saveFailed": "保存失败",
+    "deleteSuccess": "规则已删除",
+    "deleteFailed": "删除失败",
+    "deleteConfirm": "确定要删除此触发规则吗？",
+    "namePlaceholder": "例如：main 分支推送触发",
+    "descPlaceholder": "规则描述",
+    "triggerEvent": "触发事件",
+    "targetType": "目标类型"
+  },
+  "notifications": {
+    "title": "通知设置",
+    "create": "创建渠道",
+    "edit": "编辑渠道",
+    "noConfigs": "暂无通知渠道",
+    "fetchFailed": "获取通知配置失败",
+    "createSuccess": "渠道创建成功",
+    "updateSuccess": "渠道更新成功",
+    "saveFailed": "保存失败",
+    "deleteSuccess": "渠道已删除",
+    "deleteFailed": "删除失败",
+    "deleteConfirm": "确定要删除此通知渠道吗？",
+    "namePlaceholder": "例如：钉钉测试群",
+    "channelType": "渠道类型",
+    "webhookUrl": "Webhook URL",
+    "urlPlaceholder": "https://...",
+    "events": "通知事件",
+    "testSend": "测试发送",
+    "testSuccess": "测试消息已发送",
+    "testFailed": "测试发送失败"
+  },
+  "teamMetrics": {
+    "title": "团队效能指标",
+    "fetchFailed": "获取团队指标失败",
+    "last7Days": "最近 7 天",
+    "last30Days": "最近 30 天",
+    "last90Days": "最近 90 天",
+    "totalCases": "总用例数",
+    "totalExecutions": "总执行数",
+    "avgPassRate": "平均通过率",
+    "activeMembers": "活跃成员",
+    "member": "成员",
+    "casesCreated": "用例创建",
+    "casesExecuted": "用例执行",
+    "bugsFound": "发现缺陷",
+    "noData": "暂无数据"
   }
 }

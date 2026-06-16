@@ -37,6 +37,9 @@ const TestPlanDetail = lazy(() => import('./pages/TestPlanDetail'))
 const TestPlanRunDetail = lazy(() => import('./pages/TestPlanRunDetail'))
 const SSOCallback = lazy(() => import('./pages/SSOCallback'))
 const QualityGates = lazy(() => import('./pages/QualityGates'))
+const TriggerRules = lazy(() => import('./pages/TriggerRules'))
+const NotificationSettings = lazy(() => import('./pages/NotificationSettings'))
+const TeamMetrics = lazy(() => import('./pages/TeamMetrics'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -295,6 +298,36 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <TestPlanRunDetail />
+            </Suspense>
+          }
+        />
+
+        {/* 触发规则 */}
+        <Route
+          path="trigger-rules"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <TriggerRules />
+            </Suspense>
+          }
+        />
+
+        {/* 通知设置 */}
+        <Route
+          path="notification-settings"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <NotificationSettings />
+            </Suspense>
+          }
+        />
+
+        {/* 团队效能 */}
+        <Route
+          path="team-metrics"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <TeamMetrics />
             </Suspense>
           }
         />

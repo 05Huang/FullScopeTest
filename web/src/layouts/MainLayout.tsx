@@ -28,6 +28,7 @@ import {
   KeyOutlined,
   ExperimentOutlined,
   SafetyOutlined,
+  BellOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -362,7 +363,12 @@ const MainLayout = () => {
     { icon: <ExperimentOutlined />, label: t('sidebar.testPlans'), path: '/test-plans' },
     { icon: <SafetyOutlined />, label: t('sidebar.qualityGates'), path: '/quality-gates' },
     { icon: <DotChartOutlined />, label: t('sidebar.aiInsights'), path: '/ai-insights' },
-    { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd' },
+    { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd', children: [
+      { label: t('sidebar.cicdMain'), path: '/ci-cd' },
+      { label: t('sidebar.triggerRules'), path: '/trigger-rules' },
+    ]},
+    { icon: <BellOutlined />, label: t('sidebar.notifications'), path: '/notification-settings' },
+    { icon: <BarChartOutlined />, label: t('sidebar.teamMetrics'), path: '/team-metrics' },
     { icon: <TeamOutlined />, label: t('sidebar.organizations'), path: '/organizations' },
     { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
     { icon: <KeyOutlined />, label: t('sidebar.apiTokens'), path: '/api-tokens' },

@@ -202,7 +202,11 @@
     "auditLogs": "Audit Logs",
     "apiTokens": "API Tokens",
     "testPlans": "Test Plans",
-    "qualityGates": "Quality Gates"
+    "qualityGates": "Quality Gates",
+    "cicdMain": "CI/CD & Schedules",
+    "triggerRules": "Trigger Rules",
+    "notifications": "Notification Settings",
+    "teamMetrics": "Team Metrics"
   },
   "header": {
     "logout": "Log Out",
@@ -995,5 +999,59 @@
     "inactive": "Inactive",
     "evaluate": "Evaluate",
     "evaluateHint": "Evaluation requires a test run ID. Please trigger via API."
+  },
+  "triggerRules": {
+    "title": "Trigger Rules",
+    "create": "Create Rule",
+    "edit": "Edit Rule",
+    "noRules": "No trigger rules yet",
+    "fetchFailed": "Failed to fetch rules",
+    "createSuccess": "Rule created",
+    "updateSuccess": "Rule updated",
+    "saveFailed": "Save failed",
+    "deleteSuccess": "Rule deleted",
+    "deleteFailed": "Deletion failed",
+    "deleteConfirm": "Are you sure you want to delete this trigger rule?",
+    "namePlaceholder": "e.g., main branch push trigger",
+    "descPlaceholder": "Rule description",
+    "triggerEvent": "Trigger Event",
+    "targetType": "Target Type"
+  },
+  "notifications": {
+    "title": "Notification Settings",
+    "create": "Create Channel",
+    "edit": "Edit Channel",
+    "noConfigs": "No notification channels yet",
+    "fetchFailed": "Failed to fetch notification configs",
+    "createSuccess": "Channel created",
+    "updateSuccess": "Channel updated",
+    "saveFailed": "Save failed",
+    "deleteSuccess": "Channel deleted",
+    "deleteFailed": "Deletion failed",
+    "deleteConfirm": "Are you sure you want to delete this notification channel?",
+    "namePlaceholder": "e.g., DingTalk Group",
+    "channelType": "Channel Type",
+    "webhookUrl": "Webhook URL",
+    "urlPlaceholder": "https://...",
+    "events": "Events",
+    "testSend": "Test Send",
+    "testSuccess": "Test message sent",
+    "testFailed": "Test send failed"
+  },
+  "teamMetrics": {
+    "title": "Team Metrics",
+    "fetchFailed": "Failed to fetch team metrics",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days",
+    "totalCases": "Total Cases",
+    "totalExecutions": "Total Executions",
+    "avgPassRate": "Avg Pass Rate",
+    "activeMembers": "Active Members",
+    "member": "Member",
+    "casesCreated": "Cases Created",
+    "casesExecuted": "Cases Executed",
+    "bugsFound": "Bugs Found",
+    "noData": "No data yet"
   }
 }
