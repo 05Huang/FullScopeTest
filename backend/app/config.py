@@ -37,6 +37,10 @@ class BaseConfig:
     # 预检请求缓存时间（秒）
     CORS_MAX_AGE = int(os.environ.get('CORS_MAX_AGE', '3600'))
 
+    # 并行测试执行配置
+    PARALLEL_WORKERS = int(os.environ.get('PARALLEL_WORKERS', '5'))
+    MAX_PARALLEL_WORKERS = int(os.environ.get('MAX_PARALLEL_WORKERS', '20'))
+
     # 限流配置
     RATELIMIT_DEFAULT = "200/minute"
     RATELIMIT_STORAGE_URI = os.environ.get('REDIS_URL', 'memory://')
