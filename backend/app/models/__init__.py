@@ -31,6 +31,7 @@ from .audit_log import AuditLog
 from .quota import Quota
 from .notification_config import NotificationConfig
 from .role import Role
+from .test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
 
 __all__ = [
     'User',
@@ -67,4 +68,7 @@ __all__ = [
     'Quota',
     'NotificationConfig',
     'Role',
+    'TestPlan',
+    'TestPlanRun',
+    'TestPlanCaseResult',
 ]
