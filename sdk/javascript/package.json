@@ -1,0 +1,14 @@
+{
+  "name": "@fullscopetest/sdk",
+  "version": "1.0.0",
+  "description": "FullScopeTest JavaScript/TypeScript SDK",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": ["testing", "api-testing", "fullscopetest"],
+  "license": "MIT"
+}
