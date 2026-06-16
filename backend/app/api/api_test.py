@@ -584,3 +584,59 @@ def run_collection(collection_id):
     except Exception as exc:
         logger.error("run collection failed", error=str(exc), exc_info=True)
         return error_response(500, f"执行集合失败: {str(exc)}")
+
+
+# ==================== 用例版本历史 ====================
+
+@api_bp.route("/api-test/cases/<int:case_id>/versions", methods=["GET"])
+@jwt_required()
+def get_case_versions(case_id):
+    """
+    获取用例的版本历史列表
+
+    查询参数:
+        page: 页码 (默认 1)
+        per_page: 每页数量 (默认 20)
+    """
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+
+    try:
+        result = case_service.get_versions(case_id, page, per_page)
+        return success_response(data=result)
+    except AppError as e:
+        return error_response(e.code, e.message)
+
+
+@api_bp.route("/api-test/versions/<int:version_id>", methods=["GET"])
+@jwt_required()
+def get_version_detail(version_id):
+    """获取指定版本详情"""
+    try:
+        version = case_service.get_version(version_id)
+        return success_response(data=version)
+    except AppError as e:
+        return error_response(e.code, e.message)
+
+
+@api_bp.route("/api-test/versions/diff", methods=["GET"])
+@jwt_required()
+def diff_versions():
+    """
+    对比两个版本的差异
+
+    查询参数:
+        v1: 旧版本 ID (必填)
+        v2: 新版本 ID (必填)
+    """
+    v1 = request.args.get('v1', type=int)
+    v2 = request.args.get('v2', type=int)
+
+    if not v1 or not v2:
+        return error_response(400, '缺少 v1 或 v2 参数')
+
+    try:
+        result = case_service.diff_two_versions(v1, v2)
+        return success_response(data=result)
+    except AppError as e:
+        return error_response(e.code, e.message)

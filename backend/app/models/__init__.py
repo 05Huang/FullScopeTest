@@ -33,6 +33,7 @@ from .notification_config import NotificationConfig
 from .role import Role
 from .test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
 from .issue_link import IssueLink
+from .test_case_version import TestCaseVersion
 
 __all__ = [
     'User',
@@ -73,4 +74,5 @@ __all__ = [
     'TestPlanRun',
     'TestPlanCaseResult',
     'IssueLink',
+    'TestCaseVersion',
 ]
