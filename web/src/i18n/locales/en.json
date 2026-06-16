@@ -51,7 +51,15 @@
     "title": "Welcome to FullScopeTest",
     "subtitle": "Simple & Efficient Automated Testing Platform",
     "accountLogin": "Account Login",
-    "moreLoginMethods": "More login methods",
+    "moreLoginMethods": "Other login methods",
+    "sso": {
+      "processing": "Processing SSO login...",
+      "success": "SSO Login Successful",
+      "redirecting": "Redirecting to dashboard...",
+      "failed": "SSO Login Failed",
+      "error": "SSO authentication failed. Please try again.",
+      "missingCode": "Missing authorization code"
+    },
     "username": "Username",
     "password": "Password",
     "loginBtn": "Log In",

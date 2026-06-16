@@ -41,6 +41,11 @@ class User(db.Model):
     reset_token_expires = db.Column(db.DateTime, nullable=True, comment='重置 Token 过期时间')
     password_changed_at = db.Column(db.DateTime, nullable=True, comment='最后一次修改密码时间')
 
+    # SSO 单点登录字段
+    sso_provider = db.Column(db.String(50), nullable=True, comment='SSO 提供商: oidc/ldap/local')
+    sso_id = db.Column(db.String(255), nullable=True, comment='SSO 提供商中的用户标识')
+    sso_metadata = db.Column(db.JSON, nullable=True, comment='SSO 提供商返回的额外元数据')
+
     # 关联
     projects = db.relationship('Project', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -54,7 +59,8 @@ class User(db.Model):
             'role': self.role,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'sso_provider': self.sso_provider,
         }
 
     def has_permission(self, permission: str) -> bool:

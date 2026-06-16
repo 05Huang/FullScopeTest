@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, message } from 'antd'
+import { Form, Input, Button, message, Divider } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
+import api from '@/services/api'
 
 interface LoginForm {
   username: string
@@ -130,6 +131,42 @@ const Login = () => {
 
   const [mode, setMode] = useState<AuthMode>(() => getModeFromPathname(location.pathname))
   const autoFilled = useRef(false)
+
+  // SSO 提供商状态
+  const [ssoProviders, setSsoProviders] = useState<Array<{ name: string; display_name: string }>>([])
+
+  useEffect(() => {
+    // 获取可用的 SSO 提供商
+    const fetchProviders = async () => {
+      try {
+        const res = await api.get('/auth/sso/providers')
+        const data = (res as any)?.data || res
+        if (data && Array.isArray(data)) {
+          setSsoProviders(data)
+        }
+      } catch {
+        // SSO 未配置时静默失败
+      }
+    }
+    fetchProviders()
+  }, [])
+
+  const handleSSOLogin = useCallback(async (provider: string) => {
+    if (provider === 'oidc') {
+      try {
+        const redirectUri = `${window.location.origin}/sso/callback`
+        const res = await api.get('/auth/sso/oidc/login', {
+          params: { redirect_uri: redirectUri },
+        })
+        const data = (res as any)?.data || res
+        if (data?.login_url) {
+          window.location.href = data.login_url
+        }
+      } catch {
+        message.error(t('login.sso.error'))
+      }
+    }
+  }, [t])
 
   useEffect(() => {
     setMode(getModeFromPathname(location.pathname))
@@ -307,6 +344,25 @@ const Login = () => {
                     </Button>
                   </Form.Item>
                 </Form>
+
+                {/* SSO 登录入口 */}
+                {ssoProviders.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <Divider plain style={{ fontSize: 12, color: '#999' }}>
+                      {t('login.moreLoginMethods')}
+                    </Divider>
+                    {ssoProviders.map((p) => (
+                      <Button
+                        key={p.name}
+                        block
+                        style={{ marginBottom: 8 }}
+                        onClick={() => handleSSOLogin(p.name)}
+                      >
+                        {p.display_name}
+                      </Button>
+                    ))}
+                  </div>
+                )}
 
               </section>
 

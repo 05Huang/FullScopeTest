@@ -4,6 +4,7 @@
 提供用户注册、登录、登出、密码重置等功能
 """
 
+import os
 import secrets
 from datetime import datetime, timedelta
 
@@ -428,3 +429,158 @@ def reset_password():
     logger.info('Password reset completed', user_id=matched_user.id)
 
     return success_response(message='密码重置成功，请使用新密码登录')
+
+
+# ── SSO 单点登录 ─────────────────────────────────────────────────────────────
+
+@api_bp.route('/auth/sso/providers', methods=['GET'])
+def list_sso_providers():
+    """获取可用的 SSO 提供商列表"""
+    from ..services.sso_service import get_available_providers
+    providers = get_available_providers()
+    return success_response(data=providers)
+
+
+@api_bp.route('/auth/sso/oidc/login', methods=['GET'])
+def oidc_login_url():
+    """
+    获取 OIDC 登录 URL
+
+    查询参数:
+        redirect_uri: 回调 URL（默认使用前端域名 + /sso/callback）
+    """
+    from ..services.sso_service import oidc_provider
+    if not oidc_provider.is_configured():
+        return error_response(400, 'OIDC 未配置')
+
+    redirect_uri = request.args.get('redirect_uri', '')
+    if not redirect_uri:
+        frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+        redirect_uri = f'{frontend_url}/sso/callback'
+
+    # 生成 state 参数防 CSRF
+    state = secrets.token_urlsafe(32)
+
+    try:
+        login_url = oidc_provider.get_login_url(redirect_uri, state)
+    except Exception as exc:
+        logger.error("OIDC 登录 URL 生成失败", error=str(exc))
+        return error_response(502, 'OIDC 服务不可用')
+
+    return success_response(data={'login_url': login_url, 'state': state})
+
+
+@api_bp.route('/auth/sso/oidc/callback', methods=['POST'])
+@validate_json('code')
+def oidc_callback():
+    """
+    处理 OIDC 回调
+
+    请求体:
+        code: 授权码
+        redirect_uri: 回调 URL（与登录时一致）
+    """
+    from ..services.sso_service import oidc_provider, find_or_create_sso_user
+    if not oidc_provider.is_configured():
+        return error_response(400, 'OIDC 未配置')
+
+    data = request.get_json()
+    code = data['code']
+    redirect_uri = data.get('redirect_uri', '')
+
+    if not redirect_uri:
+        frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+        redirect_uri = f'{frontend_url}/sso/callback'
+
+    sso_info = oidc_provider.handle_callback(code, redirect_uri)
+    if not sso_info:
+        return error_response(401, 'OIDC 认证失败')
+
+    user = find_or_create_sso_user(sso_info, 'oidc')
+
+    # 生成 Token 并返回（与普通登录一致）
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
+
+    from flask import make_response
+    response = make_response(success_response(
+        data={
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': user.to_dict(),
+        },
+        message='SSO 登录成功'
+    ))
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+
+    return response
+
+
+@api_bp.route('/auth/sso/ldap/login', methods=['POST'])
+@limiter.limit("10/minute")
+@validate_json('username', 'password')
+def ldap_login():
+    """
+    LDAP 登录
+
+    请求体:
+        username: 用户名
+        password: 密码
+    """
+    from ..services.sso_service import ldap_provider, find_or_create_sso_user
+    if not ldap_provider.is_configured():
+        return error_response(400, 'LDAP 未配置')
+
+    data = request.get_json()
+    username = data['username'].strip()
+    password = data['password']
+
+    sso_info = ldap_provider.authenticate(username, password)
+    if not sso_info:
+        return error_response(401, 'LDAP 认证失败，用户名或密码错误')
+
+    user = find_or_create_sso_user(sso_info, 'ldap')
+
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
+
+    from flask import make_response
+    response = make_response(success_response(
+        data={
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': user.to_dict(),
+        },
+        message='LDAP 登录成功'
+    ))
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+
+    return response
+
+
+@api_bp.route('/auth/sso/config', methods=['GET'])
+@jwt_required()
+def get_sso_config():
+    """获取 SSO 配置信息（管理员可见）"""
+    from ..services.sso_service import oidc_provider, ldap_provider
+    user_id = get_current_user_id()
+    user = User.query.get(user_id)
+    if not user or not user.is_admin():
+        return error_response(403, '需要管理员权限')
+
+    return success_response(data={
+        'oidc': {
+            'configured': oidc_provider.is_configured(),
+            'issuer_url': os.environ.get('OIDC_ISSUER_URL', ''),
+            'client_id': os.environ.get('OIDC_CLIENT_ID', ''),
+            'scopes': os.environ.get('OIDC_SCOPES', 'openid email profile'),
+        },
+        'ldap': {
+            'configured': ldap_provider.is_configured(),
+            'server_url': os.environ.get('LDAP_SERVER_URL', ''),
+            'base_dn': os.environ.get('LDAP_BASE_DN', ''),
+            'search_filter': os.environ.get('LDAP_USER_SEARCH_FILTER', '(uid={username})'),
+        },
+    })

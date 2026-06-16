@@ -35,6 +35,7 @@ const ApiTokens = lazy(() => import('./pages/ApiTokens'))
 const TestPlans = lazy(() => import('./pages/TestPlans'))
 const TestPlanDetail = lazy(() => import('./pages/TestPlanDetail'))
 const TestPlanRunDetail = lazy(() => import('./pages/TestPlanRunDetail'))
+const SSOCallback = lazy(() => import('./pages/SSOCallback'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -72,6 +73,14 @@ function App() {
         </Route>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/sso/callback"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <SSOCallback />
+            </Suspense>
+          }
+        />
 
         {/* 受保护的路由 */}
         <Route

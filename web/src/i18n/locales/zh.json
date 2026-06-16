@@ -51,7 +51,15 @@
     "title": "欢迎使用 FullScopeTest",
     "subtitle": "简单高效的自动化测试平台",
     "accountLogin": "账号登录",
-    "moreLoginMethods": "更多登录方式",
+    "moreLoginMethods": "其他登录方式",
+    "sso": {
+      "processing": "正在处理 SSO 登录...",
+      "success": "SSO 登录成功",
+      "redirecting": "正在跳转到工作台...",
+      "failed": "SSO 登录失败",
+      "error": "SSO 认证失败，请稍后重试",
+      "missingCode": "缺少授权码"
+    },
     "username": "用户名",
     "password": "密码",
     "loginBtn": "登录",
