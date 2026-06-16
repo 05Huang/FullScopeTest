@@ -32,6 +32,9 @@ const OrganizationList = lazy(() => import('./pages/organizations/OrganizationLi
 const OrganizationDetail = lazy(() => import('./pages/organizations/OrganizationDetail'))
 const AuditLogs = lazy(() => import('./pages/AuditLogs'))
 const ApiTokens = lazy(() => import('./pages/ApiTokens'))
+const TestPlans = lazy(() => import('./pages/TestPlans'))
+const TestPlanDetail = lazy(() => import('./pages/TestPlanDetail'))
+const TestPlanRunDetail = lazy(() => import('./pages/TestPlanRunDetail'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -244,6 +247,34 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <CICD />
+            </Suspense>
+          }
+        />
+
+        {/* 测试计划 */}
+        <Route path="test-plans">
+          <Route
+            index
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <TestPlans />
+              </Suspense>
+            }
+          />
+          <Route
+            path=":planId"
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <TestPlanDetail />
+              </Suspense>
+            }
+          />
+        </Route>
+        <Route
+          path="test-plan-runs/:runId"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <TestPlanRunDetail />
             </Suspense>
           }
         />
