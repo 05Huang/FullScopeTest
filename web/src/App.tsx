@@ -36,6 +36,7 @@ const TestPlans = lazy(() => import('./pages/TestPlans'))
 const TestPlanDetail = lazy(() => import('./pages/TestPlanDetail'))
 const TestPlanRunDetail = lazy(() => import('./pages/TestPlanRunDetail'))
 const SSOCallback = lazy(() => import('./pages/SSOCallback'))
+const QualityGates = lazy(() => import('./pages/QualityGates'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -246,6 +247,16 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <Reports />
+            </Suspense>
+          }
+        />
+
+        {/* 质量门禁 */}
+        <Route
+          path="quality-gates"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <QualityGates />
             </Suspense>
           }
         />

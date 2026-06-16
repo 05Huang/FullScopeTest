@@ -201,7 +201,8 @@
     "organizations": "Organizations",
     "auditLogs": "Audit Logs",
     "apiTokens": "API Tokens",
-    "testPlans": "Test Plans"
+    "testPlans": "Test Plans",
+    "qualityGates": "Quality Gates"
   },
   "header": {
     "logout": "Log Out",
@@ -970,5 +971,29 @@
     "finishedAt": "Finished At",
     "caseType": "Case Type",
     "caseId": "Case ID"
+  },
+  "qualityGates": {
+    "title": "Quality Gates",
+    "create": "Create Gate",
+    "edit": "Edit Gate",
+    "noGates": "No quality gates yet",
+    "fetchFailed": "Failed to fetch quality gates",
+    "createSuccess": "Created successfully",
+    "updateSuccess": "Updated successfully",
+    "saveFailed": "Save failed",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Deletion failed",
+    "deleteConfirm": "Are you sure you want to delete this quality gate?",
+    "namePlaceholder": "e.g., Release Quality Gate",
+    "descPlaceholder": "Gate description",
+    "minPassRate": "Min Pass Rate",
+    "maxP95": "Max P95 Response Time",
+    "maxVisualDiff": "Max Visual Diff",
+    "optional": "Optional",
+    "enabled": "Enabled",
+    "active": "Active",
+    "inactive": "Inactive",
+    "evaluate": "Evaluate",
+    "evaluateHint": "Evaluation requires a test run ID. Please trigger via API."
   }
 }

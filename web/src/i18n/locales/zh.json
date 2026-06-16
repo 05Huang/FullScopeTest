@@ -201,7 +201,8 @@
     "organizations": "组织管理",
     "auditLogs": "审计日志",
     "apiTokens": "API Token",
-    "testPlans": "测试计划"
+    "testPlans": "测试计划",
+    "qualityGates": "质量门禁"
   },
   "header": {
     "logout": "退出登录",
@@ -970,5 +971,29 @@
     "finishedAt": "结束时间",
     "caseType": "用例类型",
     "caseId": "用例 ID"
+  },
+  "qualityGates": {
+    "title": "质量门禁",
+    "create": "创建门禁",
+    "edit": "编辑门禁",
+    "noGates": "暂无质量门禁",
+    "fetchFailed": "获取质量门禁失败",
+    "createSuccess": "创建成功",
+    "updateSuccess": "更新成功",
+    "saveFailed": "保存失败",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "deleteConfirm": "确定要删除此质量门禁吗？",
+    "namePlaceholder": "例如：发版质量门禁",
+    "descPlaceholder": "门禁描述",
+    "minPassRate": "最低通过率",
+    "maxP95": "P95 响应时间上限",
+    "maxVisualDiff": "视觉差异上限",
+    "optional": "可选",
+    "enabled": "启用",
+    "active": "启用",
+    "inactive": "禁用",
+    "evaluate": "评估",
+    "evaluateHint": "评估需要指定测试运行 ID，请通过 API 触发"
   }
 }
