@@ -34,6 +34,7 @@ from .role import Role
 from .test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
 from .issue_link import IssueLink
 from .test_case_version import TestCaseVersion
+from .comment import Comment
 
 __all__ = [
     'User',
@@ -75,4 +76,5 @@ __all__ = [
     'TestPlanCaseResult',
     'IssueLink',
     'TestCaseVersion',
+    'Comment',
 ]

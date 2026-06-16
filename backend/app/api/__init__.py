@@ -36,3 +36,4 @@ from .webhooks import gitlab
 from . import organizations
 from . import tokens
 from . import test_plans
+from . import comments
