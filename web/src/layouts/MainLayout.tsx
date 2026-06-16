@@ -23,6 +23,7 @@ import {
   DotChartOutlined,
   EditOutlined,
   DeleteOutlined,
+  TeamOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -356,6 +357,7 @@ const MainLayout = () => {
     { icon: <BarChartOutlined />, label: t('sidebar.reports'), path: '/reports' },
     { icon: <DotChartOutlined />, label: t('sidebar.aiInsights'), path: '/ai-insights' },
     { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd' },
+    { icon: <TeamOutlined />, label: t('sidebar.organizations'), path: '/organizations' },
     { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
   ]

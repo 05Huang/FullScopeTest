@@ -28,6 +28,8 @@ const Settings = lazy(() => import('./pages/Settings'))
 const Profile = lazy(() => import('./pages/Profile'))
 const VisualRegressionHistory = lazy(() => import('./pages/VisualRegressionHistory'))
 const AIInsightsDashboard = lazy(() => import('./pages/AIInsightsDashboard'))
+const OrganizationList = lazy(() => import('./pages/organizations/OrganizationList'))
+const OrganizationDetail = lazy(() => import('./pages/organizations/OrganizationDetail'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -189,6 +191,26 @@ function App() {
             element={
               <Suspense fallback={<PageLoading />}>
                 <PerfTestAlertRules />
+              </Suspense>
+            }
+          />
+        </Route>
+
+        {/* 组织管理 */}
+        <Route path="organizations">
+          <Route
+            index
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <OrganizationList />
+              </Suspense>
+            }
+          />
+          <Route
+            path=":orgId"
+            element={
+              <Suspense fallback={<PageLoading />}>
+                <OrganizationDetail />
               </Suspense>
             }
           />
