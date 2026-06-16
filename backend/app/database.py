@@ -32,7 +32,44 @@ from sqlalchemy.orm import (
     relationship,
     scoped_session,
     backref,
+    Query,
 )
+
+
+def _paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
+    """
+    Flask-SQLAlchemy 兼容的分页方法，直接注入到 SQLAlchemy Query 类。
+
+    这样 Project.query.filter_by(...).paginate(...) 等链式调用也能正常工作。
+    """
+    if page is None:
+        page = 1
+    if per_page is None:
+        per_page = 20
+    page = int(page)
+    per_page = int(per_page)
+    if max_per_page and per_page > max_per_page:
+        per_page = max_per_page
+
+    total = self.count()
+    items = self.offset((page - 1) * per_page).limit(per_page).all()
+
+    class _Pagination:
+        def __init__(self, items, total, page, per_page):
+            self.items = items
+            self.total = total
+            self.page = page
+            self.per_page = per_page
+            self.pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+            self.has_next = page < self.pages
+            self.has_prev = page > 1
+
+    return _Pagination(items, total, page, per_page)
+
+
+# 猴子补丁：给 SQLAlchemy Query 添加 paginate 方法
+if not hasattr(Query, 'paginate'):
+    Query.paginate = _paginate
 
 
 class Base(DeclarativeBase):
@@ -143,6 +180,38 @@ class _DatabaseManager:
             def __call__(self, *args, **kwargs):
                 return db_instance.session.query(self._model, *args, **kwargs)
 
+            def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
+                """
+                Flask-SQLAlchemy 兼容的分页方法
+
+                当 page/per_page 为 None 时使用默认值，避免类型错误。
+                """
+                if page is None:
+                    page = 1
+                if per_page is None:
+                    per_page = 20
+                page = int(page)
+                per_page = int(per_page)
+                if max_per_page and per_page > max_per_page:
+                    per_page = max_per_page
+
+                query_obj = db_instance.session.query(self._model)
+                total = query_obj.count()
+                items = query_obj.offset((page - 1) * per_page).limit(per_page).all()
+
+                # 返回一个与 Flask-SQLAlchemy Pagination 兼容的对象
+                class _Pagination:
+                    def __init__(self, items, total, page, per_page):
+                        self.items = items
+                        self.total = total
+                        self.page = page
+                        self.per_page = per_page
+                        self.pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+                        self.has_next = page < self.pages
+                        self.has_prev = page > 1
+
+                return _Pagination(items, total, page, per_page)
+
         class _ModelMeta(type):
             """拦截 Model 类的 query 属性访问"""
             @property
@@ -170,6 +239,11 @@ class _DatabaseManager:
                 "Database not initialized. Call db.init() or db.init_app() first."
             )
         return self._session
+
+    @property
+    def metadata(self):
+        """SQLAlchemy Metadata，用于 Alembic 迁移和 create_all"""
+        return Base.metadata
 
     def create_all(self):
         """创建所有表"""

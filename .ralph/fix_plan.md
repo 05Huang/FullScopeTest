@@ -1728,7 +1728,7 @@
 
 ---
 
-## 任务总数统计
+## 任务总数统计（第一/二阶段）
 
 | 阶段 | 总数 | 已完成 | 未完成 |
 |------|------|--------|--------|
@@ -1746,3 +1746,1696 @@
 | 🟡 P1（重要） | 15 项 | 20-28 天 | 质量门禁、GitHub 集成、评论、导入、Mock、版本管理、视觉回归、WebSocket、暗色模式、移动端、批量操作、文档、测试覆盖率 |
 | 🟢 P2（锦上添花） | 7 项 | 5-8 天 | 触发规则、通知、团队指标、语义去重、快捷键、conftest 拆分 |
 | **总计** | **29 项** | **37-53 天** | |
+
+---
+
+# 第三阶段：商业化生产级全栈提升
+
+> 目标：将 FullScopeTest 从"功能完整的测试平台"升级为"可面向企业客户销售的商业级 AI 测试平台"。
+> 本阶段覆盖 8 大维度、100+ 项改进任务，涵盖基础设施、AI 核心、测试引擎、企业安全、CI/CD、报告分析、开发者体验、商业化运营。
+> 每条任务完成后标记 `- [x]`，并附上 commit hash。
+
+---
+
+## ⚠️ 第三阶段全局规范补充
+
+> 除遵守第二阶段全局设计规范外，第三阶段新增以下约束：
+
+### 1. 后端代码规范补充
+
+- ✅ 所有新增 API 端点必须有 Pydantic Schema（请求/响应），用于 OpenAPI 文档自动生成
+- ✅ 所有数据库写操作必须包裹在 `try/except` 中，异常时 `db.session.rollback()`
+- ✅ 所有新增模型字段必须有 `nullable` 和 `default` 显式声明
+- ✅ 所有新增 API 必须在 `__init__.py` 注册蓝图，并在 conftest 中提供测试 fixture
+- ✅ 日志统一使用 `structlog`，禁止 `print()` 和 `logging.getLogger()`
+- ✅ 新增 service 类必须继承 `BaseService`（`backend/app/services/base.py`）
+- ✅ 所有新增 API 必须通过 `@audit_action` 装饰器记录操作日志
+
+### 2. 前端代码规范补充
+
+- ✅ 新增页面组件行数不超过 400 行，超过必须拆分子组件
+- ✅ 新增页面必须同时支持 i18n（`zh.json` + `en.json`）
+- ✅ 所有 API 调用必须有错误处理（`try/catch` + `message.error()`）
+- ✅ 列表页面默认支持：分页、排序、筛选、空状态
+- ✅ 表单页面默认支持：Loading 状态、提交防重复、表单校验
+
+### 3. 安全规范补充
+
+- ✅ 所有用户输入必须经过校验（`input_validation.py`）
+- ✅ SQL 查询禁止使用字符串拼接，必须使用 SQLAlchemy ORM 或参数化查询
+- ✅ 文件上传必须校验类型、大小、内容（magic bytes）
+- ✅ 所有外部 URL 调用必须经过 SSRF 校验（`url_safety.py`）
+- ✅ 敏感配置项必须通过环境变量读取，禁止硬编码
+
+---
+
+## P13：基础设施与生产就绪（地基加固）
+
+> 本阶段解决"能跑"到"能在生产环境稳定运行"的差距。
+
+### P13-1: Alembic 迁移工程化 — 生成干净的基线迁移
+
+**问题**：数据库 schema 多次通过手动 `ALTER TABLE` 和 `db.create_all()` 修改，Alembic 迁移历史混乱（多个 head、已迁移文件与实际 schema 不一致）。后续开发无法安全地添加新字段或创建新表。
+
+**修改范围**：
+- 备份现有 `backend/migrations/versions/` 下所有迁移文件
+- 删除旧迁移文件，生成全新的基线迁移 `backend/migrations/versions/001_baseline.py`
+- 修改 `backend/app/database.py` — 确保 `metadata` 属性正确暴露所有模型的表
+- 修改 `backend/app/models/__init__.py` — 确保所有模型都被 import（避免遗漏表）
+- 新增 `backend/scripts/reset_db.py` — 数据库重置脚本（开发环境用）
+
+**实现要求**：
+- `flask db migrate -m "baseline: all models"` 生成包含全部 34+ 张表的基线迁移
+- 基线迁移文件必须在 SQLite 和 PostgreSQL 下均可执行
+- 提供 `flask db stamp head` 命令说明（标记现有数据库为最新版本）
+- 迁移文件中包含：所有表定义、所有索引、所有外键约束
+- `reset_db.py` 脚本：删除数据库 → 创建数据库 → 运行迁移 → 填充种子数据
+
+
+- [x] 已完成 — P13-1
+
+---
+
+### P13-2: Docker 本地开发环境 — 一键启动
+
+**问题**：本地开发需要分别启动 Redis、后端（Flask）、前端（Vite）三个进程，步骤繁琐且容易出错。新开发者上手成本高。
+
+**修改范围**：
+- 新增 `docker-compose.dev.yml` — 开发环境 Docker Compose（热重载）
+- 修改 `docker/Dockerfile.backend.dev` — 开发用后端镜像（挂载代码卷）
+- 新增 `docker/Dockerfile.frontend.dev` — 开发用前端镜像
+- 修改 `START.bat` / `start_dev.sh` — 更新启动脚本
+- 修改 `docs/development-setup.md` — 开发环境文档
+
+**实现要求**：
+- `docker-compose -f docker-compose.dev.yml up` 一键启动全部服务
+- 服务包含：Redis（端口 6379）、PostgreSQL（端口 5432，可选）、Flask 后端（端口 5211，热重载）、Vite 前端（端口 3001，HMR）
+- 代码卷挂载：修改代码后自动重载，无需重建镜像
+- 环境变量通过 `.env` 文件注入
+- 数据持久化：数据库和 Redis 数据通过 Docker Volume 持久化
+- 提供 `docker-compose -f docker-compose.dev.yml down -v` 清理命令
+
+
+- [ ] 未完成
+
+---
+
+### P13-3: 请求链路追踪 — Request ID 贯穿全链路
+
+**问题**：排查线上问题时，无法将前端请求、后端日志、数据库查询关联起来。
+
+**修改范围**：
+- 新增 `backend/app/middleware/request_id.py` — Request ID 中间件
+- 修改 `backend/app/core/logging.py` — 日志中注入 request_id
+- 修改 `web/src/services/api.ts` — 前端请求拦截器记录 request_id
+- 修改 `backend/app/utils/response.py` — 响应头中返回 X-Request-ID
+
+**实现要求**：
+- 每个请求生成唯一 UUID（格式：`req_xxxx-xxxx-xxxx`）
+- Request ID 通过 `X-Request-ID` 请求头传递
+- 后端日志中自动附加 `request_id` 字段
+- 前端错误日志中记录 request_id（方便提交 bug 时附带）
+- 响应头中返回 `X-Request-ID`（方便前端定位问题）
+- 支持从外部网关传入的 `X-Request-ID`（透传模式）
+
+
+- [ ] 未完成
+
+---
+
+### P13-4: 数据库连接池优化与健康探活
+
+**问题**：当前 SQLite 开发配置无连接池概念，生产环境 PostgreSQL 缺少连接池调优。长时间空闲后数据库连接可能断开。
+
+**修改范围**：
+- 修改 `backend/app/config.py` — 添加 SQLAlchemy 连接池配置
+- 修改 `backend/app/database.py` — 连接池事件监听
+- 修改 `backend/app/core/health.py` — 数据库连接池状态检查
+
+**实现要求**：
+- SQLAlchemy 连接池配置：
+  - `pool_size=10`（基础连接数）
+  - `max_overflow=20`（溢出连接数）
+  - `pool_timeout=30`（获取连接超时）
+  - `pool_recycle=1800`（连接回收时间，30 分钟）
+  - `pool_pre_ping=True`（使用前探活，避免使用断开的连接）
+- 开发环境（SQLite）自动回退到 `NullPool`
+- 健康检查端点显示连接池状态：`{pool_size: 10, checked_in: 8, checked_out: 2, overflow: 0}`
+- 连接池耗尽时记录告警日志
+
+
+- [ ] 未完成
+
+---
+
+### P13-5: 请求超时与 Body 大小限制中间件
+
+**问题**：缺少请求超时控制和请求体大小限制，恶意用户可发送超大请求或让请求挂起消耗资源。
+
+**修改范围**：
+- 新增 `backend/app/middleware/request_limits.py` — 请求限制中间件
+- 修改 `backend/app/__init__.py` — 注册中间件
+- 修改 `backend/app/config.py` — 添加配置项
+
+**实现要求**：
+- 请求体大小限制：默认 10MB，文件上传接口单独配置（50MB）
+- 请求超时：API 请求默认 30 秒，AI 相关接口 120 秒，测试执行接口 300 秒
+- 超时返回 `408 Request Timeout`，包含请求 ID
+- Body 过大返回 `413 Payload Too Large`
+- 通过环境变量可配置：`REQUEST_TIMEOUT=30`、`MAX_CONTENT_LENGTH=10485760`
+
+
+- [ ] 未完成
+
+---
+
+### P13-6: API 响应压缩与缓存头
+
+**问题**：API 响应未压缩，大量数据传输时带宽浪费。前端重复请求相同数据。
+
+**修改范围**：
+- 新增 `backend/app/middleware/compression.py` — 响应压缩中间件
+- 修改 `backend/app/__init__.py` — 注册中间件
+- 修改现有 API 端点 — 添加 Cache-Control 头
+
+**实现要求**：
+- 启用 Gzip/Brotli 压缩（阈值 1KB 以上才压缩）
+- 静态资源 Cache-Control: `max-age=31536000, immutable`
+- API 响应 Cache-Control: `no-cache`（默认）或 `max-age=60`（配置类接口）
+- ETag 支持（304 Not Modified）
+- 通过环境变量 `COMPRESSION_ENABLED`（默认 true）控制开关
+
+
+- [ ] 未完成
+
+---
+
+### P13-7: CORS 安全加固
+
+**问题**：CORS 配置过于宽松（`origins="*"`），生产环境存在安全风险。
+
+**修改范围**：
+- 修改 `backend/app/__init__.py` — CORS 配置
+- 修改 `backend/app/config.py` — CORS 环境变量
+
+**实现要求**：
+- 开发环境：`origins=["http://localhost:3001", "http://127.0.0.1:3001"]`
+- 生产环境：通过 `CORS_ORIGINS` 环境变量配置（逗号分隔）
+- 限制允许的方法：`GET, POST, PUT, DELETE, PATCH, OPTIONS`
+- 限制允许的头：`Authorization, Content-Type, X-Request-ID`
+- `supports_credentials=True`（配合 httpOnly Cookie）
+- `max_age=3600`（预检请求缓存 1 小时）
+
+
+- [ ] 未完成
+
+---
+
+### P13-8: 文件上传安全与存储抽象
+
+**问题**：文件上传缺乏类型校验和大小限制。存储方式硬编码为本地文件系统。
+
+**修改范围**：
+- 新增 `backend/app/services/storage_service.py` — 存储抽象层
+- 修改 `backend/app/utils/sandbox.py` — 文件校验增强
+- 修改 `backend/app/config.py` — 存储配置
+
+**实现要求**：
+- `StorageService` 接口：`upload(file, path) -> url`、`download(path) -> bytes`、`delete(path) -> bool`
+- 三种实现：`LocalStorage`（开发）、`OSSStorage`（阿里云 OSS）、`S3Storage`（AWS S3）
+- 文件校验：检查 MIME 类型（magic bytes）、文件大小、扩展名
+- 文件名随机化（UUID），防止路径遍历攻击
+- 通过 `STORAGE_TYPE=local/oss/s3` 环境变量切换
+- 上传限制：图片 5MB，脚本 500KB，报告附件 20MB
+
+
+- [ ] 未完成
+
+---
+
+### P13-9: 全局错误处理与统一异常体系
+
+**问题**：部分 API 未统一异常处理，500 错误直接暴露堆栈信息。
+
+**修改范围**：
+- 修改 `backend/app/utils/exceptions.py` — 完善异常类体系
+- 修改 `backend/app/__init__.py` — 全局错误处理器
+- 新增 `backend/app/middleware/error_handler.py` — 统一错误响应
+
+**实现要求**：
+- 异常类体系：
+  - `AppError`（基类，code=500）
+  - `NotFoundError`（code=404）
+  - `ValidationError`（code=400）
+  - `AuthenticationError`（code=401）
+  - `AuthorizationError`（code=403）
+  - `ConflictError`（code=409）
+  - `RateLimitError`（code=429）
+  - `ExternalServiceError`（code=502）
+- 生产环境：500 错误不暴露堆栈，仅返回 `{"code": 500, "message": "服务器内部错误", "request_id": "req_xxx"}`
+- 开发环境：500 错误包含完整堆栈（便于调试）
+- 所有异常自动记录 structlog 日志（含 request_id、user_id、异常详情）
+
+
+- [ ] 未完成
+
+---
+
+### P13-10: 数据库索引优化
+
+**问题**：SQLite 数据库缺少索引，数据量增长后查询变慢。
+
+**修改范围**：
+- 新增 `backend/migrations/versions/002_add_indexes.py` — 索引迁移
+- 修改关键模型文件 — 添加 `__table_args__` 索引定义
+
+**实现要求**：
+- 高频查询字段索引：
+  - `api_test_cases`: `(project_id)`, `(collection_id)`, `(created_at)`
+  - `test_runs`: `(project_id)`, `(status)`, `(created_at)`
+  - `test_reports`: `(run_id)`, `(project_id)`
+  - `audit_logs`: `(user_id)`, `(action)`, `(created_at)`
+  - `comments`: `(resource_type, resource_id)`, `(user_id)`
+  - `notifications`: `(user_id)`, `(is_read)`
+  - `api_tokens`: `(user_id)`, `(is_active)`
+  - `test_plans`: `(project_id)`
+  - `quality_gates`: `(project_id)`
+- 复合索引：`(project_id, created_at DESC)` 用于分页查询
+- 迁移文件可在 SQLite 和 PostgreSQL 下执行
+
+
+- [ ] 未完成
+
+---
+
+## P14：AI/ML 核心能力增强（核心差异化）
+
+> 本阶段将 AI 从"辅助功能"升级为"核心引擎"，打造真正的 AI-native 测试平台。
+
+### P14-1: RAG 检索增强测试生成 — 基于已有用例的智能生成
+
+**问题**：当前 AI 生成用例是纯 LLM 推理，未利用项目中已有的高质量测试用例作为上下文，生成质量不稳定。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/rag_service.py` — RAG 检索服务
+- 新增 `backend/app/services/ai/embedding_service.py` — 向量化服务
+- 修改 `backend/app/utils/ai_copilot.py` — 集成 RAG 上下文
+- 修改 `backend/app/utils/ai_data_synthesizer.py` — 集成 RAG 上下文
+- 新增 `backend/app/models/embedding_cache.py` — 向量缓存模型
+
+**实现要求**：
+- 当用户请求"生成类似 xxx 的测试用例"时：
+  1. 从项目中检索语义最相似的 5-10 个已有用例
+  2. 将检索到的用例作为 few-shot examples 注入 prompt
+  3. LLM 基于参考用例生成新用例
+- 向量存储方案：
+  - 生产：pgvector（PostgreSQL 扩展）
+  - 开发/轻量：本地 FAISS 索引（文件存储）
+- 向量化模型：使用 DeepSeek Embedding API 或本地 Sentence-Transformers
+- 缓存策略：用例内容 hash → 向量缓存，避免重复计算
+- 检索时支持按项目、标签、测试类型过滤
+
+
+- [ ] 未完成
+
+---
+
+### P14-2: AI 测试用例自愈 — API 变更自动修复用例
+
+**问题**：API 接口变更（字段重命名、路径修改、参数调整）后，已有的测试用例全部失败，需要人工逐个修复。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/healing_service.py` — 用例自愈服务
+- 修改 `backend/app/services/api_execution_service.py` — 执行失败后触发自愈
+- 修改 `backend/app/api/api_test.py` — 自愈 API 端点
+- 新增 `backend/tests/test_healing_service.py`
+
+**实现要求**：
+- 测试执行失败后，分析失败原因：
+  - 404 → 路径变更，AI 推荐新路径
+  - 字段缺失 → 响应结构变更，AI 推荐新的断言
+  - 状态码变更 → 接口行为变更，AI 推荐更新期望值
+- AI 生成修复建议（diff 格式），用户确认后自动应用
+- 批量自愈：同一批次失败的用例，AI 统一分析并批量修复
+- 自愈历史记录：每次修复记录原始用例、修复后用例、修复原因
+- 提供 API 端点：
+  - `POST /api-test/cases/:id/heal` — 单个用例自愈
+  - `POST /api-test/collections/:id/heal` — 用例集批量自愈
+
+
+- [ ] 未完成
+
+---
+
+### P14-3: 智能测试选择 — 基于变更影响分析
+
+**问题**：每次代码变更都执行全量测试，耗时且成本高。缺少根据代码变更智能选择需要执行的测试子集的能力。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/test_selector_service.py` — 智能选测服务
+- 修改 `backend/app/api/triggers.py` — 触发时集成智能选测
+- 新增 `backend/tests/test_test_selector.py`
+
+**实现要求**：
+- 基于 API 路径映射：代码变更的文件/函数 → 影响的 API 端点 → 关联的测试用例
+- 基于历史失败数据：经常因类似变更失败的用例优先执行
+- 选测结果展示：推荐执行的用例列表 + 推荐理由 + 预估执行时间
+- 用户可调整选测结果（添加/移除用例）后执行
+- 与 CI/CD 集成：GitHub PR 触发时自动选测
+
+
+- [ ] 未完成
+
+---
+
+### P14-4: Flaky Test 检测 — 不稳定用例自动识别
+
+**问题**：测试结果中存在"时好时坏"的不稳定用例，干扰测试结果的可信度。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/flaky_detector_service.py` — Flaky 检测服务
+- 修改 `backend/app/models/test_run.py` — 添加 flaky_score 字段
+- 修改 `backend/app/api/reports.py` — Flaky 报告 API
+- 新增 `backend/tests/test_flaky_detector.py`
+
+**实现要求**：
+- 分析同一用例在最近 N 次执行中的通过/失败模式
+- Flaky 评分算法：`(状态切换次数 / 执行次数) * 100`
+- 评分 > 30 标记为"疑似不稳定"，> 60 标记为"不稳定"
+- 报告页面展示 Flaky Top 10 排行榜
+- 支持将 Flaky 用例标记为"已知不稳定"（执行时标记为 soft fail）
+- API 端点：`GET /reports/flaky-tests`
+
+
+- [ ] 未完成
+
+---
+
+### P14-5: 自然语言创建测试 — 对话式测试编写
+
+**问题**：创建测试用例需要手动填写表单，效率低。非技术人员无法编写测试。
+
+**修改范围**：
+- 修改 `backend/app/utils/ai_copilot.py` — 对话式用例生成
+- 修改 `web/src/pages/api-test/components/AiAssistantDrawer.tsx` — 对话式 UI
+- 新增 `web/src/pages/api-test/components/NLTestCaseCreator.tsx` — NL 创建组件
+
+**实现要求**：
+- 用户输入自然语言描述："测试用户登录接口，用户名 admin 密码 123456，期望返回 200 和 token"
+- AI 解析并生成完整的测试用例（URL、Method、Headers、Body、断言）
+- 支持多轮对话细化：用户可以追加"再加一个密码错误的场景"
+- 生成后预览，用户确认后保存到用例集
+- 支持中文和英文输入
+- 对话历史保存，可回顾和复用
+
+
+- [ ] 未完成
+
+---
+
+### P14-6: AI 测试数据工厂 — 智能测试数据生成
+
+**问题**：测试执行需要大量测试数据（用户、订单、商品等），手动准备效率低。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/data_factory_service.py` — 测试数据工厂
+- 新增 `backend/app/api/data_factory.py` — 数据工厂 API
+- 修改 `backend/app/api/__init__.py` — 注册蓝图
+- 新增 `web/src/pages/DataFactory.tsx` — 数据工厂页面
+
+**实现要求**：
+- AI 根据接口定义自动生成符合格式的测试数据
+- 支持数据模板：用户数据、订单数据、商品数据等
+- 批量生成：指定数量批量生成（100 个用户、1000 条订单）
+- 数据关联：生成的数据自动关联（订单引用真实用户 ID）
+- 数据清理：一键清理生成的测试数据
+- 支持自定义规则："手机号以 138 开头"、"金额在 10-1000 之间"
+- API 端点：
+  - `POST /data-factory/generate` — 生成测试数据
+  - `GET /data-factory/templates` — 数据模板列表
+  - `DELETE /data-factory/cleanup` — 清理测试数据
+
+
+- [ ] 未完成
+
+---
+
+### P14-7: AI 失败根因分析
+
+**问题**：测试失败后，用户需要逐个查看日志分析失败原因，效率低。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/root_cause_service.py` — 根因分析服务
+- 修改 `backend/app/api/reports.py` — 根因分析 API
+- 修改 `web/src/pages/Reports.tsx` — 根因分析 UI
+
+**实现要求**：
+- 测试执行完成后，AI 分析所有失败用例：
+  - 分类失败原因（环境问题、数据问题、接口变更、Bug）
+  - 按原因聚合失败用例
+  - 给出修复建议
+- 根因报告格式：
+  - 共 20 个用例失败
+  - 8 个因接口返回格式变更（建议：更新断言 / 触发自愈）
+  - 5 个因超时（建议：增加超时时间 / 检查服务状态）
+  - 4 个因认证失败（建议：检查 Token 是否过期）
+  - 3 个可能是产品 Bug（建议：提交 Issue）
+- API 端点：`POST /reports/:run_id/analyze`
+
+
+- [ ] 未完成
+
+---
+
+### P14-8: AI 模型管理与成本控制
+
+**问题**：AI 调用分散在各处，无法统一管理模型版本、控制成本、监控用量。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/model_manager.py` — 模型管理器
+- 修改 `backend/app/models/ai_invocation_log.py` — 增强日志字段
+- 新增 `backend/app/api/ai_management.py` — AI 管理 API
+- 修改 `web/src/pages/Settings.tsx` — AI 管理设置页
+
+**实现要求**：
+- 统一 AI 调用入口：所有 AI 功能通过 `ModelManager` 调用
+- 模型路由：按功能选择模型（代码生成用 DeepSeek-Coder，通用对话用 DeepSeek-Chat）
+- 模型降级链：主模型不可用时自动切换备用模型（DeepSeek → GPT-4 → Claude）
+- Token 用量统计：按用户、按功能、按天统计
+- 成本预算：设置月度 Token 预算，超预算后降级到小模型或暂停
+- 调用日志：记录每次 AI 调用的输入 tokens、输出 tokens、耗时、模型、成本
+- API 端点：
+  - `GET /ai/management/models` — 模型列表和状态
+  - `GET /ai/management/usage` — Token 用量统计
+  - `PUT /ai/management/budget` — 设置预算
+
+
+- [ ] 未完成
+
+---
+
+### P14-9: Prompt 模板市场 — 可复用的 Prompt 管理
+
+**问题**：AI 功能的 Prompt 硬编码在代码中，无法灵活调整和复用。
+
+**修改范围**：
+- 修改 `backend/app/models/prompt_version.py` — 增强 Prompt 模型
+- 新增 `backend/app/services/ai/prompt_marketplace.py` — Prompt 市场服务
+- 修改 `web/src/pages/Settings.tsx` — Prompt 管理页面
+- 新增 `web/src/pages/PromptMarketplace.tsx` — Prompt 市场页面
+
+**实现要求**：
+- Prompt 模板支持变量占位符：`{{api_url}}`, `{{test_data}}`, `{{language}}`
+- 内置模板库：
+  - API 测试用例生成（REST / GraphQL / gRPC）
+  - 性能测试脚本生成（Locust / JMeter / k6）
+  - Web 自动化脚本生成（Playwright）
+  - 测试数据生成（用户 / 订单 / 商品）
+  - 失败分析 / 根因分析
+- 用户可创建自定义模板并分享到团队
+- 模板版本管理：每次修改保存版本，支持回滚
+- 模板评分和使用统计
+
+
+- [ ] 未完成
+
+---
+
+### P14-10: AI 代码审查 — 测试用例质量分析
+
+**问题**：用户编写的测试用例质量参差不齐，缺乏自动化的质量评估。
+
+**修改范围**：
+- 新增 `backend/app/services/ai/case_reviewer_service.py` — 用例质量审查
+- 修改 `backend/app/api/api_test.py` — 审查 API 端点
+- 修改 `web/src/pages/api-test/RequestEditor.tsx` — 审查结果展示
+
+**实现要求**：
+- AI 审查维度：
+  - 断言完整性：是否有足够的断言验证响应
+  - 边界覆盖：是否覆盖了正常/异常/边界值
+  - 命名规范：用例名称是否清晰描述测试意图
+  - 数据独立性：是否依赖其他用例的状态
+  - 安全性：是否测试了 SQL 注入、XSS 等安全场景
+- 评分：0-100 分，附带改进建议
+- 批量审查：对整个用例集进行质量审查
+- API 端点：`POST /api-test/cases/:id/review`、`POST /api-test/collections/:id/review`
+
+
+- [ ] 未完成
+
+---
+
+## P15：测试引擎增强（核心产品力）
+
+> 本阶段增强测试执行引擎的能力，覆盖更多测试场景。
+
+### P15-1: 并行测试执行引擎
+
+**问题**：测试用例串行执行，大量用例时耗时过长。
+
+**修改范围**：
+- 修改 `backend/app/services/api_execution_service.py` — 并行执行支持
+- 修改 `backend/app/tasks.py` — 并行任务调度
+- 修改 `backend/app/config.py` — 并行度配置
+
+**实现要求**：
+- 支持配置并行度（默认 5，最大 20）
+- 同一用例集内的用例并行执行
+- 执行结果实时汇总（通过 Redis 或内存计数器）
+- 进度回调：已执行/总数/通过/失败/进行中
+- 并行执行时资源限制：防止并发过高压垮被测系统
+- 环境变量：`PARALLEL_WORKERS=5`、`MAX_PARALLEL_WORKERS=20`
+
+
+- [ ] 未完成
+
+---
+
+### P15-2: 测试执行重试与容错
+
+**问题**：网络抖动或临时故障导致测试失败，但并非产品 Bug。
+
+**修改范围**：
+- 修改 `backend/app/services/api_execution_service.py` — 重试机制
+- 修改 `backend/app/models/api_test_case.py` — 添加 retry 配置字段
+- 修改 `web/src/pages/api-test/RequestEditor.tsx` — 重试配置 UI
+
+**实现要求**：
+- 用例级重试配置：最大重试次数（0-5）、重试间隔（秒）
+- 自动重试条件：网络错误、5xx 错误、超时（不重试 4xx）
+- 重试间隔：指数退避（1s, 2s, 4s, 8s, 16s）
+- 最终结果标记：`passed`、`failed`、`flaky`（重试后通过）
+- 重试日志：记录每次重试的详细信息
+
+
+- [ ] 未完成
+
+---
+
+### P15-3: 测试执行环境变量注入
+
+**问题**：不同环境（开发/测试/预发布）的 API 地址、认证信息不同，切换环境需要手动修改用例。
+
+**修改范围**：
+- 修改 `backend/app/services/api_execution_service.py` — 环境变量替换
+- 修改 `backend/app/models/environment.py` — 环境变量模型增强
+- 修改 `web/src/pages/api-test/EnvironmentSelector.tsx` — 环境变量管理 UI
+
+**实现要求**：
+- 环境变量支持在 URL、Headers、Body、断言中使用：`{{base_url}}`、`{{auth_token}}`
+- 变量替换在执行前统一处理
+- 支持变量嵌套：`{{api_url}}/users/{{user_id}}`
+- 内置变量：`{{$timestamp}}`、`{{$random_int}}`、`{{$uuid}}`
+- 环境变量导入/导出（JSON 格式）
+
+
+- [ ] 未完成
+
+---
+
+### P15-4: 测试套件嵌套与标签管理
+
+**问题**：用例集只能单层组织，无法按模块/功能/优先级多维度管理。
+
+**修改范围**：
+- 修改 `backend/app/models/api_test_case.py` — 添加 tags 字段
+- 修改 `backend/app/models/api_test_case.py` — 添加 priority 字段
+- 修改 `web/src/pages/api-test/ApiTestCollections.tsx` — 标签和优先级 UI
+
+**实现要求**：
+- 标签：支持自定义标签（如 `smoke`、`regression`、`p0`、`auth`）
+- 优先级：P0（阻塞）/P1（严重）/P2（一般）/P3（低优先级）
+- 按标签筛选执行：只执行 `smoke` 标签的用例
+- 按优先级筛选执行：只执行 P0+P1 用例
+- 标签统计：每个标签的用例数量
+- 标签颜色：支持自定义标签颜色
+
+
+- [ ] 未完成
+
+---
+
+### P15-5: gRPC 测试支持
+
+**问题**：仅支持 REST API 测试，不支持 gRPC 协议，微服务场景下覆盖不足。
+
+**修改范围**：
+- 新增 `backend/app/services/grpc_executor.py` — gRPC 执行器
+- 新增 `backend/app/models/grpc_test_case.py` — gRPC 用例模型
+- 新增 `backend/app/api/grpc_test.py` — gRPC 测试 API
+- 新增 `web/src/pages/grpc-test/` — gRPC 测试页面
+
+**实现要求**：
+- 支持 Unary、Server Streaming、Client Streaming、Bidirectional Streaming
+- 支持导入 `.proto` 文件自动解析 service 和 message 定义
+- 请求编辑器：根据 proto 定义自动生成 JSON 模板
+- 响应展示：格式化 gRPC 响应
+- Metadata 支持：自定义 gRPC metadata（类似 HTTP headers）
+- TLS 支持：配置证书文件
+
+
+- [ ] 未完成
+
+---
+
+### P15-6: GraphQL 测试支持
+
+**问题**：不支持 GraphQL 协议测试。
+
+**修改范围**：
+- 新增 `backend/app/services/graphql_executor.py` — GraphQL 执行器
+- 修改 `backend/app/services/api_execution_service.py` — GraphQL 请求构建
+- 修改 `web/src/pages/api-test/RequestEditor.tsx` — GraphQL 查询编辑器
+
+**实现要求**：
+- 支持 Query、Mutation、Subscription
+- Schema 内省：输入 GraphQL endpoint 自动获取 schema
+- 查询编辑器：基于 schema 的自动补全
+- Variables 支持：GraphQL variables JSON 编辑
+- 批量查询支持
+
+
+- [ ] 未完成
+
+---
+
+### P15-7: WebSocket 连接测试
+
+**问题**：无法测试 WebSocket 接口。
+
+**修改范围**：
+- 新增 `backend/app/services/ws_executor.py` — WebSocket 测试执行器
+- 修改 `web/src/pages/api-test/RequestEditor.tsx` — WebSocket 测试 UI
+
+**实现要求**：
+- 支持 ws:// 和 wss:// 连接
+- 消息发送/接收展示（实时滚动）
+- 消息断言：验证收到的消息内容
+- 连接超时和心跳检测
+- 多消息序列测试（发送 N 条消息，验证每条响应）
+
+
+- [ ] 未完成
+
+---
+
+## P16：企业安全与合规（采购门槛）
+
+> 本阶段满足企业客户的安全审计和合规要求。
+
+### P16-1: 双因素认证（2FA/TOTP）
+
+**问题**：仅支持密码登录，企业客户要求 2FA。
+
+**修改范围**：
+- 修改 `backend/app/models/user.py` — 添加 totp_secret 字段
+- 修改 `backend/app/api/auth.py` — 2FA 设置和验证端点
+- 新增 `web/src/pages/TwoFactorSetup.tsx` — 2FA 设置页面
+- 修改 `web/src/pages/Login.tsx` — 2FA 验证步骤
+
+**实现要求**：
+- 支持 TOTP（Google Authenticator、Microsoft Authenticator）
+- 设置流程：显示 QR Code → 用户扫码 → 输入验证码确认 → 生成备用恢复码
+- 登录流程：密码正确 → 检查是否启用 2FA → 请求 TOTP 验证码 → 验证通过 → 发放 Token
+- 恢复码：生成 8 个一次性恢复码，使用后标记为已用
+- 管理员可强制要求组织成员启用 2FA
+
+
+- [ ] 未完成
+
+---
+
+### P16-2: 会话管理与并发登录控制
+
+**问题**：无法查看和管理活跃会话，无法限制并发登录。
+
+**修改范围**：
+- 新增 `backend/app/models/session.py` — 会话模型
+- 修改 `backend/app/api/auth.py` — 会话管理 API
+- 修改 `web/src/pages/Settings.tsx` — 会话管理 UI
+
+**实现要求**：
+- 每次登录创建会话记录：设备信息、IP 地址、登录时间、最后活跃时间
+- 会话列表：用户可查看所有活跃会话
+- 单点登录（SSO）：同一账户只允许一个活跃会话（可配置）
+- 会话超时：可配置不活跃超时时间（默认 2 小时）
+- 强制登出：用户可远程登出其他设备
+- 管理员可强制登出任意用户
+
+
+- [ ] 未完成
+
+---
+
+### P16-3: 数据导出与 GDPR 合规
+
+**问题**：企业客户要求支持数据导出和删除（GDPR "被遗忘权"）。
+
+**修改范围**：
+- 新增 `backend/app/services/gdpr_service.py` — GDPR 服务
+- 修改 `backend/app/api/auth.py` — 数据导出/删除端点
+- 修改 `web/src/pages/Settings.tsx` — 数据管理 UI
+
+**实现要求**：
+- 数据导出：用户可请求导出所有个人数据（JSON 格式），包含用例、执行记录、评论等
+- 数据删除：用户可请求删除账户和所有关联数据（30 天冷静期）
+- 管理员可导出组织所有数据（审计用途）
+- 导出任务异步处理，完成后通知用户下载
+- 删除操作记录审计日志
+
+
+- [ ] 未完成
+
+---
+
+### P16-4: API 密钥轮换机制
+
+**问题**：API Token 创建后永久有效，无法自动轮换，存在泄露风险。
+
+**修改范围**：
+- 修改 `backend/app/models/api_token.py` — 添加 expiry 和 auto_rotate 字段
+- 修改 `backend/app/api/tokens.py` — 密钥轮换 API
+- 修改 `web/src/pages/ApiTokens.tsx` — 轮换配置 UI
+
+**实现要求**：
+- Token 过期时间：创建时可选择（30 天/90 天/365 天/永不过期）
+- 自动轮换：到期前 7 天自动创建新 Token，旧 Token 保留 7 天过渡期
+- 轮换通知：轮换前通过邮件/通知渠道提醒用户
+- 手动轮换：用户可随时手动轮换 Token
+- Token 使用审计：记录每次 Token 使用的 IP 和时间
+
+
+- [ ] 未完成
+
+---
+
+### P16-5: IP 白名单与访问控制
+
+**问题**：企业客户要求限制 API 访问来源 IP。
+
+**修改范围**：
+- 修改 `backend/app/models/organization.py` — 添加 ip_whitelist 字段
+- 新增 `backend/app/middleware/ip_filter.py` — IP 过滤中间件
+- 修改 `backend/app/api/organizations.py` — IP 白名单管理 API
+
+**实现要求**：
+- 组织级 IP 白名单：配置允许访问的 IP/CIDR 列表
+- API Token 级 IP 白名单：每个 Token 可单独配置
+- IP 白名单变更记录审计日志
+- 白名单为空时不限制（默认行为）
+- 支持 IPv4 和 IPv6
+
+
+- [ ] 未完成
+
+---
+
+### P16-6: 敏感数据脱敏
+
+**问题**：日志和报告中可能包含敏感数据（密码、Token、个人信息）。
+
+**修改范围**：
+- 新增 `backend/app/utils/data_masking.py` — 数据脱敏工具
+- 修改 `backend/app/core/logging.py` — 日志脱敏
+- 修改 `backend/app/services/report_service.py` — 报告脱敏
+
+**实现要求**：
+- 自动脱敏规则：
+  - 密码字段：`password`、`token`、`secret`、`authorization` → `***`
+  - 邮箱：`u***@example.com`
+  - 手机号：`138****1234`
+  - 身份证：`110***********1234`
+  - IP 地址：可选脱敏
+- 日志自动脱敏：structlog processor 自动检测并脱敏
+- 报告中的请求/响应自动脱敏（可配置开关）
+- 通过环境变量 `DATA_MASKING_ENABLED`（默认 true）控制
+
+
+- [ ] 未完成
+
+---
+
+## P17：CI/CD 深度集成（研发流程闭环）
+
+> 本阶段打通从代码提交到测试执行到质量门禁的全流程自动化。
+
+### P17-1: GitHub Actions 一键集成 Action
+
+**问题**：CI/CD 集成需要用户手动编写 workflow YAML，门槛高。
+
+**修改范围**：
+- 新增 `.github/actions/fullscopetest/action.yml` — GitHub Action 定义
+- 新增 `.github/actions/fullscopetest/entrypoint.sh` — Action 入口脚本
+- 新增 `docs/github-action-usage.md` — 使用文档
+
+**实现要求**：
+- 用户只需在 workflow 中添加：
+  ```yaml
+  - uses: fullscope/test-action@v1
+    with:
+      api-token: ${{ secrets.FST_TOKEN }}
+      project-id: 1
+      test-type: api
+  ```
+- Action 参数：project_id、test_type（api/web/perf/all）、collection_id（可选）、quality-gate-id（可选）
+- Action 输出：pass_rate、total_cases、failed_cases、report_url
+- 执行完成后自动在 PR 中添加评论（包含测试结果摘要）
+- 支持 `continue-on-error` 配置
+
+
+- [ ] 未完成
+
+---
+
+### P17-2: PR 评论与状态检查回写
+
+**问题**：测试执行结果无法回写到 PR，开发者需要手动查看。
+
+**修改范围**：
+- 修改 `backend/app/services/github_check_service.py` — 增强 Check Run
+- 修改 `backend/app/api/github_checks.py` — 状态回写 API
+- 新增 `backend/app/services/pr_comment_service.py` — PR 评论服务
+
+**实现要求**：
+- 测试执行完成后自动：
+  1. 创建/更新 GitHub Check Run（显示通过率、用例数）
+  2. 在 PR 中添加评论（包含测试结果表格、失败用例列表、报告链接）
+  3. 设置 Commit Status（success/failure/pending）
+- 评论模板：
+  ```
+  FullScopeTest 测试结果
+  ━━━━━━━━━━━━━━━━━━
+  通过率: 95% (19/20)
+  耗时: 2m 30s
+  
+  失败用例:
+  - [POST /api/login] 状态码应为 200，实际为 401
+  
+  查看完整报告: https://...
+  ```
+- GitLab CI 同步支持（通过 GitLab API）
+
+
+- [ ] 未完成
+
+---
+
+### P17-3: 质量门禁与发布卡点
+
+**问题**：质量门禁仅在 UI 上手动触发，无法自动卡点 CI/CD 流水线。
+
+**修改范围**：
+- 修改 `backend/app/services/quality_gate_service.py` — 自动评估
+- 修改 `backend/app/api/quality_gates.py` — 门禁结果 API
+- 修改 `.github/actions/fullscopetest/action.yml` — 门禁集成
+
+**实现要求**：
+- 门禁评估集成到测试执行流程：执行完成 → 自动评估关联的质量门禁
+- 门禁不通过时：
+  - CI Action 返回非零退出码（阻断流水线）
+  - GitHub Check Run 标记为 failure
+  - PR 评论中标红门禁未通过项
+- 门禁条件扩展：
+  - 通过率 ≥ X%
+  - 失败用例数 ≤ N
+  - P95 响应时间 ≤ Yms
+  - Flaky 用例比例 ≤ Z%
+  - 新增用例覆盖率要求
+  - AI 质量评分 ≥ W 分
+
+
+- [ ] 未完成
+
+---
+
+### P17-4: CI/CD 流水线指标看板
+
+**问题**：无法度量 CI/CD 集成的效果和测试执行趋势。
+
+**修改范围**：
+- 新增 `backend/app/services/cicd_metrics_service.py` — CI/CD 指标服务
+- 修改 `backend/app/api/reports.py` — CI/CD 指标 API
+- 修改 `web/src/pages/CICD.tsx` — CI/CD 指标看板
+
+**实现要求**：
+- 指标：
+  - 日均执行次数
+  - 平均执行时长
+  - 通过率趋势
+  - 质量门禁通过率
+  - PR 合并前测试覆盖率
+  - 最频繁失败的 Top 10 用例
+- 时间范围：最近 7 天/30 天/90 天
+- 按项目/仓库筛选
+
+
+- [ ] 未完成
+
+---
+
+## P18：报告与分析增强（决策支撑）
+
+> 本阶段将报告从"数据展示"升级为"数据洞察"。
+
+### P18-1: 自定义报告模板引擎
+
+**问题**：报告格式固定，不同团队/客户需要不同的报告格式。
+
+**修改范围**：
+- 新增 `backend/app/services/report_template_service.py` — 报告模板引擎
+- 新增 `backend/app/models/report_template.py` — 报告模板模型
+- 新增 `backend/app/api/report_templates.py` — 模板 API
+- 新增 `web/src/pages/ReportTemplates.tsx` — 模板管理页面
+
+**实现要求**：
+- 模板定义：JSON Schema 格式，定义报告包含的区块和布局
+- 内置模板：
+  - 执行摘要模板（管理层看）
+  - 详细报告模板（测试团队看）
+  - 趋势分析模板（质量团队看）
+  - CI/CD 集成模板（研发团队看）
+- 自定义模板：用户可拖拽组合报告区块
+- 模板变量：项目名、时间范围、团队名等动态替换
+- 导出支持：PDF、Excel、HTML
+
+
+- [ ] 未完成
+
+---
+
+### P18-2: 定时报告自动推送
+
+**问题**：报告需要手动查看，无法定时推送到邮箱/钉钉/飞书。
+
+**修改范围**：
+- 新增 `backend/app/services/scheduled_report_service.py` — 定时报告服务
+- 修改 `backend/app/models/scheduled_task.py` — 增强定时任务模型
+- 修改 `web/src/pages/Settings.tsx` — 定时报告配置 UI
+
+**实现要求**：
+- 配置：选择报告模板、时间范围、推送频率（每天/每周/每月）、推送渠道
+- 推送渠道：邮件（SMTP）、钉钉 Webhook、飞书 Webhook、Slack Webhook
+- 报告内容：HTML 格式邮件正文 + PDF/Excel 附件
+- 推送失败重试：3 次，指数退避
+- 推送记录：记录每次推送的状态和时间
+
+
+- [ ] 未完成
+
+---
+
+### P18-3: SLA 追踪与告警
+
+**问题**：无法追踪测试通过率是否满足 SLA 要求。
+
+**修改范围**：
+- 新增 `backend/app/services/sla_service.py` — SLA 服务
+- 新增 `backend/app/models/sla_config.py` — SLA 配置模型
+- 修改 `backend/app/api/reports.py` — SLA API
+- 修改 `web/src/pages/Dashboard.tsx` — SLA 状态展示
+
+**实现要求**：
+- SLA 配置：
+  - 通过率 SLA：API 测试 ≥ 95%，Web 测试 ≥ 90%
+  - 响应时间 SLA：P95 ≤ 2s
+  - 可用性 SLA：99.9%
+- SLA 状态：达标（绿色）/ 警告（黄色）/ 违规（红色）
+- SLA 违规时自动触发告警通知
+- SLA 趋势：按周/月的 SLA 达标率
+- SLA 报告：定期生成 SLA 达成报告
+
+
+- [ ] 未完成
+
+---
+
+### P18-4: 测试成本分析
+
+**问题**：无法量化测试执行的成本（时间、资源、AI Token）。
+
+**修改范围**：
+- 新增 `backend/app/services/cost_analysis_service.py` — 成本分析服务
+- 修改 `backend/app/api/reports.py` — 成本分析 API
+- 修改 `web/src/pages/Dashboard.tsx` — 成本展示
+
+**实现要求**：
+- 成本维度：
+  - 执行时间成本（执行时长 × 人力单价）
+  - AI Token 消耗成本
+  - 基础设施成本（按执行次数估算）
+- 成本趋势：按周/月的成本变化
+- 成本优化建议：
+  - 哪些用例执行耗时最长
+  - 哪些 AI 调用可以缓存
+  - 哪些用例可以降级执行
+
+
+- [ ] 未完成
+
+---
+
+## P19：生产运维与可靠性（SLA 保障）
+
+> 本阶段确保平台在生产环境中可靠运行。
+
+### P19-1: Kubernetes Helm Chart
+
+**问题**：缺少 Kubernetes 部署方案，无法支持云原生部署。
+
+**修改范围**：
+- 新增 `deploy/helm/fullscopetest/Chart.yaml`
+- 新增 `deploy/helm/fullscopetest/values.yaml`
+- 新增 `deploy/helm/fullscopetest/templates/` — K8s 资源模板
+- 新增 `docs/kubernetes-deployment.md` — K8s 部署文档
+
+**实现要求**：
+- 包含组件：Backend Deployment、Frontend Deployment、Redis StatefulSet、PostgreSQL StatefulSet、Nginx Ingress
+- HPA（水平自动扩展）：基于 CPU/内存自动扩展后端 Pod
+- PDB（Pod 中断预算）：确保滚动更新时至少 1 个 Pod 可用
+- 健康检查：livenessProbe（/health/live）、readinessProbe（/health/ready）
+- ConfigMap 和 Secret 管理
+- 持久化存储：数据库和文件存储使用 PVC
+- Ingress 配置：TLS、域名、路径路由
+
+
+- [ ] 未完成
+
+---
+
+### P19-2: OpenTelemetry 分布式追踪
+
+**问题**：无法追踪请求在多个服务间的调用链路和性能瓶颈。
+
+**修改范围**：
+- 新增 `backend/app/middleware/tracing.py` — OpenTelemetry 中间件
+- 修改 `backend/app/config.py` — 追踪配置
+- 新增 `docker-compose.tracing.yml` — 追踪基础设施
+
+**实现要求**：
+- 集成 OpenTelemetry SDK
+- 自动追踪：HTTP 请求、SQL 查询、Redis 操作、AI API 调用
+- Trace ID 与 Request ID 关联
+- 导出到 Jaeger/Zipkin（可选）
+- 性能瓶颈分析：自动标记慢查询和慢请求
+- 通过 `TRACING_ENABLED`（默认 false）环境变量控制
+
+
+- [ ] 未完成
+
+---
+
+### P19-3: Sentry 错误追踪集成
+
+**问题**：线上错误无法自动收集和告警。
+
+**修改范围**：
+- 修改 `backend/app/__init__.py` — Sentry 初始化
+- 修改 `web/src/main.tsx` — 前端 Sentry 初始化
+- 修改 `backend/app/config.py` — Sentry DSN 配置
+
+**实现要求**：
+- 后端：Flask + SQLAlchemy 集成
+- 前端：React Error Boundary + Sentry
+- 环境区分：development/staging/production
+- 采样率：开发 100%，生产 10%（可配置）
+- 上下文：自动附加 user_id、request_id、API path
+- 敏感数据过滤：自动移除 Authorization header、password 字段
+- 通过 `SENTRY_DSN` 环境变量启用
+
+
+- [ ] 未完成
+
+---
+
+### P19-4: Feature Flag 系统
+
+**问题**：新功能只能通过代码发布上线，无法灰度发布和 A/B 测试。
+
+**修改范围**：
+- 新增 `backend/app/services/feature_flag_service.py` — Feature Flag 服务
+- 新增 `backend/app/models/feature_flag.py` — Feature Flag 模型
+- 新增 `backend/app/api/feature_flags.py` — Feature Flag API
+- 修改 `web/src/hooks/useFeatureFlag.ts` — 前端 Feature Flag Hook
+
+**实现要求**：
+- Flag 类型：boolean（开关）、percentage（百分比灰度）、user_list（白名单用户）
+- 管理界面：创建/编辑/删除 Flag，查看状态
+- 前端 Hook：`useFeatureFlag('dark_mode')` 返回是否启用
+- 后端装饰器：`@feature_flag('new_ai_model')` 控制 API 可用性
+- 实时生效：Flag 变更后无需重启服务
+- 审计：Flag 变更记录操作日志
+
+
+- [ ] 未完成
+
+---
+
+### P19-5: 配置热更新
+
+**问题**：修改配置需要重启服务才能生效。
+
+**修改范围**：
+- 新增 `backend/app/services/config_service.py` — 配置热更新服务
+- 修改 `backend/app/config.py` — 支持动态配置
+- 新增 `backend/app/api/admin_config.py` — 管理员配置 API
+
+**实现要求**：
+- 可热更新的配置：AI 模型选择、限流参数、缓存 TTL、功能开关
+- 不可热更新的配置（需重启）：数据库 URL、Redis URL、端口号
+- 配置变更通知：变更后通知所有 worker（通过 Redis pub/sub）
+- 配置回滚：支持回滚到上一个配置版本
+- 配置导出/导入：JSON 格式
+
+
+- [ ] 未完成
+
+---
+
+## P20：开发者体验（生态建设）
+
+> 本阶段降低集成门槛，构建开发者生态。
+
+### P20-1: CLI 工具增强 — fst 命令行工具
+
+**问题**：SDK 中的 CLI 功能简单，无法满足 CI/CD 场景的需求。
+
+**修改范围**：
+- 修改 `sdk/python/fullscopetest/cli.py` — CLI 增强
+- 修改 `sdk/python/setup.py` — 安装配置
+- 新增 `sdk/python/fullscopetest/formatters.py` — 输出格式化
+
+**实现要求**：
+- 命令：
+  - `fst run --project 1 --type api --collection 5` — 执行测试
+  - `fst run --project 1 --plan 3` — 执行测试计划
+  - `fst status --run 123` — 查询执行状态
+  - `fst report --run 123 --format pdf` — 下载报告
+  - `fst create case --file case.json` — 创建用例
+  - `fst import --type postman --file collection.json` — 导入用例
+  - `fst gate check --gate 1 --run 123` — 检查质量门禁
+  - `fst config set api-token xxx` — 配置 Token
+- 输出格式：text（人类可读）、json（机器可读）
+- 退出码：0（通过）、1（失败）、2（门禁不通过）
+- Shell 补全：bash/zsh/fish 自动补全
+
+
+- [ ] 未完成
+
+---
+
+### P20-2: JavaScript/TypeScript SDK
+
+**问题**：仅有 Python SDK，前端和 Node.js 项目无法方便地集成。
+
+**修改范围**：
+- 新增 `sdk/javascript/src/index.ts` — 入口文件
+- 新增 `sdk/javascript/src/client.ts` — TS 客户端
+- 新增 `sdk/javascript/package.json` — NPM 包配置
+- 新增 `sdk/javascript/tests/client.test.ts` — 测试
+- 新增 `sdk/javascript/README.md` — 文档
+
+**实现要求**：
+- 发布为 NPM 包：`@fullscopetest/sdk`
+- TypeScript 类型定义完整
+- 支持：创建测试运行、查询结果、创建用例、管理项目
+- Promise-based API
+- 自动重试和超时处理
+- 支持 ESM 和 CommonJS
+
+
+- [ ] 未完成
+
+---
+
+### P20-3: API Playground — 在线试用界面
+
+**问题**：API 文档只有静态描述，无法在线试用。
+
+**修改范围**：
+- 修改 `backend/app/api/v2/openapi_docs.py` — 增强 Swagger UI
+- 新增 `web/src/pages/ApiPlayground.tsx` — API 试用页面
+- 修改 `web/src/layouts/MainLayout.tsx` — 添加入口
+
+**实现要求**：
+- 内嵌 Swagger UI（通过 /docs 端点）
+- API 试用：支持在页面内直接发送 API 请求
+- 认证支持：自动注入当前用户的 JWT Token
+- 请求历史：保存最近 100 次试用请求
+- 代码生成：自动生成 curl、Python、JavaScript 代码片段
+
+
+- [ ] 未完成
+
+---
+
+### P20-4: VS Code 扩展（Extension）
+
+**问题**：开发者在 VS Code 中编写测试用例时，需要切换到浏览器操作。
+
+**修改范围**：
+- 新增 `extensions/vscode/` — VS Code 扩展目录
+- 新增 `extensions/vscode/package.json` — 扩展配置
+- 新增 `extensions/vscode/src/extension.ts` — 扩展入口
+
+**实现要求**：
+- 功能：
+  - 在 VS Code 中查看项目和用例列表
+  - 在 VS Code 中运行单个用例或用例集
+  - 在 VS Code 中查看执行结果
+  - .fst 文件语法高亮（测试用例 JSON）
+  - 快捷键：Ctrl+Shift+T 运行当前用例
+- TreeView：侧边栏展示项目 → 用例集 → 用例树
+- 发布到 VS Code Marketplace
+
+
+- [ ] 未完成
+
+---
+
+### P20-5: 从其他平台迁移工具
+
+**问题**：用户从 Postman/JMeter/Metersphere 等工具迁移到 FullScopeTest 缺乏自动化工具。
+
+**修改范围**：
+- 新增 `backend/app/services/migration_service.py` — 迁移服务
+- 修改 `backend/app/api/api_test.py` — 迁移 API
+- 新增 `docs/migration-guide.md` — 迁移指南
+
+**实现要求**：
+- 支持导入源：
+  - Postman Collection v2.1（JSON）
+  - Postman Environment（JSON）
+  - JMeter Test Plan（XML）
+  - Swagger/OpenAPI 2.0 & 3.0（JSON/YAML）
+  - HAR 文件（HTTP Archive）
+  - curl 命令批量导入
+- 迁移报告：导入数量、跳过数量、错误列表
+- 字段映射：自动映射尽可能多的字段，不支持的字段给出警告
+- API 端点：`POST /api-test/migrate/{source_type}`
+
+
+- [ ] 未完成
+
+---
+
+## P21：商业化运营能力（变现就绪）
+
+> 本阶段构建面向 SaaS 运营的能力。
+
+### P21-1: 多租户数据隔离强化
+
+**问题**：当前多租户隔离仅在 API 层面通过 tenant_id 过滤，缺少数据库级隔离。
+
+**修改范围**：
+- 修改 `backend/app/middleware/tenant.py` — 增强租户隔离
+- 修改 `backend/app/database.py` — 行级安全策略
+- 新增 `backend/tests/test_tenant_isolation.py` — 租户隔离测试
+
+**实现要求**：
+- 所有查询自动注入 `WHERE tenant_id = ?` 条件（通过 SQLAlchemy event）
+- 租户上下文通过 JWT Token 或 API Token 自动注入
+- 跨租户数据访问检测：任何跨租户访问记录严重告警
+- 租户数据统计：每个租户的存储使用量、API 调用量、活跃用户数
+- 租户数据清理：删除组织时级联清理所有关联数据
+
+
+- [ ] 未完成
+
+---
+
+### P21-2: 用量计量与配额执行
+
+**问题**：Quota 模型已创建但未在所有写操作前执行检查。
+
+**修改范围**：
+- 修改 `backend/app/services/quota_service.py` — 增强配额检查
+- 修改 `backend/app/middleware/tenant.py` — 配额检查装饰器
+- 修改所有创建操作的 API — 注入配额检查
+
+**实现要求**：
+- 所有创建操作前检查配额：创建项目、创建用例、执行测试、AI 调用
+- 配额不足返回 `402 Payment Required`，包含当前用量和限制
+- 配额使用量实时更新（原子操作，防并发）
+- 配额预警：使用量达到 80% 时发送通知
+- 按计划（Free/Pro/Enterprise）设置默认配额
+- 管理员可手动调整配额
+
+
+- [ ] 未完成
+
+---
+
+### P21-3: 管理员后台 — SaaS 运营面板
+
+**问题**：缺少平台管理员的运营视角，无法监控整体使用情况。
+
+**修改范围**：
+- 新增 `backend/app/api/admin.py` — 管理员 API
+- 新增 `web/src/pages/admin/AdminDashboard.tsx` — 管理员面板
+- 新增 `web/src/pages/admin/TenantManagement.tsx` — 租户管理
+- 修改 `web/src/App.tsx` — 管理员路由
+
+**实现要求**：
+- 平台概览：
+  - 总租户数、活跃租户数
+  - 总用户数、日活用户
+  - 日均 API 调用量、日均测试执行量
+  - AI Token 总消耗
+- 租户管理：
+  - 租户列表（名称、计划、用量、状态）
+  - 租户详情（成员、项目、用量统计）
+  - 租户操作（暂停、恢复、删除、调整配额）
+- 系统健康：数据库连接池、Redis 状态、磁盘使用率
+- 仅 `super_admin` 角色可访问
+
+
+- [ ] 未完成
+
+---
+
+### P21-4: 用户引导与新手教程
+
+**问题**：新用户注册后不知道如何开始使用。
+
+**修改范围**：
+- 新增 `web/src/components/OnboardingTour.tsx` — 新手引导组件
+- 新增 `web/src/components/QuickStartGuide.tsx` — 快速开始指南
+- 修改 `web/src/pages/Dashboard.tsx` — 集成引导
+- 修改 `web/src/stores/authStore.ts` — 记录引导状态
+
+**实现要求**：
+- 首次登录引导（3-5 步）：
+  1. 欢迎 → 创建第一个项目
+  2. 创建第一个 API 测试用例
+  3. 执行测试并查看结果
+  4. 查看报告
+  5. 邀请团队成员
+- 引导使用 react-joyride 或自定义实现
+- 引导进度保存在 localStorage
+- 跳过引导后可在设置中重新触发
+- Dashboard 空状态时展示快速开始卡片
+
+
+- [ ] 未完成
+
+---
+
+### P21-5: 操作日志与用户行为分析
+
+**问题**：无法了解用户如何使用产品，无法优化用户体验。
+
+**修改范围**：
+- 新增 `backend/app/models/user_activity.py` — 用户行为模型
+- 新增 `backend/app/services/activity_tracking_service.py` — 行为追踪
+- 修改 `backend/app/api/admin.py` — 行为分析 API
+
+**实现要求**：
+- 追踪事件：
+  - 页面访问（PV）
+  - 功能使用（创建用例、执行测试、查看报告等）
+  - AI 功能使用（生成用例、语义去重等）
+  - 错误事件（API 错误、前端错误）
+- 分析指标：
+  - DAU/MAU（日活/月活）
+  - 功能使用热力图
+  - 用户留存率
+  - 平均会话时长
+- 数据存储：独立表，不影响主业务性能
+- 隐私合规：支持用户 opt-out
+
+
+- [ ] 未完成
+
+---
+
+## P22：前端体验升级（用户留存）
+
+> 本阶段提升前端交互体验，达到一线产品水平。
+
+### P22-1: 通用列表性能优化 — 虚拟滚动
+
+**问题**：用例列表、日志列表等大数据量页面卡顿。
+
+**修改范围**：
+- 新增 `web/src/components/VirtualTable.tsx` — 虚拟滚动表格组件
+- 修改 `web/src/pages/api-test/ApiTestCollections.tsx` — 使用虚拟滚动
+- 修改 `web/src/pages/AuditLogs.tsx` — 使用虚拟滚动
+- 修改 `web/src/pages/Reports.tsx` — 使用虚拟滚动
+
+**实现要求**：
+- 基于 react-virtual 或 @tanstack/react-virtual
+- 支持 Ant Design Table 集成
+- 10000+ 行数据流畅滚动
+- 动态行高支持
+- 滚动位置保持（切换 Tab 后返回时恢复位置）
+
+
+- [ ] 未完成
+
+---
+
+### P22-2: 可拖拽布局 — 测试工作台面板调整
+
+**问题**：API 测试工作台的请求编辑和响应查看区域大小固定，无法根据内容调整。
+
+**修改范围**：
+- 修改 `web/src/pages/api-test/ApiTestWorkspace.tsx` — 可拖拽布局
+- 新增 `web/src/components/ResizablePanel.tsx` — 可调整大小面板组件
+
+**实现要求**：
+- 请求编辑器和响应查看器之间可拖拽调整大小
+- 面板大小保存到 localStorage
+- 双击分隔线恢复默认大小
+- 最小宽度限制（防止面板过小无法使用）
+- 支持水平/垂直布局切换
+
+
+- [ ] 未完成
+
+---
+
+### P22-3: 代码编辑器增强 — Monaco Editor 深度集成
+
+**问题**：JSON 编辑器功能简单，缺乏语法高亮、自动补全、格式化等能力。
+
+**修改范围**：
+- 修改 `web/src/pages/api-test/RequestEditor.tsx` — Monaco Editor 集成
+- 新增 `web/src/components/JsonEditor.tsx` — JSON 编辑器组件
+- 新增 `web/src/components/CodeEditor.tsx` — 通用代码编辑器组件
+
+**实现要求**：
+- Monaco Editor 集成（VS Code 同款编辑器）
+- JSON 编辑器功能：
+  - 语法高亮
+  - 自动格式化（Shift+Alt+F）
+  - JSON 验证（实时显示错误）
+  - 折叠/展开
+  - 搜索/替换
+  - 自动补全（基于 Schema）
+- 脚本编辑器功能（Web/Perf 测试）：
+  - Python 语法高亮
+  - 自动补全
+  - 代码片段（Snippets）
+- 暗色模式自适应
+
+
+- [ ] 未完成
+
+---
+
+### P22-4: 全局通知中心 — 实时消息聚合
+
+**问题**：测试完成、告警触发等通知分散在各处，无统一的通知中心。
+
+**修改范围**：
+- 新增 `web/src/components/NotificationCenter.tsx` — 通知中心组件
+- 修改 `backend/app/models/notification.py` — 通知模型
+- 修改 `backend/app/api/notifications.py` — 通知 API
+- 修改 `web/src/layouts/MainLayout.tsx` — 通知中心入口
+
+**实现要求**：
+- 通知类型：
+  - 测试执行完成/失败
+  - 质量门禁通过/不通过
+  - AI 任务完成
+  - 团队成员 @提及
+  - 系统告警
+  - 配额预警
+- 通知中心：
+  - 未读计数 Badge
+  - 通知列表（按时间倒序）
+  - 标记已读/全部已读
+  - 通知设置（每种类型单独控制）
+- 实时推送：通过 WebSocket 推送新通知
+- 浏览器通知：支持浏览器原生 Notification API
+
+
+- [ ] 未完成
+
+---
+
+### P22-5: 数据可视化增强 — 图表组件库
+
+**问题**：图表使用分散，样式不统一，交互体验不一致。
+
+**修改范围**：
+- 新增 `web/src/components/charts/LineChart.tsx` — 折线图组件
+- 新增 `web/src/components/charts/BarChart.tsx` — 柱状图组件
+- 新增 `web/src/components/charts/PieChart.tsx` — 饼图组件
+- 新增 `web/src/components/charts/GaugeChart.tsx` — 仪表盘组件
+- 新增 `web/src/components/charts/TreemapChart.tsx` — 矩形树图组件
+
+**实现要求**：
+- 统一 ECharts 封装，统一配色方案（遵循 `--fst-*` 变量）
+- 通用 props：`data`、`title`、`height`、`loading`、`theme`（light/dark）
+- 交互：Tooltip、Legend、DataZoom、点击事件回调
+- 响应式：自动适应容器大小
+- 暗色模式：自动切换图表主题
+- 导出：支持导出为 PNG 图片
+
+
+- [ ] 未完成
+
+---
+
+### P22-6: 国际化完善 — 多语言全覆盖
+
+**问题**：i18n 文件不完整，部分页面硬编码中文。
+
+**修改范围**：
+- 修改 `web/src/i18n/locales/zh.json` — 补全中文 key
+- 修改 `web/src/i18n/locales/en.json` — 补全英文 key
+- 修改所有硬编码文案的页面组件 — 替换为 `t()` 调用
+
+**实现要求**：
+- 扫描所有页面组件，提取硬编码文案
+- 确保 zh.json 和 en.json 的 key 完全一致
+- 支持语言切换：顶栏添加语言切换下拉
+- 语言偏好持久化到 localStorage
+- 日期/数字格式化：根据语言自动格式化
+- 后端错误消息支持中英文（通过 Accept-Language header）
+
+
+- [ ] 未完成
+
+---
+
+### P22-7: 离线支持与乐观更新
+
+**问题**：网络不稳定时操作无响应，用户体验差。
+
+**修改范围**：
+- 修改 `web/src/services/api.ts` — 离线检测和请求队列
+- 修改 `web/src/stores/` — 乐观更新逻辑
+- 新增 `web/src/components/OfflineIndicator.tsx` — 离线指示器
+
+**实现要求**：
+- 离线检测：监听 `navigator.onLine` 和心跳检测
+- 离线指示器：顶栏显示"离线"状态
+- 乐观更新：
+  - 创建/编辑操作先更新本地状态，再同步服务器
+  - 服务器返回失败时回滚本地状态
+- 请求队列：离线时的写操作进入队列，恢复网络后自动重放
+- 最近浏览页面缓存：离线时可查看最近访问的页面
+
+
+- [ ] 未完成
+
+---
+
+## 第三阶段进度跟踪
+
+| 任务 | 优先级 | 状态 | Commit |
+|------|--------|------|--------|
+| **P13: 基础设施与生产就绪** | | | |
+| P13-1 Alembic 迁移工程化 | 🔴 | 已完成 | P13-1 |
+| P13-2 Docker 本地开发环境 | 🔴 | 未完成 | |
+| P13-3 请求链路追踪 | 🔴 | 未完成 | |
+| P13-4 数据库连接池优化 | 🔴 | 未完成 | |
+| P13-5 请求超时与 Body 限制 | 🟡 | 未完成 | |
+| P13-6 响应压缩与缓存头 | 🟡 | 未完成 | |
+| P13-7 CORS 安全加固 | 🔴 | 未完成 | |
+| P13-8 文件上传安全与存储抽象 | 🟡 | 未完成 | |
+| P13-9 全局错误处理与异常体系 | 🔴 | 未完成 | |
+| P13-10 数据库索引优化 | 🟡 | 未完成 | |
+| **P14: AI/ML 核心能力增强** | | | |
+| P14-1 RAG 检索增强测试生成 | 🔴 | 未完成 | |
+| P14-2 AI 测试用例自愈 | 🔴 | 未完成 | |
+| P14-3 智能测试选择 | 🟡 | 未完成 | |
+| P14-4 Flaky Test 检测 | 🟡 | 未完成 | |
+| P14-5 自然语言创建测试 | 🟡 | 未完成 | |
+| P14-6 AI 测试数据工厂 | 🟢 | 未完成 | |
+| P14-7 AI 失败根因分析 | 🟡 | 未完成 | |
+| P14-8 AI 模型管理与成本控制 | 🔴 | 未完成 | |
+| P14-9 Prompt 模板市场 | 🟢 | 未完成 | |
+| P14-10 AI 代码审查 | 🟢 | 未完成 | |
+| **P15: 测试引擎增强** | | | |
+| P15-1 并行测试执行 | 🔴 | 未完成 | |
+| P15-2 测试重试与容错 | 🟡 | 未完成 | |
+| P15-3 环境变量注入 | 🟡 | 未完成 | |
+| P15-4 标签与优先级管理 | 🟢 | 未完成 | |
+| P15-5 gRPC 测试支持 | 🟡 | 未完成 | |
+| P15-6 GraphQL 测试支持 | 🟡 | 未完成 | |
+| P15-7 WebSocket 连接测试 | 🟡 | 未完成 | |
+| **P16: 企业安全与合规** | | | |
+| P16-1 双因素认证 (2FA) | 🔴 | 未完成 | |
+| P16-2 会话管理与并发控制 | 🟡 | 未完成 | |
+| P16-3 数据导出与 GDPR 合规 | 🟡 | 未完成 | |
+| P16-4 API 密钥轮换 | 🟡 | 未完成 | |
+| P16-5 IP 白名单 | 🟡 | 未完成 | |
+| P16-6 敏感数据脱敏 | 🟡 | 未完成 | |
+| **P17: CI/CD 深度集成** | | | |
+| P17-1 GitHub Actions Action | 🔴 | 未完成 | |
+| P17-2 PR 评论与状态回写 | 🟡 | 未完成 | |
+| P17-3 质量门禁流水线卡点 | 🟡 | 未完成 | |
+| P17-4 CI/CD 指标看板 | 🟢 | 未完成 | |
+| **P18: 报告与分析增强** | | | |
+| P18-1 自定义报告模板引擎 | 🟡 | 未完成 | |
+| P18-2 定时报告自动推送 | 🟡 | 未完成 | |
+| P18-3 SLA 追踪与告警 | 🟡 | 未完成 | |
+| P18-4 测试成本分析 | 🟢 | 未完成 | |
+| **P19: 生产运维与可靠性** | | | |
+| P19-1 Kubernetes Helm Chart | 🟡 | 未完成 | |
+| P19-2 OpenTelemetry 分布式追踪 | 🟡 | 未完成 | |
+| P19-3 Sentry 错误追踪 | 🟡 | 未完成 | |
+| P19-4 Feature Flag 系统 | 🟢 | 未完成 | |
+| P19-5 配置热更新 | 🟢 | 未完成 | |
+| **P20: 开发者体验** | | | |
+| P20-1 CLI 工具增强 | 🟡 | 未完成 | |
+| P20-2 JavaScript/TypeScript SDK | 🟡 | 未完成 | |
+| P20-3 API Playground | 🟢 | 未完成 | |
+| P20-4 VS Code 扩展 | 🟢 | 未完成 | |
+| P20-5 其他平台迁移工具 | 🟢 | 未完成 | |
+| **P21: 商业化运营** | | | |
+| P21-1 多租户数据隔离强化 | 🔴 | 未完成 | |
+| P21-2 用量计量与配额执行 | 🔴 | 未完成 | |
+| P21-3 管理员后台 | 🟡 | 未完成 | |
+| P21-4 用户引导与新手教程 | 🟡 | 未完成 | |
+| P21-5 用户行为分析 | 🟢 | 未完成 | |
+| **P22: 前端体验升级** | | | |
+| P22-1 虚拟滚动优化 | 🟡 | 未完成 | |
+| P22-2 可拖拽布局 | 🟢 | 未完成 | |
+| P22-3 Monaco Editor 深度集成 | 🟡 | 未完成 | |
+| P22-4 全局通知中心 | 🟡 | 未完成 | |
+| P22-5 数据可视化组件库 | 🟡 | 未完成 | |
+| P22-6 国际化完善 | 🟡 | 未完成 | |
+| P22-7 离线支持与乐观更新 | 🟢 | 未完成 | |
+
+---
+
+## 第三阶段任务总数统计
+
+| 阶段 | 总数 | 🔴 必须 | 🟡 重要 | 🟢 锦上添花 |
+|------|------|---------|---------|-------------|
+| P13 基础设施 | 10 | 4 | 4 | 2 |
+| P14 AI/ML 核心 | 10 | 2 | 4 | 4 |
+| P15 测试引擎 | 7 | 1 | 4 | 2 |
+| P16 企业安全 | 6 | 1 | 5 | 0 |
+| P17 CI/CD | 4 | 1 | 2 | 1 |
+| P18 报告分析 | 4 | 0 | 3 | 1 |
+| P19 生产运维 | 5 | 0 | 3 | 2 |
+| P20 开发者体验 | 5 | 0 | 2 | 3 |
+| P21 商业化运营 | 5 | 2 | 2 | 1 |
+| P22 前端体验 | 7 | 0 | 5 | 2 |
+| **总计** | **63** | **11** | **34** | **18** |
