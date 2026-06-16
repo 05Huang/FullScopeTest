@@ -25,7 +25,7 @@ from .extensions import db, migrate, jwt, celery
 from .config import config
 from .celery_app import init_celery
 from .scheduler import init_scheduler
-from .core.logging import configure_structlog, set_trace_id, clear_trace_id, get_logger
+from .core.logging import configure_structlog, get_logger
 
 # 初始化限流器
 limiter = Limiter(key_func=get_remote_address)
@@ -61,15 +61,9 @@ def create_app(config_name='development'):
     json_format = config_name in ('production', 'staging')
     configure_structlog(log_level=log_level, json_format=json_format)
 
-    # 注入 trace_id 到每个请求上下文
-    @app.before_request
-    def _inject_trace_id():
-        from flask import g
-        g.trace_id = set_trace_id()
-
-    @app.teardown_appcontext
-    def _clear_trace_id(exc=None):
-        clear_trace_id()
+    # 请求链路追踪中间件（统一处理 trace_id / request_id）
+    from .middleware.request_id import request_id_middleware
+    request_id_middleware(app)
 
     # 初始化扩展
     init_extensions(app)

@@ -8,7 +8,14 @@ export interface ApiResponse<T = any> {
   message: string
   timestamp: string
   errors?: any
+  request_id?: string
 }
+
+/**
+ * 获取最近一次请求的 Request ID（用于错误日志和 Bug 报告）
+ */
+let lastRequestId = ''
+export const getLastRequestId = () => lastRequestId
 
 // 创建 axios 实例
 // withCredentials: true 使浏览器自动携带 httpOnly Cookie
@@ -57,6 +64,11 @@ api.interceptors.request.use(
 // 响应拦截器 - 返回类型为 ApiResponse
 api.interceptors.response.use(
   (response) => {
+    // 捕获后端返回的 X-Request-ID（用于错误排查）
+    const requestId = response.headers['x-request-id']
+    if (requestId) {
+      lastRequestId = requestId
+    }
     // 如果响应类型是 text 或 blob，直接返回整个 response 对象
     // 让调用方自行处理
     if (response.config.responseType === 'text' || response.config.responseType === 'blob') {
@@ -66,6 +78,11 @@ api.interceptors.response.use(
     return response.data
   },
   async (error: AxiosError) => {
+    // 捕获错误响应中的 X-Request-ID
+    const errorRequestId = error.response?.headers?.['x-request-id']
+    if (errorRequestId) {
+      lastRequestId = errorRequestId
+    }
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
 
     // 401 错误，尝试刷新 token（通过 httpOnly Cookie）

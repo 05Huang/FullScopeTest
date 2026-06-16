@@ -32,19 +32,22 @@ def success_response(data=None, message='success', code=200):
 def error_response(code, message, errors=None):
     """
     错误响应
-    
+
     Args:
         code: HTTP 状态码
         message: 错误消息
         errors: 详细错误信息
-    
+
     Returns:
         tuple: (响应体, 状态码)
     """
+    from flask import g
+    request_id = getattr(g, 'request_id', '')
     response = {
         'code': code,
         'message': message,
         'errors': errors,
+        'request_id': request_id,
         'timestamp': datetime.utcnow().isoformat() + 'Z'
     }
     return jsonify(response), code
