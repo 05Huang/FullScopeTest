@@ -122,6 +122,118 @@ class QuickstartUser(HttpUser):
     return json.dumps({"status": "error", "message": f"Unknown tool {function_name}"})
 
 
+# ==================== 自然语言创建测试用例 ====================
+
+NL_TEST_SYSTEM_PROMPT = """你是一个 API 测试用例生成专家。根据用户的自然语言描述，生成完整的 API 测试用例。
+
+返回格式（严格 JSON）：
+{
+  "name": "用例名称",
+  "method": "HTTP 方法（GET/POST/PUT/DELETE/PATCH）",
+  "url": "请求 URL",
+  "headers": {"Content-Type": "application/json"},
+  "body": {},
+  "body_type": "json",
+  "assertions": [
+    {"type": "status_code", "expected": 200},
+    {"type": "json_path", "path": "$.data.token", "condition": "exists"}
+  ],
+  "description": "用例描述"
+}
+
+规则：
+- URL 使用相对路径（如 /api/v1/auth/login）
+- 断言至少包含状态码断言
+- Headers 根据方法自动推断
+- 如果用户描述了多个场景，返回用例数组"""
+
+
+def create_test_from_nl(
+    user_input: str,
+    user_id: int,
+    project_id: int,
+    collection_id: int = None,
+    config: Dict[str, Any] = None,
+) -> Dict[str, Any]:
+    """
+    通过自然语言描述创建测试用例
+
+    Args:
+        user_input: 用户的自然语言描述
+        user_id: 用户 ID
+        project_id: 项目 ID
+        collection_id: 用例集 ID（可选）
+        config: AI 配置
+
+    Returns:
+        Dict: 创建结果 {cases: [...], message: "..."}
+    """
+    from ..services.ai.base import AIServiceBase
+
+    svc = AIServiceBase(config=config)
+    messages = [{"role": "user", "content": user_input}]
+
+    response = svc.simple_chat(
+        messages=messages,
+        feature="nl_test_creation",
+        user_id=user_id,
+        system_prompt=NL_TEST_SYSTEM_PROMPT,
+        temperature=0.2,
+    )
+
+    content = svc.get_content(response)
+    cases_data = _parse_nl_response(content)
+
+    # 保存到数据库
+    created_cases = []
+    for case_data in cases_data:
+        try:
+            from ..models.api_test_case import ApiTestCase
+            case = ApiTestCase(
+                name=case_data.get("name", "NL 生成用例"),
+                method=case_data.get("method", "GET"),
+                url=case_data.get("url", "/"),
+                headers=case_data.get("headers"),
+                body=case_data.get("body"),
+                body_type=case_data.get("body_type", "json"),
+                assertions=case_data.get("assertions"),
+                description=case_data.get("description", "AI 生成"),
+                project_id=project_id,
+                collection_id=collection_id,
+                user_id=user_id,
+            )
+            db.session.add(case)
+            db.session.flush()
+            created_cases.append(case.to_dict())
+        except Exception as exc:
+            logger.warning("NL 用例创建失败", error=str(exc))
+
+    db.session.commit()
+
+    return {
+        "cases": created_cases,
+        "message": f"已根据描述创建 {len(created_cases)} 个测试用例",
+    }
+
+
+def _parse_nl_response(content: str) -> List[Dict[str, Any]]:
+    """解析 AI 返回的用例 JSON"""
+    try:
+        if "```json" in content:
+            json_str = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            json_str = content.split("```")[1].split("```")[0].strip()
+        else:
+            json_str = content.strip()
+        result = json.loads(json_str)
+        if isinstance(result, list):
+            return result
+        return [result]
+    except (json.JSONDecodeError, IndexError):
+        logger.warning("NL 响应解析失败", content_preview=content[:200])
+        return []
+
+
 def process_copilot_chat(
     messages: List[Dict[str, str]],
     user_id: int,
