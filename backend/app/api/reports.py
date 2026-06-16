@@ -812,6 +812,59 @@ def export_test_run_csv(run_id):
         return error_response(e.code, e.message)
 
 
+@api_bp.route('/test-runs/<int:run_id>/export/pdf', methods=['GET'])
+@jwt_required()
+def export_test_run_pdf(run_id):
+    """导出测试执行报告为 PDF 格式"""
+    from ..services.export_service import generate_pdf_report
+    try:
+        pdf_bytes = generate_pdf_report(run_id)
+        if pdf_bytes is None:
+            return error_response(500, 'ReportLab 未安装，无法生成 PDF')
+        from flask import send_file
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'test_report_{run_id}.pdf',
+        )
+    except AppError as e:
+        return error_response(e.code, e.message)
+
+
+@api_bp.route('/reports/export/excel', methods=['GET'])
+@jwt_required()
+def export_report_excel_range():
+    """
+    按范围导出 Excel 报告
+
+    查询参数:
+        project_id: 项目 ID（可选）
+        days: 时间范围天数（可选）
+        test_type: 测试类型过滤（可选）
+    """
+    from ..services.export_service import generate_enhanced_excel
+    project_id = request.args.get('project_id', type=int)
+    days = request.args.get('days', type=int)
+    test_type = request.args.get('test_type')
+
+    try:
+        excel_bytes = generate_enhanced_excel(
+            project_id=project_id, days=days, test_type=test_type,
+        )
+        if excel_bytes is None:
+            return error_response(500, 'openpyxl 未安装')
+        from flask import send_file
+        return send_file(
+            io.BytesIO(excel_bytes),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='test_report.xlsx',
+        )
+    except AppError as e:
+        return error_response(e.code, e.message)
+
+
 # ==================== 质量趋势分析 ====================
 
 @api_bp.route('/reports/trend', methods=['GET'])
