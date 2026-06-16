@@ -8,6 +8,7 @@ from flask import request, send_file
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_
+import io
 import json
 import os
 import tempfile
@@ -23,7 +24,7 @@ from ..models.perf_test_scenario import PerfTestScenario
 from ..utils.response import success_response, error_response, paginate_response
 from ..utils import get_current_user_id
 from ..services.report_service import ReportService
-from ..utils.exceptions import NotFoundError
+from ..utils.exceptions import NotFoundError, AppError
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -771,4 +772,42 @@ def delete_test_report(report_id):
     except Exception as e:
         db.session.rollback()
         return error_response(500, f'删除失败: {str(e)}')
+
+
+# ==================== 报告导出 ====================
+
+@api_bp.route('/test-runs/<int:run_id>/export/excel', methods=['GET'])
+@jwt_required()
+def export_test_run_excel(run_id):
+    """导出测试执行报告为 Excel 格式"""
+    from ..services.import_export_service import export_test_report_excel
+    try:
+        excel_bytes = export_test_report_excel(run_id)
+        if excel_bytes is None:
+            return error_response(500, 'openpyxl 未安装，无法导出 Excel')
+        from flask import send_file
+        return send_file(
+            io.BytesIO(excel_bytes),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'test_report_{run_id}.xlsx',
+        )
+    except AppError as e:
+        return error_response(e.code, e.message)
+
+
+@api_bp.route('/test-runs/<int:run_id>/export/csv', methods=['GET'])
+@jwt_required()
+def export_test_run_csv(run_id):
+    """导出测试执行报告为 CSV 格式"""
+    from ..services.import_export_service import export_test_report_csv
+    try:
+        csv_content = export_test_report_csv(run_id)
+        from flask import make_response
+        response = make_response(csv_content)
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename=test_report_{run_id}.csv'
+        return response
+    except AppError as e:
+        return error_response(e.code, e.message)
 

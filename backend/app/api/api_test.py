@@ -431,6 +431,87 @@ def mock_api_endpoint(case_id):
     return resp
 
 
+# ==================== 导入导出 ====================
+
+@api_bp.route("/api-test/import/postman", methods=["POST"])
+@jwt_required()
+def import_postman():
+    """
+    从 Postman Collection JSON 导入用例
+
+    请求体:
+        project_id: 项目 ID (必填)
+        collection_id: 集合 ID (可选)
+        content: JSON 字符串 (必填)
+    """
+    from ..services.import_export_service import import_from_postman_json
+    user_id = int(get_current_user_id())
+    data = request.get_json(silent=True) or {}
+
+    project_id = data.get('project_id')
+    if not project_id:
+        return error_response(400, '缺少 project_id')
+
+    content = data.get('content', '')
+    if not content:
+        return error_response(400, '缺少导入内容')
+
+    try:
+        results = import_from_postman_json(
+            user_id=user_id,
+            project_id=project_id,
+            json_content=content,
+            collection_id=data.get('collection_id'),
+        )
+        return success_response(data=results, message=f'导入完成: {results["imported"]} 条用例')
+    except AppError as e:
+        return error_response(e.code, e.message, errors=e.errors)
+
+
+@api_bp.route("/api-test/import/csv", methods=["POST"])
+@jwt_required()
+def import_csv():
+    """
+    从 CSV 格式批量导入用例
+
+    请求体:
+        project_id: 项目 ID (必填)
+        collection_id: 集合 ID (可选)
+        content: CSV 文本 (必填)
+    """
+    from ..services.import_export_service import import_from_csv
+    user_id = int(get_current_user_id())
+    data = request.get_json(silent=True) or {}
+
+    project_id = data.get('project_id')
+    if not project_id:
+        return error_response(400, '缺少 project_id')
+
+    content = data.get('content', '')
+    if not content:
+        return error_response(400, '缺少导入内容')
+
+    try:
+        results = import_from_csv(
+            user_id=user_id,
+            project_id=project_id,
+            csv_content=content,
+            collection_id=data.get('collection_id'),
+        )
+        return success_response(data=results, message=f'导入完成: {results["imported"]} 条用例')
+    except AppError as e:
+        return error_response(e.code, e.message, errors=e.errors)
+
+
+@api_bp.route("/api-test/import/template", methods=["GET"])
+@jwt_required()
+def get_csv_template():
+    """获取 CSV 导入模板"""
+    from ..services.import_export_service import generate_csv_template
+    template = generate_csv_template()
+    return success_response(data={'template': template})
+
+
 
 # ==================== 执行测试 ====================
 
