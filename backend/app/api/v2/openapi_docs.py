@@ -160,7 +160,10 @@ async def export_metersphere_format():
 async def get_full_openapi_schema():
     from ...fastapi_app import create_fastapi_app
     app = create_fastapi_app("production")
-    return get_openapi(title=app.title, version=app.version, description=app.description, routes=app.routes)
+    schema = get_openapi(title=app.title, version=app.version, description=app.description, routes=app.routes)
+    # 增强 schema：添加认证说明和示例
+    schema = _enhance_openapi_schema(schema)
+    return schema
 
 @router.get("/openapi/stats", summary="获取 API 统计信息", description="返回当前 API 的端点数量、标签分布、认证方式等统计信息。")
 async def get_api_stats():
@@ -179,3 +182,52 @@ async def get_api_stats():
                 for tag in details.get("tags", ["default"]):
                     tag_counts[tag] = tag_counts.get(tag, 0) + 1
     return {"total_endpoints": total_endpoints, "by_method": method_counts, "by_tag": tag_counts, "security_schemes": list(openapi_schema.get("components", {}).get("securitySchemes", {}).keys()), "version": openapi_schema.get("info", {}).get("version", "unknown")}
+
+
+def _enhance_openapi_schema(schema: dict) -> dict:
+    """
+    增强 OpenAPI Schema
+
+    添加认证说明、安全方案、通用响应示例。
+    """
+    # 增强 API 描述
+    enhanced_description = (
+        schema.get("info", {}).get("description", "") +
+        "\n\n## Authentication\n\n" +
+        "All endpoints require authentication via one of:\n\n" +
+        "1. **JWT Bearer Token** - Obtained via `/api/v2/auth/login`. "
+        "Include `Authorization: Bearer <token>` header.\n" +
+        "2. **API Token** - Created via `/api/v1/tokens`. "
+        "Include `Authorization: Bearer <api_token>` header.\n\n" +
+        "Some endpoints (login, register) are public and do not require authentication."
+    )
+    schema.setdefault("info", {})["description"] = enhanced_description
+
+    # 添加安全方案
+    schema.setdefault("components", {}).setdefault("securitySchemes", {})
+    schema["components"]["securitySchemes"]["BearerAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer Token from /api/v2/auth/login",
+    }
+    schema["components"]["securitySchemes"]["ApiToken"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Token",
+        "description": "API Token from /api/v1/tokens",
+    }
+
+    # 添加通用错误响应 schema
+    schema["components"].setdefault("schemas", {})
+    schema["components"]["schemas"]["ErrorResponse"] = {
+        "type": "object",
+        "properties": {
+            "code": {"type": "integer", "description": "HTTP status code"},
+            "message": {"type": "string", "description": "Error message"},
+            "errors": {"type": "object", "description": "Detailed errors"},
+            "timestamp": {"type": "string", "format": "date-time"},
+        },
+    }
+
+    return schema
