@@ -32,6 +32,7 @@ from .quota import Quota
 from .notification_config import NotificationConfig
 from .role import Role
 from .test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
+from .issue_link import IssueLink
 
 __all__ = [
     'User',
@@ -71,4 +72,5 @@ __all__ = [
     'TestPlan',
     'TestPlanRun',
     'TestPlanCaseResult',
+    'IssueLink',
 ]
