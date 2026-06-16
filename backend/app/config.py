@@ -28,7 +28,14 @@ class BaseConfig:
     SECRET_KEY = os.environ.get('SECRET_KEY')
 
     # CORS 配置 - 允许的源列表（逗号分隔）
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:8080').split(',')
+    # 开发环境默认允许 localhost
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3001,http://localhost:3000,http://localhost:8080').split(',')
+    # 允许的 HTTP 方法
+    CORS_METHODS = os.environ.get('CORS_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS').split(',')
+    # 允许的请求头
+    CORS_ALLOW_HEADERS = os.environ.get('CORS_ALLOW_HEADERS', 'Authorization,Content-Type,X-Request-ID').split(',')
+    # 预检请求缓存时间（秒）
+    CORS_MAX_AGE = int(os.environ.get('CORS_MAX_AGE', '3600'))
 
     # 限流配置
     RATELIMIT_DEFAULT = "200/minute"

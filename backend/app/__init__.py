@@ -81,8 +81,7 @@ def create_app(config_name='development'):
     # 注册蓝图
     register_blueprints(app)
 
-    # 注册全局错误处理器
-    register_error_handlers(app)
+    # 全局错误处理器由 error_handler_middleware 统一注册（见上方）
 
     # 初始化定时任务
     init_scheduler(app)
@@ -114,6 +113,14 @@ def create_app(config_name='development'):
     # 初始化请求限制中间件（超时 + Body 大小）
     from .middleware.request_limits import request_limits_middleware
     request_limits_middleware(app)
+
+    # 初始化响应压缩中间件
+    from .middleware.compression import compression_middleware
+    compression_middleware(app)
+
+    # 注册全局错误处理器（统一异常体系）
+    from .middleware.error_handler import error_handler_middleware
+    error_handler_middleware(app)
 
     # 初始化 RBAC 权限注入中间件
     from .middleware.permission import inject_user_permissions
@@ -234,9 +241,19 @@ def init_extensions(app):
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # CORS - 使用配置中的允许源列表
-    cors_origins = app.config.get('CORS_ORIGINS', ['http://localhost:3000'])
-    CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
+    # CORS - 安全加固配置
+    cors_origins = app.config.get('CORS_ORIGINS', ['http://localhost:3001'])
+    cors_methods = app.config.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
+    cors_allow_headers = app.config.get('CORS_ALLOW_HEADERS', ['Authorization', 'Content-Type', 'X-Request-ID'])
+    cors_max_age = app.config.get('CORS_MAX_AGE', 3600)
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": cors_origins}},
+        methods=cors_methods,
+        allow_headers=cors_allow_headers,
+        supports_credentials=True,
+        max_age=cors_max_age,
+    )
 
     # 限流
     limiter.init_app(app)
@@ -277,27 +294,5 @@ def register_blueprints(app):
 
 
 def register_error_handlers(app):
-    """注册全局错误处理器"""
-    from .utils.response import error_response
-    from .utils.exceptions import AppError
-
-    @app.errorhandler(AppError)
-    def handle_app_error(e):
-        """统一处理自定义异常"""
-        return error_response(e.code, e.message, errors=e.errors)
-
-    @app.errorhandler(400)
-    def bad_request(e):
-        return error_response(400, '请求参数错误')
-
-    @app.errorhandler(401)
-    def unauthorized(e):
-        return error_response(401, '未授权访问')
-
-    @app.errorhandler(404)
-    def not_found(e):
-        return error_response(404, '资源不存在')
-
-    @app.errorhandler(500)
-    def internal_error(e):
-        return error_response(500, '服务器内部错误')
+    """注册全局错误处理器（已由 error_handler_middleware 替代，保留兼容性）"""
+    pass  # 错误处理由 middleware/error_handler.py 统一管理
