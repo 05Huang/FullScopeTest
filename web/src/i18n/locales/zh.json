@@ -191,7 +191,8 @@
     "profile": "个人中心",
     "alertRules": "告警规则",
     "organizations": "组织管理",
-    "auditLogs": "审计日志"
+    "auditLogs": "审计日志",
+    "apiTokens": "API Token"
   },
   "header": {
     "logout": "退出登录",
@@ -897,5 +898,28 @@
     "last90Days": "最近 90 天",
     "totalOperations": "总操作数",
     "activeUsers": "活跃用户数"
+  },
+  "tokens": {
+    "title": "API Token 管理",
+    "create": "创建 Token",
+    "noTokens": "暂无 Token",
+    "fetchFailed": "获取 Token 列表失败",
+    "createSuccess": "Token 创建成功",
+    "createFailed": "创建失败",
+    "deleteSuccess": "Token 已删除",
+    "deleteFailed": "删除失败",
+    "deleteConfirm": "确定要删除此 Token 吗？删除后无法恢复。",
+    "namePlaceholder": "例如：CI/CD Token",
+    "permissions": "权限",
+    "projectScope": "项目范围",
+    "projectScopeHint": "（留空表示不限制项目）",
+    "projectIdsPlaceholder": "项目 ID，逗号分隔（如 1,2,5）",
+    "allProjects": "所有项目",
+    "expiresAt": "过期时间",
+    "neverExpires": "永不过期",
+    "actions": "操作权限",
+    "tokenRevealedTitle": "请妥善保存 Token",
+    "tokenRevealedDesc": "Token 仅在创建时显示一次，关闭后无法再次查看。请立即复制并保存到安全位置。",
+    "copied": "已复制到剪贴板"
   }
 }

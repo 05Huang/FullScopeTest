@@ -191,7 +191,8 @@
     "profile": "Profile",
     "alertRules": "Alert Rules",
     "organizations": "Organizations",
-    "auditLogs": "Audit Logs"
+    "auditLogs": "Audit Logs",
+    "apiTokens": "API Tokens"
   },
   "header": {
     "logout": "Log Out",
@@ -897,5 +898,28 @@
     "last90Days": "Last 90 days",
     "totalOperations": "Total Operations",
     "activeUsers": "Active Users"
+  },
+  "tokens": {
+    "title": "API Token Management",
+    "create": "Create Token",
+    "noTokens": "No tokens yet",
+    "fetchFailed": "Failed to fetch tokens",
+    "createSuccess": "Token created successfully",
+    "createFailed": "Creation failed",
+    "deleteSuccess": "Token deleted",
+    "deleteFailed": "Deletion failed",
+    "deleteConfirm": "Are you sure you want to delete this token? This action cannot be undone.",
+    "namePlaceholder": "e.g., CI/CD Token",
+    "permissions": "Permissions",
+    "projectScope": "Project Scope",
+    "projectScopeHint": "(leave empty for all projects)",
+    "projectIdsPlaceholder": "Project IDs, comma-separated (e.g., 1,2,5)",
+    "allProjects": "All Projects",
+    "expiresAt": "Expires At",
+    "neverExpires": "Never",
+    "actions": "Actions",
+    "tokenRevealedTitle": "Save Your Token",
+    "tokenRevealedDesc": "This token is only shown once. Please copy and save it to a secure location now.",
+    "copied": "Copied to clipboard"
   }
 }

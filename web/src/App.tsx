@@ -31,6 +31,7 @@ const AIInsightsDashboard = lazy(() => import('./pages/AIInsightsDashboard'))
 const OrganizationList = lazy(() => import('./pages/organizations/OrganizationList'))
 const OrganizationDetail = lazy(() => import('./pages/organizations/OrganizationDetail'))
 const AuditLogs = lazy(() => import('./pages/AuditLogs'))
+const ApiTokens = lazy(() => import('./pages/ApiTokens'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -253,6 +254,16 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <AuditLogs />
+            </Suspense>
+          }
+        />
+
+        {/* API Token 管理 */}
+        <Route
+          path="api-tokens"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <ApiTokens />
             </Suspense>
           }
         />
