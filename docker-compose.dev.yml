@@ -1,0 +1,105 @@
+# FullScopeTest 本地开发环境
+# 一键启动：docker-compose -f docker-compose.dev.yml up
+# 清理环境：docker-compose -f docker-compose.dev.yml down -v
+
+version: '3.8'
+
+services:
+
+  # Redis 缓存/消息队列
+  redis:
+    image: redis:7-alpine
+    container_name: fst_dev_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL 数据库（可选，通过 profiles 启用）
+  # 默认不启动，使用 SQLite 开发
+  # 启用方式：docker-compose -f docker-compose.dev.yml --profile postgres up
+  postgres:
+    image: postgres:15-alpine
+    container_name: fst_dev_postgres
+    restart: unless-stopped
+    profiles:
+      - postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-fullscopetest}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-devpassword}
+      - POSTGRES_DB=${POSTGRES_DB:-fullscopetest_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fullscopetest -d fullscopetest_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Flask 后端（热重载）
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend.dev
+      args:
+        SKIP_PLAYWRIGHT_BROWSERS: "1"
+    container_name: fst_dev_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///fullscopetest.db}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret-key-change-in-production}
+      - AUTO_SEED=true
+    volumes:
+      - ./backend:/app
+      - backend_dev_uploads:/app/uploads
+      - backend_dev_reports:/app/reports
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: flask run --host=0.0.0.0 --port=5000 --reload --debugger
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Vite 前端（HMR 热更新）
+  frontend:
+    build:
+      context: ./web
+      dockerfile: ../docker/Dockerfile.frontend.dev
+    container_name: fst_dev_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:5000
+      - NODE_ENV=development
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0 --port 3001
+
+volumes:
+  redis_dev_data:
+  postgres_dev_data:
+  backend_dev_uploads:
+  backend_dev_reports:
