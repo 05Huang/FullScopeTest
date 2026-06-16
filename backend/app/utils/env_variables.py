@@ -1,16 +1,30 @@
 """
 环境变量处理工具
 
-支持在测试用例中使用环境变量 {variable_name}
+支持在测试用例中使用环境变量 {{variable_name}}
+内置变量：{{$timestamp}}、{{$random_int}}、{{$uuid}}
 """
 
 import re
+import uuid
+import time
+import random
 from typing import Dict, Any, Optional
+
+
+# 内置动态变量（每次调用生成新值）
+BUILTIN_VARIABLES = {
+    "$timestamp": lambda: str(int(time.time())),
+    "$random_int": lambda: str(random.randint(100000, 999999)),
+    "$uuid": lambda: str(uuid.uuid4()),
+}
 
 
 def replace_variables(text: str, variables: Dict[str, Any]) -> str:
     """
     替换文本中的变量 (支持 {{variable_name}} 格式，与 Postman 一致)
+    支持内置变量：{{$timestamp}}、{{$random_int}}、{{$uuid}}
+    支持变量嵌套：{{api_url}}/users/{{user_id}}
 
     Args:
         text: 原始文本，包含 {{variable_name}} 格式的变量
@@ -18,26 +32,40 @@ def replace_variables(text: str, variables: Dict[str, Any]) -> str:
 
     Returns:
         替换后的文本
-
-    Example:
-        >>> replace_variables("http://api.com/{{version}}/user", {"version": "v1"})
-        "http://api.com/v1/user"
     """
     if not text or not isinstance(text, str):
         return text
 
-    if not variables:
+    # 合并内置变量和用户变量
+    all_vars = {}
+    for key, gen_fn in BUILTIN_VARIABLES.items():
+        all_vars[key] = gen_fn()
+    if variables:
+        all_vars.update(variables)
+
+    if not all_vars:
         return text
 
-    # 查找所有 {{variable_name}} 格式的变量 (双花括号，与 Postman 一致)
+    # 查找所有 {{variable_name}} 格式的变量
     pattern = r'\{\{([^}]+)\}\}'
 
     def replacer(match):
-        var_name = match.group(1).strip()  # 去除可能的空格
-        # 从变量字典中获取值，如果不存在则保持原样
-        return str(variables.get(var_name, match.group(0)))
+        var_name = match.group(1).strip()
+        # 先检查内置变量（带 $ 前缀）
+        if var_name in BUILTIN_VARIABLES:
+            return BUILTIN_VARIABLES[var_name]()
+        # 再检查用户变量
+        return str(all_vars.get(var_name, match.group(0)))
 
-    return re.sub(pattern, replacer, text)
+    # 支持多轮替换（处理嵌套变量）
+    max_rounds = 3
+    for _ in range(max_rounds):
+        new_text = re.sub(pattern, replacer, text)
+        if new_text == text:
+            break
+        text = new_text
+
+    return text
 
 
 def replace_variables_in_dict(data: Dict[str, Any], variables: Dict[str, Any]) -> Dict[str, Any]:
