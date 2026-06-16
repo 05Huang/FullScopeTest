@@ -1,0 +1,90 @@
+name: FullScopeTest
+description: Execute tests on FullScopeTest platform and report results
+
+inputs:
+  api-token:
+    description: FullScopeTest API Token
+    required: true
+  base-url:
+    description: FullScopeTest API base URL
+    required: false
+    default: https://api.fullscopetest.com
+  project-id:
+    description: Project ID to run tests against
+    required: true
+  test-type:
+    description: Test type to run (api/web/perf/all)
+    required: false
+    default: api
+  collection-id:
+    description: Specific collection ID (optional)
+    required: false
+  quality-gate-id:
+    description: Quality gate ID for pass/fail evaluation (optional)
+    required: false
+  continue-on-error:
+    description: Continue workflow even if tests fail
+    required: false
+    default: "false"
+
+outputs:
+  pass-rate:
+    description: Test pass rate percentage
+    value: ${{ steps.run-tests.outputs.pass_rate }}
+  total-cases:
+    description: Total number of test cases
+    value: ${{ steps.run-tests.outputs.total_cases }}
+  failed-cases:
+    description: Number of failed cases
+    value: ${{ steps.run-tests.outputs.failed_cases }}
+  report-url:
+    description: URL to the test report
+    value: ${{ steps.run-tests.outputs.report_url }}
+  quality-gate-passed:
+    description: Whether quality gate passed
+    value: ${{ steps.run-tests.outputs.quality_gate_passed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run tests
+      id: run-tests
+      shell: bash
+      env:
+        FST_API_TOKEN: ${{ inputs.api-token }}
+        FST_BASE_URL: ${{ inputs.base-url }}
+        FST_PROJECT_ID: ${{ inputs.project-id }}
+        FST_TEST_TYPE: ${{ inputs.test-type }}
+        FST_COLLECTION_ID: ${{ inputs.collection-id }}
+        FST_QUALITY_GATE_ID: ${{ inputs.quality-gate-id }}
+      run: |
+        ${{ github.action_path }}/entrypoint.sh
+
+    - name: Add PR comment
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPORT_URL: ${{ steps.run-tests.outputs.report_url }}
+        PASS_RATE: ${{ steps.run-tests.outputs.pass_rate }}
+        TOTAL_CASES: ${{ steps.run-tests.outputs.total_cases }}
+        FAILED_CASES: ${{ steps.run-tests.outputs.failed_cases }}
+      run: |
+        COMMENT="## FullScopeTest Results
+"
+        COMMENT+="
+"
+        COMMENT+="| Metric | Value |
+"
+        COMMENT+="|--------|-------|
+"
+        COMMENT+="| Pass Rate | ${PASS_RATE}% |
+"
+        COMMENT+="| Total Cases | ${TOTAL_CASES} |
+"
+        COMMENT+="| Failed Cases | ${FAILED_CASES} |
+"
+        COMMENT+="| Report | [View Report](${REPORT_URL}) |
+"
+        echo -e "$COMMENT"
