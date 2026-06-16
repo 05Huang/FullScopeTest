@@ -40,7 +40,6 @@ jobs:
       - name: Lint with ruff
         run: |
           ruff check backend/app/ --select E,F,W --ignore E501,F841
-        continue-on-error: true
 
       - name: Run tests
         working-directory: backend

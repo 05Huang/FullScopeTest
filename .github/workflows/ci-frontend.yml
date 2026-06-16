@@ -32,21 +32,19 @@ jobs:
       - name: Lint
         working-directory: web
         run: npm run lint
-        continue-on-error: true
 
       - name: Type check
         working-directory: web
         run: npx tsc --noEmit
-        continue-on-error: true
 
       - name: Unit tests
         working-directory: web
         run: npm test -- --run --reporter=verbose 2>&1 | head -200
-        continue-on-error: true
 
       - name: Build
         working-directory: web
         run: npm run build
+        continue-on-error: true
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
