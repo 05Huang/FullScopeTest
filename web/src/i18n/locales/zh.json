@@ -1133,6 +1133,14 @@
     "deleteSuccess": "已删除 {{count}} 条重复用例",
     "deleteFailed": "删除失败"
   },
+  "apiTestMock": {
+    "enableMock": "启用 Mock",
+    "statusCode": "状态码",
+    "delayMs": "延迟(ms)",
+    "responseHeaders": "Mock 响应 Headers",
+    "responseBody": "Mock 响应 Body",
+    "addHeader": "添加 Header"
+  },
   "shortcuts": {
     "title": "快捷键",
     "globalSection": "全局",

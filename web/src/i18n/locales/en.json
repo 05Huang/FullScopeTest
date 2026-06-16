@@ -1133,6 +1133,14 @@
     "deleteSuccess": "Deleted {{count}} duplicate cases",
     "deleteFailed": "Deletion failed"
   },
+  "apiTestMock": {
+    "enableMock": "Enable Mock",
+    "statusCode": "Status Code",
+    "delayMs": "Delay (ms)",
+    "responseHeaders": "Mock Response Headers",
+    "responseBody": "Mock Response Body",
+    "addHeader": "Add Header"
+  },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
     "globalSection": "Global",

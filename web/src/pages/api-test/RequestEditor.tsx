@@ -139,13 +139,29 @@ const RequestEditor: React.FC<RequestEditorProps> = (p) => {
             <div style={{ padding: '8px 0' }}>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                  <Space><Text>启用 Mock:</Text><Switch checked={p.mockEnabled} onChange={p.setMockEnabled} size="small" /></Space>
-                  <Space><Text>状态码:</Text><InputNumber value={p.mockResponseCode} onChange={v => p.setMockResponseCode(v||200)} size="small" style={{width:80}} /></Space>
-                  <Space><Text>延迟(ms):</Text><InputNumber value={p.mockDelayMs} onChange={v => p.setMockDelayMs(v||0)} size="small" style={{width:80}} min={0} /></Space>
+                  <Space><Text>{t('apiTest.mock.enableMock')}:</Text><Switch checked={p.mockEnabled} onChange={p.setMockEnabled} size="small" /></Space>
+                  <Space><Text>{t('apiTest.mock.statusCode')}:</Text><Select value={p.mockResponseCode} onChange={v => p.setMockResponseCode(v)} size="small" style={{width:90}}
+                    options={[200,201,204,400,401,403,404,500,502,503].map(c => ({value:c,label:c}))} /></Space>
+                  <Space><Text>{t('apiTest.mock.delayMs')}:</Text><InputNumber value={p.mockDelayMs} onChange={v => p.setMockDelayMs(v||0)} size="small" style={{width:80}} min={0} /></Space>
                 </div>
-                <MonacoEditor height={150} language="json" theme="vs-light"
-                  value={p.mockResponseBody} onChange={v => p.setMockResponseBody(v||'')}
-                  options={{ minimap:{enabled:false}, fontSize:13, scrollBeyondLastLine:false, automaticLayout:true }} />
+                <div>
+                  <Text style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>{t('apiTest.mock.responseHeaders')}</Text>
+                  <Table size="small" rowKey="rowKey"
+                    columns={[
+                      { title: 'Key', dataIndex: 'key', render: (_:any,__:any,i:number) => <Input size="small" value={p.mockResponseHeaders[i]?.key||''} onChange={e => { const h=[...p.mockResponseHeaders]; h[i]={...h[i],key:e.target.value}; p.setMockResponseHeaders(h) }} /> },
+                      { title: 'Value', dataIndex: 'value', render: (_:any,__:any,i:number) => <Input size="small" value={p.mockResponseHeaders[i]?.value||''} onChange={e => { const h=[...p.mockResponseHeaders]; h[i]={...h[i],value:e.target.value}; p.setMockResponseHeaders(h) }} /> },
+                      { title: '', width: 40, render: (_:any,__:any,i:number) => <Button type="text" size="small" danger icon={<DeleteOutlined/>} onClick={() => { const h=[...p.mockResponseHeaders]; h.splice(i,1); p.setMockResponseHeaders(h) }} /> },
+                    ]}
+                    dataSource={p.mockResponseHeaders.map((x,i)=>({...x,rowKey:String(i)}))}
+                    pagination={false}
+                    footer={() => <Button type="dashed" size="small" icon={<PlusOutlined/>} block onClick={() => p.setMockResponseHeaders([...p.mockResponseHeaders,{key:'',value:''}])}>{t('apiTest.mock.addHeader')}</Button>} />
+                </div>
+                <div>
+                  <Text style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>{t('apiTest.mock.responseBody')}</Text>
+                  <MonacoEditor height={150} language="json" theme="vs-light"
+                    value={p.mockResponseBody} onChange={v => p.setMockResponseBody(v||'')}
+                    options={{ minimap:{enabled:false}, fontSize:13, scrollBeyondLastLine:false, automaticLayout:true }} />
+                </div>
               </Space>
             </div>
           ),
