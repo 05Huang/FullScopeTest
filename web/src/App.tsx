@@ -40,6 +40,7 @@ const QualityGates = lazy(() => import('./pages/QualityGates'))
 const TriggerRules = lazy(() => import('./pages/TriggerRules'))
 const NotificationSettings = lazy(() => import('./pages/NotificationSettings'))
 const TeamMetrics = lazy(() => import('./pages/TeamMetrics'))
+const Integrations = lazy(() => import('./pages/Integrations'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -298,6 +299,16 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <TestPlanRunDetail />
+            </Suspense>
+          }
+        />
+
+        {/* 集成管理 */}
+        <Route
+          path="integrations"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <Integrations />
             </Suspense>
           }
         />

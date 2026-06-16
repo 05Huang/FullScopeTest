@@ -29,6 +29,7 @@ import {
   ExperimentOutlined,
   SafetyOutlined,
   BellOutlined,
+  LinkOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -372,6 +373,7 @@ const MainLayout = () => {
     { icon: <TeamOutlined />, label: t('sidebar.organizations'), path: '/organizations' },
     { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
     { icon: <KeyOutlined />, label: t('sidebar.apiTokens'), path: '/api-tokens' },
+    { icon: <LinkOutlined />, label: t('sidebar.integrations'), path: '/integrations' },
     { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
   ]

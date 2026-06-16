@@ -206,7 +206,8 @@
     "cicdMain": "CI/CD 与定时任务",
     "triggerRules": "触发规则",
     "notifications": "通知设置",
-    "teamMetrics": "团队效能"
+    "teamMetrics": "团队效能",
+    "integrations": "集成管理"
   },
   "header": {
     "logout": "退出登录",
@@ -1053,5 +1054,41 @@
     "casesExecuted": "用例执行",
     "bugsFound": "发现缺陷",
     "noData": "暂无数据"
+  },
+  "integrations": {
+    "title": "集成管理",
+    "connected": "已连接",
+    "notConnected": "未连接",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "comingSoon": "即将推出",
+    "github": {
+      "description": "将 GitHub 仓库与测试平台关联，自动回写 Check Run 状态到 PR。",
+      "connect": "连接 GitHub",
+      "unbind": "断开连接",
+      "unbindConfirm": "确定要断开 GitHub 连接吗？",
+      "connectSuccess": "GitHub 连接成功",
+      "connectFailed": "GitHub 连接失败",
+      "authFailed": "GitHub 授权失败",
+      "unbindSuccess": "GitHub 已断开连接",
+      "unbindFailed": "断开连接失败",
+      "checkRun": "Check Run 回写"
+    },
+    "gitlab": {
+      "description": "将 GitLab 仓库与测试平台关联，支持 CI/CD 集成。"
+    },
+    "jira": {
+      "description": "关联 Jira 项目，自动创建和同步缺陷。"
+    }
+  },
+  "comments": {
+    "placeholder": "写下你的评论...",
+    "send": "发送",
+    "noComments": "暂无评论",
+    "submitFailed": "提交评论失败",
+    "editFailed": "编辑评论失败",
+    "deleteSuccess": "评论已删除",
+    "deleteFailed": "删除评论失败",
+    "deleteConfirm": "确定要删除此评论吗？"
   }
 }

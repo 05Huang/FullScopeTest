@@ -206,7 +206,8 @@
     "cicdMain": "CI/CD & Schedules",
     "triggerRules": "Trigger Rules",
     "notifications": "Notification Settings",
-    "teamMetrics": "Team Metrics"
+    "teamMetrics": "Team Metrics",
+    "integrations": "Integrations"
   },
   "header": {
     "logout": "Log Out",
@@ -1053,5 +1054,41 @@
     "casesExecuted": "Cases Executed",
     "bugsFound": "Bugs Found",
     "noData": "No data yet"
+  },
+  "integrations": {
+    "title": "Integrations",
+    "connected": "Connected",
+    "notConnected": "Not Connected",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "comingSoon": "Coming Soon",
+    "github": {
+      "description": "Link your GitHub repository to automatically write back Check Run status to PRs.",
+      "connect": "Connect GitHub",
+      "unbind": "Disconnect",
+      "unbindConfirm": "Are you sure you want to disconnect GitHub?",
+      "connectSuccess": "GitHub connected successfully",
+      "connectFailed": "GitHub connection failed",
+      "authFailed": "GitHub authorization failed",
+      "unbindSuccess": "GitHub disconnected",
+      "unbindFailed": "Disconnect failed",
+      "checkRun": "Check Run Writeback"
+    },
+    "gitlab": {
+      "description": "Link your GitLab repository for CI/CD integration."
+    },
+    "jira": {
+      "description": "Link Jira project to automatically create and sync issues."
+    }
+  },
+  "comments": {
+    "placeholder": "Write a comment...",
+    "send": "Send",
+    "noComments": "No comments yet",
+    "submitFailed": "Failed to submit comment",
+    "editFailed": "Failed to edit comment",
+    "deleteSuccess": "Comment deleted",
+    "deleteFailed": "Failed to delete comment",
+    "deleteConfirm": "Are you sure you want to delete this comment?"
   }
 }
