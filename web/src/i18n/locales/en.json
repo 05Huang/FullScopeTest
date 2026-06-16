@@ -1090,5 +1090,33 @@
     "deleteSuccess": "Comment deleted",
     "deleteFailed": "Failed to delete comment",
     "deleteConfirm": "Are you sure you want to delete this comment?"
+  },
+  "apiTestImport": {
+    "title": "Import Cases",
+    "importType": "Import Type",
+    "targetCollection": "Target Collection",
+    "collectionPlaceholder": "Leave empty to create new collection",
+    "uploadFile": "Upload File",
+    "dragHint": "Click or drag file here",
+    "fileSizeHint": "file, recommended < 10MB",
+    "selectFile": "Please select a file first",
+    "startImport": "Start Import",
+    "importFailed": "Import failed",
+    "templateFailed": "Failed to download template",
+    "downloadTemplate": "Download CSV Import Template",
+    "resultTitle": "Import Result",
+    "total": "Total",
+    "imported": "Imported",
+    "failed": "Failed",
+    "errorDetails": "Error Details",
+    "moreErrors": "And {{count}} more errors..."
+  },
+  "versions": {
+    "title": "Version History",
+    "noVersions": "No version history yet",
+    "selectHint": "Click to select two versions for comparison",
+    "compare": "Compare",
+    "diffResult": "Diff Result",
+    "diffFailed": "Failed to compare versions"
   }
 }
