@@ -181,6 +181,47 @@ export const deleteTestReport = (reportId: number): Promise<ApiResponse> => {
   return api.delete(`/test-reports/${reportId}`) as Promise<ApiResponse>
 }
 
+// ==================== 多格式导出 ====================
+
+/**
+ * 下载文件的通用方法
+ * 处理 blob 响应并触发浏览器下载
+ */
+export const downloadFile = (blob: Blob, filename: string) => {
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(link.href)
+}
+
+/** 导出测试运行报告为 Excel */
+export const exportTestRunExcel = (runId: number): Promise<Blob> => {
+  return api.get(`/test-runs/${runId}/export/excel`, { responseType: 'blob' }).then((res: any) => res.data || res)
+}
+
+/** 导出测试运行报告为 PDF */
+export const exportTestRunPdf = (runId: number): Promise<Blob> => {
+  return api.get(`/test-runs/${runId}/export/pdf`, { responseType: 'blob' }).then((res: any) => res.data || res)
+}
+
+/** 导出测试运行报告为 CSV */
+export const exportTestRunCsv = (runId: number): Promise<Blob> => {
+  return api.get(`/test-runs/${runId}/export/csv`, { responseType: 'blob' }).then((res: any) => res.data || res)
+}
+
+/** 导出汇总 Excel 报告 */
+export const exportSummaryExcel = (params?: {
+  project_id?: number
+  test_type?: string
+  start_date?: string
+  end_date?: string
+}): Promise<Blob> => {
+  return api.get('/reports/export/excel', { params, responseType: 'blob' }).then((res: any) => res.data || res)
+}
+
 // 导出服务对象
 export const reportService = {
   getTestRuns,
@@ -196,6 +237,11 @@ export const reportService = {
   getTestReport,
   getTestReportHtml,
   deleteTestReport,
+  downloadFile,
+  exportTestRunExcel,
+  exportTestRunPdf,
+  exportTestRunCsv,
+  exportSummaryExcel,
 }
 
 export default reportService

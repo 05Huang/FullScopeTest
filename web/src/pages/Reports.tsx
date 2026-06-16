@@ -215,6 +215,31 @@ const Reports = () => {
     }
   }
 
+  /** 多格式导出：Excel / PDF / CSV */
+  const handleExportFormat = async (runId: number, format: 'excel' | 'pdf' | 'csv') => {
+    const report = findReportByRunId(runId)
+    const baseName = report ? getReportName(report) : `test-run-${runId}`
+    const dateStr = new Date().toISOString().slice(0, 10)
+    const extMap = { excel: 'xlsx', pdf: 'pdf', csv: 'csv' }
+    const filename = `${baseName}_${dateStr}.${extMap[format]}`
+
+    try {
+      let blob: Blob
+      if (format === 'excel') {
+        blob = await reportService.exportTestRunExcel(runId)
+      } else if (format === 'pdf') {
+        blob = await reportService.exportTestRunPdf(runId)
+      } else {
+        blob = await reportService.exportTestRunCsv(runId)
+      }
+      reportService.downloadFile(blob, filename)
+      message.success(t('reports.downloadStarted'))
+    } catch (error) {
+      message.error(t('reports.downloadFailed'))
+      console.error(error)
+    }
+  }
+
   const handleDelete = async (runId: number) => {
     const report = findReportByRunId(runId)
 
@@ -406,9 +431,21 @@ const Reports = () => {
               onClick={() => handleViewReport(record.id, record.test_object_name || `测试执行 #${record.id}`)}
             />
           </Tooltip>
-          <Tooltip title={t("reports.downloadJson")}>
-            <Button type="text" size="small" icon={<DownloadOutlined />} onClick={() => handleExportJson(record.id)} />
-          </Tooltip>
+          <Dropdown
+            menu={{
+              items: [
+                { key: 'json', label: 'JSON', onClick: () => handleExportJson(record.id) },
+                { key: 'excel', label: 'Excel (.xlsx)', onClick: () => handleExportFormat(record.id, 'excel') },
+                { key: 'pdf', label: 'PDF', onClick: () => handleExportFormat(record.id, 'pdf') },
+                { key: 'csv', label: 'CSV', onClick: () => handleExportFormat(record.id, 'csv') },
+              ],
+            }}
+            trigger={['click']}
+          >
+            <Tooltip title={t('reports.exportReport')}>
+              <Button type="text" size="small" icon={<DownloadOutlined />} />
+            </Tooltip>
+          </Dropdown>
           <Popconfirm title={t('reports.confirmDeleteRecord')} onConfirm={() => handleDelete(record.id)}>
             <Tooltip title={t("common.delete")}>
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />
