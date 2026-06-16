@@ -87,5 +87,32 @@ class OrganizationMember(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
 
+    def get_effective_role_name(self) -> str:
+        """
+        获取有效的 RBAC 角色名
+
+        将旧角色名（owner/member）映射到新 RBAC 角色名。
+        """
+        from .role import LEGACY_ROLE_MAPPING
+        return LEGACY_ROLE_MAPPING.get(self.role, self.role)
+
+    def has_permission(self, resource: str, action: str) -> bool:
+        """
+        检查成员是否拥有指定权限
+
+        优先使用 Role 表中的自定义权限，回退到系统角色映射。
+        """
+        effective_role = self.get_effective_role_name()
+        from .role import get_effective_permissions
+        permissions = get_effective_permissions(effective_role)
+        allowed_actions = permissions.get(resource, [])
+        return action in allowed_actions
+
+    def get_permissions(self) -> dict:
+        """获取成员的完整权限配置"""
+        effective_role = self.get_effective_role_name()
+        from .role import get_effective_permissions
+        return get_effective_permissions(effective_role)
+
     def __repr__(self):
         return f'<OrganizationMember org={self.organization_id} user={self.user_id} role={self.role}>'

@@ -30,6 +30,7 @@ from .api_token import ApiToken
 from .audit_log import AuditLog
 from .quota import Quota
 from .notification_config import NotificationConfig
+from .role import Role
 
 __all__ = [
     'User',
@@ -65,4 +66,5 @@ __all__ = [
     'AuditLog',
     'Quota',
     'NotificationConfig',
+    'Role',
 ]

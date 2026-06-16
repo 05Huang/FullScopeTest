@@ -117,6 +117,14 @@ def create_app(config_name='development'):
     from .middleware.security_headers import security_headers_middleware
     security_headers_middleware(app)
 
+    # 初始化 RBAC 权限注入中间件
+    from .middleware.permission import inject_user_permissions
+    inject_user_permissions(app)
+
+    # 应用启动时自动 seed 系统角色（幂等）
+    if os.environ.get('AUTO_SEED', '').lower() == 'true' or os.environ.get('SEED_RBAC', '').lower() == 'true':
+        _seed_system_roles(app)
+
     return app
 
 
@@ -174,6 +182,26 @@ def _seed_default_prompt_versions(app):
             db.session.commit()
     except Exception as exc:
         logger.warning('Failed to seed default PromptVersions', error=str(exc))
+
+
+def _seed_system_roles(app):
+    """在应用启动时自动创建系统角色（幂等操作）"""
+    try:
+        with app.app_context():
+            from .extensions import db
+            from sqlalchemy import inspect as sa_inspect
+            try:
+                inspector = sa_inspect(db.engine)
+                if not inspector.has_table("roles"):
+                    return
+            except Exception:
+                return
+
+            from .services.permission_service import seed_system_roles
+            seed_system_roles()
+            logger.info("System roles seeded successfully")
+    except Exception as exc:
+        logger.warning("Failed to seed system roles", error=str(exc))
 
 
 def init_extensions(app):
