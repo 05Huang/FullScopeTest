@@ -190,7 +190,8 @@
     "settings": "系统设置",
     "profile": "个人中心",
     "alertRules": "告警规则",
-    "organizations": "组织管理"
+    "organizations": "组织管理",
+    "auditLogs": "审计日志"
   },
   "header": {
     "logout": "退出登录",
@@ -869,5 +870,32 @@
     "roleDeleteSuccess": "角色已删除",
     "roleDeleteFailed": "删除失败",
     "roleDeleteConfirm": "确定要删除此自定义角色吗？"
+  },
+  "auditLogs": {
+    "title": "审计日志",
+    "operator": "操作人",
+    "action": "操作类型",
+    "resourceType": "资源类型",
+    "resourceId": "资源 ID",
+    "ipAddress": "IP 地址",
+    "detail": "详情",
+    "logDetail": "日志详情",
+    "changeDetails": "变更内容",
+    "oldValues": "旧值",
+    "newValues": "新值",
+    "noChanges": "无变更详情",
+    "noLogs": "暂无审计日志",
+    "fetchFailed": "获取审计日志失败",
+    "statsFailed": "获取统计数据失败",
+    "filterAction": "筛选操作类型",
+    "filterResourceType": "筛选资源类型",
+    "statistics": "审计统计",
+    "showStats": "查看统计",
+    "hideStats": "隐藏统计",
+    "last7Days": "最近 7 天",
+    "last30Days": "最近 30 天",
+    "last90Days": "最近 90 天",
+    "totalOperations": "总操作数",
+    "activeUsers": "活跃用户数"
   }
 }

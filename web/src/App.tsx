@@ -30,6 +30,7 @@ const VisualRegressionHistory = lazy(() => import('./pages/VisualRegressionHisto
 const AIInsightsDashboard = lazy(() => import('./pages/AIInsightsDashboard'))
 const OrganizationList = lazy(() => import('./pages/organizations/OrganizationList'))
 const OrganizationDetail = lazy(() => import('./pages/organizations/OrganizationDetail'))
+const AuditLogs = lazy(() => import('./pages/AuditLogs'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -242,6 +243,16 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <CICD />
+            </Suspense>
+          }
+        />
+
+        {/* 审计日志 */}
+        <Route
+          path="audit-logs"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <AuditLogs />
             </Suspense>
           }
         />

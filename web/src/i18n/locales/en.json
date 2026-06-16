@@ -190,7 +190,8 @@
     "settings": "Settings",
     "profile": "Profile",
     "alertRules": "Alert Rules",
-    "organizations": "Organizations"
+    "organizations": "Organizations",
+    "auditLogs": "Audit Logs"
   },
   "header": {
     "logout": "Log Out",
@@ -869,5 +870,32 @@
     "roleDeleteSuccess": "Role deleted",
     "roleDeleteFailed": "Deletion failed",
     "roleDeleteConfirm": "Are you sure you want to delete this custom role?"
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "operator": "Operator",
+    "action": "Action",
+    "resourceType": "Resource Type",
+    "resourceId": "Resource ID",
+    "ipAddress": "IP Address",
+    "detail": "Detail",
+    "logDetail": "Log Detail",
+    "changeDetails": "Change Details",
+    "oldValues": "Old Values",
+    "newValues": "New Values",
+    "noChanges": "No change details",
+    "noLogs": "No audit logs yet",
+    "fetchFailed": "Failed to fetch audit logs",
+    "statsFailed": "Failed to fetch statistics",
+    "filterAction": "Filter by action",
+    "filterResourceType": "Filter by resource type",
+    "statistics": "Audit Statistics",
+    "showStats": "Show Statistics",
+    "hideStats": "Hide Statistics",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days",
+    "totalOperations": "Total Operations",
+    "activeUsers": "Active Users"
   }
 }
