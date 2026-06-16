@@ -924,3 +924,31 @@ def get_trend_stats():
     except Exception as exc:
         logger.error("get trend stats failed", error=str(exc))
         return error_response(500, f'获取趋势统计失败: {str(exc)}')
+
+
+# ==================== 团队效能度量 ====================
+
+@api_bp.route('/reports/team-metrics', methods=['GET'])
+@jwt_required()
+def get_team_metrics():
+    """
+    获取团队效能度量数据
+
+    查询参数:
+        project_id: 项目 ID（可选）
+        days: 统计范围天数（默认 30）
+
+    返回:
+        {period_days, summary, members: [{user_id, username, cases_created, ...}]}
+    """
+    from ..services.team_metrics_service import get_team_metrics as _get_team_metrics
+
+    project_id = request.args.get('project_id', type=int)
+    days = request.args.get('days', 30, type=int)
+
+    try:
+        metrics = _get_team_metrics(project_id, days)
+        return success_response(data=metrics)
+    except Exception as exc:
+        logger.error("get team metrics failed", error=str(exc))
+        return error_response(500, f'获取团队效能数据失败: {str(exc)}')
