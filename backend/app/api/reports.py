@@ -811,3 +811,63 @@ def export_test_run_csv(run_id):
     except AppError as e:
         return error_response(e.code, e.message)
 
+
+# ==================== 质量趋势分析 ====================
+
+@api_bp.route('/reports/trend', methods=['GET'])
+@jwt_required()
+def get_quality_trend():
+    """
+    获取质量趋势数据
+
+    查询参数:
+        project_id: 项目 ID（可选，不传则全组织）
+        days: 时间范围天数（7/30/90，默认 30）
+        granularity: 聚合粒度（day/week/month，默认 week）
+
+    返回:
+        [{date, api, web, perf, total_runs, total_passed, total_failed}]
+    """
+    from ..services.trend_service import get_pass_rate_trend
+
+    project_id = request.args.get('project_id', type=int)
+    days = request.args.get('days', 30, type=int)
+    granularity = request.args.get('granularity', 'week')
+
+    if days not in (7, 30, 90):
+        return error_response(400, 'days 只能为 7, 30 或 90')
+    if granularity not in ('day', 'week', 'month'):
+        return error_response(400, 'granularity 只能为 day, week, month')
+
+    try:
+        trend = get_pass_rate_trend(project_id, days, granularity)
+        return success_response(data=trend)
+    except Exception as exc:
+        logger.error("get quality trend failed", error=str(exc))
+        return error_response(500, f'获取趋势数据失败: {str(exc)}')
+
+
+@api_bp.route('/reports/trend/stats', methods=['GET'])
+@jwt_required()
+def get_trend_stats():
+    """
+    获取趋势统计汇总数据
+
+    查询参数:
+        project_id: 项目 ID（可选）
+        days: 统计范围天数（默认 30）
+
+    返回:
+        {period_days, total_runs, pass_rate, by_type, daily}
+    """
+    from ..services.trend_service import get_dashboard_stats
+
+    project_id = request.args.get('project_id', type=int)
+    days = request.args.get('days', 30, type=int)
+
+    try:
+        stats = get_dashboard_stats(project_id, days)
+        return success_response(data=stats)
+    except Exception as exc:
+        logger.error("get trend stats failed", error=str(exc))
+        return error_response(500, f'获取趋势统计失败: {str(exc)}')
