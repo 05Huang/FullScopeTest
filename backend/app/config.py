@@ -164,6 +164,10 @@ class DevelopmentConfig(BaseConfig):
     else:
         SQLALCHEMY_DATABASE_URI = _raw_db_url
     SQLALCHEMY_ECHO = True  # 开发时打印 SQL
+    # SQLite 不支持连接池，使用 NullPool 避免 "database is locked" 错误
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+    }
 
 
 class TestingConfig(BaseConfig):

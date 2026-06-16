@@ -118,6 +118,7 @@ class _DatabaseManager:
         Flask-SQLAlchemy 风格的初始化
 
         从 Flask app config 中读取数据库 URL 并创建引擎。
+        SQLite 自动使用 NullPool。
         """
         database_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
         if not database_uri:
@@ -127,6 +128,12 @@ class _DatabaseManager:
             )
 
         engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+
+        # SQLite 自动使用 NullPool（避免 "database is locked" 错误）
+        if database_uri.startswith('sqlite'):
+            from sqlalchemy.pool import NullPool
+            engine_options.setdefault('poolclass', NullPool)
+
         self._engine = create_engine(database_uri, **engine_options)
 
         self._session_factory = sessionmaker(bind=self._engine)
@@ -143,12 +150,18 @@ class _DatabaseManager:
         独立初始化（无 Flask）
 
         用于 FastAPI 或测试场景。
+        SQLite 自动使用 NullPool 避免连接池问题。
         """
         if database_url is None:
             database_url = os.environ.get(
                 'DATABASE_URL',
                 'sqlite:///fullscopetest.db'
             )
+
+        # SQLite 自动使用 NullPool（避免 "database is locked" 错误）
+        if database_url.startswith('sqlite'):
+            from sqlalchemy.pool import NullPool
+            engine_options.setdefault('poolclass', NullPool)
 
         self._engine = create_engine(database_url, **engine_options)
         self._session_factory = sessionmaker(bind=self._engine)

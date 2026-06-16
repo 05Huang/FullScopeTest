@@ -112,10 +112,40 @@ def health_check():
 # ── 组件检查函数 ──────────────────────────────────────────────────────────────
 
 def _check_database() -> dict:
-    """检查数据库连通性"""
+    """检查数据库连通性和连接池状态"""
     try:
         db.session.execute(sa_text('SELECT 1'))
-        return {'status': 'ok'}
+        result = {'status': 'ok'}
+        # 连接池状态（仅在有真实连接池时报告，跳过 NullPool）
+        try:
+            pool = db.engine.pool
+            from sqlalchemy.pool import NullPool
+            if isinstance(pool, NullPool):
+                # NullPool 不维护连接池，跳过统计
+                return result
+            pool_status = {
+                'pool_size': pool.size(),
+                'checked_in': pool.checkedin(),
+                'checked_out': pool.checkedout(),
+                'overflow': pool.overflow(),
+            }
+            result['pool'] = pool_status
+            # 连接池使用率告警（超过 80%）
+            total_capacity = pool.size() + pool.overflow()
+            if total_capacity > 0:
+                usage = pool.checkedout() / total_capacity
+                if usage > 0.8:
+                    result['status'] = 'warning'
+                    result['message'] = f'连接池使用率过高: {usage:.0%}'
+                    logger.warning(
+                        "数据库连接池使用率过高",
+                        checked_out=pool.checkedout(),
+                        total_capacity=total_capacity,
+                        usage=f"{usage:.0%}",
+                    )
+        except (AttributeError, NotImplementedError, TypeError):
+            pass  # 某些 pool 实现不支持这些方法
+        return result
     except Exception as e:
         logger.error("数据库健康检查失败", error=str(e))
         return {'status': 'error', 'message': str(e)}
