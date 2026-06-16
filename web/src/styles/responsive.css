@@ -1,0 +1,133 @@
+/**
+ * 响应式样式
+ *
+ * 断点：
+ * - mobile: < 768px
+ * - tablet: 768px - 1024px
+ * - desktop: > 1024px
+ */
+
+/* ─── 移动端 (< 768px) ─── */
+@media (max-width: 767px) {
+  /* 侧边栏隐藏 */
+  .fst-app-root > aside {
+    display: none !important;
+  }
+
+  /* 主内容区全宽 */
+  .fst-app-root > div:last-of-type {
+    margin-left: 0 !important;
+  }
+
+  /* 顶栏简化 */
+  header {
+    padding: 0 12px !important;
+    height: 56px !important;
+  }
+
+  /* 页面内边距缩小 */
+  main {
+    padding: 12px !important;
+  }
+
+  /* 表格响应式：隐藏部分列 */
+  .ant-table {
+    font-size: 13px;
+  }
+
+  /* 按钮触控友好 */
+  .ant-btn {
+    min-height: 40px;
+  }
+
+  /* 弹窗全屏 */
+  .ant-modal {
+    max-width: 100vw !important;
+    padding: 0 !important;
+  }
+
+  .ant-modal-content {
+    border-radius: 0 !important;
+    min-height: 100vh;
+  }
+
+  /* 卡片间距 */
+  .ant-card {
+    margin-bottom: 8px;
+  }
+
+  /* 图表自适应 */
+  .echarts-for-react {
+    width: 100% !important;
+  }
+
+  /* 页脚隐藏 */
+  .fst-app-footer {
+    display: none;
+  }
+
+  /* 移动端底部 Tab 栏 */
+  .fst-mobile-tab-bar {
+    display: flex !important;
+  }
+}
+
+/* ─── 平板 (768px - 1024px) ─── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .fst-app-root > aside {
+    width: 72px !important;
+  }
+
+  .fst-app-root > div:last-of-type {
+    margin-left: 72px !important;
+  }
+
+  main {
+    padding: 16px !important;
+  }
+}
+
+/* ─── 桌面 (> 1024px) — 默认样式，无需额外规则 ─── */
+
+/* ─── 移动端底部 Tab 栏（默认隐藏） ─── */
+.fst-mobile-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--fst-glass-bg, #fff);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--fst-outline-soft, #f0f0f0);
+  z-index: 100;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+}
+
+.fst-mobile-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--fst-on-surface-variant, #999);
+  text-decoration: none;
+  padding: 4px 12px;
+  border-radius: 8px;
+  transition: color 150ms;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.fst-mobile-tab-item.is-active {
+  color: var(--fst-primary, #2D6A64);
+  font-weight: 600;
+}
+
+.fst-mobile-tab-item .anticon {
+  font-size: 20px;
+}
