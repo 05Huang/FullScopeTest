@@ -35,6 +35,7 @@ from .test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
 from .issue_link import IssueLink
 from .test_case_version import TestCaseVersion
 from .comment import Comment
+from .embedding_cache import EmbeddingCache
 
 __all__ = [
     'User',
@@ -77,4 +78,5 @@ __all__ = [
     'IssueLink',
     'TestCaseVersion',
     'Comment',
+    'EmbeddingCache',
 ]
