@@ -1118,5 +1118,18 @@
     "compare": "对比",
     "diffResult": "差异对比结果",
     "diffFailed": "版本对比失败"
+  },
+  "apiTestDedup": {
+    "title": "语义去重结果",
+    "analyzing": "AI 正在分析用例相似度，请稍候...",
+    "noDuplicates": "未发现重复用例",
+    "foundGroups": "发现 {{count}} 组相似用例",
+    "group": "相似组",
+    "similarity": "相似度",
+    "recommended": "建议保留",
+    "selectAllDuplicates": "选中所有重复项",
+    "deleteSelected": "删除选中",
+    "deleteSuccess": "已删除 {{count}} 条重复用例",
+    "deleteFailed": "删除失败"
   }
 }

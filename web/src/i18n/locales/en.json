@@ -1118,5 +1118,18 @@
     "compare": "Compare",
     "diffResult": "Diff Result",
     "diffFailed": "Failed to compare versions"
+  },
+  "apiTestDedup": {
+    "title": "Semantic Deduplication Result",
+    "analyzing": "AI is analyzing case similarity, please wait...",
+    "noDuplicates": "No duplicate cases found",
+    "foundGroups": "Found {{count}} groups of similar cases",
+    "group": "Similar Group",
+    "similarity": "Similarity",
+    "recommended": "Recommended",
+    "selectAllDuplicates": "Select All Duplicates",
+    "deleteSelected": "Delete Selected",
+    "deleteSuccess": "Deleted {{count}} duplicate cases",
+    "deleteFailed": "Deletion failed"
   }
 }
