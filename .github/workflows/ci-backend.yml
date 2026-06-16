@@ -35,13 +35,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install -r backend/requirements-test.txt
-          pip install ruff
+          pip install ruff pytest-cov
 
       - name: Lint with ruff
         run: |
           ruff check backend/app/ --select E,F,W --ignore E501,F841
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: backend
         env:
           FLASK_ENV: testing
@@ -49,7 +49,7 @@ jobs:
           JWT_SECRET_KEY: test-jwt-secret-ci
           CELERY_ENABLE: "false"
         run: |
-          python -m pytest tests/ -v --tb=short -x 2>&1 | head -200
+          python -m pytest tests/ -v --tb=short -x --cov=app --cov-report=xml --cov-report=term -q 2>&1 | head -200
 
       - name: Upload test results
         if: always()
@@ -58,3 +58,11 @@ jobs:
           name: backend-test-results-py${{ matrix.python-version }}
           path: backend/.pytest_cache/
           retention-days: 7
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          retention-days: 30

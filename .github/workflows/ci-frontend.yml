@@ -37,9 +37,17 @@ jobs:
         working-directory: web
         run: npx tsc --noEmit
 
-      - name: Unit tests
+      - name: Unit tests with coverage
         working-directory: web
-        run: npm test -- --run --reporter=verbose 2>&1 | head -200
+        run: npm test -- --run --reporter=verbose --coverage 2>&1 | head -200
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: web/coverage/
+          retention-days: 30
 
       - name: Build
         working-directory: web
