@@ -111,6 +111,10 @@ def create_app(config_name='development'):
     from .middleware.security_headers import security_headers_middleware
     security_headers_middleware(app)
 
+    # 初始化请求限制中间件（超时 + Body 大小）
+    from .middleware.request_limits import request_limits_middleware
+    request_limits_middleware(app)
+
     # 初始化 RBAC 权限注入中间件
     from .middleware.permission import inject_user_permissions
     inject_user_permissions(app)
