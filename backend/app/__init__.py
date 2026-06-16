@@ -121,6 +121,9 @@ def create_app(config_name='development'):
     from .middleware.permission import inject_user_permissions
     inject_user_permissions(app)
 
+    # 初始化插件系统
+    _init_plugins(app)
+
     # 应用启动时自动 seed 系统角色（幂等）
     if os.environ.get('AUTO_SEED', '').lower() == 'true' or os.environ.get('SEED_RBAC', '').lower() == 'true':
         _seed_system_roles(app)
@@ -182,6 +185,29 @@ def _seed_default_prompt_versions(app):
             db.session.commit()
     except Exception as exc:
         logger.warning('Failed to seed default PromptVersions', error=str(exc))
+
+
+def _init_plugins(app):
+    """初始化插件系统：自动发现并加载插件"""
+    try:
+        from .plugins.registry import plugin_registry
+        # 自动扫描 custom/ 目录下的插件
+        plugin_registry.auto_discover()
+        # 注册内置插件（如有）
+        _register_builtin_plugins(plugin_registry)
+        # 初始化所有插件
+        plugin_registry.init_all(app)
+    except Exception as exc:
+        logger.warning("插件系统初始化失败", error=str(exc))
+
+
+def _register_builtin_plugins(registry):
+    """注册内置插件"""
+    try:
+        from .plugins.custom.slack_notify import SlackNotifyPlugin
+        registry.register(SlackNotifyPlugin())
+    except Exception:
+        pass  # 内置插件加载失败不影响启动
 
 
 def _seed_system_roles(app):
