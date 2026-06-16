@@ -97,23 +97,65 @@ def login():
     请求体:
         username: 用户名或邮箱
         password: 密码
+
+    安全机制：
+        - 连续 5 次登录失败后锁定账户 15 分钟
+        - 锁定状态下返回 HTTP 423
+        - 成功登录后重置失败计数
     """
+    from ..services.password_policy import (
+        is_account_locked, record_login_failure, reset_login_failures, get_login_failures,
+    )
+
     data = request.get_json()
-    
+
     username = data['username'].strip()
     password = data['password']
-    
+    ip_address = request.remote_addr
+
     # 支持用户名或邮箱登录
     user = User.query.filter(
         (User.username == username) | (User.email == username.lower())
     ).first()
-    
-    if not user or not check_password_hash(user.password_hash, password):
+
+    # 用户不存在时也记录（但不锁定，因为没有 user_id）
+    if not user:
+        logger.warning("登录失败：用户不存在", username=username, ip=ip_address)
         return error_response(401, '用户名或密码错误')
-    
+
+    # 检查账户锁定状态
+    locked, remaining = is_account_locked(user.id)
+    if locked:
+        logger.warning("登录尝试：账户已锁定",
+                       user_id=user.id, username=username,
+                       remaining_seconds=remaining, ip=ip_address)
+        return error_response(
+            423,
+            f'账户已锁定，请在 {remaining // 60} 分 {remaining % 60} 秒后重试',
+            errors={
+                'locked': True,
+                'remaining_seconds': remaining,
+                'max_failures': 5,
+            },
+        )
+
+    # 验证密码
+    if not check_password_hash(user.password_hash, password):
+        record_login_failure(user.id, ip_address=ip_address, username=username)
+        failures = get_login_failures(user.id)
+        return error_response(
+            401,
+            '用户名或密码错误',
+            errors={'failures': failures, 'max_failures': 5},
+        )
+
+    # 检查账户是否激活
     if not user.is_active:
         return error_response(403, '账号已被禁用')
-    
+
+    # 登录成功：重置失败计数
+    reset_login_failures(user.id)
+
     # 更新最后登录时间
     user.update_last_login()
 
