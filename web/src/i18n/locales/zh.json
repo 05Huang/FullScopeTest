@@ -45,7 +45,8 @@
     "cancelled": "已取消",
     "batchRun": "批量执行",
     "more": "更多",
-    "copy": "复制"
+    "copy": "复制",
+    "selected": "已选择"
   },
   "login": {
     "title": "欢迎使用 FullScopeTest",
@@ -1131,5 +1132,17 @@
     "deleteSelected": "删除选中",
     "deleteSuccess": "已删除 {{count}} 条重复用例",
     "deleteFailed": "删除失败"
+  },
+  "shortcuts": {
+    "title": "快捷键",
+    "globalSection": "全局",
+    "apiTestSection": "接口测试",
+    "globalSearch": "全局搜索",
+    "help": "快捷键帮助",
+    "toggleSidebar": "切换侧边栏",
+    "sendRequest": "发送请求",
+    "saveCase": "保存用例",
+    "clearResponse": "清空响应",
+    "duplicateCase": "复制用例"
   }
 }

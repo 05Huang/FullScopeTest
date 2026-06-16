@@ -45,7 +45,8 @@
     "cancelled": "Cancelled",
     "batchRun": "Batch Run",
     "more": "More",
-    "copy": "Copy"
+    "copy": "Copy",
+    "selected": "Selected"
   },
   "login": {
     "title": "Welcome to FullScopeTest",
@@ -1131,5 +1132,17 @@
     "deleteSelected": "Delete Selected",
     "deleteSuccess": "Deleted {{count}} duplicate cases",
     "deleteFailed": "Deletion failed"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "globalSection": "Global",
+    "apiTestSection": "API Testing",
+    "globalSearch": "Global Search",
+    "help": "Shortcuts Help",
+    "toggleSidebar": "Toggle Sidebar",
+    "sendRequest": "Send Request",
+    "saveCase": "Save Case",
+    "clearResponse": "Clear Response",
+    "duplicateCase": "Duplicate Case"
   }
 }
