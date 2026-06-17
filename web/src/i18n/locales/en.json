@@ -76,6 +76,8 @@
     "goLogin": "Log In",
     "loginSuccess": "Login successful!",
     "loginFailed": "Login failed. Please check your username and password.",
+    "inviteCodePlaceholder": "Organization invite code (optional, leave empty for personal space)",
+    "inviteCodeHint": "Enter an invite code to join a team directly, or leave empty to create a personal space",
     "autoFillHint": "Guest credentials auto-filled. Click Login to enter.",
     "mobileHint": "For best experience, please use the desktop version.",
     "slogan1": "See test coverage clearly, control risks effectively",

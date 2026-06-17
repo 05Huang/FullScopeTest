@@ -16,6 +16,7 @@ interface RegisterForm {
   email: string
   password: string
   confirmPassword: string
+  invite_code?: string
 }
 
 type AuthMode = 'login' | 'register'
@@ -243,7 +244,7 @@ const Login = () => {
       { name: 'confirmPassword', errors: [] },
     ])
     try {
-      await authService.register(values.username, values.email, values.password)
+      await authService.register(values.username, values.email, values.password, values.invite_code)
       message.success(t('login.register.registerSuccess'))
       navigate('/login')
     } catch (error: any) {
@@ -480,6 +481,19 @@ const Login = () => {
                       }
                     />
                   </Form.Item>
+
+                  {/* 组织邀请码（可选） */}
+                  <Form.Item name="invite_code" style={{ marginBottom: 16 }}>
+                    <Input
+                      className="fst-auth-input"
+                      placeholder={t('login.register.inviteCodePlaceholder') || '组织邀请码（可选，留空创建个人空间）'}
+                      aria-label={t('login.register.inviteCode') || 'Organization invite code'}
+                      maxLength={20}
+                    />
+                  </Form.Item>
+                  <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)', marginTop: -12, marginBottom: 16 }}>
+                    {t('login.register.inviteCodeHint') || '输入组织邀请码可直接加入团队，留空则创建个人空间'}
+                  </div>
 
                   <Form.Item style={{ marginBottom: 16 }}>
                     <Button htmlType="submit" loading={registerLoading} block className="fst-auth-submit">

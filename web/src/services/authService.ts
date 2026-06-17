@@ -26,8 +26,8 @@ export const login = (username: string, password: string): Promise<ApiResponse<A
 }
 
 // 用户注册
-export const register = (username: string, email: string, password: string): Promise<ApiResponse> => {
-  return api.post('/auth/register', { username, email, password }) as Promise<ApiResponse>
+export const register = (username: string, email: string, password: string, invite_code?: string): Promise<ApiResponse> => {
+  return api.post('/auth/register', { username, email, password, invite_code: invite_code || undefined }) as Promise<ApiResponse>
 }
 
 // 获取当前用户信息

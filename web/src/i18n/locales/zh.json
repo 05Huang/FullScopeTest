@@ -76,6 +76,8 @@
     "goLogin": "去登录",
     "loginSuccess": "登录成功！",
     "loginFailed": "登录失败，请检查用户名和密码",
+    "inviteCodePlaceholder": "组织邀请码（可选，留空创建个人空间）",
+    "inviteCodeHint": "输入组织邀请码可直接加入团队，留空则创建个人空间",
     "autoFillHint": "已自动填充游客账户密码，您可直接点击登录进入系统",
     "mobileHint": "建议使用PC端，以获得更佳体验",
     "slogan1": "把测试覆盖看得见，把风险收得住",

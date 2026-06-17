@@ -43,12 +43,14 @@ def register():
         username: 用户名 (3-50字符)
         email: 邮箱地址
         password: 密码 (至少8位，包含大小写字母、数字、特殊字符)
+        invite_code: 组织邀请码 (可选，留空则创建个人空间)
     """
     data = request.get_json()
 
     username = data['username'].strip()
     email = data['email'].strip().lower()
     password = data['password']
+    invite_code = data.get('invite_code', '').strip()
 
     # 验证用户名长度
     if len(username) < 3 or len(username) > 50:
@@ -62,15 +64,23 @@ def register():
     is_valid, error_msg = validate_password_strength(password)
     if not is_valid:
         return error_response(400, error_msg)
-    
+
     # 检查用户名是否已存在
     if User.query.filter_by(username=username).first():
         return error_response(400, '用户名已被使用')
-    
+
     # 检查邮箱是否已存在
     if User.query.filter_by(email=email).first():
         return error_response(400, '邮箱已被注册')
-    
+
+    # 验证邀请码
+    target_org = None
+    if invite_code:
+        from ..models.organization import Organization
+        target_org = Organization.query.filter_by(invite_code=invite_code, is_active=True).first()
+        if not target_org:
+            return error_response(400, '邀请码无效或组织已禁用')
+
     # 创建用户
     user = User(
         username=username,
@@ -81,14 +91,31 @@ def register():
     db.session.add(user)
     db.session.flush()  # 获取 user.id
 
-    # 自动创建个人空间组织
-    from ..middleware.tenant import ensure_user_has_organization
-    ensure_user_has_organization(user.id)
-
-    db.session.commit()
-
-    return success_response(
-        data={'user_id': user.id, 'username': user.username, 'role': user.role},
+    if target_org:
+        # 加入邀请码对应的组织
+        from ..models.organization import OrganizationMember
+        member = OrganizationMember(
+            organization_id=target_org.id,
+            user_id=user.id,
+            role='member',
+            invited_by=target_org.owner_id,
+            is_active=True,
+        )
+        db.session.add(member)
+        db.session.commit()
+        return success_response(
+            data={'user_id': user.id, 'username': user.username, 'role': user.role,
+                  'organization': target_org.to_dict()},
+            message=f'注册成功，已加入组织「{target_org.name}」',
+            code=201
+        )
+    else:
+        # 无邀请码，创建个人空间
+        from ..middleware.tenant import ensure_user_has_organization
+        ensure_user_has_organization(user.id)
+        db.session.commit()
+        return success_response(
+            data={'user_id': user.id, 'username': user.username, 'role': user.role},
         message='注册成功',
         code=201
     )

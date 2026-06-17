@@ -4,6 +4,7 @@
 存储组织信息和成员关系
 """
 
+import secrets
 from datetime import datetime
 from ..extensions import db
 
@@ -14,6 +15,7 @@ class Organization(db.Model):
     __tablename__ = 'organizations'
     __table_args__ = (
         db.Index('idx_organizations_owner_id', 'owner_id'),
+        db.Index('idx_organizations_invite_code', 'invite_code'),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -22,6 +24,7 @@ class Organization(db.Model):
     description = db.Column(db.Text, comment='组织描述')
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='创建者 ID')
     avatar = db.Column(db.String(500), comment='组织头像 URL')
+    invite_code = db.Column(db.String(20), unique=True, nullable=True, comment='邀请码')
     settings = db.Column(db.JSON, default=dict, comment='组织设置')
     is_active = db.Column(db.Boolean, default=True, comment='是否激活')
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
@@ -32,6 +35,11 @@ class Organization(db.Model):
     members = db.relationship('OrganizationMember', backref='organization', lazy='dynamic', cascade='all, delete-orphan')
     projects = db.relationship('Project', backref='organization', lazy='dynamic')
 
+    def generate_invite_code(self):
+        """生成 8 位邀请码"""
+        self.invite_code = secrets.token_urlsafe(6).upper()[:8]
+        return self.invite_code
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -40,6 +48,7 @@ class Organization(db.Model):
             'description': self.description,
             'owner_id': self.owner_id,
             'avatar': self.avatar,
+            'invite_code': self.invite_code,
             'settings': self.settings,
             'is_active': self.is_active,
             'member_count': self.members.count(),
