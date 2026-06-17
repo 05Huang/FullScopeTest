@@ -486,13 +486,13 @@ const Login = () => {
                   <Form.Item name="invite_code" style={{ marginBottom: 16 }}>
                     <Input
                       className="fst-auth-input"
-                      placeholder={t('login.register.inviteCodePlaceholder') || '组织邀请码（可选，留空创建个人空间）'}
-                      aria-label={t('login.register.inviteCode') || 'Organization invite code'}
+                      placeholder={t('login.inviteCodePlaceholder') || '组织邀请码（可选，留空创建个人空间）'}
+                      aria-label={t('login.inviteCodePlaceholder') || 'Organization invite code'}
                       maxLength={20}
                     />
                   </Form.Item>
                   <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)', marginTop: -12, marginBottom: 16 }}>
-                    {t('login.register.inviteCodeHint') || '输入组织邀请码可直接加入团队，留空则创建个人空间'}
+                    {t('login.inviteCodeHint') || '输入组织邀请码可直接加入团队，留空则创建个人空间'}
                   </div>
 
                   <Form.Item style={{ marginBottom: 16 }}>
