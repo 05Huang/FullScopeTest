@@ -19,24 +19,23 @@ interface Message {
   status?: 'pending' | 'done' | 'error';
 }
 
-const AppBrandMark = ({ size = 22 }: { size?: number }) => (
+/** AI 图标 — 与右下角悬浮按钮完全一致 */
+const AiIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 64 64"
+    viewBox="0 0 24 24"
     fill="none"
     style={{ display: 'block' }}
     aria-hidden="true"
     focusable="false"
   >
-    <path
-      d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
-      fill="rgba(255,255,255,0.85)"
-    />
-    <path d="M22 23h24" stroke="rgba(61,110,102,0.5)" strokeWidth="2.5" strokeLinecap="round" />
-    <path d="M22 45h18" stroke="rgba(61,110,102,0.35)" strokeWidth="2.5" strokeLinecap="round" />
-    <circle cx="46" cy="16" r="6" fill="rgba(215,181,109,0.9)" />
-    <path d="M44 16l1.5 1.5 3-3" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 2a7 7 0 0 1 7 7c0 2.4-1 4-2.4 5.8-.8 1-1.5 2.2-1.8 3.6-.1.6-.6 1-1.2 1h-3.2c-.6 0-1.1-.4-1.2-1-.3-1.4-1-2.6-1.8-3.6C6 13 5 11.4 5 9a7 7 0 0 1 7-7z" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    <circle cx="9.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
+    <circle cx="14.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
+    <path d="M10 16c1.1 1.2 2.9 1.2 4 0" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+    <path d="M18 9c0 0 1-1 1-3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+    <path d="M6 9c0 0-1-1-1-3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
   </svg>
 );
 
@@ -475,8 +474,13 @@ const GlobalCopilot: React.FC = () => {
           title={
             <div className="fst-copilot-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onPointerDown={handlePanelPointerDown}>
               <Space>
-                <span className="fst-copilot-header-icon" aria-hidden="true">
-                  <AppBrandMark size={20} />
+                <span className="fst-copilot-header-icon" aria-hidden="true" style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(61,110,102,0.2)',
+                }}>
+                  <AiIcon size={18} />
                 </span>
                 <span className="fst-copilot-header-title">{t('copilot.title')}</span>
               </Space>
@@ -544,9 +548,9 @@ const GlobalCopilot: React.FC = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
-                        boxShadow: '0 2px 8px rgba(61, 110, 102, 0.2)',
+                        boxShadow: '0 2px 8px rgba(61, 110, 102,0.2)',
                       }}>
-                        <AppBrandMark size={24} />
+                        <AiIcon size={20} />
                       </div>
                     )}
                     <div style={{
