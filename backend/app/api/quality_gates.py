@@ -13,18 +13,21 @@ from ..models.project import Project
 from ..models.test_run import TestRun
 from ..utils.response import success_response, error_response
 from ..utils import get_current_user_id
+from ..utils.org_filter import filter_by_org_projects, filter_by_owner_or_org
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 def _get_gate_with_permission(gate_id, user_id):
-    """获取质量门禁并验证用户权限（通过 Project.owner_id）"""
+    """获取质量门禁并验证用户权限（通过组织隔离）"""
     gate = QualityGate.query.get(gate_id)
     if not gate:
         return None, error_response(404, '质量门禁不存在')
-    project = Project.query.get(gate.project_id)
-    if not project or project.owner_id != user_id:
+    # 验证项目属于当前组织
+    query = filter_by_owner_or_org(Project.query, Project, user_id)
+    project = query.filter_by(id=gate.project_id).first()
+    if not project:
         logger.warning('IDOR attempt blocked on quality_gate',
                        user_id=user_id, gate_id=gate_id)
         return None, error_response(404, '质量门禁不存在')
@@ -38,6 +41,8 @@ def get_quality_gates():
     project_id = request.args.get('project_id', type=int)
 
     query = QualityGate.query
+    # 组织隔离
+    query = filter_by_org_projects(query, QualityGate, 'project_id')
     if project_id:
         query = query.filter_by(project_id=project_id)
 

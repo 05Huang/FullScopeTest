@@ -13,6 +13,7 @@ from ..models.project import Project
 from ..models.environment import Environment
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_json
+from ..utils.org_filter import filter_by_org_projects, filter_by_owner_or_org
 from ..utils import get_current_user_id
 from ..services.cache_service import get_cache_service, environments_key, ENVIRONMENTS_TTL
 
@@ -31,8 +32,8 @@ def get_all_environments():
         if cached is not None:
             return success_response(data=cached)
 
-    # 获取用户所有项目
-    user_projects = Project.query.filter_by(owner_id=user_id).all()
+    # 获取用户所有项目（组织隔离）
+    user_projects = filter_by_owner_or_org(Project.query, Project, user_id).all()
     project_ids = [p.id for p in user_projects]
 
     if not project_ids:
@@ -80,8 +81,9 @@ def create_global_environment():
             db.session.commit()
         project_id = project.id
     else:
-        # 验证项目权限
-        project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
+        # 验证项目权限（组织隔离）
+        query = filter_by_owner_or_org(Project.query, Project, user_id)
+        project = query.filter_by(id=project_id).first()
         if not project:
             return error_response(404, '项目不存在')
     

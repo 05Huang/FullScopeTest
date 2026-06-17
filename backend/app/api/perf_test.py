@@ -13,6 +13,7 @@ from ..models.perf_test_result import PerformanceTestResult, PerformanceMetricSa
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required, is_valid_url, is_valid_http_method
 from ..utils.url_safety import is_safe_url
+from ..utils.org_filter import filter_by_org_projects, filter_by_owner_or_org
 from ..utils import get_current_user_id
 from ..tasks import run_perf_test_task
 from ..utils.ai_script_generator import generate_test_script
@@ -350,7 +351,8 @@ def get_scenario(scenario_id):
 def update_scenario(scenario_id):
     """Update a performance test scenario."""
     user_id = get_current_user_id()
-    scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
+    query = filter_by_org_projects(PerfTestScenario.query, PerfTestScenario)
+    scenario = query.filter_by(id=scenario_id, user_id=user_id).first()
 
     if not scenario:
         return error_response(404, 'Scenario not found')
@@ -475,7 +477,8 @@ def delete_scenario(scenario_id):
 def run_scenario(scenario_id):
     """Run a performance test scenario (async)."""
     user_id = get_current_user_id()
-    scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
+    query = filter_by_org_projects(PerfTestScenario.query, PerfTestScenario)
+    scenario = query.filter_by(id=scenario_id, user_id=user_id).first()
 
     if not scenario:
         return error_response(404, 'Scenario not found')
@@ -561,7 +564,8 @@ def run_scenario(scenario_id):
 def stop_scenario(scenario_id):
     """停止运行中的性能测试"""
     user_id = get_current_user_id()
-    scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
+    query = filter_by_org_projects(PerfTestScenario.query, PerfTestScenario)
+    scenario = query.filter_by(id=scenario_id, user_id=user_id).first()
     
     if not scenario:
         return error_response(404, '场景不存在')
@@ -589,7 +593,8 @@ def stop_scenario(scenario_id):
 def get_scenario_status(scenario_id):
     """获取场景执行状态"""
     user_id = get_current_user_id()
-    scenario = PerfTestScenario.query.filter_by(id=scenario_id, user_id=user_id).first()
+    query = filter_by_org_projects(PerfTestScenario.query, PerfTestScenario)
+    scenario = query.filter_by(id=scenario_id, user_id=user_id).first()
 
     if not scenario:
         return error_response(404, '场景不存在')
@@ -636,9 +641,10 @@ def compare_performance_runs():
 
     # 查询所有匹配的结果
     from app.models.perf_test_result import PerformanceTestResult
-    results = PerformanceTestResult.query.filter(
-        PerformanceTestResult.id.in_(run_ids)
-    ).all()
+    from ..utils.org_filter import filter_by_org_projects
+    results = filter_by_org_projects(
+        PerformanceTestResult.query, PerformanceTestResult, 'scenario_id'
+    ).filter(PerformanceTestResult.id.in_(run_ids)).all()
 
     if len(results) == 0:
         return error_response(404, '未找到匹配的性能测试结果')

@@ -9,6 +9,7 @@ from ..extensions import db
 from ..models.test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
 from ..models.api_test_case import ApiTestCase
 from ..utils.exceptions import NotFoundError, ValidationError
+from ..utils.org_filter import filter_by_org_projects, get_org_id_for_create
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -77,6 +78,8 @@ class PlanService(BaseService):
             分页结果
         """
         query = TestPlan.query.filter_by(project_id=project_id)
+        # 组织隔离：确保项目属于当前组织
+        query = filter_by_org_projects(query, TestPlan, 'project_id')
         if status:
             query = query.filter_by(status=status)
 
