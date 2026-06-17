@@ -564,7 +564,7 @@ body {
 .fst-auth-card {
   width: 100%;
   max-width: 468px;
-  height: min(640px, calc(100dvh - 48px));
+  max-height: min(680px, calc(100dvh - 48px));
   min-height: 520px;
   padding: 28px 28px 22px;
   border-radius: 26px;
@@ -573,7 +573,8 @@ body {
   box-shadow: 0 28px 90px rgba(15, 45, 40, 0.18);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   perspective: 1200px;
   animation: fst-auth-card-in 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1024,7 +1025,7 @@ body {
   .fst-auth-card {
     padding: 22px 18px 18px;
     border-radius: 22px;
-    height: calc(100dvh - 32px);
+    max-height: calc(100dvh - 32px);
     min-height: 0;
   }
   .fst-auth-header {
