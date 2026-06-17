@@ -111,3 +111,203 @@
 [data-theme="dark"] .fst-site-footer-link {
   color: var(--fst-on-surface-variant);
 }
+
+/* ─── 暗色模式下侧边栏导航项 hover ─── */
+[data-theme="dark"] aside button:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ─── 暗色模式下 Popover ─── */
+[data-theme="dark"] .ant-popover-inner {
+  background: var(--fst-surface-variant);
+}
+
+[data-theme="dark"] .ant-popover-arrow::before {
+  background: var(--fst-surface-variant);
+}
+
+/* ─── 暗色模式下 Tag ─── */
+[data-theme="dark"] .ant-tag {
+  background: var(--fst-surface-container);
+  border-color: var(--fst-outline-soft);
+  color: var(--fst-on-surface-variant);
+}
+
+/* ─── 暗色模式下 Tabs ─── */
+[data-theme="dark"] .ant-tabs-tab {
+  color: var(--fst-on-surface-variant);
+}
+
+[data-theme="dark"] .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--fst-primary);
+}
+
+[data-theme="dark"] .ant-tabs-ink-bar {
+  background: var(--fst-primary);
+}
+
+/* ─── 暗色模式下 Select 下拉 ─── */
+[data-theme="dark"] .ant-select-dropdown {
+  background: var(--fst-surface-variant);
+  border: 1px solid var(--fst-outline-soft);
+}
+
+[data-theme="dark"] .ant-select-item {
+  color: var(--fst-on-surface);
+}
+
+[data-theme="dark"] .ant-select-item-option-active {
+  background: var(--fst-surface-container);
+}
+
+[data-theme="dark"] .ant-select-item-option-selected {
+  background: var(--fst-primary-container);
+}
+
+/* ─── 暗色模式下 Tooltip ─── */
+[data-theme="dark"] .ant-tooltip-inner {
+  background: var(--fst-surface-container);
+  color: var(--fst-on-surface);
+}
+
+/* ─── 暗色模式下 Message 提示 ─── */
+[data-theme="dark"] .ant-message-notice-content {
+  background: var(--fst-surface-variant);
+  border: 1px solid var(--fst-outline-soft);
+  color: var(--fst-on-surface);
+}
+
+/* ─── 暗色模式下 Stat 统计卡片 ─── */
+[data-theme="dark"] .ant-statistic-content-value {
+  color: var(--fst-on-surface);
+}
+
+/* ─── 暗色模式下 Divider 分割线 ─── */
+[data-theme="dark"] .ant-divider {
+  border-color: var(--fst-outline-soft);
+}
+
+/* ─── 暗色模式下 Descriptions ─── */
+[data-theme="dark"] .ant-descriptions-item-label {
+  background: var(--fst-surface-container);
+  color: var(--fst-on-surface-variant);
+}
+
+[data-theme="dark"] .ant-descriptions-item-content {
+  color: var(--fst-on-surface);
+}
+
+/* ─── 暗色模式下 Badge ─── */
+[data-theme="dark"] .ant-badge-status-text {
+  color: var(--fst-on-surface-variant);
+}
+
+/* ─── 暗色模式下 Timeline ─── */
+[data-theme="dark"] .ant-timeline-item-content {
+  color: var(--fst-on-surface-variant);
+}
+
+/* ─── 暗色模式下 Page Header ─── */
+[data-theme="dark"] .fst-page {
+  color: var(--fst-on-surface);
+}
+
+[data-theme="dark"] .fst-page-title {
+  color: var(--fst-on-surface);
+}
+
+[data-theme="dark"] .fst-ios-card {
+  background: var(--fst-surface-variant);
+  border-color: var(--fst-outline-soft);
+}
+
+[data-theme="dark"] .fst-ios-card-header {
+  border-bottom-color: var(--fst-outline-soft);
+}
+
+[data-theme="dark"] .fst-ios-card-title {
+  color: var(--fst-on-surface);
+}
+
+[data-theme="dark"] .fst-ios-card-subtitle {
+  color: var(--fst-on-surface-variant);
+}
+
+/* ─── 暗色模式下 Copilot 面板 ─── */
+[data-theme="dark"] .fst-copilot-sprite {
+  background: rgba(30, 33, 34, 0.85);
+  border-color: var(--fst-outline);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .fst-copilot-panel.ant-card {
+  background: rgba(30, 33, 34, 0.92);
+  border-color: var(--fst-outline);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .fst-copilot-panel .ant-card-head {
+  background: rgba(30, 33, 34, 0.95);
+  border-bottom-color: var(--fst-outline-soft);
+}
+
+[data-theme="dark"] .fst-copilot-nudge-bubble {
+  background: rgba(30, 33, 34, 0.92);
+  border-color: var(--fst-outline);
+  color: var(--fst-on-surface);
+}
+
+[data-theme="dark"] .fst-copilot-nudge-bubble::after {
+  background: rgba(30, 33, 34, 0.92);
+  border-color: var(--fst-outline);
+}
+
+[data-theme="dark"] .fst-copilot-nudge-title {
+  color: var(--fst-on-surface);
+}
+
+[data-theme="dark"] .fst-copilot-nudge-text {
+  color: var(--fst-on-surface-variant);
+}
+
+/* ─── 暗色模式下登录页 ─── */
+[data-theme="dark"] .fst-login-split {
+  background: var(--fst-surface);
+}
+
+[data-theme="dark"] .fst-login-right {
+  background: var(--fst-surface-variant);
+}
+
+[data-theme="dark"] .fst-login-left {
+  background: var(--fst-surface-container);
+}
+
+/* ─── 暗色模式下 Dashboard 统计卡片 ─── */
+[data-theme="dark"] .fst-stat-icon {
+  background: var(--fst-surface-container);
+}
+
+/* ─── 暗色模式下全局背景覆盖 ─── */
+[data-theme="dark"] #root {
+  background: var(--fst-surface);
+}
+
+/* ─── 暗色模式下滚动条 ─── */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--fst-surface-container);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--fst-outline);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--fst-on-surface-muted);
+}
+
+/* ─── 无障碍：焦点样式 ─── */
+[data-theme="dark"] *:focus-visible {
+  outline: 2px solid var(--fst-primary);
+  outline-offset: 2px;
+}

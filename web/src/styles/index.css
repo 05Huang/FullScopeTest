@@ -20,6 +20,69 @@ body {
   background-color: #f5f5f5;
 }
 
+/* ═══════════════════════════════════════════════════════
+   无障碍 (Accessibility)
+   ═══════════════════════════════════════════════════════ */
+
+/* 跳过导航链接 - 键盘用户可快速跳到主内容 */
+.fst-skip-nav {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 99999;
+  padding: 12px 24px;
+  background: var(--fst-primary, #5FA59B);
+  color: #fff;
+  border-radius: 0 0 12px 12px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: top 200ms ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fst-skip-nav:focus {
+  top: 0;
+  outline: 3px solid rgba(95, 165, 155, 0.5);
+  outline-offset: 2px;
+}
+
+/* 全局焦点样式 */
+*:focus-visible {
+  outline: 2px solid var(--fst-primary, #5FA59B);
+  outline-offset: 2px;
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 屏幕阅读器专用 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* 确保足够的颜色对比度 */
+[data-theme="dark"] .ant-tag {
+  border-width: 1px;
+  border-style: solid;
+}
+
 /* 滚动条样式 */
 ::-webkit-scrollbar {
   width: 6px;
@@ -994,122 +1057,56 @@ body {
   position: fixed;
   right: 28px;
   bottom: 28px;
-  width: 62px;
-  height: 62px;
-  border-radius: 22px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   border: 1px solid rgba(15, 45, 40, 0.14);
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 22px 60px rgba(15, 45, 40, 0.18);
+  background: linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%);
+  box-shadow: 0 8px 24px rgba(61, 110, 102, 0.3);
   display: grid;
   place-items: center;
   cursor: pointer;
   z-index: 9999;
   overflow: hidden;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-  animation: fst-copilot-float 3.6s ease-in-out infinite;
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
 .fst-copilot-sprite:focus-visible {
-  outline: 3px solid rgba(95, 165, 155, 0.35);
-  outline-offset: 4px;
+  outline: 3px solid rgba(95, 165, 155, 0.5);
+  outline-offset: 3px;
 }
 
 .fst-copilot-sprite:hover {
-  transform: translate3d(0, -2px, 0) scale(1.02);
-  border-color: rgba(95, 165, 155, 0.28);
-  box-shadow: 0 26px 70px rgba(15, 45, 40, 0.22);
+  transform: scale(1.08);
+  box-shadow: 0 12px 32px rgba(61, 110, 102, 0.4);
 }
 
-.fst-copilot-sprite-glow {
-  position: absolute;
-  inset: -20px;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(95, 165, 155, 0.34), transparent 55%),
-    radial-gradient(circle at 80% 70%, rgba(215, 181, 109, 0.24), transparent 58%),
-    radial-gradient(circle at 55% 40%, rgba(61, 110, 102, 0.26), transparent 60%);
-  filter: blur(10px);
-  opacity: 0.9;
-  animation: fst-copilot-glow 2.8s ease-in-out infinite;
-  pointer-events: none;
+.fst-copilot-sprite:active {
+  transform: scale(0.96);
+}
+
+.fst-copilot-sprite-glow,
+.fst-copilot-sprite-spark {
+  display: none;
 }
 
 .fst-copilot-sprite-svg {
-  width: 40px;
-  height: 40px;
-  filter: drop-shadow(0 10px 16px rgba(15, 45, 40, 0.20));
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
 }
 
-.fst-copilot-sprite-spark {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 0 6px rgba(95, 165, 155, 0.12);
-  opacity: 0.85;
-  animation: fst-copilot-orbit 2.6s linear infinite;
-  pointer-events: none;
+.fst-copilot-sprite-svg path {
+  fill: rgba(255, 255, 255, 0.95);
 }
 
-.fst-copilot-sprite-spark.s1 {
-  top: 10px;
-  left: 10px;
-}
-
-.fst-copilot-sprite-spark.s2 {
-  top: 12px;
-  right: 12px;
-  animation-duration: 3.1s;
-  opacity: 0.7;
-}
-
-.fst-copilot-sprite-spark.s3 {
-  bottom: 12px;
-  left: 14px;
-  animation-duration: 3.6s;
-  opacity: 0.65;
+.fst-copilot-sprite-svg circle {
+  fill: rgba(255, 255, 255, 0.95);
 }
 
 @keyframes fst-copilot-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -6px, 0);
-  }
-}
-
-@keyframes fst-copilot-glow {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1.04);
-  }
-}
-
-@keyframes fst-copilot-orbit {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  25% {
-    transform: translate3d(34px, 6px, 0);
-  }
-  50% {
-    transform: translate3d(10px, 34px, 0);
-  }
-  75% {
-    transform: translate3d(-18px, 14px, 0);
-  }
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1); }
 }
 
 .fst-copilot-nudge {

@@ -401,6 +401,11 @@ const MainLayout = () => {
 
   return (
     <div className="fst-app-root" style={{ minHeight: '100vh', display: 'flex' }}>
+      {/* 无障碍：跳过导航链接 */}
+      <a href="#main-content" className="fst-skip-nav">
+        {t('layout.skipToContent') || '跳转到主内容'}
+      </a>
+
       {/* ─── iOS Sidebar ─── */}
       <aside style={{
         width: collapsed ? 72 : 260,
@@ -788,13 +793,18 @@ const MainLayout = () => {
         </header>
 
         {/* ─── Page Content ─── */}
-        <main style={{
-          flex: 1,
-          padding: 24,
-          maxWidth: 1440,
-          width: '100%',
-          margin: '0 auto',
-        }}>
+        <main
+          id="main-content"
+          role="main"
+          aria-label={t('layout.mainContent') || '主内容区'}
+          style={{
+            flex: 1,
+            padding: 24,
+            maxWidth: 1440,
+            width: '100%',
+            margin: '0 auto',
+          }}
+        >
           <Outlet />
         </main>
 

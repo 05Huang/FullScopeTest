@@ -445,47 +445,14 @@ const GlobalCopilot: React.FC = () => {
       {!isOpen && (
         <>
           <Tooltip title="AI 测试助手" placement="left">
-            <button className="fst-copilot-sprite" type="button" onClick={handleOpen} aria-label="打开 AI Copilot">
-              <span className="fst-copilot-sprite-glow" aria-hidden="true" />
-              <span className="fst-copilot-sprite-spark s1" aria-hidden="true" />
-              <span className="fst-copilot-sprite-spark s2" aria-hidden="true" />
-              <span className="fst-copilot-sprite-spark s3" aria-hidden="true" />
-              <svg viewBox="0 0 64 64" className="fst-copilot-sprite-svg" aria-hidden="true">
-                <defs>
-                  <linearGradient id="fstCopilotG" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
-                    <stop offset="0" stopColor="#5FA59B" />
-                    <stop offset="0.6" stopColor="#3D6E66" />
-                    <stop offset="1" stopColor="#D7B56D" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M32 9c9.2 0 16.9 7.6 16.9 16.9 0 6.4-2.7 10.7-6.4 15.3-2 2.5-3.8 5.3-4.6 9.2-.3 1.5-1.6 2.7-3.2 2.7h-5.4c-1.6 0-2.9-1.2-3.2-2.7-.8-3.9-2.6-6.7-4.6-9.2-3.7-4.6-6.4-8.9-6.4-15.3C15.1 16.6 22.8 9 32 9z"
-                  fill="url(#fstCopilotG)"
-                  opacity="0.92"
-                />
-                <path
-                  d="M20.5 26.2c4.2-4.7 11.7-6.6 19-3.7 2.2.9 4.2 2.2 5.9 4.1"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.75)"
-                  strokeWidth="3.4"
-                  strokeLinecap="round"
-                />
-                <circle cx="26.8" cy="32.2" r="2.3" fill="rgba(255,255,255,0.9)" />
-                <circle cx="37.2" cy="32.2" r="2.3" fill="rgba(255,255,255,0.9)" />
-                <path
-                  d="M28.5 38.5c2.1 2.3 4.9 2.3 7 0"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.9)"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M26 54.2c1.8 1.4 3.9 2.2 6 2.2s4.2-.8 6-2.2"
-                  fill="none"
-                  stroke="rgba(15,45,40,0.22)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
+            <button className="fst-copilot-sprite" type="button" onClick={handleOpen} aria-label="打开 AI 助手">
+              <svg viewBox="0 0 24 24" className="fst-copilot-sprite-svg" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a7 7 0 0 1 7 7c0 2.4-1 4-2.4 5.8-.8 1-1.5 2.2-1.8 3.6-.1.6-.6 1-1.2 1h-3.2c-.6 0-1.1-.4-1.2-1-.3-1.4-1-2.6-1.8-3.6C6 13 5 11.4 5 9a7 7 0 0 1 7-7z" stroke="rgba(255,255,255,0.9)" fill="none"/>
+                <circle cx="9.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
+                <circle cx="14.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
+                <path d="M10 16c1.1 1.2 2.9 1.2 4 0" stroke="rgba(255,255,255,0.85)" fill="none"/>
+                <path d="M18 9c0 0 1-1 1-3" stroke="rgba(255,255,255,0.5)" fill="none"/>
+                <path d="M6 9c0 0-1-1-1-3" stroke="rgba(255,255,255,0.5)" fill="none"/>
               </svg>
             </button>
           </Tooltip>
