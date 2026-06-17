@@ -48,10 +48,71 @@
   color-scheme: dark;
 }
 
-/* 暗色模式下全局背景 */
+/* 暗色模式下全局背景 — 需要 !important 覆盖 index.css */
 [data-theme="dark"] body {
-  background: var(--fst-surface);
-  color: var(--fst-on-surface);
+  background: var(--fst-surface) !important;
+  color: var(--fst-on-surface) !important;
+}
+
+/* 暗色模式下根容器 */
+[data-theme="dark"] #root {
+  background: var(--fst-surface) !important;
+}
+
+/* 暗色模式下主内容区 wrapper */
+[data-theme="dark"] .fst-app-root > div {
+  background: var(--fst-surface) !important;
+}
+
+/* 暗色模式下主内容区域 */
+[data-theme="dark"] main {
+  background: var(--fst-surface) !important;
+}
+
+/* 暗色模式下顶栏 */
+[data-theme="dark"] header {
+  background: rgba(26, 29, 30, 0.7) !important;
+  border-bottom-color: var(--fst-outline-soft);
+}
+
+/* 暗色模式下登录页 */
+[data-theme="dark"] .fst-login-right {
+  background: var(--fst-surface-variant) !important;
+}
+
+[data-theme="dark"] .fst-login-left {
+  background: var(--fst-surface-container) !important;
+}
+
+[data-theme="dark"] body .fst-login-split {
+  background: var(--fst-surface) !important;
+}
+
+/* 暗色模式下所有白色背景卡片 */
+[data-theme="dark"] .ant-card,
+[data-theme="dark"] .ant-modal-content,
+[data-theme="dark"] .ant-popover-inner {
+  background: var(--fst-surface-variant) !important;
+}
+
+[data-theme="dark"] .ant-card-head {
+  background: var(--fst-surface-container) !important;
+  border-bottom-color: var(--fst-outline-soft) !important;
+}
+
+/* 暗色模式下所有 #fff / #ffffff 硬编码背景 */
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background: white"],
+[data-theme="dark"] [style*="background-color: #fff"],
+[data-theme="dark"] [style*="background-color: white"],
+[data-theme="dark"] [style*="background-color: #f9f9f8"] {
+  background: var(--fst-surface-variant) !important;
+}
+
+/* 暗色模式下 Copilot 输入区 */
+[data-theme="dark"] .fst-copilot-input {
+  background: var(--fst-surface-variant);
+  border-top-color: var(--fst-outline-soft);
 }
 
 /* 暗色模式下统计图标 - 覆盖硬编码颜色 */
@@ -84,66 +145,6 @@
 /* 暗色模式下统计卡片内渐变条 */
 [data-theme="dark"] .fst-stat-card::before {
   background: linear-gradient(90deg, var(--fst-primary-light), var(--fst-tertiary));
-}
-
-/* 暗色模式下侧边栏 */
-[data-theme="dark"] .fst-app-root aside {
-  background: var(--fst-glass-bg);
-}
-
-/* 暗色模式下顶栏 */
-[data-theme="dark"] header {
-  background: rgba(26, 29, 30, 0.6) !important;
-}
-
-/* 暗色模式下卡片 */
-[data-theme="dark"] .ant-card {
-  background: var(--fst-surface-variant);
-  border-color: var(--fst-outline-soft);
-}
-
-/* 暗色模式下表格 */
-[data-theme="dark"] .ant-table {
-  background: var(--fst-surface-variant);
-}
-
-[data-theme="dark"] .ant-table-thead > tr > th {
-  background: var(--fst-surface-container);
-  border-bottom-color: var(--fst-outline-soft);
-}
-
-/* 暗色模式下输入框 */
-[data-theme="dark"] .ant-input,
-[data-theme="dark"] .ant-input-affix-wrapper,
-[data-theme="dark"] .ant-select-selector {
-  background: var(--fst-surface-container);
-  border-color: var(--fst-outline);
-  color: var(--fst-on-surface);
-}
-
-/* 暗色模式下弹窗 */
-[data-theme="dark"] .ant-modal-content {
-  background: var(--fst-surface-variant);
-}
-
-[data-theme="dark"] .ant-modal-header {
-  background: var(--fst-surface-variant);
-  border-bottom-color: var(--fst-outline-soft);
-}
-
-/* 暗色模式下下拉菜单 */
-[data-theme="dark"] .ant-dropdown-menu {
-  background: var(--fst-surface-variant);
-  border: 1px solid var(--fst-outline-soft);
-}
-
-/* 暗色模式下页脚 */
-[data-theme="dark"] .fst-app-footer {
-  border-top-color: var(--fst-outline-soft);
-}
-
-[data-theme="dark"] .fst-site-footer-link {
-  color: var(--fst-on-surface-variant);
 }
 
 /* ─── 暗色模式下侧边栏导航项 hover ─── */
@@ -304,29 +305,6 @@
   color: var(--fst-on-surface-variant);
 }
 
-/* ─── 暗色模式下登录页 ─── */
-[data-theme="dark"] .fst-login-split {
-  background: var(--fst-surface);
-}
-
-[data-theme="dark"] .fst-login-right {
-  background: var(--fst-surface-variant);
-}
-
-[data-theme="dark"] .fst-login-left {
-  background: var(--fst-surface-container);
-}
-
-/* ─── 暗色模式下 Dashboard 统计卡片 ─── */
-[data-theme="dark"] .fst-stat-icon {
-  background: var(--fst-surface-container);
-}
-
-/* ─── 暗色模式下全局背景覆盖 ─── */
-[data-theme="dark"] #root {
-  background: var(--fst-surface);
-}
-
 /* ─── 暗色模式下滚动条 ─── */
 [data-theme="dark"] ::-webkit-scrollbar-track {
   background: var(--fst-surface-container);
@@ -376,10 +354,4 @@
 [data-theme="dark"] .fst-tab--active {
   color: var(--fst-primary);
   background: var(--fst-primary-container);
-}
-
-/* ─── 暗色模式下 Copilot 输入区 ─── */
-[data-theme="dark"] .fst-copilot-input {
-  background: var(--fst-surface-variant);
-  border-top-color: var(--fst-outline-soft);
 }

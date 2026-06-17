@@ -546,7 +546,7 @@ const MainLayout = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 32px',
-          background: 'rgba(249, 249, 248, 0.6)',
+          background: 'var(--fst-glass-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid var(--fst-outline-soft)',

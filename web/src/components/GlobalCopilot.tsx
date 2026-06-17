@@ -90,7 +90,7 @@ const GlobalCopilot: React.FC = () => {
     {
       id: 'init',
       role: 'assistant',
-      content: '你好！我是你的 AI 测试平台助手。你可以让我帮你创建性能测试任务，或者查询最近失败的 Web 测试记录。',
+      content: t('copilot.welcome'),
       status: 'done',
     },
   ]);
@@ -643,7 +643,7 @@ const GlobalCopilot: React.FC = () => {
               <div className="fst-copilot-input">
                 <Input
                   size="large"
-                  placeholder="给 Copilot 发送指令..."
+                  placeholder={t('copilot.placeholder')}
                   value={inputValue}
                   onChange={e => setInputValue(e.target.value)}
                   onPressEnter={handleSend}

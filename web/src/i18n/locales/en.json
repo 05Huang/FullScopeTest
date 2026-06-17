@@ -1,4 +1,9 @@
 {
+  "copilot": {
+    "title": "AI Assistant",
+    "placeholder": "Send a command to AI Assistant...",
+    "welcome": "Hi! I'm your AI test platform assistant. I can help you create performance test tasks, or query recent failed Web test records."
+  },
   "common": {
     "loading": "Loading...",
     "noData": "No data",
