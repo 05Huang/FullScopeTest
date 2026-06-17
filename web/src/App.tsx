@@ -70,6 +70,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 }
 
 function App() {
+  console.log('[App] Rendering... VITE_DEPLOY_ENV:', (import.meta as any).env?.VITE_DEPLOY_ENV)
   return (
     <ErrorBoundary>
       <LanguageSwitchPrompt />
