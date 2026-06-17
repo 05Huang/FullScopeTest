@@ -31,12 +31,25 @@
 
 **FullScopeTest** 是一个 AI 驱动的全链路自动化测试平台，覆盖 API 接口测试、Web UI 自动化、APP 移动端测试和性能压测四大领域。平台以 **AI-Native** 为核心设计理念，提供自然语言编排、脚本自动生成、智能错误分析与自愈等能力，降低测试编写与维护门槛。
 
-- **AI 赋能**：内置 AI Copilot，支持自然语言编排、脚本自动生成、智能错误分析与自愈
-- **接口测试**：完整的 HTTP/REST API 测试工作台，支持环境变量、前置/后置脚本、断言、cURL 导入导出
-- **Web 自动化**：基于 Playwright，支持在线编写、录制、视觉回归测试
-- **性能压测**：基于 Locust，支持分布式压测、实时监控、历史对比
+### 核心能力
+
+- **AI 赋能**：内置 AI Copilot，支持自然语言编排、脚本自动生成、智能错误分析与自愈、Prompt 版本管理与 A/B 测试
+- **接口测试**：完整的 HTTP/REST API 测试工作台，支持环境变量、前置/后置脚本、断言、cURL 导入导出、Mock Server
+- **Web 自动化**：基于 Playwright，支持在线编写、录制、视觉回归测试、VNC Live View 实时预览
+- **性能压测**：基于 Locust，支持分布式压测、实时监控大盘、历史对比、告警引擎
 - **APP 测试**：基于 Appium，支持 Android / iOS 双平台
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
+
+### 企业级特性
+
+- **多租户隔离**：组织级数据隔离，项目/用例/脚本/报告按组织过滤
+- **用户管理**：管理员后台，支持角色切换、启用/禁用、密码重置
+- **RBAC 权限**：admin / member / viewer 三级角色控制
+- **组织邀请码**：通过邀请码直接加入团队，无需手动分配
+- **审计日志**：全操作审计追踪，支持按用户/模块/时间筛选
+- **国际化**：中英文双语支持，演示系统根据 IP 智能提示切换语言
+- **暗色模式**：完整的深色主题适配，支持系统偏好自动切换
+- **无障碍访问**：WCAG 2.1 AA 级别，键盘导航、屏幕阅读器支持、跳过导航链接
 
 ---
 
@@ -260,11 +273,13 @@ graph TD
 
 ### API 模块划分
 
-所有 API 路由挂载在统一的 `api_bp` 蓝图下（前缀 `/api/v1`），按功能域划分为 25 个模块：
+所有 API 路由挂载在统一的 `api_bp` 蓝图下（前缀 `/api/v1`），按功能域划分为 30+ 个模块：
 
 | 模块 | 路由前缀 | 核心功能 |
 |------|---------|---------|
-| `auth` | `/auth` | 注册、登录、Token 刷新、用户信息 |
+| `auth` | `/auth` | 注册（支持邀请码）、登录、Token 刷新、SSO、用户信息 |
+| `admin` | `/admin` | 用户管理：列表/角色切换/启用禁用/密码重置（仅管理员） |
+| `organizations` | `/organizations` | 组织 CRUD、邀请码管理、成员管理 |
 | `projects` | `/projects` | 项目 CRUD、成员管理、RBAC 权限 |
 | `environments` | `/environments` | 环境变量管理、变量替换引擎 |
 | `api_test` | `/api-test` | 集合/用例 CRUD、Mock Server、cURL 导入导出 |
@@ -274,23 +289,38 @@ graph TD
 | `reports` | `/test-reports` | 测试报告聚合、历史趋势分析 |
 | `docs` | `/docs` | 测试文档管理、Markdown 编辑 |
 | `ai_copilot` | `/ai` | AI 对话、用例生成、错误分析、脚本生成 |
+| `ai_stats` | `/ai/stats` | AI 调用统计、Token 消耗、成本分析 |
+| `prompt_versions` | `/ai/prompts` | Prompt 版本管理、A/B 测试、流量分配 |
 | `triggers` | `/triggers` | Webhook 触发器、定时任务调度 |
 | `global_search` | `/ai/global-search` | 全局搜索（跨模块模糊查询） |
+| `quality_gates` | `/quality-gates` | 质量门禁配置、通过率/P95/视觉差异阈值 |
+| `test_plans` | `/test-plans` | 测试计划管理、执行跟踪 |
+| `audit_logs` | `/audit-logs` | 操作审计日志、按用户/模块/时间筛选 |
+| `notifications` | `/notifications` | 通知配置、Webhook/邮件通知 |
+| `tokens` | `/tokens` | API Token 管理、权限范围控制 |
+| `geo` | `/geo` | 地理位置检测（演示系统语言切换） |
+| `github_integration` | `/github` | GitHub OAuth、PR 自动触发、Check Run 回写 |
+| `github_checks` | `/github/checks` | GitHub Checks API 集成 |
 
 ### 数据模型 ER 图
 
 ```mermaid
 erDiagram
+    Organization ||--o{ Project : "owns"
+    Organization ||--o{ User : "has members"
     User ||--o{ Project : "owns"
     User ||--o{ WebTestScript : "creates"
     User ||--o{ TestRun : "triggers"
     User ||--o{ ScheduledTask : "schedules"
+    User ||--o{ AuditLog : "generates"
 
     Project ||--o{ Environment : "has"
     Project ||--o{ ApiTestCollection : "contains"
     Project ||--o{ WebTestCollection : "contains"
     Project ||--o{ AppTestCollection : "contains"
     Project ||--o{ PerfTestScenario : "contains"
+    Project ||--o{ QualityGate : "enforces"
+    Project ||--o{ TestPlan : "plans"
 
     ApiTestCollection ||--o{ ApiTestCase : "contains"
     WebTestCollection ||--o{ WebTestScript : "contains"
@@ -303,17 +333,25 @@ erDiagram
 
     WebhookToken }o--|| Project : "belongs to"
 
+    Organization {
+        int id PK
+        string name
+        string invite_code UK
+        boolean is_active
+    }
     User {
         int id PK
         string username UK
         string email UK
         string password_hash
         string role "admin | member | viewer"
+        int organization_id FK
     }
     Project {
         int id PK
         string name
         int owner_id FK
+        int organization_id FK
     }
     Environment {
         int id PK
@@ -341,6 +379,21 @@ erDiagram
         string test_type
         json summary
         int test_run_id FK
+    }
+    AuditLog {
+        int id PK
+        int user_id FK
+        string action
+        string module
+        json details
+        datetime created_at
+    }
+    QualityGate {
+        int id PK
+        string name
+        float min_pass_rate
+        int max_p95_ms
+        int project_id FK
     }
 ```
 
@@ -397,7 +450,7 @@ graph LR
 
 ```mermaid
 graph TD
-    App["App.tsx<br/>路由入口"] --> Layout["MainLayout<br/>侧边栏 + 顶栏 + 内容区"]
+    App["App.tsx<br/>路由入口 + 语言检测"] --> Layout["MainLayout<br/>侧边栏 + 顶栏 + 内容区"]
     Layout --> Suspense["React.Suspense<br/>懒加载边界"]
     Suspense --> Pages["页面组件"]
     Pages --> Dashboard["Dashboard"]
@@ -406,7 +459,15 @@ graph TD
     Pages --> AppTest["APP 测试"]
     Pages --> PerfTest["性能测试"]
     Pages --> Reports["报告中心"]
-    Pages --> Settings["系统设置"]
+    Pages --> Settings["系统设置<br/>5 个 Tab"]
+    Pages --> Admin["用户管理<br/>(管理员)"]
+    Pages --> Orgs["组织管理"]
+    Pages --> AuditLogs["审计日志"]
+    Pages --> TestPlans["测试计划"]
+    Pages --> QualityGates["质量门禁"]
+    Pages --> CICD["CI/CD 集成"]
+    Pages --> Integ["第三方集成<br/>GitHub OAuth"]
+    Pages --> Tokens["API Token 管理"]
 
     APITest --> Components["业务组件"]
     Components --> RequestEditor["请求编辑器"]
@@ -416,7 +477,8 @@ graph TD
     Layout --> Global["全局组件"]
     Global --> Copilot["GlobalCopilot<br/>AI 助手浮窗"]
     Global --> Search["GlobalSearch<br/>全局搜索"]
-    Global --> EnvHint["EnvironmentVariableHint<br/>变量自动补全"]
+    Global --> GeoPrompt["LanguageSwitchPrompt<br/>智能语言切换提示"]
+    Global --> TourGuide["TourGuide<br/>新手引导"]
 ```
 
 ### 状态管理 (Zustand)
@@ -449,7 +511,9 @@ graph LR
 
 | 服务文件 | 对应后端模块 | 核心方法 |
 |---------|-------------|---------|
-| `authService.ts` | auth | login, register, refreshToken, getProfile |
+| `authService.ts` | auth | login, register, refreshToken, getProfile, ssoLogin |
+| `adminService.ts` | admin | getUsers, updateUserRole, toggleUserStatus, resetPassword |
+| `organizationService.ts` | organizations | getOrganizations, createOrganization, regenerateInviteCode |
 | `projectService.ts` | projects | getProjects, createProject, updateProject |
 | `environmentService.ts` | environments | getEnvironments, createEnvironment |
 | `apiTestService.ts` | api_test | getCollections, createCase, runCase, curlImport |
@@ -457,9 +521,17 @@ graph LR
 | `appTestService.ts` | app_test | getScripts, createScript, runScript |
 | `perfTestService.ts` | perf_test | getScenarios, createScenario, runScenario |
 | `reportService.ts` | reports | getReports, getReportDetail |
+| `qualityGateService.ts` | quality_gates | getGates, createGate, evaluateGate |
+| `testPlanService.ts` | test_plans | getPlans, createPlan, executePlan |
+| `auditLogService.ts` | audit_logs | getLogs, filterByUser, filterByModule |
+| `notificationService.ts` | notifications | getSettings, updateSettings |
+| `tokenService.ts` | tokens | getTokens, createToken, revokeToken |
 | `aiCopilotService.ts` | ai_copilot | chat, generateCases, analyzeError |
+| `aiStatsService.ts` | ai_stats | getStats, getCostAnalysis |
 | `documentService.ts` | docs | getDocuments, createDocument |
 | `triggerService.ts` | triggers | getTriggers, createTrigger |
+| `geoService.ts` | geo | detectRegion |
+| `integrationService.ts` | github_integration | connectGitHub, getPRStatus |
 
 **Axios 拦截器链**：
 1. **请求拦截器**：自动注入 `Authorization: Bearer <token>` 头
@@ -528,6 +600,10 @@ graph TD
 | **敏感信息** | `.env` 文件 + `.gitignore` | API Key、密码等不进入代码仓库 |
 | **安全扫描** | GitHub CodeQL | CI 自动检测 OWASP Top 10 漏洞 |
 | **依赖审计** | npm audit + pip-audit | CI 自动检测已知漏洞依赖 |
+| **API Token** | 独立 Token 管理 | 支持细粒度权限范围、可随时吊销 |
+| **审计日志** | 全操作记录 | 登录/CRUD/配置变更全部可追溯 |
+| **租户隔离** | organization_id 过滤 | 数据库级别组织隔离，防止跨租户访问 |
+| **SSO 集成** | OIDC 协议 | 支持企业单点登录 |
 
 ---
 
@@ -569,6 +645,19 @@ graph TD
 | Redis | 5.0+ | **必需** — Celery 消息队列（`app.py` 会自动开启 Celery） |
 
 > **数据库说明**：本地开发默认使用 **SQLite**（零配置），无需安装 PostgreSQL。生产环境推荐 PostgreSQL。
+
+### 初始管理员配置
+
+生产环境通过环境变量配置初始管理员（首次启动自动创建）：
+
+```bash
+# backend/.env
+INIT_ADMIN_USERNAME=admin
+INIT_ADMIN_EMAIL=admin@example.com
+INIT_ADMIN_PASSWORD=your_secure_password
+```
+
+> 不设置这些变量则不自动创建管理员，需通过 `python create_admin.py` 手动创建。
 
 ### 方式 A：手动启动（推荐）
 
@@ -735,13 +824,53 @@ CELERY_ENABLE=true
 SECRET_KEY=<随机长字符串>
 JWT_SECRET_KEY=<另一个随机长字符串>
 
+# ================= 初始管理员 (首次启动自动创建) =================
+INIT_ADMIN_USERNAME=admin
+INIT_ADMIN_EMAIL=admin@example.com
+INIT_ADMIN_PASSWORD=<安全密码>
+
 # ================= AI 助手配置 (可选) =================
-# 也可由前端界面按请求动态覆盖
 AI_ASSISTANT_ENABLED=true
 AI_ASSISTANT_BASE_URL=https://api.openai.com/v1
 AI_ASSISTANT_MODEL=gpt-4o-mini
 AI_ASSISTANT_API_KEY=your_api_key_here
+
+# ================= 文件存储 (可选) =================
+OSS_ENDPOINT=https://your-oss-endpoint
+OSS_ACCESS_KEY_ID=your_key
+OSS_ACCESS_KEY_SECRET=your_secret
+OSS_BUCKET_NAME=your_bucket
+OSS_DOMAIN=https://your-domain.com
 ```
+
+### 生产环境部署（Docker Compose）
+
+```bash
+# 1. 配置环境变量
+cp backend/.env.example backend/.env
+# 编辑 backend/.env 填入生产配置
+
+# 2. 启动所有服务
+docker compose -f docker-compose.prod.yml up -d
+
+# 3. 查看日志
+docker compose -f docker-compose.prod.yml logs -f backend
+
+# 4. 构建前端并部署到 Nginx
+cd web && npm install && npm run build
+cp -r dist/* /var/www/test.huangxuan.chat/index/
+```
+
+生产环境包含的服务：
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| backend | 8000 | Flask API + Gunicorn (4 workers) |
+| celery | - | 异步任务 Worker |
+| redis | 6379 | 消息队列 + 缓存 |
+| prometheus | 9090 | 指标采集 |
+| grafana | 3001 | 监控可视化 |
+| alertmanager | 9093 | 告警管理 |
 
 > **注意：**
 > - 生产环境务必修改 `SECRET_KEY` 和 `JWT_SECRET_KEY`，切勿使用默认值。
@@ -756,37 +885,130 @@ AI_ASSISTANT_API_KEY=your_api_key_here
 FullScopeTest/
 ├── backend/                    # Flask 后端核心服务
 │   ├── app/
-│   │   ├── api/                # API 路由层 (25 个功能模块)
-│   │   ├── models/             # SQLAlchemy 数据模型 (31 个模型)
+│   │   ├── api/                # API 路由层 (30+ 个功能模块)
+│   │   │   ├── auth.py         # 认证：注册/登录/SSO/邀请码
+│   │   │   ├── admin.py        # 管理员：用户管理/角色/密码重置
+│   │   │   ├── geo.py          # 地理位置检测（语言切换）
+│   │   │   ├── organizations.py # 组织管理/邀请码
+│   │   │   ├── audit_logs.py   # 审计日志
+│   │   │   └── ...
+│   │   ├── models/             # SQLAlchemy 数据模型 (35+ 个模型)
+│   │   │   ├── organization.py # 组织模型（含邀请码）
+│   │   │   ├── user.py         # 用户模型（含角色/组织关联）
+│   │   │   ├── audit_log.py    # 审计日志模型
+│   │   │   └── ...
+│   │   ├── middleware/          # 中间件层
+│   │   │   ├── tenant.py       # 租户隔离中间件
+│   │   │   ├── permission.py   # RBAC 权限注入
+│   │   │   ├── rate_limit.py   # 限流中间件
+│   │   │   ├── security_headers.py # 安全响应头
+│   │   │   └── ...
+│   │   ├── utils/
+│   │   │   └── org_filter.py   # 组织级数据过滤工具
+│   │   ├── plugins/            # 插件系统
 │   │   ├── tasks/              # Celery 异步任务
-│   │   ├── utils/              # 工具类 (响应格式化、校验器、安全)
+│   │   ├── services/           # 业务服务层 (AI/权限/配额等)
 │   │   ├── __init__.py         # 应用工厂 create_app()
 │   │   ├── config.py           # 多环境配置 (Dev / Test / Prod)
 │   │   └── extensions.py       # 扩展初始化 (db, jwt, celery, migrate)
 │   ├── migrations/             # Alembic 数据库迁移脚本
+│   ├── scripts/                # 数据脚本 (seed_data.py)
 │   ├── tests/                  # Pytest 自动化测试 (470+ 用例)
 │   ├── app.py                  # 后端启动入口
-│   ├── init_db.py              # 数据库初始化 (含 admin 账号)
+│   ├── init_db.py              # 数据库初始化
 │   └── requirements.txt        # Python 依赖
 ├── web/                        # React + TypeScript 前端
 │   ├── src/
 │   │   ├── pages/              # 页面组件 (按模块组织)
-│   │   ├── components/         # 共享组件 (GlobalCopilot, GlobalSearch 等)
-│   │   ├── services/           # API 服务层 (14 个 Service)
-│   │   ├── stores/             # Zustand 状态管理 (6 个 Store)
+│   │   │   ├── admin/          # 管理员页面 (UserManagement)
+│   │   │   ├── organizations/  # 组织管理页面
+│   │   │   ├── api-test/       # API 测试工作台
+│   │   │   ├── web-test/       # Web 自动化
+│   │   │   ├── app-test/       # APP 测试
+│   │   │   ├── perf-test/      # 性能测试
+│   │   │   └── ...
+│   │   ├── components/         # 共享组件
+│   │   │   ├── GlobalCopilot.tsx    # AI 助手浮窗
+│   │   │   ├── LanguageSwitchPrompt.tsx # 智能语言切换
+│   │   │   └── ...
+│   │   ├── services/           # API 服务层 (25+ 个 Service)
 │   │   ├── hooks/              # 自定义 Hooks
-│   │   ├── layouts/            # 布局组件 (MainLayout)
-│   │   └── test/               # Vitest 测试配置与用例
+│   │   │   ├── useRole.ts      # 角色权限 Hook
+│   │   │   └── useGeoLanguage.ts # 地理语言检测 Hook
+│   │   ├── stores/             # Zustand 状态管理
+│   │   ├── i18n/               # 国际化 (中英文)
+│   │   ├── styles/             # 样式系统
+│   │   │   ├── index.css       # 主样式 (iOS 设计系统)
+│   │   │   ├── dark-theme.css  # 暗色主题
+│   │   │   └── responsive.css  # 响应式适配
+│   │   └── layouts/            # 布局组件 (MainLayout)
+│   ├── .env.production         # 生产环境变量
 │   ├── vite.config.ts          # Vite 构建配置 + API 代理
 │   └── tsconfig.json           # TypeScript 严格模式配置
-├── document/                   # 项目文档 (STARTUP / API / DEVELOPMENT 等)
-├── nginx/                      # Nginx 部署配置示例
-├── docker/                     # Dockerfile + 容器编排
-├── scripts/                    # 辅助运维/构建脚本
+├── infra/                      # 基础设施配置
+│   └── monitoring/             # Prometheus + Grafana 监控
+├── document/                   # 项目文档
+├── docker/                     # Dockerfile
 ├── docker-compose.yml          # 开发环境 Docker Compose
 ├── docker-compose.prod.yml     # 生产环境 Docker Compose
 └── deploy.sh                   # 一键部署脚本
 ```
+
+---
+
+## 🌟 新增功能详解
+
+### 多租户与组织管理
+
+- **组织（Organization）**：顶层租户单元，所有数据按组织隔离
+- **邀请码**：每个组织有唯一邀请码，注册时输入即可直接加入团队
+- **个人空间**：注册时不填邀请码自动创建个人空间组织
+- **数据隔离**：项目、用例、脚本、报告等所有资源按 `organization_id` 过滤
+
+### 用户管理（管理员后台）
+
+管理员可以：
+- 查看所有用户列表（支持搜索）
+- 切换用户角色（admin / member / viewer）
+- 启用/禁用用户账号
+- 重置用户密码
+
+### 国际化与智能语言切换
+
+- **中英文双语**：完整的 i18n 支持，覆盖所有页面和组件
+- **智能检测**：演示系统根据用户 IP 地理位置自动提示切换英文
+- **用户偏好**：语言选择保存在 localStorage，下次访问自动应用
+
+### 暗色模式
+
+- 完整的深色主题适配，覆盖所有组件和页面
+- 支持系统偏好自动切换（`prefers-color-scheme: dark`）
+- 手动切换保存在 localStorage
+
+### 无障碍访问（Accessibility）
+
+- WCAG 2.1 AA 级别合规
+- 键盘导航支持（Tab 切换、Enter 确认）
+- 屏幕阅读器友好（ARIA 标签、role 属性）
+- 跳过导航链接（Skip Navigation）
+- 减少动画模式（`prefers-reduced-motion`）
+- 颜色对比度达标
+
+### 设置页面（5 个 Tab）
+
+| Tab | 功能 |
+|-----|------|
+| 通用 | 基础设置、语言切换 |
+| 外观 | 主题切换、暗色模式 |
+| AI | AI 模型配置、API Key |
+| 安全 | 密码修改、API Token |
+| 集成 | GitHub OAuth、Webhook 配置 |
+
+### 新手引导（Tour Guide）
+
+- 首次登录自动触发 7 步引导
+- 覆盖侧边栏导航、AI 助手、项目创建等核心功能
+- 引导状态保存在 localStorage，不重复显示
 
 ---
 
@@ -931,7 +1153,68 @@ cd web && npx tsc --noEmit
    ```bash
    python init_db.py
    ```
-   </details>
+</details>
+
+<details>
+<summary><strong>如何配置初始管理员？</strong></summary>
+
+生产环境通过环境变量配置（推荐）：
+
+```bash
+# backend/.env
+INIT_ADMIN_USERNAME=admin
+INIT_ADMIN_EMAIL=admin@example.com
+INIT_ADMIN_PASSWORD=your_secure_password
+```
+
+首次启动时自动创建。已有用户则跳过。
+
+开发环境手动创建：
+
+```bash
+cd backend
+python create_admin.py
+# 默认账号：admin / admin123
+```
+</details>
+
+<details>
+<summary><strong>如何启用多租户隔离？</strong></summary>
+
+多租户功能已内置，默认启用。所有 API 请求通过 `X-Organization-ID` 头标识当前组织。
+
+注册流程：
+1. 用户注册时输入组织邀请码 → 自动加入对应组织
+2. 不填邀请码 → 自动创建个人空间组织
+
+管理员可以通过 `/api/v1/admin/users` 管理用户角色和状态。
+</details>
+
+<details>
+<summary><strong>演示系统语言切换不生效？</strong></summary>
+
+1. 确认 `web/.env.production` 中设置了 `VITE_DEPLOY_ENV=demo`
+2. 清除浏览器 localStorage 中的 `fst-language` 和 `fst-geo-dismiss` 键
+3. 刷新页面，F12 Console 查看 `[GeoLanguage]` 调试输出
+4. 如果显示 `is_china: true`，说明你的 IP 被识别为中国（在国内访问不会弹提示）
+</details>
+
+<details>
+<summary><strong>生产环境部署后前端文件未更新？</strong></summary>
+
+前端构建文件在 `web/dist/`，但 Nginx 可能从其他目录读取。部署时需同步：
+
+```bash
+# 构建前端
+cd web && npm run build
+
+# 同步到 Nginx 根目录（根据实际配置调整路径）
+cp -r dist/* /opt/1panel/www/sites/test.huangxuan.chat/index/
+
+# 重载 Nginx
+docker exec openresty openresty -s reload
+```
+</details>
 
 ---
 
@@ -1044,7 +1327,10 @@ jobs:
 - **数据库**: [PostgreSQL 15](https://www.postgresql.org/) + [Redis 7](https://redis.io/)
 - **测试引擎**: [Playwright](https://playwright.dev/) (Web) + [Locust](https://locust.io/) (性能) + [Appium](https://appium.io/) (APP)
 - **异步任务**: [Celery](https://docs.celeryq.dev/) + [APScheduler](https://apscheduler.readthedocs.io/)
-- **基础设施**: [Docker Compose](https://www.docker.com/)
+- **国际化**: [i18next](https://www.i18next.com/) + [react-i18next](https://react.i18next.com/) (中英文双语)
+- **状态管理**: [Zustand](https://github.com/pmndrs/zustand) (轻量级 Store + persist 持久化)
+- **监控**: [Prometheus](https://prometheus.io/) + [Grafana](https://grafana.com/) (指标采集 + 可视化)
+- **基础设施**: [Docker Compose](https://www.docker.com/) + [OpenResty](https://openresty.org/) (Nginx + Lua)
 
 ---
 
