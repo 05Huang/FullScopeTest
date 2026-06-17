@@ -41,6 +41,7 @@ const TriggerRules = lazy(() => import('./pages/TriggerRules'))
 const NotificationSettings = lazy(() => import('./pages/NotificationSettings'))
 const TeamMetrics = lazy(() => import('./pages/TeamMetrics'))
 const Integrations = lazy(() => import('./pages/Integrations'))
+const UserManagement = lazy(() => import('./pages/admin/UserManagement'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -389,6 +390,16 @@ function App() {
           }
         />
       </Route>
+
+        {/* 用户管理 */}
+        <Route
+          path="admin/users"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <UserManagement />
+            </Suspense>
+          }
+        />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />

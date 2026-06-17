@@ -213,7 +213,12 @@
     "triggerRules": "Trigger Rules",
     "notifications": "Notification Settings",
     "teamMetrics": "Team Metrics",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "userManagement": "User Management"
+  },
+  "admin": {
+    "userManagement": "User Management",
+    "userManagementSubtitle": "Manage user accounts, roles and permissions"
   },
   "header": {
     "logout": "Log Out",

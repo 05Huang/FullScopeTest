@@ -213,7 +213,12 @@
     "triggerRules": "触发规则",
     "notifications": "通知设置",
     "teamMetrics": "团队效能",
-    "integrations": "集成管理"
+    "integrations": "集成管理",
+    "userManagement": "用户管理"
+  },
+  "admin": {
+    "userManagement": "用户管理",
+    "userManagementSubtitle": "管理系统用户账号、角色和权限"
   },
   "header": {
     "logout": "退出登录",

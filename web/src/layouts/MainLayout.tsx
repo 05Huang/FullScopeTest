@@ -35,6 +35,7 @@ import {
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
+import { useRole } from '@/hooks/useRole'
 import { useProjectStore } from '@/stores/projectStore'
 import { projectService } from '@/services/projectService'
 import { useThemeStore } from '@/stores/themeStore'
@@ -171,6 +172,7 @@ const MainLayout = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const { isAdmin } = useRole()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
   const { resolvedTheme, toggle: toggleTheme } = useThemeStore()
   const [projectModalOpen, setProjectModalOpen] = useState(false)
@@ -402,6 +404,11 @@ const MainLayout = () => {
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
   ]
 
+  // 管理员专属菜单
+  const adminNav = [
+    { icon: <TeamOutlined />, label: t('sidebar.userManagement') || '用户管理', path: '/admin/users' },
+  ]
+
   // Track expanded sidebar groups
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
     const path = location.pathname
@@ -476,6 +483,20 @@ const MainLayout = () => {
               children={item.children}
               onClick={(p) => navigate(p)}
               onToggle={() => toggleGroup(item.path)}
+            />
+          ))}
+          {/* 管理员专属菜单 */}
+          {isAdmin && adminNav.map(item => (
+            <SidebarItem
+              key={item.path}
+              icon={item.icon}
+              label={item.label}
+              path={item.path}
+              active={location.pathname === item.path}
+              expanded={false}
+              currentPath={location.pathname}
+              onClick={(p) => navigate(p)}
+              onToggle={() => {}}
             />
           ))}
         </nav>
