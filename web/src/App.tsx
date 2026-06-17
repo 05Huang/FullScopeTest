@@ -389,9 +389,8 @@ function App() {
             </Suspense>
           }
         />
-      </Route>
 
-        {/* 用户管理 */}
+        {/* 用户管理（管理员） */}
         <Route
           path="admin/users"
           element={
@@ -400,6 +399,7 @@ function App() {
             </Suspense>
           }
         />
+      </Route>
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
