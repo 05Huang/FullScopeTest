@@ -13,6 +13,7 @@ from ..models.web_test_script import WebTestScript
 from ..utils.response import success_response, error_response
 from ..utils.validators import validate_required
 from ..utils.url_safety import is_safe_url
+from ..utils.org_filter import filter_by_org_projects, filter_by_owner_or_org
 from ..utils import get_current_user_id
 from ..tasks import run_web_test_task
 from ..utils.ai_script_generator import generate_test_script
@@ -231,7 +232,8 @@ def _release_live_view_session(session: dict):
 
 
 def _get_collection_or_404(collection_id: int, user_id: int):
-    collection = WebTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
+    query = filter_by_org_projects(WebTestCollection.query, WebTestCollection)
+    collection = query.filter_by(id=collection_id, user_id=user_id).first()
     if not collection:
         return None, error_response(404, '用例集不存在')
     return collection, None
@@ -276,7 +278,8 @@ def analyze_web_test_error():
         return error_response(400, 'script_id and error_log are required')
         
     user_id = get_current_user_id()
-    script = WebTestScript.query.filter_by(id=script_id, user_id=user_id).first()
+    query = filter_by_org_projects(WebTestScript.query, WebTestScript)
+    script = query.filter_by(id=script_id, user_id=user_id).first()
     if not script:
         return error_response(404, '脚本不存在')
         

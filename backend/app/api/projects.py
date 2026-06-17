@@ -13,6 +13,7 @@ from ..models.project import Project
 from ..utils.response import success_response, error_response, paginate_response
 from ..utils.validators import validate_json
 from ..utils import get_current_user_id
+from ..utils.org_filter import get_org_id_for_create, filter_by_owner_or_org
 from ..services.cache_service import get_cache_service, projects_key, PROJECTS_TTL
 
 
@@ -21,7 +22,7 @@ from ..services.cache_service import get_cache_service, projects_key, PROJECTS_T
 def get_projects():
     """
     获取项目列表
-    
+
     查询参数:
         page: 页码 (默认 1)
         per_page: 每页数量 (默认 20)
@@ -31,7 +32,7 @@ def get_projects():
     page = request.args.get('page', 1, type=int)
     per_page = min(request.args.get('per_page', 20, type=int), 100)
     keyword = request.args.get('keyword', '').strip()
-    
+
     # 仅首页无搜索关键词时使用缓存
     cache = get_cache_service()
     if cache and page == 1 and not keyword:
@@ -39,7 +40,7 @@ def get_projects():
         if cached is not None:
             return success_response(data=cached)
 
-    query = Project.query.filter_by(owner_id=user_id)
+    query = filter_by_owner_or_org(Project.query, Project, user_id)
 
     if keyword:
         query = query.filter(Project.name.ilike(f'%{keyword}%'))
@@ -76,32 +77,37 @@ def get_projects():
 def create_project():
     """
     创建项目
-    
+
     请求体:
         name: 项目名称
         description: 项目描述 (可选)
     """
     user_id = get_current_user_id()
+    org_id = get_org_id_for_create()
     data = request.get_json()
-    
+
     name = data['name'].strip()
     description = data.get('description', '').strip()
-    
+
     # 验证名称长度
     if len(name) < 1 or len(name) > 100:
         return error_response(400, '项目名称长度应为 1-100 个字符')
-    
+
     # 检查同名项目
-    existing = Project.query.filter_by(owner_id=user_id, name=name).first()
+    existing = Project.query.filter_by(owner_id=user_id, name=name)
+    if org_id:
+        existing = existing.filter_by(organization_id=org_id)
+    existing = existing.first()
     if existing:
         return error_response(400, '项目名称已存在')
-    
+
     project = Project(
         name=name,
         description=description,
-        owner_id=user_id
+        owner_id=user_id,
+        organization_id=org_id,
     )
-    
+
     db.session.add(project)
     db.session.commit()
 
@@ -122,11 +128,12 @@ def create_project():
 def get_project(project_id):
     """获取项目详情"""
     user_id = get_current_user_id()
-    project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
-    
+    query = filter_by_owner_or_org(Project.query, Project, user_id)
+    project = query.filter_by(id=project_id).first()
+
     if not project:
         return error_response(404, '项目不存在')
-    
+
     return success_response(data=project.to_dict())
 
 
@@ -135,27 +142,25 @@ def get_project(project_id):
 def update_project(project_id):
     """更新项目"""
     user_id = get_current_user_id()
-    project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
-    
+    query = filter_by_owner_or_org(Project.query, Project, user_id)
+    project = query.filter_by(id=project_id).first()
+
     if not project:
         return error_response(404, '项目不存在')
-    
+
     data = request.get_json()
-    
+
     if 'name' in data:
         name = data['name'].strip()
         if len(name) < 1 or len(name) > 100:
             return error_response(400, '项目名称长度应为 1-100 个字符')
-        
+
         # 检查同名项目
-        existing = Project.query.filter(
-            Project.owner_id == user_id,
-            Project.name == name,
-            Project.id != project_id
-        ).first()
+        existing = filter_by_owner_or_org(Project.query, Project, user_id)
+        existing = existing.filter(Project.name == name, Project.id != project_id).first()
         if existing:
             return error_response(400, '项目名称已存在')
-        
+
         project.name = name
     
     if 'description' in data:
@@ -182,8 +187,9 @@ def update_project(project_id):
 def delete_project(project_id):
     """删除项目"""
     user_id = get_current_user_id()
-    project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
-    
+    query = filter_by_owner_or_org(Project.query, Project, user_id)
+    project = query.filter_by(id=project_id).first()
+
     if not project:
         return error_response(404, '项目不存在')
     

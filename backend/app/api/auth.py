@@ -79,6 +79,12 @@ def register():
     )
 
     db.session.add(user)
+    db.session.flush()  # 获取 user.id
+
+    # 自动创建个人空间组织
+    from ..middleware.tenant import ensure_user_has_organization
+    ensure_user_has_organization(user.id)
+
     db.session.commit()
 
     return success_response(

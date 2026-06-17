@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db
 from ..models.api_test_case import ApiTestCollection, ApiTestCase
+from ..utils.org_filter import filter_by_org_projects, filter_by_owner_or_org
 from ..models.environment import Environment
 from ..models.project import Project
 from ..models.test_run import TestRun
@@ -112,15 +113,15 @@ def generate_ai_plan():
     if not prompt:
         return error_response(400, "prompt is required")
 
-    collections = ApiTestCollection.query.filter_by(user_id=user_id).all()
+    collections = filter_by_org_projects(ApiTestCollection.query, ApiTestCollection).filter_by(user_id=user_id).all()
     cases = (
-        ApiTestCase.query
+        filter_by_org_projects(ApiTestCase.query, ApiTestCase)
         .filter_by(user_id=user_id)
         .order_by(ApiTestCase.updated_at.desc())
         .limit(200)
         .all()
     )
-    projects = Project.query.filter_by(owner_id=user_id).all()
+    projects = filter_by_owner_or_org(Project.query, Project, user_id).all()
     project_ids = [p.id for p in projects]
     envs = []
     if project_ids:

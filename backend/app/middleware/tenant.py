@@ -24,6 +24,11 @@ def set_current_organization_id(org_id: Optional[int]):
     g.organization_id = org_id
 
 
+def get_current_user_organization_ids() -> list:
+    """获取当前用户所属的所有组织 ID"""
+    return getattr(g, 'user_organization_ids', [])
+
+
 def require_organization(f):
     """装饰器：要求请求必须关联到一个组织"""
     @wraps(f)
@@ -52,6 +57,46 @@ def get_user_organizations(user_id: int) -> list:
         is_active=True,
     ).all()
     return [m.organization_id for m in memberships]
+
+
+def ensure_user_has_organization(user_id: int):
+    """确保用户至少有一个组织，没有则自动创建个人空间"""
+    memberships = OrganizationMember.query.filter_by(
+        user_id=user_id, is_active=True
+    ).count()
+
+    if memberships > 0:
+        return
+
+    from ..models.user import User
+    user = User.query.get(user_id)
+    if not user:
+        return
+
+    # 创建个人空间组织
+    slug = f"personal-{user.username}-{user.id}"
+    org = Organization(
+        name=f"{user.username} 的个人空间",
+        slug=slug,
+        description="系统自动创建的个人空间",
+        owner_id=user.id,
+        is_active=True,
+    )
+    db.session.add(org)
+    db.session.flush()
+
+    # 添加为所有者
+    member = OrganizationMember(
+        organization_id=org.id,
+        user_id=user.id,
+        role='owner',
+        invited_by=user.id,
+        is_active=True,
+    )
+    db.session.add(member)
+    db.session.commit()
+
+    logger.info(f'Auto-created personal org for user {user.username}', org_id=org.id)
 
 
 def setup_tenant_hooks(app):
