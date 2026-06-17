@@ -19,7 +19,7 @@ interface Message {
   status?: 'pending' | 'done' | 'error';
 }
 
-/** AI 图标 — 与右下角悬浮按钮完全一致 */
+/** AI 图标 — 与右下角悬浮按钮完全一致的灯泡图标 */
 const AiIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
@@ -30,12 +30,14 @@ const AiIcon = ({ size = 20 }: { size?: number }) => (
     aria-hidden="true"
     focusable="false"
   >
-    <path d="M12 2a7 7 0 0 1 7 7c0 2.4-1 4-2.4 5.8-.8 1-1.5 2.2-1.8 3.6-.1.6-.6 1-1.2 1h-3.2c-.6 0-1.1-.4-1.2-1-.3-1.4-1-2.6-1.8-3.6C6 13 5 11.4 5 9a7 7 0 0 1 7-7z" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    <circle cx="9.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
-    <circle cx="14.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
-    <path d="M10 16c1.1 1.2 2.9 1.2 4 0" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
-    <path d="M18 9c0 0 1-1 1-3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
-    <path d="M6 9c0 0-1-1-1-3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+    <path
+      d="M9 21h6M12 3a6 6 0 0 0-4 10.5V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3.5A6 6 0 0 0 12 3Z"
+      fill="rgba(255,255,255,0.92)"
+      stroke="rgba(255,255,255,0.92)"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -427,13 +429,15 @@ const GlobalCopilot: React.FC = () => {
         <>
           <Tooltip title="AI 测试助手" placement="left">
             <button className="fst-copilot-sprite" type="button" onClick={handleOpen} aria-label="打开 AI 助手">
-              <svg viewBox="0 0 24 24" className="fst-copilot-sprite-svg" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a7 7 0 0 1 7 7c0 2.4-1 4-2.4 5.8-.8 1-1.5 2.2-1.8 3.6-.1.6-.6 1-1.2 1h-3.2c-.6 0-1.1-.4-1.2-1-.3-1.4-1-2.6-1.8-3.6C6 13 5 11.4 5 9a7 7 0 0 1 7-7z" stroke="rgba(255,255,255,0.9)" fill="none"/>
-                <circle cx="9.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
-                <circle cx="14.5" cy="12.5" r="1" fill="rgba(255,255,255,0.9)" stroke="none"/>
-                <path d="M10 16c1.1 1.2 2.9 1.2 4 0" stroke="rgba(255,255,255,0.85)" fill="none"/>
-                <path d="M18 9c0 0 1-1 1-3" stroke="rgba(255,255,255,0.5)" fill="none"/>
-                <path d="M6 9c0 0-1-1-1-3" stroke="rgba(255,255,255,0.5)" fill="none"/>
+              <svg viewBox="0 0 24 24" className="fst-copilot-sprite-svg" aria-hidden="true" fill="none">
+                <path
+                  d="M9 21h6M12 3a6 6 0 0 0-4 10.5V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3.5A6 6 0 0 0 12 3Z"
+                  fill="rgba(255,255,255,0.92)"
+                  stroke="rgba(255,255,255,0.92)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </Tooltip>
