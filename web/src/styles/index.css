@@ -153,16 +153,18 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   padding: 40px 60px 24px;
   background: #fff;
   position: relative;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .fst-login-right-inner {
   width: 100%;
   max-width: 420px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -172,6 +174,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .fst-login-right-logo {
@@ -182,7 +185,8 @@ body {
 
 .fst-login-right-card {
   width: 100%;
-  min-height: 380px;
+  flex: 1;
+  min-height: 0;
 }
 
 .fst-login-right-title {
