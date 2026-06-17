@@ -56,13 +56,15 @@ interface SidebarItemProps {
   children?: { label: string; path: string }[]
   onClick: (path: string) => void
   onToggle: () => void
+  tourId?: string
 }
 
-const SidebarItem = ({ icon, label, path, active, expanded, currentPath, children, onClick, onToggle }: SidebarItemProps) => {
+const SidebarItem = ({ icon, label, path, active, expanded, currentPath, children, onClick, onToggle, tourId }: SidebarItemProps) => {
   const isActive = active || (children?.some(c => currentPath === c.path) ?? false)
   return (
     <div style={{ marginBottom: 2 }}>
       <button
+        data-tour-id={tourId}
         onClick={() => children && children.length ? onToggle() : onClick(path)}
         style={{
           width: '100%',
@@ -333,7 +335,7 @@ const MainLayout = () => {
     {
       title: t('tour.step3Title') || '🧪 接口测试',
       description: t('tour.step3Desc') || '左侧导航包含所有测试模块：接口测试（工作台/集合/环境）、Web 自动化、APP 测试、性能压测等。点击展开子菜单。',
-      target: () => document.querySelector('.fst-app-menu') as HTMLElement,
+      target: () => document.querySelector('[data-tour-id="tour-api-test"]') as HTMLElement,
       placement: 'right',
     },
     {
@@ -356,8 +358,8 @@ const MainLayout = () => {
     {
       title: t('tour.step7Title') || '⚙️ 系统设置',
       description: t('tour.step7Desc') || '在系统设置中可以配置 AI 模型参数、主题外观、安全策略、通知渠道、GitHub 集成等。前往 /settings 查看。',
-      target: () => document.querySelector('.fst-app-menu') as HTMLElement,
-      placement: 'right',
+      target: () => document.querySelector('[data-tour-id="tour-settings"]') as HTMLElement,
+      placement: 'left',
     },
   ]
 
@@ -460,7 +462,7 @@ const MainLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav role="navigation" aria-label={t('layout.mainNavigation') || '主导航'} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        <nav className="fst-app-menu" role="navigation" aria-label={t('layout.mainNavigation') || '主导航'} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           {sidebarNav.map(item => (
             <SidebarItem
               key={item.path}
@@ -469,6 +471,7 @@ const MainLayout = () => {
               path={item.path}
               active={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
               expanded={expandedGroups.has(item.path)}
+              tourId={item.path === '/settings' ? 'tour-settings' : item.path === '/api-test' ? 'tour-api-test' : undefined}
               currentPath={location.pathname}
               children={item.children}
               onClick={(p) => navigate(p)}
@@ -839,8 +842,20 @@ const MainLayout = () => {
               GitHub 开源
             </a>
             <span className="fst-site-footer-sep" aria-hidden="true" />
-            <span className="fst-site-footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }} title={t('layout.accessibilityTitle') || '本系统支持无障碍访问：键盘导航、屏幕阅读器、高对比度模式、减少动画'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <span
+              className="fst-site-footer-link"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '2px 8px', borderRadius: 6,
+                background: 'rgba(45, 106, 100, 0.08)',
+                border: '1px solid rgba(45, 106, 100, 0.15)',
+                fontSize: 12, fontWeight: 500,
+              }}
+              title={t('layout.accessibilityTitle') || '本系统支持无障碍访问：键盘导航、屏幕阅读器、高对比度模式、减少动画'}
+              role="note"
+              aria-label={t('layout.accessibilityTitle') || '本系统支持无障碍访问'}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="m8 12 2 0m4 0 2 0"/>
                 <path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor" stroke="none"/>

@@ -23,18 +23,20 @@ const AppBrandMark = ({ size = 22 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="0 0 64 64"
     fill="none"
     style={{ display: 'block' }}
     aria-hidden="true"
     focusable="false"
   >
     <path
-      d="M7 6h10c.6 0 1 .4 1 1v2.5c0 .6-.4 1-1 1H9.5v2.3H15c.6 0 1 .4 1 1v2.5c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1Z"
-      fill="rgba(255,255,255,0.9)"
+      d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
+      fill="rgba(255,255,255,0.85)"
     />
-    <path d="M8.5 9.5h9" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeLinecap="round" />
-    <path d="M8.5 16.5h6" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
+    <path d="M22 23h24" stroke="rgba(61,110,102,0.5)" strokeWidth="2.5" strokeLinecap="round" />
+    <path d="M22 45h18" stroke="rgba(61,110,102,0.35)" strokeWidth="2.5" strokeLinecap="round" />
+    <circle cx="46" cy="16" r="6" fill="rgba(215,181,109,0.9)" />
+    <path d="M44 16l1.5 1.5 3-3" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -534,8 +536,8 @@ const GlobalCopilot: React.FC = () => {
                   >
                     {msg.role === 'assistant' && (
                       <div style={{
-                        width: 32,
-                        height: 32,
+                        width: 34,
+                        height: 34,
                         borderRadius: 10,
                         background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)',
                         display: 'flex',
@@ -544,7 +546,7 @@ const GlobalCopilot: React.FC = () => {
                         flexShrink: 0,
                         boxShadow: '0 2px 8px rgba(61, 110, 102, 0.2)',
                       }}>
-                        <AppBrandMark size={20} />
+                        <AppBrandMark size={24} />
                       </div>
                     )}
                     <div style={{
