@@ -491,7 +491,7 @@ const Login = () => {
                       maxLength={20}
                     />
                   </Form.Item>
-                  <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)', marginTop: -12, marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, color: 'var(--fst-on-surface-muted)', marginTop: -8, marginBottom: 4 }}>
                     {t('login.inviteCodeHint') || '输入组织邀请码可直接加入团队，留空则创建个人空间'}
                   </div>
 

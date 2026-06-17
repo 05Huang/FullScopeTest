@@ -603,6 +603,33 @@ body {
   transform: rotateY(180deg);
 }
 
+/* Register form — compact to fit 380px card */
+.fst-login-right-card .fst-auth-back .ant-form-item {
+  margin-bottom: 6px;
+}
+.fst-login-right-card .fst-auth-back .ant-form-item:last-of-type {
+  margin-bottom: 0;
+}
+.fst-login-right-card .fst-auth-back .ant-input-affix-wrapper {
+  height: 36px;
+  padding: 0 10px;
+}
+.fst-login-right-card .fst-auth-back .ant-input-affix-wrapper-lg {
+  height: 36px;
+  padding: 0 10px;
+}
+.fst-login-right-card .fst-auth-back .fst-auth-submit.ant-btn {
+  height: 36px;
+}
+.fst-login-right-card .fst-auth-back .fst-login-right-title {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+.fst-login-right-card .fst-auth-back .fst-login-right-footer {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
 .fst-auth-flip {
   position: relative;
   width: 100%;
