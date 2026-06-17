@@ -18,12 +18,21 @@ export function useGeoLanguage() {
 
   useEffect(() => {
     console.log('[GeoLanguage] Initializing...')
+    const env = (import.meta as any).env || {}
+    console.log('[GeoLanguage] env:', JSON.stringify({ MODE: env.MODE, VITE_DEPLOY_ENV: env.VITE_DEPLOY_ENV, VITE_ENABLE_GEO: env.VITE_ENABLE_GEO }))
 
-    // 仅在演示/非生产环境触发
-    const isProduction = (import.meta as any).env?.MODE === 'production' || (import.meta as any).env?.VITE_DEPLOY_ENV === 'prod'
-    console.log('[GeoLanguage] isProduction:', isProduction, '| MODE:', (import.meta as any).env?.MODE, '| VITE_DEPLOY_ENV:', (import.meta as any).env?.VITE_DEPLOY_ENV)
+    // 显式禁用时跳过
+    if (env.VITE_ENABLE_GEO === 'false') {
+      console.log('[GeoLanguage] Skipped — VITE_ENABLE_GEO=false')
+      setLoading(false)
+      return
+    }
+
+    // 生产环境且未显式启用时跳过
+    const isProduction = env.MODE === 'production' && env.VITE_DEPLOY_ENV !== 'demo'
+    console.log('[GeoLanguage] isProduction:', isProduction)
     if (isProduction) {
-      console.log('[GeoLanguage] Skipped — production environment')
+      console.log('[GeoLanguage] Skipped — production (set VITE_DEPLOY_ENV=demo to enable)')
       setLoading(false)
       return
     }
