@@ -297,7 +297,6 @@ const Login = () => {
                   autoComplete="off"
                   size="large"
                   layout="vertical"
-                  style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                 >
                   <Form.Item name="username" rules={[{ required: true, message: t('login.validation.usernameRequired') }]}>
                     <Input
@@ -391,7 +390,6 @@ const Login = () => {
                   autoComplete="off"
                   size="large"
                   layout="vertical"
-                  style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                 >
                   <Form.Item
                     name="username"
