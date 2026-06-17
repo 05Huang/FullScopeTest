@@ -32,6 +32,8 @@ import {
   BugOutlined,
   CheckCircleOutlined,
   EyeOutlined,
+  RobotOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons'
 import VisualDiffViewer from '@/components/VisualDiffViewer'
 import LogViewerModal from './components/LogViewerModal'
@@ -142,7 +144,7 @@ import { useAuthStore } from '@/stores/authStore'
 
 const WebTestScripts = () => {
   const { t } = useTranslation();
-  const { token, user } = useAuthStore()
+  const { user } = useAuthStore()
 
   const statusConfig: Record<string, { color: string; text: string }> = {
     passed: { color: 'success', text: t('common.passed') },
@@ -413,7 +415,7 @@ const WebTestScripts = () => {
         vision_model: aiVisionModel,
         vision_api_key: aiVisionApiKey
       }, {
-        token,
+        token: '',
         signal: controller.signal,
         onLog: (line) => {
           if (line) {
@@ -1655,7 +1657,7 @@ const WebTestScripts = () => {
         scriptResult={currentScript?.last_result}
         aiHealing={aiHealing}
         aiAnalysisResult={aiAnalysisResult}
-        token={token || ''}
+        token={''}
         onClose={() => {
           setIsLogModalOpen(false)
           setCurrentScript(null)

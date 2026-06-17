@@ -186,15 +186,16 @@ class TestingConfig(BaseConfig):
 
     TESTING = True
     # 测试环境使用默认密钥
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'test-secret-key')
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'test-jwt-secret-key')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'test-secret-key-for-testing-only-32bytes!')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'test-jwt-secret-key-for-testing-only-32bytes!')
 
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',
         'postgresql://localhost:5432/fullscopetest_test'
     )
-    # 测试环境禁用限流和 CSRF
+    # 测试环境禁用限流和 CSRF，启用 DEBUG（返回 reset_token 等开发信息）
     RATELIMIT_ENABLED = False
+    DEBUG = True
     WTF_CSRF_ENABLED = False
 
 

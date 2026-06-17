@@ -74,7 +74,8 @@ class User(db.Model):
 
     def update_last_login(self):
         """更新最后登录时间"""
-        self.last_login = datetime.utcnow()
+        from datetime import timezone
+        self.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
     def __repr__(self):

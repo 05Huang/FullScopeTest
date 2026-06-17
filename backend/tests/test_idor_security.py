@@ -90,7 +90,7 @@ class TestApiTestIDOR:
 
         # 用户 B 尝试执行用户 A 的集合
         resp = client.post(f'/api/v1/api-test/collections/{collection_id}/run',
-                           headers=_auth_header(user_b_token))
+                           headers=_auth_header(user_b_token), json={})
         assert resp.status_code in (404, 403)
 
 

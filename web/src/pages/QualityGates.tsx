@@ -106,9 +106,9 @@ const QualityGates = () => {
         project_id: currentProjectId,
         description: formDesc.trim(),
         is_active: formActive,
-        min_pass_rate: formPassRate,
-        max_p95_response_time: formP95,
-        max_visual_diff_percentage: formVisualDiff,
+        min_pass_rate: formPassRate ?? undefined,
+        max_p95_response_time: formP95 ?? undefined,
+        max_visual_diff_percentage: formVisualDiff ?? undefined,
       }
 
       let res

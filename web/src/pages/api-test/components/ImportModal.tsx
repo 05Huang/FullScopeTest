@@ -197,7 +197,7 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
                 <UploadOutlined style={{ fontSize: 32, color: '#999' }} />
               </p>
               <p>{t('apiTest.import.dragHint')}</p>
-              <p type="secondary" style={{ fontSize: 12 }}>
+              <p style={{ fontSize: 12, color: '#999' }}>
                 {importType === 'postman' ? 'JSON' : 'CSV'} {t('apiTest.import.fileSizeHint')}
               </p>
             </Upload.Dragger>

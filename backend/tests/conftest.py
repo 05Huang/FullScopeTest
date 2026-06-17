@@ -18,6 +18,9 @@ os.environ.setdefault("TEST_DATABASE_URL", f"sqlite:///{_db_path}")
 def app():
     os.environ.setdefault("FLASK_ENV", "testing")
     os.environ["CELERY_ENABLE"] = "false"
+    # 禁用登录锁定，防止测试间状态泄漏
+    os.environ["MAX_LOGIN_FAILURES"] = "999999"
+    os.environ["LOCKOUT_DURATION_SECONDS"] = "1"
 
     from app import create_app
     from app.extensions import db
@@ -26,7 +29,7 @@ def app():
     flask_app.config.update(
         TESTING=True,
         SQLALCHEMY_ENGINE_OPTIONS={"connect_args": {"check_same_thread": False}},
-        JWT_SECRET_KEY="test-jwt-secret",
+        JWT_SECRET_KEY="test-jwt-secret-key-for-testing-only-32bytes!",
     )
 
     with flask_app.app_context():
@@ -47,6 +50,23 @@ def app():
         pass
 
 
+@pytest.fixture(autouse=True)
+def _isolate_tests(app):
+    """每个测试前清除内存状态，测试后回滚数据库事务"""
+    # 清除登录锁定状态
+    import app.services.password_policy as _pp
+    _pp._login_failure_store.clear()
+
+    yield
+
+    # 回滚未提交的事务，防止测试间数据泄漏
+    with app.app_context():
+        from app.extensions import db
+        db.session.rollback()
+    # 再次清除锁定状态
+    _pp._login_failure_store.clear()
+
+
 @pytest.fixture()
 def no_rate_limit(monkeypatch):
     """按需禁用限流的 fixture
@@ -59,6 +79,8 @@ def no_rate_limit(monkeypatch):
         "app.middleware.rate_limit.sliding_window_rate_limit",
         lambda key, limit, **kw: True,
     )
+
+
 
 
 @pytest.fixture()

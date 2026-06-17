@@ -93,23 +93,20 @@ class TestV2PerfAlertRules:
     def test_create(self, v2_client):
         u = _rl(v2_client)
         r = v2_client.post("/api/v2/perf-tests/alert-rules", headers=_h(u["access_token"]),
-            json={"name": "P95", "condition_type": "absolute", "metric_name": "p95_response_time",
-                  "operator": ">", "threshold_value": 2000})
+            json={"name": "P95", "p95_threshold": 2000, "error_rate_threshold": 5.0})
         assert r.status_code == 201 and r.json()["name"] == "P95"
 
     def test_list(self, v2_client):
         u = _rl(v2_client)
         v2_client.post("/api/v2/perf-tests/alert-rules", headers=_h(u["access_token"]),
-            json={"name": "R1", "condition_type": "absolute", "metric_name": "rps",
-                  "operator": "<", "threshold_value": 10})
+            json={"name": "R1", "p95_threshold": 1000, "rps_min_threshold": 50})
         r = v2_client.get("/api/v2/perf-tests/alert-rules", headers=_h(u["access_token"]))
         assert r.status_code == 200 and len(r.json()) >= 1
 
     def test_delete(self, v2_client):
         u = _rl(v2_client)
         c = v2_client.post("/api/v2/perf-tests/alert-rules", headers=_h(u["access_token"]),
-            json={"name": "D", "condition_type": "absolute", "metric_name": "rps",
-                  "operator": "<", "threshold_value": 10})
+            json={"name": "D", "p95_threshold": 500})
         rid = c.json()["id"]
         assert v2_client.delete(f"/api/v2/perf-tests/alert-rules/{rid}", headers=_h(u["access_token"])).status_code == 200
 

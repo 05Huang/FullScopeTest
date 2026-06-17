@@ -78,7 +78,7 @@ describe("usePerformanceComparison", () => {
   it("should add compare metrics", () => {
     const { result } = renderHook(() => usePerformanceComparison())
 
-    const metrics = [{ timestamp: "2024-01-01", current_rps: 100 }]
+    const metrics = [{ timestamp: "2024-01-01", current_rps: 100, avg_response_time: 200, error_rate: 0.01, active_users: 10 }]
 
     act(() => {
       result.current.addCompareMetrics(1, metrics)

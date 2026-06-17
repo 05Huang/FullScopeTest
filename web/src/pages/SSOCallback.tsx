@@ -14,7 +14,7 @@ const SSOCallback = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { setUser } = useAuthStore()
+  const { setAuth } = useAuthStore()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -44,7 +44,7 @@ const SSOCallback = () => {
 
         const data = (res as any)?.data || res
         if (data?.user) {
-          setUser(data.user)
+          setAuth(data.user)
           setStatus('success')
           setTimeout(() => navigate('/dashboard'), 1000)
         } else {
@@ -58,7 +58,7 @@ const SSOCallback = () => {
     }
 
     handleCallback()
-  }, [searchParams, navigate, setUser, t])
+  }, [searchParams, navigate, setAuth, t])
 
   if (status === 'loading') {
     return (

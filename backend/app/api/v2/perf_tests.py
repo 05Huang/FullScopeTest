@@ -385,14 +385,14 @@ async def get_alert_rules(scenario_id: Optional[int] = Query(None), user: User =
 
 @router.post("/alert-rules", status_code=201)
 async def create_alert_rule(data: AlertRuleCreate, user: User = Depends(get_current_user)):
-    if data.condition_type not in ("absolute", "relative"):
-        raise HTTPException(400, "condition_type must be absolute or relative")
     rule = PerformanceAlertRule(
         name=data.name, description=data.description or "", scenario_id=data.scenario_id,
-        condition_type=data.condition_type, metric_name=data.metric_name, operator=data.operator,
-        threshold_value=data.threshold_value, relative_metric=data.relative_metric,
-        degradation_percentage=data.degradation_percentage, notify_webhook=data.notify_webhook,
-        notify_users=data.notify_users or [], is_enabled=data.is_enabled,
+        p95_threshold=data.p95_threshold if hasattr(data, 'p95_threshold') else None,
+        p99_threshold=data.p99_threshold if hasattr(data, 'p99_threshold') else None,
+        error_rate_threshold=data.error_rate_threshold if hasattr(data, 'error_rate_threshold') else None,
+        rps_min_threshold=data.rps_min_threshold if hasattr(data, 'rps_min_threshold') else None,
+        notify_webhook=data.notify_webhook if hasattr(data, 'notify_webhook') else None,
+        enabled=data.is_enabled if hasattr(data, 'is_enabled') else True,
     )
     db.session.add(rule)
     db.session.commit()

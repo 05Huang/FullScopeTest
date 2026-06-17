@@ -113,6 +113,15 @@ class _DatabaseManager:
         self.relationship = relationship
         self.backref = backref
 
+        # SQLAlchemy 函数和操作符（Flask-SQLAlchemy 兼容）
+        from sqlalchemy import or_, and_, not_, func, case, text
+        self.or_ = or_
+        self.and_ = and_
+        self.not_ = not_
+        self.func = func
+        self.case = case
+        self.text = text
+
     def init_app(self, app):
         """
         Flask-SQLAlchemy 风格的初始化

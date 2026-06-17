@@ -14,6 +14,8 @@ import {
   Tooltip,
   message,
   Spin,
+  Modal,
+  Card,
 } from 'antd'
 import {
   PlusOutlined,
@@ -1969,7 +1971,7 @@ const ApiTestWorkspace = () => {
           method={method} setMethod={setMethod}
           url={url} setUrl={setUrl}
           sending={sending} onSend={handleSend}
-          currentCaseId={currentCaseId} hasUnsavedChanges={hasUnsavedChanges}
+          currentCaseId={currentCaseId ?? undefined} hasUnsavedChanges={hasUnsavedChanges}
           onNewCase={handleNewCase} onSaveCase={saveCurrentCase} onOpenSaveModal={openSaveCaseModal}
           onDeleteCase={handleDeleteCase}
           environments={environments} selectedEnvId={selectedEnvId} onSelectEnv={handleSelectEnv}

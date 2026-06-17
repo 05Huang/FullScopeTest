@@ -30,14 +30,14 @@ def registered_user(client):
 class TestPasswordReset:
     """密码重置测试"""
 
-    def test_forgot_password_returns_token(self, client, registered_user):
-        """忘记密码接口返回重置 token"""
+    def test_forgot_password_returns_success(self, client, registered_user):
+        """忘记密码接口返回成功消息"""
         resp = client.post('/api/v1/auth/forgot-password', json={
             'email': registered_user['email'],
         })
         assert resp.status_code == 200
         data = resp.get_json()
-        assert 'reset_token' in data['data']
+        assert data['message'] == '如果该邮箱已注册，重置链接已发送'
 
     def test_forgot_password_nonexistent_email(self, client):
         """不存在的邮箱也返回成功（防止邮箱枚举）"""

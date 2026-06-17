@@ -5,7 +5,7 @@
 """
 
 from flask import jsonify
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def success_response(data=None, message='success', code=200):
@@ -24,7 +24,7 @@ def success_response(data=None, message='success', code=200):
         'code': code,
         'message': message,
         'data': data,
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
+        'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
     }
     return jsonify(response), code
 
@@ -48,7 +48,7 @@ def error_response(code, message, errors=None):
         'message': message,
         'errors': errors,
         'request_id': request_id,
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
+        'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
     }
     return jsonify(response), code
 
@@ -79,6 +79,6 @@ def paginate_response(items, total, page, per_page, message='success'):
                 'pages': (total + per_page - 1) // per_page
             }
         },
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
+        'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
     }
     return jsonify(response), 200
