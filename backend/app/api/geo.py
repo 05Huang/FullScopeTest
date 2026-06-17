@@ -67,9 +67,12 @@ def detect_region():
     }
     """
     client_ip = _get_client_ip()
+    logger.info(f'[GeoDetect] Client IP: {client_ip}')
+    logger.info(f'[GeoDetect] Headers — X-Forwarded-For: {request.headers.get("X-Forwarded-For", "N/A")} | X-Real-IP: {request.headers.get("X-Real-IP", "N/A")} | Remote-Addr: {request.remote_addr}')
 
     # 本地/内网 IP 直接返回中国
     if client_ip in ('127.0.0.1', '::1', 'localhost') or client_ip.startswith('192.168.') or client_ip.startswith('10.'):
+        logger.info(f'[GeoDetect] Private/local IP → China (skipping API call)')
         return jsonify({
             'code': 200,
             'data': {
@@ -82,6 +85,7 @@ def detect_region():
 
     geo = _detect_country(client_ip)
     is_china = geo.get('country_code') == 'CN' if geo else True
+    logger.info(f'[GeoDetect] Result — country: {geo.get("country", "N/A")} | code: {geo.get("country_code", "N/A")} | is_china: {is_china}')
 
     return jsonify({
         'code': 200,
