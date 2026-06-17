@@ -1511,9 +1511,9 @@ body {
 }
 
 .fst-stat-icon--primary { background: var(--fst-primary-container); color: var(--fst-primary); }
-.fst-stat-icon--secondary { background: #E8F5F0; color: var(--fst-secondary); }
-.fst-stat-icon--tertiary { background: var(--fst-tertiary-light); color: #8B6914; }
-.fst-stat-icon--info { background: #E3F0FA; color: var(--fst-info); }
+.fst-stat-icon--secondary { background: rgba(98, 155, 149, 0.12); color: var(--fst-secondary); }
+.fst-stat-icon--tertiary { background: rgba(212, 180, 131, 0.15); color: var(--fst-tertiary); }
+.fst-stat-icon--info { background: rgba(91, 143, 185, 0.12); color: var(--fst-info); }
 
 .fst-stat-value {
   font-size: 28px; font-weight: 700;
@@ -1536,7 +1536,7 @@ body {
 }
 
 .fst-stat-trend--up { color: var(--fst-primary); background: var(--fst-primary-container); }
-.fst-stat-trend--down { color: var(--fst-error); background: #FDECEA; }
+.fst-stat-trend--down { color: var(--fst-error); background: rgba(199, 84, 80, 0.1); }
 
 /* ── iOS Section Cards ── */
 .fst-ios-card {

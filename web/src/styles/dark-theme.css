@@ -22,8 +22,10 @@
 
   /* ─── 表面色 ─── */
   --fst-surface: #1A1D1E;
+  --fst-surface-card: #242728;
   --fst-surface-variant: #242728;
   --fst-surface-container: #1E2122;
+  --fst-surface-dim: #1E2122;
   --fst-on-surface: #E2E2E0;
   --fst-on-surface-variant: #A0A0A0;
   --fst-on-surface-muted: #707070;
@@ -50,6 +52,38 @@
 [data-theme="dark"] body {
   background: var(--fst-surface);
   color: var(--fst-on-surface);
+}
+
+/* 暗色模式下统计图标 - 覆盖硬编码颜色 */
+[data-theme="dark"] .fst-stat-icon--secondary {
+  background: #1A3A37;
+  color: var(--fst-secondary);
+}
+
+[data-theme="dark"] .fst-stat-icon--tertiary {
+  background: #3D3528;
+  color: var(--fst-tertiary);
+}
+
+[data-theme="dark"] .fst-stat-icon--info {
+  background: #1A2E3A;
+  color: var(--fst-info);
+}
+
+/* 暗色模式下趋势标签 */
+[data-theme="dark"] .fst-stat-trend--up {
+  color: var(--fst-primary);
+  background: var(--fst-primary-container);
+}
+
+[data-theme="dark"] .fst-stat-trend--down {
+  color: var(--fst-error);
+  background: rgba(232, 112, 108, 0.15);
+}
+
+/* 暗色模式下统计卡片内渐变条 */
+[data-theme="dark"] .fst-stat-card::before {
+  background: linear-gradient(90deg, var(--fst-primary-light), var(--fst-tertiary));
 }
 
 /* 暗色模式下侧边栏 */
@@ -310,4 +344,42 @@
 [data-theme="dark"] *:focus-visible {
   outline: 2px solid var(--fst-primary);
   outline-offset: 2px;
+}
+
+/* ─── 暗色模式下 Badge 标签 ─── */
+[data-theme="dark"] .fst-badge--success {
+  color: var(--fst-success);
+  background: rgba(74, 158, 150, 0.15);
+}
+
+[data-theme="dark"] .fst-badge--error {
+  color: var(--fst-error);
+  background: rgba(232, 112, 108, 0.15);
+}
+
+[data-theme="dark"] .fst-badge--primary {
+  color: var(--fst-primary);
+  background: rgba(74, 158, 150, 0.15);
+}
+
+[data-theme="dark"] .fst-badge--warning {
+  color: var(--fst-warning);
+  background: rgba(232, 207, 160, 0.15);
+}
+
+/* ─── 暗色模式下 Tab 按钮 ─── */
+[data-theme="dark"] .fst-tab {
+  color: var(--fst-on-surface-variant);
+  background: transparent;
+}
+
+[data-theme="dark"] .fst-tab--active {
+  color: var(--fst-primary);
+  background: var(--fst-primary-container);
+}
+
+/* ─── 暗色模式下 Copilot 输入区 ─── */
+[data-theme="dark"] .fst-copilot-input {
+  background: var(--fst-surface-variant);
+  border-top-color: var(--fst-outline-soft);
 }
