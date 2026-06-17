@@ -37,6 +37,35 @@ csrf = CSRFProtect()
 logger = get_logger(__name__)
 
 
+def _create_init_admin(app):
+    """通过环境变量创建初始管理员（仅首次启动时生效，已有用户则跳过）"""
+    init_username = os.environ.get('INIT_ADMIN_USERNAME', '').strip()
+    init_email = os.environ.get('INIT_ADMIN_EMAIL', '').strip()
+    init_password = os.environ.get('INIT_ADMIN_PASSWORD', '').strip()
+
+    if not all([init_username, init_email, init_password]):
+        return
+
+    with app.app_context():
+        from .extensions import db
+        from .models.user import User
+        from werkzeug.security import generate_password_hash
+
+        if User.query.count() > 0:
+            return  # 已有用户，跳过
+
+        user = User(
+            username=init_username,
+            email=init_email,
+            password_hash=generate_password_hash(init_password),
+            role='admin',
+            is_active=True,
+        )
+        db.session.add(user)
+        db.session.commit()
+        logger.info(f'Initial admin created: {init_username}')
+
+
 def create_app(config_name='development'):
     """
     应用工厂函数
@@ -80,6 +109,9 @@ def create_app(config_name='development'):
 
     # 注册蓝图
     register_blueprints(app)
+
+    # 通过环境变量创建初始管理员（仅首次启动时生效）
+    _create_init_admin(app)
 
     # 全局错误处理器由 error_handler_middleware 统一注册（见上方）
 

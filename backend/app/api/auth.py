@@ -78,17 +78,12 @@ def register():
         password_hash=generate_password_hash(password)
     )
 
-    # 第一个注册的用户自动成为管理员
-    user_count = User.query.count()
-    if user_count == 0:
-        user.role = 'admin'
-
     db.session.add(user)
     db.session.commit()
 
     return success_response(
         data={'user_id': user.id, 'username': user.username, 'role': user.role},
-        message='注册成功' + ('，您是第一位用户，已自动设为管理员' if user_count == 0 else ''),
+        message='注册成功',
         code=201
     )
 
