@@ -157,16 +157,14 @@ body {
   padding: 40px 60px 24px;
   background: #fff;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .fst-login-right-inner {
   width: 100%;
   max-width: 420px;
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .fst-login-right-brand {
