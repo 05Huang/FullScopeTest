@@ -320,6 +320,10 @@ def register_blueprints(app):
     from .api.admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/api/v1')
 
+    # 地理位置检测（无需认证）
+    from .api.geo import geo_bp
+    app.register_blueprint(geo_bp)
+
     # 健康检查端点（无需认证）
     from .core.health import health_bp
     app.register_blueprint(health_bp)
@@ -328,6 +332,7 @@ def register_blueprints(app):
     if app.config.get('WTF_CSRF_ENABLED', False):
         csrf.exempt(api_bp)
         csrf.exempt(admin_bp)
+        csrf.exempt(geo_bp)
 
 
 def register_error_handlers(app):

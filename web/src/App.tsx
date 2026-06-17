@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import ErrorBoundary from './components/ErrorBoundary'
+import LanguageSwitchPrompt from './components/LanguageSwitchPrompt'
 import i18n from './i18n'
 import { useAuthStore } from './stores/authStore'
 
@@ -71,6 +72,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <ErrorBoundary>
+      <LanguageSwitchPrompt />
       <Routes>
         {/* 公开路由 */}
         <Route element={<Login />}>

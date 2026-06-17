@@ -630,7 +630,7 @@
     "modelTooltip": "e.g. deepseek-chat, gpt-4o, etc.",
     "apiKey": "API Key",
     "visionBaseURL": "Vision Model Base URL",
-    "visionModel": "Vision Model Name",
+    "visionModel": "Vision Model",
     "visionApiKey": "Vision Model API Key",
     "saveBtn": "Save Settings",
     "saveSuccess": "Settings saved successfully, written to backend .env",
@@ -658,7 +658,6 @@
     "darkPreview": "Dark mode is active. Dark backgrounds reduce eye strain, ideal for nighttime use.",
     "lightPreview": "Light mode is active. Ideal for daytime use.",
     "modelLabel": "Model Name",
-    "visionModel": "Vision Model",
     "securityTab": "Security",
     "securityHint": "Manage password policies, login security, and session timeout settings.",
     "passwordPolicy": "Password Policy",
@@ -1241,5 +1240,11 @@
     "saveCase": "Save Case",
     "clearResponse": "Clear Response",
     "duplicateCase": "Duplicate Case"
+  },
+  "geo": {
+    "title": "Switch to English?",
+    "description": "We detected you might prefer English. Would you like to switch the interface language?",
+    "keepChinese": "Keep Chinese",
+    "switchEnglish": "Switch to English"
   }
 }

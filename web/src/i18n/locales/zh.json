@@ -630,7 +630,7 @@
     "modelTooltip": "如 deepseek-chat, gpt-4o 等",
     "apiKey": "API Key",
     "visionBaseURL": "视觉模型 Base URL",
-    "visionModel": "视觉模型名称",
+    "visionModel": "视觉模型",
     "visionApiKey": "视觉模型 API Key",
     "saveBtn": "保存设置",
     "saveSuccess": "设置保存成功，已写入后端 .env",
@@ -658,7 +658,6 @@
     "darkPreview": "当前为暗色模式，深色背景可减少眼部疲劳，适合夜间使用。",
     "lightPreview": "当前为亮色模式，适合日间使用。",
     "modelLabel": "模型名称",
-    "visionModel": "视觉模型",
     "securityTab": "安全",
     "securityHint": "管理密码策略、登录安全和会话超时设置。",
     "passwordPolicy": "密码策略",
@@ -1241,5 +1240,11 @@
     "saveCase": "保存用例",
     "clearResponse": "清空响应",
     "duplicateCase": "复制用例"
+  },
+  "geo": {
+    "title": "切换为英文？",
+    "description": "我们检测到您可能更喜欢英文界面，是否切换语言？",
+    "keepChinese": "保持中文",
+    "switchEnglish": "Switch to English"
   }
 }
