@@ -345,6 +345,14 @@ const Login = () => {
                   </Form.Item>
                 </Form>
 
+                {/* 注册入口 */}
+                <div className="fst-login-right-footer">
+                  <span className="fst-auth-footer-muted">{t('login.noAccount')}</span>
+                  <Link to="/register" className="fst-auth-link">
+                    {t('login.registerNow')}
+                  </Link>
+                </div>
+
                 {/* SSO 登录入口 */}
                 {ssoProviders.length > 0 && (
                   <div style={{ marginTop: 8 }}>
