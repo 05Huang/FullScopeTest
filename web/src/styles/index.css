@@ -154,10 +154,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 60px 24px;
+  padding: 24px 60px 16px;
   background: #fff;
   position: relative;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .fst-login-right-inner {
@@ -171,25 +171,25 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .fst-login-right-logo {
-  height: 72px;
+  height: 60px;
   width: auto;
   display: block;
 }
 
 .fst-login-right-card {
   width: 100%;
-  min-height: 380px;
+  min-height: 560px;
 }
 
 .fst-login-right-title {
   font-size: 20px;
   font-weight: 700;
   color: #1a2b2a;
-  margin: 0 0 20px;
+  margin: 0 0 14px;
   letter-spacing: 0.01em;
 }
 
@@ -247,11 +247,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .fst-login-right-copyright {
-  margin-top: 24px;
+  margin-top: 12px;
   font-size: 12px;
   color: #b0b0b0;
   text-align: center;
@@ -594,12 +594,20 @@ body {
   flex-direction: column;
   gap: 0;
   backface-visibility: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
 }
 
 .fst-login-right-card .fst-auth-back {
   transform: rotateY(180deg);
+}
+
+/* Register form compact spacing */
+.fst-login-right-card .fst-auth-back .ant-form-item {
+  margin-bottom: 14px;
+}
+
+.fst-login-right-card .fst-auth-back .ant-form-item:last-of-type {
+  margin-bottom: 12px;
 }
 
 .fst-auth-flip {
