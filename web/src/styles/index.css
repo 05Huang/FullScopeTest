@@ -411,19 +411,19 @@ body {
 }
 
 .fst-env-notice {
-  max-width: min(680px, calc(100vw - 520px));
-  padding: 6px 14px;
-  border-radius: 12px;
+  max-width: min(900px, calc(100vw - 120px));
+  padding: 4px 12px;
+  border-radius: 10px;
   border: 1px solid rgba(15, 45, 40, 0.12);
   background: rgba(255, 255, 255, 0.52);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   color: rgba(15, 45, 40, 0.66);
-  font-size: 12px;
-  line-height: 1.5;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .fst-app-content.ant-layout-content {
