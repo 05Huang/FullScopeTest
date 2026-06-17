@@ -280,9 +280,9 @@ const Login = () => {
           </div>
 
           <div className="fst-login-right-card">
-            <div className="fst-auth-flip">
+            <div className={`fst-auth-flip ${isRegister ? 'is-flipped' : ''}`}>
               {/* ─── Login face ─── */}
-              <section className="fst-auth-face fst-auth-front" aria-label={t('login.loginForm')} hidden={isRegister}>
+              <section className="fst-auth-face fst-auth-front" aria-label={t('login.loginForm')}>
                 <h3 className="fst-login-right-title">{t('login.accountLogin')}</h3>
 
                 <Form<LoginForm>
@@ -339,7 +339,7 @@ const Login = () => {
                     </div>
                   ) : null}
 
-                  <Form.Item style={{ marginBottom: 0, marginTop: 'auto' }}>
+                  <Form.Item style={{ marginBottom: 16 }}>
                     <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
                       {t('login.loginBtn')}
                     </Button>
@@ -376,7 +376,7 @@ const Login = () => {
               </section>
 
               {/* ─── Register face ─── */}
-              <section className="fst-auth-face fst-auth-back" aria-label={t('login.registerForm')} hidden={!isRegister}>
+              <section className="fst-auth-face fst-auth-back" aria-label={t('login.registerForm')}>
                 <h3 className="fst-login-right-title">{t('login.register.title')}</h3>
 
                 <Form<RegisterForm>
@@ -495,7 +495,7 @@ const Login = () => {
                     {t('login.inviteCodeHint') || '输入组织邀请码可直接加入团队，留空则创建个人空间'}
                   </div>
 
-                  <Form.Item style={{ marginBottom: 0, marginTop: 'auto' }}>
+                  <Form.Item style={{ marginBottom: 16 }}>
                     <Button htmlType="submit" loading={registerLoading} block className="fst-auth-submit">
                       {t('login.registerBtn')}
                     </Button>

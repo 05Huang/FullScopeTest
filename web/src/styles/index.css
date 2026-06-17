@@ -154,10 +154,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 16px 60px 10px;
+  padding: 40px 60px 24px;
   background: #fff;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .fst-login-right-inner {
@@ -171,24 +171,25 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
 }
 
 .fst-login-right-logo {
-  height: 50px;
+  height: 72px;
   width: auto;
   display: block;
 }
 
 .fst-login-right-card {
   width: 100%;
+  min-height: 380px;
 }
 
 .fst-login-right-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1a2b2a;
-  margin: 0 0 10px;
+  margin: 0 0 20px;
   letter-spacing: 0.01em;
 }
 
@@ -246,12 +247,12 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
 .fst-login-right-copyright {
-  margin-top: 8px;
-  font-size: 11px;
+  margin-top: 24px;
+  font-size: 12px;
   color: #b0b0b0;
   text-align: center;
   flex-shrink: 0;
@@ -576,39 +577,29 @@ body {
 .fst-login-right-card .fst-auth-flip {
   position: relative;
   width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 680ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  will-change: transform;
+}
+
+.fst-login-right-card .fst-auth-flip.is-flipped {
+  transform: rotateY(180deg);
 }
 
 .fst-login-right-card .fst-auth-face {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
-  animation: fst-fade-in 320ms ease both;
-}
-
-.fst-login-right-card .fst-auth-face[hidden] {
-  display: none;
+  backface-visibility: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .fst-login-right-card .fst-auth-back {
   transform: rotateY(180deg);
-}
-
-/* Register form compact spacing */
-.fst-login-right-card .fst-auth-back .ant-form-item {
-  margin-bottom: 10px;
-}
-
-.fst-login-right-card .fst-auth-back .ant-form-item:last-of-type {
-  margin-bottom: 8px;
-}
-
-/* Login form compact spacing */
-.fst-login-right-card .fst-auth-front .ant-form-item {
-  margin-bottom: 12px;
-}
-
-.fst-login-right-card .fst-auth-front .ant-form-item:last-of-type {
-  margin-bottom: 0;
 }
 
 .fst-auth-flip {
@@ -685,9 +676,9 @@ body {
 }
 
 .fst-auth-input.ant-input-affix-wrapper {
-  height: 42px;
+  height: 48px;
   border-radius: 10px;
-  padding: 0 12px;
+  padding: 0 14px;
   background: #fff;
   border: 1px solid #e0e0e0;
   box-shadow: none;
@@ -764,7 +755,7 @@ body {
 }
 
 .fst-auth-submit.ant-btn {
-  height: 44px;
+  height: 50px;
   border-radius: 10px;
   border: none;
   background: #2D5A52;
