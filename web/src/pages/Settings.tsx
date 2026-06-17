@@ -1,15 +1,186 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Typography, Row, Col, Space, Tabs, Switch, Select, Slider, Divider, Radio } from 'antd';
+import { Card, Form, Input, Button, message, Typography, Row, Col, Space, Tabs, Switch, Select, Slider, Divider, Radio, Tag, Alert, Popconfirm } from 'antd';
 import {
   RobotOutlined, SaveOutlined, SettingOutlined, BulbOutlined,
   GlobalOutlined, BellOutlined, SafetyOutlined, KeyOutlined,
   SunOutlined, MoonOutlined, DesktopOutlined,
+  LinkOutlined, GithubOutlined, DisconnectOutlined, ApiOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { apiTestService } from '../services/apiTestService';
 import { useThemeStore } from '../stores/themeStore';
+import integrationService from '../services/integrationService';
 
 const { Text } = Typography;
+
+/** 集成配置子组件 — 在系统设置内管理 GitHub OAuth 等 */
+const SettingsIntegrationsTab: React.FC = () => {
+  const { t } = useTranslation();
+  const [githubConfig, setGithubConfig] = useState<{ configured: boolean; client_id?: string } | null>(null);
+  const [githubStatus, setGithubStatus] = useState<{ connected: boolean; integration?: any } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [cfgRes, statusRes] = await Promise.allSettled([
+          integrationService.getGitHubConfig(),
+          integrationService.getGitHubStatus(),
+        ]);
+        if (cfgRes.status === 'fulfilled' && cfgRes.value?.code === 200) {
+          setGithubConfig(cfgRes.value.data);
+          if (cfgRes.value.data?.client_id) setClientId(cfgRes.value.data.client_id);
+        }
+        if (statusRes.status === 'fulfilled' && statusRes.value?.code === 200) {
+          setGithubStatus(statusRes.value.data);
+        }
+      } catch {} finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  const handleSaveGitHubConfig = async () => {
+    if (!clientId.trim()) { message.error(t('settings.githubClientIdRequired') || '请输入 Client ID'); return; }
+    setSaving(true);
+    try {
+      // Save to localStorage for frontend use
+      localStorage.setItem('fst-github-client-id', clientId);
+      if (clientSecret) localStorage.setItem('fst-github-client-secret', clientSecret);
+      message.success(t('settings.saveSuccess'));
+    } finally { setSaving(false); }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await integrationService.unbindGitHub();
+      message.success(t('integrations.github.unbindSuccess'));
+      const res = await integrationService.getGitHubStatus();
+      if (res.code === 200) setGithubStatus(res.data);
+    } catch { message.error(t('integrations.github.unbindFailed')); }
+  };
+
+  const labelStyle = { fontWeight: 600, fontSize: 13 };
+
+  return (
+    <div style={{ padding: '8px 0' }}>
+      {/* GitHub Integration */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: 'linear-gradient(135deg, #24292e 0%, #586069 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <GithubOutlined style={{ fontSize: 20, color: '#fff' }} />
+          </div>
+          <div>
+            <Text strong style={{ fontSize: 15 }}>GitHub</Text>
+            <div>
+              <Tag color={githubStatus?.connected ? 'green' : githubConfig?.configured ? 'blue' : 'orange'}>
+                {githubStatus?.connected
+                  ? (t('integrations.connected') || '已连接')
+                  : githubConfig?.configured
+                    ? (t('integrations.notConnected') || '未连接')
+                    : (t('integrations.notConfigured') || '未配置')}
+              </Tag>
+            </div>
+          </div>
+        </div>
+
+        <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+          {t('settings.githubOAuthHint') || '配置 GitHub OAuth App 以启用 PR Check Run 回写、Issue 关联等功能。需要在 GitHub Settings > Developer settings > OAuth Apps 中创建应用。'}
+        </Text>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <div style={{ marginBottom: 16 }}>
+              <Text strong style={labelStyle}>Client ID</Text>
+              <Input
+                value={clientId}
+                onChange={e => setClientId(e.target.value)}
+                placeholder="Ov23li..."
+                style={{ marginTop: 6 }}
+              />
+            </div>
+          </Col>
+          <Col span={12}>
+            <div style={{ marginBottom: 16 }}>
+              <Text strong style={labelStyle}>Client Secret</Text>
+              <Input.Password
+                value={clientSecret}
+                onChange={e => setClientSecret(e.target.value)}
+                placeholder={githubConfig?.configured ? '•••••••• (已配置)' : 'ghp_xxx...'}
+                style={{ marginTop: 6 }}
+              />
+            </div>
+          </Col>
+        </Row>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveGitHubConfig} loading={saving}>
+            {t('settings.saveBtn')}
+          </Button>
+          {githubStatus?.connected && (
+            <Popconfirm
+              title={t('integrations.github.unbindConfirm')}
+              onConfirm={handleDisconnect}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+            >
+              <Button danger icon={<DisconnectOutlined />}>
+                {t('integrations.github.unbind') || '断开连接'}
+              </Button>
+            </Popconfirm>
+          )}
+        </div>
+
+        {!githubConfig?.configured && !githubStatus?.connected && (
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginTop: 16 }}
+            message={t('settings.githubSetupGuide') || '设置指南'}
+            description={
+              <ol style={{ margin: '4px 0 0', paddingLeft: 20, fontSize: 13, lineHeight: 2 }}>
+                <li>{t('settings.githubStep1') || '访问 GitHub > Settings > Developer settings > OAuth Apps'}</li>
+                <li>{t('settings.githubStep2') || '点击 "New OAuth App"，填写应用信息'}</li>
+                <li>{t('settings.githubStep3') || `Callback URL 填写: ${window.location.origin}/integrations`}</li>
+                <li>{t('settings.githubStep4') || '将获取到的 Client ID 和 Client Secret 填入上方'}</li>
+              </ol>
+            }
+          />
+        )}
+      </div>
+
+      <Divider />
+
+      {/* Webhook / API Token 快捷入口 */}
+      <div>
+        <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 8 }}>
+          {t('settings.webhookAndTokens') || 'Webhook 与 API Token'}
+        </Text>
+        <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 16 }}>
+          {t('settings.webhookHint') || 'Webhook 和 API Token 的详细管理请前往专门页面。'}
+        </Text>
+        <Space>
+          <Button icon={<ApiOutlined />} onClick={() => window.location.href = '/api-tokens'}>
+            {t('sidebar.apiTokens') || 'API Token'}
+          </Button>
+          <Button icon={<BellOutlined />} onClick={() => window.location.href = '/notification-settings'}>
+            {t('sidebar.notifications') || '通知设置'}
+          </Button>
+          <Button icon={<SettingOutlined />} onClick={() => window.location.href = '/ci-cd'}>
+            {t('sidebar.cicd') || 'CI/CD'}
+          </Button>
+        </Space>
+      </div>
+    </div>
+  );
+};
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -436,6 +607,17 @@ const Settings: React.FC = () => {
             {t('settings.saveBtn')}
           </Button>
         </div>
+      ),
+    },
+    {
+      key: 'integrations',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <LinkOutlined /> {t('settings.integrationsTab') || '集成'}
+        </span>
+      ),
+      children: (
+        <SettingsIntegrationsTab />
       ),
     },
   ];

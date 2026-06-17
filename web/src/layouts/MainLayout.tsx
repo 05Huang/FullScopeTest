@@ -88,7 +88,7 @@ const SidebarItem = ({ icon, label, path, active, expanded, currentPath, childre
         }}
       >
         <span style={{ fontSize: 18, width: 22, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-        <span style={{ flex: 1 }}>{label}</span>
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
         {children && children.length > 0 && (
           <span style={{
             fontSize: 10,
@@ -321,25 +321,43 @@ const MainLayout = () => {
 
   const tourSteps: TourProps['steps'] = [
     {
-      title: t('sidebar.dashboard'),
-      description: t('tour.welcome'),
+      title: t('tour.step1Title') || '👋 欢迎使用 FullScopeTest',
+      description: t('tour.step1Desc') || '这是一个企业级 AI 测试平台，支持接口测试、Web 自动化、APP 测试、性能压测等全方位测试能力。',
       target: () => document.querySelector('.fst-app-logo') as HTMLElement,
     },
     {
-      title: t('sidebar.dashboard'),
-      description: t('tour.dashboard'),
+      title: t('tour.step2Title') || '📊 工作台概览',
+      description: t('tour.step2Desc') || '在这里你可以一览所有测试数据：API 用例数、Web 脚本数、性能场景数、最近测试执行记录，以及测试趋势图表。',
       target: () => document.getElementById('tour-step-dashboard-api') as HTMLElement,
     },
     {
-      title: t('sidebar.apiTest'),
-      description: t('tour.navigation'),
+      title: t('tour.step3Title') || '🧪 接口测试',
+      description: t('tour.step3Desc') || '左侧导航包含所有测试模块：接口测试（工作台/集合/环境）、Web 自动化、APP 测试、性能压测等。点击展开子菜单。',
       target: () => document.querySelector('.fst-app-menu') as HTMLElement,
       placement: 'right',
     },
     {
-      title: t('sidebar.aiInsights'),
-      description: t('tour.search'),
+      title: t('tour.step4Title') || '🔍 全局搜索',
+      description: t('tour.step4Desc') || '按 Ctrl+K 可以快速搜索任何内容：测试用例、项目、文档、成员等。这是你最高效的导航方式。',
       target: () => document.getElementById('tour-step-search') as HTMLElement,
+    },
+    {
+      title: t('tour.step5Title') || '🤖 AI 助手',
+      description: t('tour.step5Desc') || '右下角的 AI 助手可以帮你：生成测试用例、分析失败原因、创建性能场景、解释数据含义。试试和它对话！',
+      target: () => document.querySelector('.fst-copilot-sprite') as HTMLElement,
+      placement: 'left',
+    },
+    {
+      title: t('tour.step6Title') || '🌙 主题切换',
+      description: t('tour.step6Desc') || '点击顶栏的太阳/月亮图标可以切换亮色/暗色主题。系统也会自动跟随你的操作系统主题。',
+      target: () => document.querySelector('header') as HTMLElement,
+      placement: 'bottom',
+    },
+    {
+      title: t('tour.step7Title') || '⚙️ 系统设置',
+      description: t('tour.step7Desc') || '在系统设置中可以配置 AI 模型参数、主题外观、安全策略、通知渠道、GitHub 集成等。前往 /settings 查看。',
+      target: () => document.querySelector('.fst-app-menu') as HTMLElement,
+      placement: 'right',
     },
   ]
 
@@ -408,7 +426,7 @@ const MainLayout = () => {
 
       {/* ─── iOS Sidebar ─── */}
       <aside style={{
-        width: collapsed ? 72 : 260,
+        width: collapsed ? 72 : 280,
         height: '100vh',
         position: 'fixed',
         left: 0,
@@ -425,7 +443,7 @@ const MainLayout = () => {
         overflow: 'hidden',
       }}>
         {/* Logo */}
-        <div style={{
+        <div className="fst-app-logo" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
@@ -469,7 +487,7 @@ const MainLayout = () => {
         }}>
           <Popover
             content={
-              <div style={{ width: 260, padding: '4px' }}>
+              <div style={{ width: 280, padding: '4px' }}>
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#3D6E66', marginBottom: 4 }}>
                     {t("layout.contactAuthor")}
@@ -530,7 +548,7 @@ const MainLayout = () => {
       {/* ─── Main Content ─── */}
       <div style={{
         flex: 1,
-        marginLeft: collapsed ? 72 : 260,
+        marginLeft: collapsed ? 72 : 280,
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
@@ -634,7 +652,7 @@ const MainLayout = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <Popover
               content={
-                <div style={{ width: 260, padding: '4px' }}>
+                <div style={{ width: 280, padding: '4px' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
                     <div style={{ fontSize: 16, fontWeight: 600, color: '#3D6E66', marginBottom: 4 }}>
                       {t("layout.contactAuthor")}
@@ -810,7 +828,7 @@ const MainLayout = () => {
 
         {/* ─── Footer ─── */}
         <footer className="fst-app-footer">
-          <div className="fst-site-footer" aria-label="网站页脚">
+          <div className="fst-site-footer" aria-label={t('layout.footerAriaLabel') || '网站页脚'}>
             <a className="fst-site-footer-link" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer noopener">
               <FooterBeianIcon className="fst-site-footer-icon" />
               苏ICP备2025167047号-3
@@ -820,6 +838,17 @@ const MainLayout = () => {
               <FooterGithubIcon className="fst-site-footer-icon" />
               GitHub 开源
             </a>
+            <span className="fst-site-footer-sep" aria-hidden="true" />
+            <span className="fst-site-footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }} title={t('layout.accessibilityTitle') || '本系统支持无障碍访问：键盘导航、屏幕阅读器、高对比度模式、减少动画'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="m8 12 2 0m4 0 2 0"/>
+                <path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor" stroke="none"/>
+                <path d="M9 16c1.5 1 4.5 1 6 0"/>
+                <path d="M8 12l-3 4m11-4 3 4"/>
+              </svg>
+              {t('layout.accessibility') || '无障碍'}
+            </span>
           </div>
         </footer>
         <GlobalCopilot />

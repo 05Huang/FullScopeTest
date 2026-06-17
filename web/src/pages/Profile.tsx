@@ -16,6 +16,7 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [pwdLoading, setPwdLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const isProduction = (import.meta as any).env?.MODE === 'production' || (import.meta as any).env?.VITE_DEPLOY_ENV === 'prod'
 
   useEffect(() => {
     if (user) {
@@ -171,7 +172,8 @@ const Profile: React.FC = () => {
         </Form>
       </div>
 
-      {/* Password Card */}
+      {/* Password Card — hidden in production/demo to prevent guest users from changing shared passwords */}
+      {!isProduction && (
       <div className="fst-ios-card fst-animate-in fst-animate-in-2">
         <div className="fst-ios-card-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -212,6 +214,7 @@ const Profile: React.FC = () => {
           </div>
         </Form>
       </div>
+      )}
     </div>
   )
 }

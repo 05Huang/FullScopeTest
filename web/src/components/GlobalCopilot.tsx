@@ -23,38 +23,18 @@ const AppBrandMark = ({ size = 22 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 64 64"
+    viewBox="0 0 24 24"
+    fill="none"
     style={{ display: 'block' }}
     aria-hidden="true"
     focusable="false"
   >
-    <defs>
-      <linearGradient id="fstAppBrandG" x1="10" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stopColor="#5FA59B" />
-        <stop offset="0.6" stopColor="#3D6E66" />
-        <stop offset="1" stopColor="#D7B56D" />
-      </linearGradient>
-      <filter id="fstAppGlow" x="-40%" y="-40%" width="180%" height="180%">
-        <feGaussianBlur stdDeviation="3.2" result="blur" />
-        <feColorMatrix
-          in="blur"
-          type="matrix"
-          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.85 0"
-          result="glow"
-        />
-        <feMerge>
-          <feMergeNode in="glow" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
-    </defs>
     <path
-      d="M18 16h28c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H25.2v6.2H42c1.7 0 3 1.3 3 3v7c0 1.7-1.3 3-3 3H18c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3Z"
-      fill="url(#fstAppBrandG)"
-      filter="url(#fstAppGlow)"
+      d="M7 6h10c.6 0 1 .4 1 1v2.5c0 .6-.4 1-1 1H9.5v2.3H15c.6 0 1 .4 1 1v2.5c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1Z"
+      fill="rgba(255,255,255,0.9)"
     />
-    <path d="M22 23h24" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" />
-    <path d="M22 45h18" stroke="rgba(255,255,255,0.38)" strokeWidth="2" strokeLinecap="round" />
+    <path d="M8.5 9.5h9" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeLinecap="round" />
+    <path d="M8.5 16.5h6" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
   </svg>
 );
 
@@ -553,17 +533,19 @@ const GlobalCopilot: React.FC = () => {
                     }}
                   >
                     {msg.role === 'assistant' && (
-                      <Avatar
-                        shape="square"
-                        icon={<AppBrandMark size={18} />}
-                        className="fst-copilot-avatar-ai"
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.56)',
-                          border: '1px solid rgba(15, 45, 40, 0.12)',
-                          boxShadow: '0 10px 22px rgba(15, 45, 40, 0.10)',
-                          borderRadius: 12,
-                        }}
-                      />
+                      <div style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: 'linear-gradient(135deg, #5FA59B 0%, #3D6E66 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 8px rgba(61, 110, 102, 0.2)',
+                      }}>
+                        <AppBrandMark size={20} />
+                      </div>
                     )}
                     <div style={{
                       maxWidth: '80%',

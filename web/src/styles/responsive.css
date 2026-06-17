@@ -87,6 +87,22 @@
   }
 }
 
+/* ─── 防止英文长文本导致水平溢出 ─── */
+body {
+  overflow-x: hidden;
+}
+
+.fst-app-root > aside {
+  overflow-x: hidden;
+}
+
+/* 侧边栏文字截断 */
+.fst-app-root aside button span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ─── 桌面 (> 1024px) — 默认样式，无需额外规则 ─── */
 
 /* ─── 移动端底部 Tab 栏（默认隐藏） ─── */
