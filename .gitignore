@@ -181,3 +181,5 @@ remaining_chinese.txt
 # 重构计划文档（本地跟踪）
 REFACTOR_PLAN.md
 REFACTOR_TASKS.md
+cloc.txt
+tree.txt
