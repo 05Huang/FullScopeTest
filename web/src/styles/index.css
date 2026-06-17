@@ -183,8 +183,6 @@ body {
 
 .fst-login-right-card {
   width: 100%;
-  flex: 1;
-  min-height: 0;
 }
 
 .fst-login-right-title {
