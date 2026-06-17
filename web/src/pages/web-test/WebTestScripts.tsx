@@ -18,6 +18,7 @@ import {
   Badge,
   Alert,
   Image,
+  type MenuProps,
 } from 'antd'
 import {
   PlusOutlined,
@@ -39,7 +40,6 @@ import VisualDiffViewer from '@/components/VisualDiffViewer'
 import LogViewerModal from './components/LogViewerModal'
 import AiExploreModal from './components/AiExploreModal'
 import type { ColumnsType } from 'antd/es/table'
-import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { webTestService } from '@/services/webTestService'
 import { runWithConcurrency } from '@/utils/runWithConcurrency'

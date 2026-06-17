@@ -208,7 +208,7 @@ const GlobalCopilot: React.FC = () => {
           next = clampPanelPos(parsed.x, parsed.y);
         }
       }
-    } catch {}
+    } catch { /* ignore */ }
     if (!next) {
       next = clampPanelPos(window.innerWidth - 420 - 28, window.innerHeight - 640 - 28);
     }
@@ -251,7 +251,7 @@ const GlobalCopilot: React.FC = () => {
     if (dismiss) {
       try {
         sessionStorage.setItem('fst-copilot-nudge-dismissed', '1');
-      } catch {}
+      } catch { /* ignore */ }
     }
   };
 
@@ -273,7 +273,7 @@ const GlobalCopilot: React.FC = () => {
     let dismissed = false;
     try {
       dismissed = sessionStorage.getItem('fst-copilot-nudge-dismissed') === '1';
-    } catch {}
+    } catch { /* ignore */ }
     if (dismissed) return;
 
     const scheduleNext = () => {
@@ -414,7 +414,7 @@ const GlobalCopilot: React.FC = () => {
       try {
         const current = panelPosRef.current;
         if (current) sessionStorage.setItem('fst-copilot-panel-pos', JSON.stringify(current));
-      } catch {}
+      } catch { /* ignore */ }
       (e.currentTarget as HTMLElement).releasePointerCapture?.(ev.pointerId);
     };
 

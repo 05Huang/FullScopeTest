@@ -17,6 +17,7 @@ import {
   Divider,
   List,
   Tag,
+  type UploadFile,
 } from 'antd'
 import {
   UploadOutlined,
@@ -26,7 +27,6 @@ import {
   CloseCircleOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import type { UploadFile } from 'antd'
 import api from '@/services/api'
 
 const { Text, Paragraph } = Typography

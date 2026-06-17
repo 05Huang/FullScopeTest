@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, message } from 'antd'
-import type { TourProps } from 'antd'
+import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, message, type TourProps } from 'antd'
 import {
   HomeOutlined,
   ApiOutlined,

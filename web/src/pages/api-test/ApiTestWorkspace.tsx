@@ -16,6 +16,7 @@ import {
   Spin,
   Modal,
   Card,
+  type MenuProps,
 } from 'antd'
 import {
   PlusOutlined,
@@ -29,9 +30,7 @@ import {
   CloseCircleOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
-import type { MenuProps } from 'antd'
-import { apiTestService } from '@/services/apiTestService'
-import type { AiPlanOperation } from '@/services/apiTestService'
+import { apiTestService, type AiPlanOperation } from '@/services/apiTestService'
 import { environmentService } from '@/services/environmentService'
 import { useProjectStore } from '@/stores/projectStore'
 import CollectionManager from './CollectionManager'
@@ -791,8 +790,8 @@ const ApiTestWorkspace = () => {
   // 获取当前请求的所有参数（包含环境变量和Headers）
   const getRequestWithEnv = async () => {
     let finalUrl = url
-    let finalHeaders: Record<string, string> = {}
-    let finalParams: Record<string, string> = {}
+    const finalHeaders: Record<string, string> = {}
+    const finalParams: Record<string, string> = {}
     const envVars: Record<string, any> =
       currentEnv?.variables && typeof currentEnv.variables === 'object' && !Array.isArray(currentEnv.variables)
         ? currentEnv.variables
@@ -1456,7 +1455,7 @@ const ApiTestWorkspace = () => {
             pushPart(parsed?.message)
             pushPart(parsed?.error)
             pushPart(parsed?.msg)
-          } catch {}
+          } catch { /* ignore */ }
         } else if (bodyData && typeof bodyData === 'object') {
           pushPart(bodyData.message)
           pushPart(bodyData.msg)

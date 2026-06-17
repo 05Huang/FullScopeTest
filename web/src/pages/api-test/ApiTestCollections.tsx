@@ -14,6 +14,7 @@ import {
   message,
   Popconfirm,
   Tooltip,
+  type MenuProps,
 } from 'antd'
 import {
   PlusOutlined,
@@ -28,7 +29,6 @@ import {
   ExportOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { MenuProps } from 'antd'
 import { apiTestService } from '@/services'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '@/stores/projectStore'

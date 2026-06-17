@@ -12,13 +12,12 @@ export async function runWithConcurrency<T, R>(
   let cursor = 0
 
   const workers = Array.from({ length: workerCount }, async () => {
-    while (true) {
+    while (cursor < items.length) {
       const index = cursor
       cursor += 1
-      if (index >= items.length) {
-        break
+      if (index < items.length) {
+        results[index] = await task(items[index], index)
       }
-      results[index] = await task(items[index], index)
     }
   })
 

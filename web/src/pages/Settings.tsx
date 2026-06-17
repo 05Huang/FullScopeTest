@@ -38,7 +38,7 @@ const SettingsIntegrationsTab: React.FC = () => {
         if (statusRes.status === 'fulfilled' && statusRes.value?.code === 200) {
           setGithubStatus(statusRes.value.data);
         }
-      } catch {} finally { setLoading(false); }
+      } catch { /* ignore */ } finally { setLoading(false); }
     };
     load();
   }, []);

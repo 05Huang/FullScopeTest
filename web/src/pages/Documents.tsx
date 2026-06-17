@@ -14,6 +14,7 @@ import {
   Dropdown,
   Empty,
   Spin,
+  type MenuProps,
 } from 'antd'
 import {
   PlusOutlined,
@@ -28,7 +29,6 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
-import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import ReactMarkdown from 'react-markdown'
 import { useTranslation } from 'react-i18next'

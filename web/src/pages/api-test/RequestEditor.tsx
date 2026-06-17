@@ -9,7 +9,7 @@
 import { useTranslation } from 'react-i18next'
 import {
   Card, Input, Button, Tabs, Select, Space, Table, Tag, Dropdown,
-  Typography, Tooltip, Switch, InputNumber, Badge, message,
+  Typography, Tooltip, Switch, InputNumber, Badge, message, type MenuProps,
 } from 'antd'
 import {
   PlusOutlined, SendOutlined, SaveOutlined, DeleteOutlined,
@@ -18,7 +18,6 @@ import {
 } from '@ant-design/icons'
 import MonacoEditor from '@monaco-editor/react'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
-import type { MenuProps } from 'antd'
 
 const { Text } = Typography
 

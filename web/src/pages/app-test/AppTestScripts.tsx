@@ -18,6 +18,7 @@ import {
   Tabs,
   Row,
   Col,
+  type MenuProps,
 } from 'antd'
 import {
   PlusOutlined,
@@ -34,7 +35,6 @@ import {
   SaveOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { MenuProps } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import { appTestService } from '@/services/appTestService'
 import { useTranslation } from 'react-i18next'

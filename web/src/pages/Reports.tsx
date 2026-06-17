@@ -17,6 +17,7 @@ import {
   Tooltip,
   Typography,
   message,
+  type MenuProps,
 } from 'antd'
 import {
   CheckCircleOutlined,
@@ -30,7 +31,6 @@ import {
   SearchOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import type { MenuProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import ReactECharts from 'echarts-for-react'
 import type { TestReport } from '@/services/reportService'

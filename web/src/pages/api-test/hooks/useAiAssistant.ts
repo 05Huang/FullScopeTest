@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { message } from "antd"
-import { apiTestService } from "@/services/apiTestService"
-import type { AiPlanOperation } from "@/services/apiTestService"
+import { apiTestService, type AiPlanOperation } from "@/services/apiTestService"
 
 type AiLogStatus = "info" | "success" | "error"
 

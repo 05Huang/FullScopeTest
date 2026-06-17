@@ -163,7 +163,7 @@ const TeamMetrics = () => {
               <Card>
                 <Statistic
                   title={t('teamMetrics.avgPassRate')}
-                  value={data.summary?.avg_pass_rate != null ? `${Math.round(data.summary.avg_pass_rate * 100)}%` : '-'}
+                  value={data.summary?.avg_pass_rate !== null && data.summary?.avg_pass_rate !== undefined ? `${Math.round(data.summary.avg_pass_rate * 100)}%` : '-'}
                   prefix={<CheckCircleOutlined />}
                   valueStyle={{ color: '#2D6A64' }}
                 />
