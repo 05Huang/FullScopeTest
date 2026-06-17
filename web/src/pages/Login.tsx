@@ -280,9 +280,9 @@ const Login = () => {
           </div>
 
           <div className="fst-login-right-card">
-            <div className={`fst-auth-flip ${isRegister ? 'is-flipped' : ''}`}>
+            <div className="fst-auth-flip">
               {/* ─── Login face ─── */}
-              <section className="fst-auth-face fst-auth-front" aria-label={t('login.loginForm')}>
+              <section className="fst-auth-face fst-auth-front" aria-label={t('login.loginForm')} hidden={isRegister}>
                 <h3 className="fst-login-right-title">{t('login.accountLogin')}</h3>
 
                 <Form<LoginForm>
@@ -297,6 +297,7 @@ const Login = () => {
                   autoComplete="off"
                   size="large"
                   layout="vertical"
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                 >
                   <Form.Item name="username" rules={[{ required: true, message: t('login.validation.usernameRequired') }]}>
                     <Input
@@ -339,7 +340,7 @@ const Login = () => {
                     </div>
                   ) : null}
 
-                  <Form.Item style={{ marginBottom: 16 }}>
+                  <Form.Item style={{ marginBottom: 0, marginTop: 'auto' }}>
                     <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
                       {t('login.loginBtn')}
                     </Button>
@@ -376,7 +377,7 @@ const Login = () => {
               </section>
 
               {/* ─── Register face ─── */}
-              <section className="fst-auth-face fst-auth-back" aria-label={t('login.registerForm')}>
+              <section className="fst-auth-face fst-auth-back" aria-label={t('login.registerForm')} hidden={!isRegister}>
                 <h3 className="fst-login-right-title">{t('login.register.title')}</h3>
 
                 <Form<RegisterForm>
@@ -390,6 +391,7 @@ const Login = () => {
                   autoComplete="off"
                   size="large"
                   layout="vertical"
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                 >
                   <Form.Item
                     name="username"
@@ -495,7 +497,7 @@ const Login = () => {
                     {t('login.inviteCodeHint') || '输入组织邀请码可直接加入团队，留空则创建个人空间'}
                   </div>
 
-                  <Form.Item style={{ marginBottom: 16 }}>
+                  <Form.Item style={{ marginBottom: 0, marginTop: 'auto' }}>
                     <Button htmlType="submit" loading={registerLoading} block className="fst-auth-submit">
                       {t('login.registerBtn')}
                     </Button>
