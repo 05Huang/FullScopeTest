@@ -320,6 +320,10 @@ def register_blueprints(app):
     from .api.admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/api/v1')
 
+    # 计费 API
+    from .api.billing import billing_bp
+    app.register_blueprint(billing_bp, url_prefix='/api/v1')
+
     # 地理位置检测（无需认证）
     from .api.geo import geo_bp
     app.register_blueprint(geo_bp)
@@ -332,6 +336,7 @@ def register_blueprints(app):
     if app.config.get('WTF_CSRF_ENABLED', False):
         csrf.exempt(api_bp)
         csrf.exempt(admin_bp)
+        csrf.exempt(billing_bp)
         csrf.exempt(geo_bp)
 
 
