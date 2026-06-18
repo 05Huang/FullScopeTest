@@ -120,18 +120,75 @@ def get_rate_limit_headers(key: str, limit: int, window: int = 60, redis_client=
     }
 
 
-def get_user_rate_limit(user_id: int, is_api_token: bool = False) -> int:
-    """获取用户限流配置"""
+def get_user_rate_limit(user_id: int, is_api_token: bool = False, org_id: int = None) -> int:
+    """
+    获取用户限流配置
+
+    优先使用组织自定义限额，回退到全局默认值。
+    组织限额缓存到 Redis（TTL 5 分钟），避免每次请求查数据库。
+    """
     base_limit = DEFAULT_RATE_LIMITS['api_token' if is_api_token else 'user']
-    # TODO: 从数据库或缓存获取组织自定义限额
+
+    if org_id is None:
+        # 尝试通过用户获取组织 ID
+        try:
+            from ..models.organization import OrganizationMember
+            membership = OrganizationMember.query.filter_by(user_id=user_id).first()
+            if membership:
+                org_id = membership.organization_id
+        except Exception:
+            pass
+
+    if org_id is not None:
+        org_limit = get_org_rate_limit(org_id)
+        if org_limit is not None:
+            return org_limit
+
     return base_limit
 
 
 def get_org_rate_limit(org_id: int) -> Optional[int]:
-    """获取组织自定义限流配置"""
-    # TODO: 从数据库获取组织自定义限额
-    # 暂时返回 None，使用默认值
-    return None
+    """
+    获取组织自定义限流配置
+
+    从 Quota 模型查询 api_rate_limit 资源类型的配额。
+    缓存到 Redis（TTL 5 分钟），避免每次请求查数据库。
+    返回 None 表示使用全局默认值。
+    """
+    cache_key = f"rate_limit:org:{org_id}"
+
+    # 尝试从 Redis 缓存读取
+    try:
+        r = _get_redis()
+        cached = r.get(cache_key)
+        if cached is not None:
+            if cached == 'null':
+                return None
+            return int(cached)
+    except Exception:
+        pass
+
+    # 从数据库查询
+    try:
+        from ..models.quota import Quota
+        quota = Quota.query.filter_by(
+            organization_id=org_id,
+            resource_type='api_rate_limit'
+        ).first()
+
+        result = quota.limit if quota and quota.limit > 0 else None
+
+        # 缓存到 Redis（TTL 5 分钟）
+        try:
+            r = _get_redis()
+            r.setex(cache_key, 300, str(result) if result is not None else 'null')
+        except Exception:
+            pass
+
+        return result
+    except Exception as exc:
+        logger.warning('获取组织限流配置失败', org_id=org_id, error=str(exc))
+        return None
 
 
 def reset_rate_limit(key: str, redis_client=None) -> bool:
