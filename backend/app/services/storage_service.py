@@ -3,8 +3,8 @@
 
 提供统一的文件存储接口，支持多种存储后端：
 - LocalStorage：本地文件系统（开发环境）
-- OSSStorage：阿里云 OSS（生产环境，待实现）
-- S3Storage：AWS S3（生产环境，待实现）
+- OSSStorage：阿里云 OSS（生产环境）
+- S3Storage：AWS S3（生产环境）
 
 通过 STORAGE_TYPE 环境变量切换：local / oss / s3
 
@@ -149,6 +149,100 @@ class StorageBase(ABC):
         pass
 
 
+class OSSStorage(StorageBase):
+    """阿里云 OSS 存储（生产环境）"""
+
+    def __init__(self):
+        import oss2
+        self.endpoint = os.environ.get('OSS_ENDPOINT', '')
+        self.access_key_id = os.environ.get('OSS_ACCESS_KEY_ID', '')
+        self.access_key_secret = os.environ.get('OSS_ACCESS_KEY_SECRET', '')
+        self.bucket_name = os.environ.get('OSS_BUCKET_NAME', '')
+        self.domain = os.environ.get('OSS_DOMAIN', '')
+
+        if not all([self.endpoint, self.access_key_id, self.access_key_secret, self.bucket_name]):
+            raise ValueError("OSS 配置不完整，请检查 OSS_ENDPOINT/OSS_ACCESS_KEY_ID/OSS_ACCESS_KEY_SECRET/OSS_BUCKET_NAME")
+
+        auth = oss2.Auth(self.access_key_id, self.access_key_secret)
+        self.bucket = oss2.Bucket(auth, self.endpoint, self.bucket_name)
+
+    def upload(self, file_data: bytes, path: str, content_type: str = '') -> str:
+        headers = {}
+        if content_type:
+            headers['Content-Type'] = content_type
+        self.bucket.put_object(path, file_data, headers=headers)
+        logger.info("OSS 文件已上传", path=path, size=len(file_data))
+        if self.domain:
+            return f"https://{self.domain}/{path}"
+        return f"https://{self.bucket_name}.{self.endpoint}/{path}"
+
+    def download(self, path: str) -> bytes:
+        result = self.bucket.get_object(path)
+        return result.read()
+
+    def delete(self, path: str) -> bool:
+        try:
+            self.bucket.delete_object(path)
+            logger.info("OSS 文件已删除", path=path)
+            return True
+        except Exception as e:
+            logger.error("OSS 文件删除失败", path=path, error=str(e))
+            return False
+
+    def exists(self, path: str) -> bool:
+        return self.bucket.object_exists(path)
+
+
+class S3Storage(StorageBase):
+    """AWS S3 存储（生产环境）"""
+
+    def __init__(self):
+        import boto3
+        self.bucket_name = os.environ.get('AWS_S3_BUCKET', '')
+        self.region = os.environ.get('AWS_S3_REGION', 'us-east-1')
+        self.domain = os.environ.get('AWS_S3_DOMAIN', '')
+
+        if not self.bucket_name:
+            raise ValueError("S3 配置不完整，请检查 AWS_S3_BUCKET")
+
+        self.s3 = boto3.client(
+            's3',
+            region_name=self.region,
+            aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID', ''),
+            aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY', ''),
+        )
+
+    def upload(self, file_data: bytes, path: str, content_type: str = '') -> str:
+        extra_args = {}
+        if content_type:
+            extra_args['ContentType'] = content_type
+        self.s3.put_object(Bucket=self.bucket_name, Key=path, Body=file_data, **extra_args)
+        logger.info("S3 文件已上传", path=path, size=len(file_data))
+        if self.domain:
+            return f"https://{self.domain}/{path}"
+        return f"https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{path}"
+
+    def download(self, path: str) -> bytes:
+        response = self.s3.get_object(Bucket=self.bucket_name, Key=path)
+        return response['Body'].read()
+
+    def delete(self, path: str) -> bool:
+        try:
+            self.s3.delete_object(Bucket=self.bucket_name, Key=path)
+            logger.info("S3 文件已删除", path=path)
+            return True
+        except Exception as e:
+            logger.error("S3 文件删除失败", path=path, error=str(e))
+            return False
+
+    def exists(self, path: str) -> bool:
+        try:
+            self.s3.head_object(Bucket=self.bucket_name, Key=path)
+            return True
+        except Exception:
+            return False
+
+
 class LocalStorage(StorageBase):
     """本地文件系统存储（开发环境）"""
 
@@ -208,13 +302,17 @@ def get_storage() -> StorageBase:
     if storage_type == 'local':
         return LocalStorage()
     elif storage_type == 'oss':
-        # TODO: 实现阿里云 OSS 存储
-        logger.warning("OSS 存储尚未实现，回退到本地存储")
-        return LocalStorage()
+        try:
+            return OSSStorage()
+        except Exception as e:
+            logger.error("OSS 存储初始化失败，回退到本地存储", error=str(e))
+            return LocalStorage()
     elif storage_type == 's3':
-        # TODO: 实现 AWS S3 存储
-        logger.warning("S3 存储尚未实现，回退到本地存储")
-        return LocalStorage()
+        try:
+            return S3Storage()
+        except Exception as e:
+            logger.error("S3 存储初始化失败，回退到本地存储", error=str(e))
+            return LocalStorage()
     else:
         logger.warning(f"未知的存储类型: {storage_type}，使用本地存储")
         return LocalStorage()
