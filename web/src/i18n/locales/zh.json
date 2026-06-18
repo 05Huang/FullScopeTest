@@ -331,6 +331,8 @@
     "assertionDesc": "断言描述",
     "errorMessage": "错误信息",
     "ungrouped": "未分组",
+    "groupedView": "分组视图",
+    "tableView": "表格视图",
     "unsavedChanges": "未保存的修改",
     "unsavedChangesContent": "当前用例有未保存的修改，是否保存后切换？",
     "index": "序号",

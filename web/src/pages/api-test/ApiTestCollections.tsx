@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Card,
+  Collapse,
   Table,
   Button,
   Space,
@@ -27,6 +28,8 @@ import {
   FileOutlined,
   CopyOutlined,
   ExportOutlined,
+  UnorderedListOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { apiTestService } from '@/services'
@@ -74,6 +77,14 @@ const ApiTestCollections = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCase, setEditingCase] = useState<TestCase | null>(null)
   const [searchText, setSearchText] = useState('')
+  const [viewMode, setViewMode] = useState<'table' | 'grouped'>(() => {
+    return (localStorage.getItem('fst-collections-view-mode') as 'table' | 'grouped') || 'table'
+  })
+  const [expandedCollections, setExpandedCollections] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('fst-expanded-collections') || '[]')
+    } catch { return [] }
+  })
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -411,6 +422,16 @@ const ApiTestCollections = () => {
         }}>
           新建用例
         </Button>
+        <Tooltip title={viewMode === 'table' ? t('apiTest.groupedView') : t('apiTest.tableView')}>
+          <Button
+            icon={viewMode === 'table' ? <AppstoreOutlined /> : <UnorderedListOutlined />}
+            onClick={() => {
+              const newMode = viewMode === 'table' ? 'grouped' : 'table'
+              setViewMode(newMode)
+              localStorage.setItem('fst-collections-view-mode', newMode)
+            }}
+          />
+        </Tooltip>
         <Dropdown menu={{
           items: moreMenuItems,
           onClick: ({ key }) => {
@@ -429,26 +450,60 @@ const ApiTestCollections = () => {
 
       <div className="fst-ios-card fst-animate-in fst-animate-in-1">
         <div className="fst-table-wrap">
-        <Table
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
-          columns={columns}
-          dataSource={cases.filter(c =>
-            !searchText ||
-            c.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            c.url?.toLowerCase().includes(searchText.toLowerCase())
-          )}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            total: cases.length,
-            showTotal: (total) => `${t('common.total')} ${total}`,
-            showSizeChanger: true,
-            showQuickJumper: true,
-          }}
-        />
+        {viewMode === 'grouped' ? (
+          <Collapse
+            activeKey={expandedCollections}
+            onChange={(keys) => {
+              const newKeys = Array.isArray(keys) ? keys : [keys]
+              setExpandedCollections(newKeys as string[])
+              localStorage.setItem('fst-expanded-collections', JSON.stringify(newKeys))
+            }}
+            items={collections.map(col => ({
+              key: String(col.id),
+              label: (
+                <Space>
+                  <FolderOutlined />
+                  <Text strong>{col.name}</Text>
+                  <Tag>{cases.filter(c => c.collection_id === col.id).length}</Tag>
+                </Space>
+              ),
+              children: (
+                <Table
+                  columns={columns.filter(c => c.key !== 'collection_id')}
+                  dataSource={cases.filter(c => c.collection_id === col.id && (
+                    !searchText ||
+                    c.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                    c.url?.toLowerCase().includes(searchText.toLowerCase())
+                  ))}
+                  rowKey="id"
+                  size="small"
+                  pagination={false}
+                />
+              ),
+            }))}
+          />
+        ) : (
+          <Table
+            rowSelection={{
+              selectedRowKeys,
+              onChange: setSelectedRowKeys,
+            }}
+            columns={columns}
+            dataSource={cases.filter(c =>
+              !searchText ||
+              c.name.toLowerCase().includes(searchText.toLowerCase()) ||
+              c.url?.toLowerCase().includes(searchText.toLowerCase())
+            )}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              total: cases.length,
+              showTotal: (total) => `${t('common.total')} ${total}`,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+          />
+        )}
         </div>
       </div>
 

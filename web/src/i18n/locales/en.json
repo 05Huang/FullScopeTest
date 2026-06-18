@@ -331,6 +331,8 @@
     "assertionDesc": "Description",
     "errorMessage": "Error Message",
     "ungrouped": "Ungrouped",
+    "groupedView": "Grouped View",
+    "tableView": "Table View",
     "unsavedChanges": "Unsaved Changes",
     "unsavedChangesContent": "Current case has unsaved changes. Save before switching?",
     "index": "No.",
