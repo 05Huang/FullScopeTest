@@ -537,7 +537,18 @@
     "aiGenerateTitle": "AI 生成性能测试场景",
     "aiGenerateFailed": "AI 生成失败",
     "bodyFormatError": "请求 Body 格式错误，请使用合法 JSON",
-    "batchDeleteSuccess": "批量删除成功"
+    "batchDeleteSuccess": "批量删除成功",
+    "diff": {
+      "title": "响应对比",
+      "lockBaseline": "锁定基准",
+      "unlock": "解锁",
+      "baselineLocked": "基准已锁定，下次请求将与基准对比",
+      "baselineUnlocked": "基准已解锁",
+      "noResponse": "请先发送请求",
+      "noBaseline": "点击「锁定基准」将当前响应设为基准，下次请求将自动对比",
+      "baseline": "基准响应",
+      "current": "当前响应"
+    }
   },
   "ai": {
     "title": "AI 统计看板",

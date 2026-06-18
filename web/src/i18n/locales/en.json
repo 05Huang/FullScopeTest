@@ -537,7 +537,18 @@
     "aiGenerateTitle": "AI Generate Performance Scenario",
     "aiGenerateFailed": "AI generation failed",
     "bodyFormatError": "Request Body format error, please use valid JSON",
-    "batchDeleteSuccess": "Batch delete successful"
+    "batchDeleteSuccess": "Batch delete successful",
+    "diff": {
+      "title": "Response Diff",
+      "lockBaseline": "Lock Baseline",
+      "unlock": "Unlock",
+      "baselineLocked": "Baseline locked. Next request will be compared against it.",
+      "baselineUnlocked": "Baseline unlocked",
+      "noResponse": "Please send a request first",
+      "noBaseline": "Click 'Lock Baseline' to set current response as baseline for comparison",
+      "baseline": "Baseline Response",
+      "current": "Current Response"
+    }
   },
   "ai": {
     "title": "AI Insights Dashboard",
