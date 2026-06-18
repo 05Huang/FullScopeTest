@@ -1744,6 +1744,7 @@ const ApiTestWorkspace = () => {
 
   // 发送请求
   const handleSend = async () => {
+    if (sending) return // 防止重复请求
     if (!url) {
       message.warning('请输入请求URL')
       return
