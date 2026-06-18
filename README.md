@@ -1013,11 +1013,12 @@ FullScopeTest/
 | 安全 | 密码修改、API Token |
 | 集成 | GitHub OAuth、Webhook 配置 |
 
-### 新手引导（Tour Guide）
+### 新手引导（Tour Guide）（计划中）
 
 - 首次登录自动触发 7 步引导
 - 覆盖侧边栏导航、AI 助手、项目创建等核心功能
 - 引导状态保存在 localStorage，不重复显示
+- **注意**：此功能尚在开发中，预计 Q3 2026 上线
 
 ---
 
