@@ -245,6 +245,11 @@
     "importcURL": "导入 cURL",
     "exportcURL": "导出 cURL",
     "copiedCurl": "已复制 cURL 命令到剪贴板",
+    "history": {
+      "title": "请求历史",
+      "empty": "暂无请求历史",
+      "confirmClear": "确定清空请求历史吗？"
+    },
     "method": "方法",
     "url": "请求地址",
     "headers": "请求头",

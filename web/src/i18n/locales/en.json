@@ -245,6 +245,11 @@
     "importcURL": "Import cURL",
     "exportcURL": "Export cURL",
     "copiedCurl": "cURL command copied to clipboard",
+    "history": {
+      "title": "Request History",
+      "empty": "No request history",
+      "confirmClear": "Clear request history?"
+    },
     "method": "Method",
     "url": "URL",
     "headers": "Headers",

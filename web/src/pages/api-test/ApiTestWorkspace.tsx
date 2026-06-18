@@ -40,6 +40,7 @@ import SaveCaseModal from './components/SaveCaseModal'
 import AiSynthesizeModal from './components/AiSynthesizeModal'
 import AiReviewModal from './components/AiReviewModal'
 import AiAssistantDrawer from './components/AiAssistantDrawer'
+import RequestHistory, { saveToHistory } from './components/RequestHistory'
 import { useAiAssistant } from './hooks/useAiAssistant'
 import RequestEditor from './RequestEditor'
 import ResponseViewer from './ResponseViewer'
@@ -1821,6 +1822,8 @@ const ApiTestWorkspace = () => {
             script_execution: respData.script_execution,
             is_mock: respData.is_mock,
           })
+          // 保存到请求历史
+          saveToHistory({ method, url, status: respData.status_code, duration: respData.response_time || elapsed })
           message.success('请求发送成功')
         } else {
           setResponse({
@@ -1954,6 +1957,20 @@ const ApiTestWorkspace = () => {
                         prev.includes(`collection-${collectionId}`) ? prev : [...prev, `collection-${collectionId}`]
                       )
                       setAiReviewModalOpen(true)
+                    }}
+                  />
+                </div>
+              ),
+            },
+            {
+              key: 'history',
+              label: t('apiTest.history.title'),
+              children: (
+                <div style={{ padding: 12, height: 'calc(100vh - 240px)', overflow: 'auto' }}>
+                  <RequestHistory
+                    onSelect={(item) => {
+                      setMethod(item.method)
+                      setUrl(item.url)
                     }}
                   />
                 </div>
