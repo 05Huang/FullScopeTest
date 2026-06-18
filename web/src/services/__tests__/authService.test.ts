@@ -60,12 +60,13 @@ describe("authService", () => {
   })
 
   it("forgotPassword should call POST /auth/forgot-password", async () => {
-    const mockResponse = { code: 200, data: { reset_token: "abc" }, message: "ok", timestamp: "" }
+    const mockResponse = { code: 200, data: null, message: "如果该邮箱已注册，重置链接已发送", timestamp: "" }
     vi.mocked(api.post).mockResolvedValue(mockResponse)
 
     const result = await authService.forgotPassword("user@example.com")
     expect(api.post).toHaveBeenCalledWith("/auth/forgot-password", { email: "user@example.com" })
-    expect(result.data.reset_token).toBe("abc")
+    expect(result.data).toBeNull()
+    expect(result.message).toContain("重置链接已发送")
   })
 
   it("resetPassword should call POST /auth/reset-password", async () => {

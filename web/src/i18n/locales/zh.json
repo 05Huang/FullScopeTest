@@ -130,6 +130,8 @@
     "sentMessage": "请检查您的邮箱，点击链接重置密码。如果未收到邮件，请检查垃圾邮件文件夹。",
     "tokenHint": "当前为开发模式，重置 Token 如下（生产环境将通过邮件发送）：",
     "goReset": "立即重置密码",
+    "emailNote": "未收到邮件？请联系管理员重置密码，或稍后重试。",
+    "backToLogin": "返回登录",
     "rememberPassword": "想起密码了？"
   },
   "resetPassword": {

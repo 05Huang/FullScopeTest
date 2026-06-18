@@ -48,16 +48,12 @@ const ForgotPassword = () => {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const [resetToken, setResetToken] = useState('')
   const navigate = useNavigate()
 
   const onFinish = async (values: { email: string }) => {
     setLoading(true)
     try {
-      const response = await authService.forgotPassword(values.email)
-      if (response.data?.reset_token) {
-        setResetToken(response.data.reset_token)
-      }
+      await authService.forgotPassword(values.email)
       setSent(true)
       message.success(t('forgotPassword.success'))
     } catch (error: any) {
@@ -83,25 +79,16 @@ const ForgotPassword = () => {
               subTitle={
                 <div>
                   <Text>{t('forgotPassword.sentMessage')}</Text>
-                  {resetToken && (
-                    <div style={{ marginTop: 16 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {t('forgotPassword.tokenHint')}
-                      </Text>
-                      <Input.TextArea
-                        value={resetToken}
-                        readOnly
-                        autoSize
-                        style={{ marginTop: 8, fontFamily: 'monospace', fontSize: 12 }}
-                        onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                      />
-                    </div>
-                  )}
+                  <div style={{ marginTop: 12 }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {t('forgotPassword.emailNote')}
+                    </Text>
+                  </div>
                 </div>
               }
               extra={
-                <Button type="primary" onClick={() => navigate('/reset-password', { state: { token: resetToken } })}>
-                  {t('forgotPassword.goReset')}
+                <Button type="primary" onClick={() => navigate('/login')}>
+                  {t('forgotPassword.backToLogin')}
                 </Button>
               }
             />

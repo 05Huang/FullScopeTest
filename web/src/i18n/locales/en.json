@@ -130,6 +130,8 @@
     "sentMessage": "Please check your email and click the link to reset your password. If you don't see it, check your spam folder.",
     "tokenHint": "Development mode: your reset token is shown below (in production, it will be sent via email):",
     "goReset": "Reset Password Now",
+    "emailNote": "Didn't receive the email? Contact your administrator to reset your password, or try again later.",
+    "backToLogin": "Back to Login",
     "rememberPassword": "Remember your password?"
   },
   "resetPassword": {
