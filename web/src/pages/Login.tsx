@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, message, Divider } from 'antd'
+import { Form, Input, Button, Checkbox, message, Divider } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
@@ -129,12 +129,21 @@ const Login = () => {
   const [loginPwdVisible, setLoginPwdVisible] = useState(false)
   const [registerPwdVisible, setRegisterPwdVisible] = useState(false)
   const [registerConfirmPwdVisible, setRegisterConfirmPwdVisible] = useState(false)
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('fst-remembered-username'))
 
   const [mode, setMode] = useState<AuthMode>(() => getModeFromPathname(location.pathname))
   const autoFilled = useRef(false)
 
   // SSO 提供商状态
   const [ssoProviders, setSsoProviders] = useState<Array<{ name: string; display_name: string }>>([])
+
+  // 记住用户名：页面加载时自动填充
+  useEffect(() => {
+    const remembered = localStorage.getItem('fst-remembered-username')
+    if (remembered) {
+      loginForm.setFieldsValue({ username: remembered })
+    }
+  }, [loginForm])
 
   useEffect(() => {
     // 获取可用的 SSO 提供商
@@ -223,6 +232,12 @@ const Login = () => {
       }
       const { user } = response.data
       setAuth(user || { id: 0, username: values.username, email: '' })
+      // 记住用户名
+      if (rememberMe) {
+        localStorage.setItem('fst-remembered-username', values.username)
+      } else {
+        localStorage.removeItem('fst-remembered-username')
+      }
       message.success(t('login.loginSuccess'))
       navigate('/dashboard')
     } catch (error: any) {
@@ -338,6 +353,12 @@ const Login = () => {
                       {loginError}
                     </div>
                   ) : null}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}>
+                      {t('login.rememberMe') || '记住用户名'}
+                    </Checkbox>
+                  </div>
 
                   <Form.Item style={{ marginBottom: 16 }}>
                     <Button htmlType="submit" loading={loginLoading} block className="fst-auth-submit">
