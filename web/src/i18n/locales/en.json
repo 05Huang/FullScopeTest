@@ -245,6 +245,7 @@
     "importcURL": "Import cURL",
     "exportcURL": "Export cURL",
     "copiedCurl": "cURL command copied to clipboard",
+    "snippetCopied": "{{language}} code copied to clipboard",
     "history": {
       "title": "Request History",
       "empty": "No request history",

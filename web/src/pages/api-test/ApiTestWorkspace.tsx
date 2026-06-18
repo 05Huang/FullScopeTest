@@ -41,6 +41,7 @@ import AiSynthesizeModal from './components/AiSynthesizeModal'
 import AiReviewModal from './components/AiReviewModal'
 import AiAssistantDrawer from './components/AiAssistantDrawer'
 import RequestHistory, { saveToHistory } from './components/RequestHistory'
+import { snippetGenerators } from '@/utils/codeSnippetGenerator'
 import { useAiAssistant } from './hooks/useAiAssistant'
 import RequestEditor from './RequestEditor'
 import ResponseViewer from './ResponseViewer'
@@ -911,15 +912,23 @@ const ApiTestWorkspace = () => {
     return curl
   }
 
-  // 复制为 cURL
-  const handleCopyCurl = () => {
+  // 复制为代码片段
+  const handleCopySnippet = (language: string) => {
     if (!url) {
       message.warning('请先输入请求 URL')
       return
     }
-    const curlCommand = generateCurl()
-    navigator.clipboard.writeText(curlCommand)
-    message.success(t('apiTest.copiedCurl'))
+    const generator = snippetGenerators[language]
+    if (!generator) return
+
+    const snippet = generator({
+      method,
+      url,
+      headers: headers.filter(h => h.key && h.value),
+      body: ['POST', 'PUT', 'PATCH'].includes(method) ? requestBody : undefined,
+    })
+    navigator.clipboard.writeText(snippet)
+    message.success(t('apiTest.snippetCopied', { language }))
   }
 
   // 保存为用例
@@ -1612,7 +1621,11 @@ const ApiTestWorkspace = () => {
   }
 
   const moreMenuItems: MenuProps['items'] = [
-    { key: 'copy', icon: <CopyOutlined />, label: '复制为 cURL', onClick: handleCopyCurl },
+    { key: 'curl', icon: <CopyOutlined />, label: 'cURL', onClick: () => handleCopySnippet('curl') },
+    { key: 'python', icon: <CopyOutlined />, label: 'Python (requests)', onClick: () => handleCopySnippet('python') },
+    { key: 'javascript', icon: <CopyOutlined />, label: 'JavaScript (fetch)', onClick: () => handleCopySnippet('javascript') },
+    { key: 'java', icon: <CopyOutlined />, label: 'Java (OkHttp)', onClick: () => handleCopySnippet('java') },
+    { key: 'go', icon: <CopyOutlined />, label: 'Go (net/http)', onClick: () => handleCopySnippet('go') },
   ]
 
   // 参数表格列

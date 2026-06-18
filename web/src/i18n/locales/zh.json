@@ -245,6 +245,7 @@
     "importcURL": "导入 cURL",
     "exportcURL": "导出 cURL",
     "copiedCurl": "已复制 cURL 命令到剪贴板",
+    "snippetCopied": "已复制 {{language}} 代码到剪贴板",
     "history": {
       "title": "请求历史",
       "empty": "暂无请求历史",
