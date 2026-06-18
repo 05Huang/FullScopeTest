@@ -64,9 +64,59 @@ class User(db.Model):
         }
 
     def has_permission(self, permission: str) -> bool:
-        """检查用户是否有指定权限"""
+        """
+        检查用户是否有指定权限
+
+        优先使用 Role 表的精细权限，回退到内置角色映射。
+        permission 格式：'read' / 'write' / 'delete' / 'manage_users' / 'manage_settings'
+        """
+        # 先尝试通过 Role 表查询（统一 RBAC）
+        try:
+            from .role import LEGACY_ROLE_MAPPING, get_effective_permissions
+            rbac_role = LEGACY_ROLE_MAPPING.get(self.role, self.role)
+            permissions = get_effective_permissions(rbac_role)
+            # 将扁平权限列表映射到 Role 表的 resource:action 格式
+            all_actions = set()
+            for resource, actions in permissions.items():
+                all_actions.update(actions)
+            # 兼容旧的扁平权限名
+            legacy_map = {
+                'read': 'read',
+                'write': 'update',
+                'delete': 'delete',
+                'manage_users': 'manage',
+                'manage_settings': 'manage',
+            }
+            rbac_action = legacy_map.get(permission, permission)
+            if rbac_action in all_actions:
+                return True
+        except Exception:
+            pass
+
+        # 回退到内置角色权限映射
         permissions = ROLE_PERMISSIONS.get(self.role, [])
         return permission in permissions
+
+    def has_rbac_permission(self, resource: str, action: str) -> bool:
+        """
+        RBAC 精细权限检查
+
+        通过 Role 表查询 resource:action 权限。
+        用于新增的 API 端点，推荐新代码使用此方法。
+
+        Args:
+            resource: 资源名称（如 'project'、'test_case'）
+            action: 操作名称（如 'create'、'read'、'delete'）
+        """
+        try:
+            from .role import LEGACY_ROLE_MAPPING, get_effective_permissions
+            rbac_role = LEGACY_ROLE_MAPPING.get(self.role, self.role)
+            permissions = get_effective_permissions(rbac_role)
+            allowed_actions = permissions.get(resource, [])
+            return action in allowed_actions
+        except Exception:
+            # 回退到简单角色检查
+            return self.role == ROLE_ADMIN
 
     def is_admin(self) -> bool:
         """检查是否为管理员"""

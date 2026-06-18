@@ -13,9 +13,10 @@ from ..utils.response import success_response, error_response
 admin_bp = Blueprint('admin', __name__)
 
 def _require_admin():
+    """统一权限检查入口"""
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    if not user or user.role != 'admin':
+    if not user or not user.is_admin():
         return None
     return user
 
