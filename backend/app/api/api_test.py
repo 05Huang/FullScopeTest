@@ -307,12 +307,19 @@ def delete_collection(collection_id):
 @api_bp.route("/api-test/cases", methods=["GET"])
 @jwt_required()
 def get_cases():
-    """获取测试用例列表"""
+    """获取测试用例列表（支持多维筛选）"""
     user_id = get_current_user_id()
     collection_id = request.args.get("collection_id", type=int)
     project_id = request.args.get("project_id", type=int)
+    method = request.args.get("method")
+    url_contains = request.args.get("url_contains")
+    tags = request.args.get("tags")
+    priority = request.args.get("priority")
     try:
-        data = case_service.get_cases(user_id, collection_id, project_id)
+        data = case_service.get_cases(
+            user_id, collection_id, project_id,
+            method=method, url_contains=url_contains, tags=tags, priority=priority,
+        )
         return success_response(data=data)
     except Exception as exc:
         logger.error("get cases failed", error=str(exc))

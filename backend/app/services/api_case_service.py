@@ -19,13 +19,35 @@ logger = get_logger(__name__)
 
 class ApiCaseService(BaseService):
 
-    def get_cases(self, user_id: int, collection_id: int = None, project_id: int = None):
-        """获取测试用例列表"""
+    def get_cases(self, user_id: int, collection_id: int = None, project_id: int = None,
+                  method: str = None, url_contains: str = None, tags: str = None, priority: str = None):
+        """
+        获取测试用例列表
+
+        Args:
+            user_id: 用户 ID
+            collection_id: 集合 ID（可选）
+            project_id: 项目 ID（可选）
+            method: HTTP 方法筛选（可选）
+            url_contains: URL 包含关键词（可选）
+            tags: 标签筛选，逗号分隔（可选）
+            priority: 优先级筛选（可选）
+        """
         query = ApiTestCase.query.filter_by(user_id=user_id)
         if collection_id:
             query = query.filter_by(collection_id=collection_id)
         if project_id:
             query = query.filter_by(project_id=project_id)
+        if method:
+            query = query.filter(ApiTestCase.method == method.upper())
+        if url_contains:
+            query = query.filter(ApiTestCase.url.ilike(f'%{url_contains}%'))
+        if tags:
+            tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+            for tag in tag_list:
+                query = query.filter(ApiTestCase.tags.contains(tag))
+        if priority:
+            query = query.filter(ApiTestCase.priority == priority)
         cases = query.order_by(ApiTestCase.created_at.desc()).all()
         return [c.to_dict() for c in cases]
 
