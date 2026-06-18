@@ -35,7 +35,7 @@
 
 - **AI 赋能**：内置 AI Copilot，支持自然语言编排、脚本自动生成、智能错误分析与自愈、Prompt 版本管理与 A/B 测试
 - **接口测试**：完整的 HTTP/REST API 测试工作台，支持环境变量、前置/后置脚本、断言、cURL 导入导出、Mock Server
-- **Web 自动化**：基于 Playwright，支持在线编写、录制、视觉回归测试、VNC Live View 实时预览
+- **Web 自动化**：基于 Playwright，支持在线编写、视觉回归测试、VNC Live View 实时预览（录制功能需本地 GUI 环境，远程服务器请使用 `playwright codegen` 本地录制后上传脚本）
 - **性能压测**：基于 Locust，支持分布式压测、实时监控大盘、历史对比、告警引擎
 - **APP 测试**：Appium 脚本管理（支持 Android / iOS 脚本编写与存储，需配合外部 Appium Server 或设备农场执行）
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
@@ -244,7 +244,7 @@ sequenceDiagram
 | **认证鉴权** | Flask-JWT-Extended | 双 Token 机制 (access + refresh) |
 | **任务队列** | Celery + Redis | 异步执行 Web/性能测试任务 |
 | **定时调度** | APScheduler | 文件锁单例，支持多进程安全 |
-| **Web 自动化** | Playwright | Chromium 内核，支持录制与 Headless 执行 |
+| **Web 自动化** | Playwright | Chromium 内核，在线编写 + 视觉回归 + VNC 预览（录制需 GUI 环境） |
 | **性能压测** | Locust | Python 编写压测脚本，支持分布式 |
 | **数据库** | PostgreSQL (生产) / SQLite (开发) | 生产推荐 PostgreSQL，开发零配置 |
 | **缓存/消息** | Redis | Celery Broker + Result Backend |

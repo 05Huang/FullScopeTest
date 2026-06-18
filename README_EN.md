@@ -112,7 +112,7 @@ A complete HTTP/REST API testing workspace supporting `{variable}` environment s
 
 #### Web Automation (Playwright)
 
-Built-in Playwright engine for writing, editing, and executing Python test scripts online. Supports `playwright codegen` for recording interactions and auto-generating scripts. Tasks execute asynchronously via Celery with real-time status tracking and error localization.
+Built-in Playwright engine for writing, editing, and executing Python test scripts online. Supports visual regression testing and VNC Live View real-time preview. **Note**: The recording feature (`playwright codegen`) requires a local GUI environment; in remote/headless environments, record locally first then upload scripts to the platform.
 
 <div align="center">
   <img src="images/docs/web-automation.webp" alt="Web Automation" width="80%" />

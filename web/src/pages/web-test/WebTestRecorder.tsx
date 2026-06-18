@@ -96,8 +96,28 @@ const WebTestRecorder = () => {
       message.warning(t('recorder.enterTargetUrl'))
       return
     }
-    
+
     try {
+      // 环境检测：检查后端是否支持录制（需要 GUI 环境）
+      message.loading('检查录制环境...', 0)
+      const statusRes = await webTestService.getRecordingStatus()
+      message.destroy()
+
+      if (statusRes.code !== 200) {
+        Modal.warning({
+          title: '录制功能不可用',
+          content: (
+            <div>
+              <p>当前服务器环境不支持 Playwright 录制功能（需要图形界面）。</p>
+              <p style={{ marginTop: 8 }}><strong>替代方案：</strong></p>
+              <p>在本地使用 <code>playwright codegen &lt;url&gt;</code> 录制后，将脚本复制粘贴到脚本编辑器中保存。</p>
+            </div>
+          ),
+          okText: '我知道了',
+        })
+        return
+      }
+
       message.loading('正在启动录制器...', 0)
       
       const res = await webTestService.startRecording({
