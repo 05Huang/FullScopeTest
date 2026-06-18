@@ -42,6 +42,7 @@ import { projectService } from '@/services/projectService'
 import { useThemeStore } from '@/stores/themeStore'
 import GlobalCopilot from '../components/GlobalCopilot'
 import PageBreadcrumb from '../components/PageBreadcrumb'
+import SessionWarning from '../components/SessionWarning'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
 
@@ -934,6 +935,7 @@ const MainLayout = () => {
           </div>
         </footer>
         <GlobalCopilot />
+        <SessionWarning />
         <FloatButton.BackTop visibilityHeight={300} />
       </div>
 
