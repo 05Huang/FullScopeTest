@@ -1273,6 +1273,33 @@
   "aiReview": {
     "reviewing": "AI 正在深度评审当前集合..."
   },
+  "emptyState": {
+    "projects": {
+      "title": "创建第一个项目",
+      "subtitle": "项目是组织测试资源的基本单元，创建项目后即可开始编写用例",
+      "action": "创建项目"
+    },
+    "testCases": {
+      "title": "创建第一个用例",
+      "subtitle": "用例是测试的核心，编写用例后即可执行测试",
+      "action": "创建用例"
+    },
+    "reports": {
+      "title": "运行测试生成报告",
+      "subtitle": "执行测试后自动生成报告，查看通过率和失败详情",
+      "action": "去执行测试"
+    },
+    "testPlans": {
+      "title": "创建测试计划",
+      "subtitle": "测试计划帮助你组织和管理测试执行",
+      "action": "创建计划"
+    },
+    "default": {
+      "title": "暂无数据",
+      "subtitle": "当前没有数据，尝试创建一些内容吧",
+      "action": "创建"
+    }
+  },
   "geo": {
     "title": "切换为英文？",
     "description": "我们检测到您可能更喜欢英文界面，是否切换语言？",

@@ -1273,6 +1273,33 @@
   "aiReview": {
     "reviewing": "AI is deeply reviewing this collection..."
   },
+  "emptyState": {
+    "projects": {
+      "title": "Create your first project",
+      "subtitle": "Projects are the basic unit for organizing test resources. Create a project to start writing test cases.",
+      "action": "Create Project"
+    },
+    "testCases": {
+      "title": "Create your first test case",
+      "subtitle": "Test cases are the core of testing. Write cases to execute tests.",
+      "action": "Create Case"
+    },
+    "reports": {
+      "title": "Run tests to generate reports",
+      "subtitle": "Reports are automatically generated after test execution. View pass rates and failure details.",
+      "action": "Run Tests"
+    },
+    "testPlans": {
+      "title": "Create a test plan",
+      "subtitle": "Test plans help you organize and manage test executions.",
+      "action": "Create Plan"
+    },
+    "default": {
+      "title": "No data",
+      "subtitle": "No data available. Try creating some content.",
+      "action": "Create"
+    }
+  },
   "geo": {
     "title": "Switch to English?",
     "description": "We detected you might prefer English. Would you like to switch the interface language?",
