@@ -1263,7 +1263,12 @@
     "cookies": "Cookies",
     "testResults": "Test Results",
     "key": "Key",
-    "value": "Value"
+    "value": "Value",
+    "format": "Format",
+    "formatted": "Formatted and copied",
+    "formatError": "Format failed",
+    "copy": "Copy",
+    "copied": "Copied to clipboard"
   },
   "aiReview": {
     "reviewing": "AI is deeply reviewing this collection..."

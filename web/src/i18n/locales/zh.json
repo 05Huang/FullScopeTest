@@ -1263,7 +1263,12 @@
     "cookies": "Cookies",
     "testResults": "测试结果",
     "key": "Key",
-    "value": "Value"
+    "value": "Value",
+    "format": "格式化",
+    "formatted": "已格式化并复制",
+    "formatError": "格式化失败",
+    "copy": "复制",
+    "copied": "已复制到剪贴板"
   },
   "aiReview": {
     "reviewing": "AI 正在深度评审当前集合..."
