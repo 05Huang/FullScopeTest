@@ -41,6 +41,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { projectService } from '@/services/projectService'
 import { useThemeStore } from '@/stores/themeStore'
 import GlobalCopilot from '../components/GlobalCopilot'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
 
@@ -849,6 +850,7 @@ const MainLayout = () => {
             margin: '0 auto',
           }}
         >
+          <PageBreadcrumb />
           <Outlet />
         </main>
 
