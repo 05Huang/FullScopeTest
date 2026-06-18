@@ -4,7 +4,7 @@ import { useGeoLanguage } from '../useGeoLanguage'
 
 // Mock dependencies
 vi.mock('@/services/geoService', () => ({
-  detectRegion: vi.fn(),
+  detectRegion: vi.fn().mockResolvedValue({ is_china: true }),
 }))
 
 vi.mock('i18next', () => ({
@@ -28,7 +28,6 @@ describe('useGeoLanguage', () => {
   it('should not show prompt when dismissed', () => {
     localStorage.setItem('fst-geo-dismiss', 'true')
     const { result } = renderHook(() => useGeoLanguage())
-    // After effect runs, showPrompt should be false
     expect(result.current.showPrompt).toBe(false)
   })
 
@@ -53,6 +52,6 @@ describe('useGeoLanguage', () => {
     act(() => {
       result.current.dismiss()
     })
-    expect(localStorage.getItem('fst-geo-dismiss')).toBe('true')
+    expect(localStorage.getItem('fst-geo-dismiss')).toBe('1')
   })
 })

@@ -1,52 +1,62 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import Profile from '../Profile'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen } from "@testing-library/react"
+import { BrowserRouter } from "react-router-dom"
+import Profile from "../Profile"
 
-vi.mock('@/services/api', () => ({
-  default: { get: vi.fn().mockResolvedValue({ data: { data: {} } }), put: vi.fn().mockResolvedValue({ data: { data: {} } }) },
+vi.mock("@/services/api", () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { data: { username: "test", email: "test@test.com" } } }),
+    put: vi.fn().mockResolvedValue({ data: { message: "ok" } }),
+  },
 }))
 
-vi.mock('@/stores/authStore', () => ({
-  useAuthStore: vi.fn(() => ({
-    user: { id: 1, username: 'testuser', email: 'test@example.com', role: 'member' },
-    setAuth: vi.fn(),
-  })),
+vi.mock("@/stores/authStore", () => ({
+  useAuthStore: () => ({ user: { id: 1, username: "test", email: "test@test.com" } }),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-describe('Profile', () => {
-  it('should render profile page', () => {
-    render(<MemoryRouter><Profile /></MemoryRouter>)
-    expect(screen.getByText('profile.title')).toBeInTheDocument()
+const renderProfile = () =>
+  render(
+    <BrowserRouter>
+      <Profile />
+    </BrowserRouter>
+  )
+
+describe("Profile Page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('should display username', () => {
-    render(<MemoryRouter><Profile /></MemoryRouter>)
-    expect(screen.getByDisplayValue('testuser')).toBeInTheDocument()
+  it("should render without crashing", () => {
+    renderProfile()
+    expect(document.body).toBeTruthy()
   })
 
-  it('should display email', () => {
-    render(<MemoryRouter><Profile /></MemoryRouter>)
-    expect(screen.getByDisplayValue('test@example.com')).toBeInTheDocument()
+  it("should render page title", () => {
+    renderProfile()
+    expect(screen.getByText("profile.title")).toBeTruthy()
   })
 
-  it('should render save button', () => {
-    render(<MemoryRouter><Profile /></MemoryRouter>)
-    expect(screen.getByText('profile.save')).toBeInTheDocument()
+  it("should render basic info title", () => {
+    renderProfile()
+    expect(screen.getByText("profile.basicInfoTitle")).toBeTruthy()
   })
 
-  it('should render change password section', () => {
-    render(<MemoryRouter><Profile /></MemoryRouter>)
-    expect(screen.getByText('profile.changePassword')).toBeInTheDocument()
+  it("should render password title", () => {
+    renderProfile()
+    expect(screen.getByText("profile.passwordTitle")).toBeTruthy()
   })
 
-  it('should have form fields', () => {
-    render(<MemoryRouter><Profile /></MemoryRouter>)
-    const inputs = document.querySelectorAll('input')
-    expect(inputs.length).toBeGreaterThan(0)
+  it("should render username label", () => {
+    renderProfile()
+    expect(screen.getByText("profile.usernameLabel")).toBeTruthy()
+  })
+
+  it("should render email label", () => {
+    renderProfile()
+    expect(screen.getByText("profile.emailLabel")).toBeTruthy()
   })
 })

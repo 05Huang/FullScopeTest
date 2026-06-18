@@ -1,48 +1,71 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import CICD from '../CICD'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen } from "@testing-library/react"
+import { BrowserRouter } from "react-router-dom"
+import CICD from "../CICD"
 
-vi.mock('@/services/api', () => ({
-  default: { get: vi.fn().mockResolvedValue({ data: { data: [] } }), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+vi.mock("@/services/api", () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { data: [] } }),
+    post: vi.fn().mockResolvedValue({ data: { data: {} } }),
+    delete: vi.fn().mockResolvedValue({ data: { message: "ok" } }),
+  },
 }))
 
-vi.mock('@/stores/projectStore', () => ({
-  useProjectStore: vi.fn(() => ({ currentProjectId: 1 })),
+vi.mock("@/services/cicdService", () => ({
+  cicdService: {
+    getWebhooks: vi.fn().mockResolvedValue({ data: [] }),
+    getSchedules: vi.fn().mockResolvedValue({ data: [] }),
+    getTargetOptions: vi.fn().mockResolvedValue({ data: [] }),
+  },
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock("@/stores/projectStore", () => ({
+  useProjectStore: () => ({ currentProjectId: 1, currentProject: { id: 1 } }),
+}))
+
+vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-describe('CICD', () => {
-  it('should render CI/CD page', () => {
-    render(<MemoryRouter><CICD /></MemoryRouter>)
-    expect(screen.getByText('cicd.title')).toBeInTheDocument()
+const renderCICD = () =>
+  render(
+    <BrowserRouter>
+      <CICD />
+    </BrowserRouter>
+  )
+
+describe("CICD Page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('should have page header', () => {
-    render(<MemoryRouter><CICD /></MemoryRouter>)
-    expect(document.querySelector('.fst-page-header')).toBeInTheDocument()
+  it("should render without crashing", () => {
+    renderCICD()
+    expect(document.body).toBeTruthy()
   })
 
-  it('should render tabs', () => {
-    render(<MemoryRouter><CICD /></MemoryRouter>)
-    expect(document.querySelector('.ant-tabs')).toBeInTheDocument()
+  it("should render page title", () => {
+    renderCICD()
+    expect(screen.getByText("sidebar.cicd")).toBeTruthy()
   })
 
-  it('should render scheduled tasks tab', () => {
-    render(<MemoryRouter><CICD /></MemoryRouter>)
-    expect(screen.getByText('cicd.scheduledTasks')).toBeInTheDocument()
+  it("should render webhook tab", () => {
+    renderCICD()
+    expect(screen.getByText(/cicd.webhookTab/)).toBeTruthy()
   })
 
-  it('should render triggers tab', () => {
-    render(<MemoryRouter><CICD /></MemoryRouter>)
-    expect(screen.getByText('cicd.triggerRules')).toBeInTheDocument()
+  it("should render schedule tab", () => {
+    renderCICD()
+    expect(screen.getByText(/cicd.scheduleTab/)).toBeTruthy()
   })
 
-  it('should render create button', () => {
-    render(<MemoryRouter><CICD /></MemoryRouter>)
-    expect(screen.getByText('cicd.create')).toBeInTheDocument()
+  it("should render new webhook button", () => {
+    renderCICD()
+    expect(screen.getByText("cicd.newWebhook")).toBeTruthy()
+  })
+
+  it("should render task name column", () => {
+    renderCICD()
+    expect(screen.getByText("cicd.taskName")).toBeTruthy()
   })
 })

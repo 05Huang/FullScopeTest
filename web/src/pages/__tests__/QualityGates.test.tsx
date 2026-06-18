@@ -1,49 +1,63 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import QualityGates from '../QualityGates'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen } from "@testing-library/react"
+import { BrowserRouter } from "react-router-dom"
+import QualityGates from "../QualityGates"
 
-vi.mock('@/services/api', () => ({
-  default: { get: vi.fn().mockResolvedValue({ data: { data: [] } }), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+vi.mock("@/services/api", () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { data: [] } }),
+    post: vi.fn().mockResolvedValue({ data: { data: {} } }),
+    delete: vi.fn().mockResolvedValue({ data: { message: "ok" } }),
+  },
 }))
 
-vi.mock('@/stores/projectStore', () => ({
-  useProjectStore: vi.fn(() => ({ currentProjectId: 1 })),
+vi.mock("@/stores/projectStore", () => ({
+  useProjectStore: () => ({ currentProject: { id: 1 } }),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-describe('QualityGates', () => {
-  it('should render quality gates page', () => {
-    render(<MemoryRouter><QualityGates /></MemoryRouter>)
-    expect(screen.getByText('qualityGates.title')).toBeInTheDocument()
+const renderQualityGates = () =>
+  render(
+    <BrowserRouter>
+      <QualityGates />
+    </BrowserRouter>
+  )
+
+describe("QualityGates Page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('should render create button', () => {
-    render(<MemoryRouter><QualityGates /></MemoryRouter>)
-    expect(screen.getByText('qualityGates.create')).toBeInTheDocument()
+  it("should render without crashing", () => {
+    renderQualityGates()
+    expect(document.body).toBeTruthy()
   })
 
-  it('should render table', () => {
-    render(<MemoryRouter><QualityGates /></MemoryRouter>)
-    expect(document.querySelector('.ant-table')).toBeInTheDocument()
+  it("should render page title", () => {
+    renderQualityGates()
+    expect(screen.getByText("qualityGates.title")).toBeTruthy()
   })
 
-  it('should render refresh button', () => {
-    render(<MemoryRouter><QualityGates /></MemoryRouter>)
-    expect(screen.getByText('common.refresh')).toBeInTheDocument()
+  it("should render create button", () => {
+    renderQualityGates()
+    expect(screen.getByText("qualityGates.create")).toBeTruthy()
   })
 
-  it('should handle empty state', () => {
-    render(<MemoryRouter><QualityGates /></MemoryRouter>)
-    // Should show empty state or table
-    expect(document.querySelector('.ant-table') || document.querySelector('.ant-empty')).toBeTruthy()
+  it("should render name column", () => {
+    renderQualityGates()
+    expect(screen.getByText("common.name")).toBeTruthy()
   })
 
-  it('should have page header', () => {
-    render(<MemoryRouter><QualityGates /></MemoryRouter>)
-    expect(document.querySelector('.fst-page-header')).toBeInTheDocument()
+  it("should render status column", () => {
+    renderQualityGates()
+    expect(screen.getByText("common.status")).toBeTruthy()
+  })
+
+  it("should render empty state", () => {
+    renderQualityGates()
+    expect(screen.getByText("qualityGates.noGates")).toBeTruthy()
   })
 })

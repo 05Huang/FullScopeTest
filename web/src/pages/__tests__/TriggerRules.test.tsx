@@ -1,19 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { BrowserRouter } from "react-router-dom"
-import OrganizationList from "../OrganizationList"
+import TriggerRules from "../TriggerRules"
 
 vi.mock("@/services/api", () => ({
   default: {
     get: vi.fn().mockResolvedValue({ data: { data: [] } }),
     post: vi.fn().mockResolvedValue({ data: { data: {} } }),
-  },
-}))
-
-vi.mock("@/services/organizationService", () => ({
-  organizationService: {
-    getOrganizations: vi.fn().mockResolvedValue({ data: [] }),
-    createOrganization: vi.fn().mockResolvedValue({ data: {} }),
+    delete: vi.fn().mockResolvedValue({ data: { message: "ok" } }),
   },
 }))
 
@@ -21,45 +15,49 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-const renderOrganizationList = () =>
+vi.mock("@/stores/projectStore", () => ({
+  useProjectStore: () => ({ currentProject: { id: 1 } }),
+}))
+
+const renderTriggerRules = () =>
   render(
     <BrowserRouter>
-      <OrganizationList />
+      <TriggerRules />
     </BrowserRouter>
   )
 
-describe("OrganizationList Page", () => {
+describe("TriggerRules Page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it("should render without crashing", () => {
-    renderOrganizationList()
+    renderTriggerRules()
     expect(document.body).toBeTruthy()
   })
 
   it("should render page title", () => {
-    renderOrganizationList()
-    expect(screen.getByText("organizations.title")).toBeTruthy()
+    renderTriggerRules()
+    expect(screen.getByText("triggerRules.title")).toBeTruthy()
   })
 
   it("should render create button", () => {
-    renderOrganizationList()
-    expect(screen.getByText("organizations.create")).toBeTruthy()
+    renderTriggerRules()
+    expect(screen.getByText("triggerRules.create")).toBeTruthy()
   })
 
   it("should render name column", () => {
-    renderOrganizationList()
+    renderTriggerRules()
     expect(screen.getByText("common.name")).toBeTruthy()
   })
 
-  it("should render member count column", () => {
-    renderOrganizationList()
-    expect(screen.getByText("organizations.memberCount")).toBeTruthy()
+  it("should render trigger event column", () => {
+    renderTriggerRules()
+    expect(screen.getByText("triggerRules.triggerEvent")).toBeTruthy()
   })
 
   it("should render empty state", () => {
-    renderOrganizationList()
-    expect(screen.getByText("organizations.noOrganizations")).toBeTruthy()
+    renderTriggerRules()
+    expect(screen.getByText("triggerRules.noRules")).toBeTruthy()
   })
 })
