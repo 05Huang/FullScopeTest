@@ -594,6 +594,19 @@ def run_collection(collection_id):
         return error_response(500, f"执行集合失败: {str(exc)}")
 
 
+@api_bp.route("/api-test/runs/<int:run_id>/progress", methods=["GET"])
+@jwt_required()
+def get_run_progress(run_id):
+    """获取测试执行进度"""
+    try:
+        progress = execution_service.get_progress(run_id)
+        if progress:
+            return success_response(data=progress)
+        return success_response(data={'current': 0, 'total': 0, 'passed': 0, 'failed': 0, 'status': 'unknown'})
+    except Exception as exc:
+        return error_response(500, f"获取进度失败: {str(exc)}")
+
+
 # ==================== 用例版本历史 ====================
 
 @api_bp.route("/api-test/cases/<int:case_id>/versions", methods=["GET"])

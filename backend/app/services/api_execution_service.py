@@ -43,6 +43,31 @@ def _safe_text(value, limit=2000):
 
 class ApiExecutionService(BaseService):
 
+    def _update_progress(self, key: str, data: dict):
+        """更新执行进度到 Redis"""
+        try:
+            import redis as redis_lib
+            import os
+            redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+            r = redis_lib.from_url(redis_url, decode_responses=True, socket_timeout=1)
+            r.setex(key, 300, json.dumps(data))  # TTL 5 分钟
+        except Exception:
+            pass  # Redis 不可用时静默忽略
+
+    def get_progress(self, run_id: int) -> dict:
+        """获取执行进度"""
+        try:
+            import redis as redis_lib
+            import os
+            redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+            r = redis_lib.from_url(redis_url, decode_responses=True, socket_timeout=1)
+            data = r.get(f"test_run_progress:{run_id}")
+            if data:
+                return json.loads(data)
+        except Exception:
+            pass
+        return None
+
     def execute_request(self, data: dict, user_id: int):
         """执行 HTTP 请求（快速测试）"""
         method = data.get('method', '').upper()
@@ -334,8 +359,16 @@ class ApiExecutionService(BaseService):
         total_passed = 0
         total_failed = 0
         start_time = time.time()
+        total_cases = len(cases)
 
-        for case in cases:
+        # 初始化进度（写入 Redis）
+        progress_key = f"test_run_progress:{test_run.id}"
+        self._update_progress(progress_key, {
+            'current': 0, 'total': total_cases,
+            'passed': 0, 'failed': 0, 'status': 'running',
+        })
+
+        for idx, case in enumerate(cases):
             case_result = self._execute_single_case_in_collection(
                 case, use_unified_env, env_id, unified_env_name, unified_env_variables
             )
@@ -345,7 +378,21 @@ class ApiExecutionService(BaseService):
             else:
                 total_failed += 1
 
+            # 更新进度
+            self._update_progress(progress_key, {
+                'current': idx + 1, 'total': total_cases,
+                'passed': total_passed, 'failed': total_failed,
+                'status': 'running',
+            })
+
         total_duration = time.time() - start_time
+
+        # 更新最终进度
+        self._update_progress(progress_key, {
+            'current': total_cases, 'total': total_cases,
+            'passed': total_passed, 'failed': total_failed,
+            'status': 'completed' if total_failed == 0 else 'failed',
+        })
 
         # 更新测试执行记录
         test_run.status = 'success' if total_failed == 0 else 'failed'
