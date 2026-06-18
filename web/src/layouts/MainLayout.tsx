@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useBranding } from '@/hooks/useBranding'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, message, type TourProps } from 'antd'
 import {
   HomeOutlined,
@@ -168,7 +169,7 @@ const FooterGithubIcon = ({ className, style }: { className?: string; style?: Re
 
 const MainLayout = () => {
   const { t, i18n } = useTranslation()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useLocalStorage('fst-sidebar-collapsed', false)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
