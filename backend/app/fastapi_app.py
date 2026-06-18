@@ -1,9 +1,14 @@
 """
-FastAPI 应用骨架
+FastAPI 应用骨架（实验性 / 渐进迁移中）
 
-与 Flask 并行运行，通过 Nginx 路由：
-- /api/v2/* -> FastAPI
-- /api/* -> Flask (保持兼容)
+此模块是 FastAPI v2 API 的实验性入口，与 Flask 并行运行，通过 Nginx 路由：
+- /api/v2/* -> FastAPI（v2 实验性接口）
+- /api/*    -> Flask 3.0（主后端，所有生产功能在 Flask 端实现）
+
+注意：FastAPI v2 目前仅实现了部分基础路由（auth、test_cases、api_tests 等），
+主后端仍为 Flask 3.0。请勿将 FastAPI 作为生产环境的主要后端框架。
+
+迁移计划详见 docs/ROADMAP.md。
 """
 
 import os

@@ -98,7 +98,7 @@ FullScopeTest 专为需要**全方位测试覆盖**的团队打造。我们不�
 | **CI/CD 集成** | ⚠️ 基础 Webhook | ✅ GitHub Action + Quality Gate + 变更感知 | PR 自动触发、质量门禁、Check Run 回写 |
 | **多租户** | ✅ 支持 | ✅ 支持 + 审计日志 | 组织级数据隔离、操作审计 |
 | **部署方式** | Docker Compose | Docker Compose + K8s | 同时支持两种部署方式 |
-| **后端性能** | Java (Spring Boot) | FastAPI (比 Flask 快 30%+) | Python 生态 + 异步高性能 |
+| **后端性能** | Java (Spring Boot) | Flask 3.0 + FastAPI v2（渐进迁移中） | Python 生态 + 异步高性能 |
 | **视觉回归** | ❌ 不支持 | ✅ 自动截图 + 像素级对比 | 独家功能，自动检测 UI 视觉变化 |
 | **AI 用例生成** | ❌ 不支持 | ✅ Swagger → 语义分析 → 自动生成 | 智能理解接口业务含义 |
 | **语义去重** | ❌ 不支持 | ✅ 向量化 + 余弦相似度 | 自动发现重复测试用例 |
@@ -617,7 +617,7 @@ graph TD
 | [API 参考文档](docs/api-reference.md) | 所有 v1 + v2 接口请求/响应示例、认证说明、错误码一览 |
 | [GitHub Actions 集成指南](docs/github-actions-integration.md) | 从零到一集成步骤、PR 自动触发、定时回归、手动触发 |
 | [GitLab CI 模板](docs/gitlab-ci-template.yml) | GitLab CI/CD YAML 模板示例 |
-| [性能基准测试](docs/performance-benchmark.md) | FastAPI vs Flask 压测对比、P95 响应时间分析 |
+| [性能基准测试](docs/performance-benchmark.md) | Flask v1 vs FastAPI v2 压测对比、P95 响应时间分析 |
 | [v1.0.0-rc1 发布说明](releases/v1.0.0-rc1.md) | 首个正式发布候选版本完整 Release Notes |
 
 ### 快速文档入口
