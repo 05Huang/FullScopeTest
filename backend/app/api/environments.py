@@ -341,5 +341,128 @@ def set_default_environment(env_id):
     
     env.is_default = True
     db.session.commit()
-    
+
     return success_response(message='设置成功')
+
+
+@api_bp.route('/environments/<int:env_id>/export', methods=['GET'])
+@jwt_required()
+def export_environment(env_id):
+    """导出环境变量为 JSON"""
+    user_id = get_current_user_id()
+
+    env = Environment.query.get(env_id)
+    if not env:
+        return error_response(404, '环境不存在')
+
+    project = Project.query.filter_by(id=env.project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(403, '无权访问此环境')
+
+    export_data = {
+        'version': '1.0',
+        'export_time': datetime.utcnow().isoformat(),
+        'environment': {
+            'name': env.name,
+            'base_url': env.base_url,
+            'variables': env.variables or {},
+            'headers': env.headers or {},
+            'description': env.description,
+        }
+    }
+
+    return success_response(data=export_data)
+
+
+@api_bp.route('/projects/<int:project_id>/environments/import', methods=['POST'])
+@jwt_required()
+def import_environment(project_id):
+    """
+    导入环境变量
+
+    请求体:
+        data: 导出的 JSON 数据
+        mode: 'override'（覆盖）或 'merge'（合并）
+
+    支持两种格式：
+    1. 导出的 JSON 格式
+    2. .env 文件格式（KEY=VALUE）
+    """
+    user_id = get_current_user_id()
+
+    project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(403, '无权访问此项目')
+
+    data = request.get_json()
+    import_data = data.get('data')
+    mode = data.get('mode', 'merge')
+
+    if not import_data:
+        return error_response(400, '缺少导入数据')
+
+    try:
+        # 解析导入数据
+        if isinstance(import_data, str):
+            # .env 格式
+            variables = {}
+            for line in import_data.strip().split('\n'):
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    variables[key.strip()] = value.strip().strip('"\'')
+
+            env_name = f'导入的环境 {datetime.utcnow().strftime("%Y%m%d%H%M%S")}'
+            env = Environment(
+                name=env_name,
+                project_id=project_id,
+                user_id=user_id,
+                variables=variables,
+            )
+            db.session.add(env)
+        elif isinstance(import_data, dict):
+            # JSON 格式
+            env_info = import_data.get('environment', import_data)
+            env_name = env_info.get('name', f'导入的环境 {datetime.utcnow().strftime("%Y%m%d%H%M%S")}')
+
+            # 查找同名环境
+            existing = Environment.query.filter_by(
+                project_id=project_id,
+                name=env_name,
+                user_id=user_id,
+            ).first()
+
+            if existing and mode == 'override':
+                existing.variables = env_info.get('variables', {})
+                existing.headers = env_info.get('headers', {})
+                existing.base_url = env_info.get('base_url', existing.base_url)
+                existing.description = env_info.get('description', existing.description)
+                env = existing
+            elif existing and mode == 'merge':
+                existing_vars = existing.variables or {}
+                new_vars = env_info.get('variables', {})
+                existing_vars.update(new_vars)
+                existing.variables = existing_vars
+                env = existing
+            else:
+                env = Environment(
+                    name=env_name,
+                    project_id=project_id,
+                    user_id=user_id,
+                    base_url=env_info.get('base_url', ''),
+                    variables=env_info.get('variables', {}),
+                    headers=env_info.get('headers', {}),
+                    description=env_info.get('description', ''),
+                )
+                db.session.add(env)
+        else:
+            return error_response(400, '不支持的数据格式')
+
+        db.session.commit()
+
+        return success_response(
+            data=env.to_dict(),
+            message=f'导入成功（{mode}模式）'
+        )
+    except Exception as e:
+        return error_response(400, f'导入失败: {str(e)}')
