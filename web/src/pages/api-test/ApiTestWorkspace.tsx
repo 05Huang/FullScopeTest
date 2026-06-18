@@ -1474,7 +1474,7 @@ const ApiTestWorkspace = () => {
           if (op.type === 'create_environment') {
             const envRes = await environmentService.createEnvironment({
               name: op.name || `AI Env ${Date.now()}`,
-              base_url: op.base_url || 'http://127.0.0.1:5211/api/v1',
+              base_url: op.base_url || '',
               description: op.description || '',
               variables: normalizeAiObject(op.variables),
               headers: normalizeAiObject(op.headers),
