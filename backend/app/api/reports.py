@@ -952,3 +952,79 @@ def get_team_metrics():
     except Exception as exc:
         logger.error("get team metrics failed", error=str(exc))
         return error_response(500, f'获取团队效能数据失败: {str(exc)}')
+
+
+@api_bp.route('/reports/percentiles', methods=['GET'])
+@jwt_required()
+def get_response_percentiles():
+    """
+    获取 API 响应时间分位数统计
+
+    查询参数:
+        project_id: 项目 ID（可选）
+        days: 统计天数（默认 7）
+
+    返回:
+        {p50, p90, p95, p99, avg, min, max, total_requests}
+    """
+    user_id = get_current_user_id()
+    project_id = request.args.get('project_id', type=int)
+    days = request.args.get('days', 7, type=int)
+
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    # 查询 API 测试执行结果
+    from ..models.test_run import TestRun
+    from ..models.api_test_case import ApiTestCase
+
+    query = db.session.query(TestRun).join(
+        Project, TestRun.project_id == Project.id
+    ).filter(
+        Project.owner_id == user_id,
+        TestRun.test_type == 'api',
+        TestRun.created_at >= start_date,
+    )
+
+    if project_id:
+        query = query.filter(TestRun.project_id == project_id)
+
+    runs = query.all()
+
+    # 收集所有响应时间
+    response_times = []
+    for run in runs:
+        if run.results and isinstance(run.results, list):
+            for result in run.results:
+                if isinstance(result, dict) and 'response_time' in result:
+                    rt = result['response_time']
+                    if isinstance(rt, (int, float)) and rt > 0:
+                        response_times.append(rt)
+
+    if not response_times:
+        return success_response(data={
+            'p50': 0, 'p90': 0, 'p95': 0, 'p99': 0,
+            'avg': 0, 'min': 0, 'max': 0,
+            'total_requests': 0,
+        })
+
+    response_times.sort()
+    total = len(response_times)
+
+    def percentile(data, p):
+        k = (len(data) - 1) * (p / 100)
+        f = int(k)
+        c = f + 1 if f + 1 < len(data) else f
+        d = k - f
+        return data[f] + d * (data[c] - data[f])
+
+    return success_response(data={
+        'p50': round(percentile(response_times, 50), 2),
+        'p90': round(percentile(response_times, 90), 2),
+        'p95': round(percentile(response_times, 95), 2),
+        'p99': round(percentile(response_times, 99), 2),
+        'avg': round(sum(response_times) / total, 2),
+        'min': round(min(response_times), 2),
+        'max': round(max(response_times), 2),
+        'total_requests': total,
+    })
