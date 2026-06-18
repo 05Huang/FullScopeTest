@@ -110,8 +110,8 @@ const UserManagement: React.FC = () => {
       </Row>
       <div className="fst-ios-card fst-animate-in fst-animate-in-2" style={{ marginBottom: 16, padding: '12px 16px' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Input prefix={<SearchOutlined />} placeholder="Search username or email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} onPressEnter={fetchUsers} style={{ width: 280 }} allowClear />
-          <Select value={roleFilter || undefined} onChange={v => { setRoleFilter(v || ''); setPage(1) }} placeholder="Filter role" style={{ width: 140 }} allowClear>
+          <Input prefix={<SearchOutlined />} placeholder={t('admin.searchPlaceholder')} value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} onPressEnter={fetchUsers} style={{ width: 280 }} allowClear />
+          <Select value={roleFilter || undefined} onChange={v => { setRoleFilter(v || ''); setPage(1) }} placeholder={t('admin.filterRole')} style={{ width: 140 }} allowClear>
             <Select.Option value="admin">Admin</Select.Option><Select.Option value="member">Member</Select.Option><Select.Option value="viewer">Viewer</Select.Option>
           </Select>
           <Button icon={<ReloadOutlined />} onClick={fetchUsers}>Refresh</Button>
@@ -124,7 +124,7 @@ const UserManagement: React.FC = () => {
       <Modal title="Reset Password" open={resetModalVisible} onOk={handleResetPassword} onCancel={() => { setResetModalVisible(false); resetForm.resetFields() }} okText="Reset" cancelText="Cancel">
         <Form form={resetForm} layout="vertical">
           <Form.Item label="New Password" name="password" rules={[{ required: true, message: 'Please enter new password' }, { min: 6, message: 'At least 6 characters' }]}>
-            <Input.Password placeholder="Enter new password (min 6 chars)" />
+            <Input.Password placeholder={t('admin.enterPassword')} />
           </Form.Item>
         </Form>
       </Modal>

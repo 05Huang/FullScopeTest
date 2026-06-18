@@ -918,7 +918,7 @@ const ApiTestWorkspace = () => {
     }
     const curlCommand = generateCurl()
     navigator.clipboard.writeText(curlCommand)
-    message.success('已复制 cURL 命令到剪贴板')
+    message.success(t('apiTest.copiedCurl'))
   }
 
   // 保存为用例

@@ -2,7 +2,9 @@
   "copilot": {
     "title": "AI Assistant",
     "placeholder": "Send a command to AI Assistant...",
-    "welcome": "Hi! I'm your AI test platform assistant. I can help you create performance test tasks, or query recent failed Web test records."
+    "welcome": "Hi! I'm your AI test platform assistant. I can help you create performance test tasks, or query recent failed Web test records.",
+    "apiKeyPlaceholder": "Enter model provider API Key",
+    "visionKeyPlaceholder": "Enter vision model API Key"
   },
   "common": {
     "loading": "Loading...",
@@ -222,7 +224,10 @@
   },
   "admin": {
     "userManagement": "User Management",
-    "userManagementSubtitle": "Manage user accounts, roles and permissions"
+    "userManagementSubtitle": "Manage user accounts, roles and permissions",
+    "searchPlaceholder": "Search username or email...",
+    "filterRole": "Filter role",
+    "enterPassword": "Enter new password (min 6 chars)"
   },
   "header": {
     "logout": "Log Out",
@@ -239,6 +244,7 @@
     "runAll": "Run All",
     "importcURL": "Import cURL",
     "exportcURL": "Export cURL",
+    "copiedCurl": "cURL command copied to clipboard",
     "method": "Method",
     "url": "URL",
     "headers": "Headers",
@@ -1244,6 +1250,23 @@
     "saveCase": "Save Case",
     "clearResponse": "Clear Response",
     "duplicateCase": "Duplicate Case"
+  },
+  "globalSearch": {
+    "naturalPlaceholder": "Search using natural language (e.g. find all APIs and scripts related to payment)"
+  },
+  "responseViewer": {
+    "response": "Response",
+    "noCookies": "No Cookies",
+    "sendRequest": "Send a request to view response",
+    "body": "Body",
+    "headers": "Headers",
+    "cookies": "Cookies",
+    "testResults": "Test Results",
+    "key": "Key",
+    "value": "Value"
+  },
+  "aiReview": {
+    "reviewing": "AI is deeply reviewing this collection..."
   },
   "geo": {
     "title": "Switch to English?",

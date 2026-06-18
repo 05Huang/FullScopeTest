@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { Card, Tabs, Space, Tag, Typography, Table, Empty } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
+import { useTranslation } from 'react-i18next'
 import ScriptTestResults from './components/ScriptTestResults'
 import { useThemeStore } from '@/stores/themeStore'
 
@@ -27,6 +28,7 @@ interface ResponseViewerProps {
 }
 
 const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
+  const { t } = useTranslation()
   const [responseTab, setResponseTab] = useState('body')
   const { resolvedTheme } = useThemeStore()
   const monacoTheme = resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'
@@ -46,7 +48,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
             <Text type="secondary">Size: {response.size}</Text>
           </Space>
         ) : (
-          '响应'
+          t('responseViewer.response')
         )
       }
     >
@@ -58,7 +60,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
           items={[
             {
               key: 'body',
-              label: 'Body',
+              label: t('responseViewer.body'),
               children: (
                 <MonacoEditor
                   height={250}
@@ -77,7 +79,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
             },
             {
               key: 'headers',
-              label: 'Headers',
+              label: t('responseViewer.headers'),
               children: (
                 <Table
                   size="small"
@@ -85,8 +87,8 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
                     ([key, value]) => ({ key, value })
                   )}
                   columns={[
-                    { title: 'Key', dataIndex: 'key', key: 'key' },
-                    { title: 'Value', dataIndex: 'value', key: 'value' },
+                    { title: t('responseViewer.key'), dataIndex: 'key', key: 'key' },
+                    { title: t('responseViewer.value'), dataIndex: 'value', key: 'value' },
                   ]}
                   pagination={false}
                 />
@@ -94,12 +96,12 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
             },
             {
               key: 'cookies',
-              label: 'Cookies',
-              children: <Empty description="暂无 Cookie" />,
+              label: t('responseViewer.cookies'),
+              children: <Empty description={t('responseViewer.noCookies')} />,
             },
             {
               key: 'test-results',
-              label: '测试结果',
+              label: t('responseViewer.testResults'),
               children: (
                 <ScriptTestResults
                   scriptExecution={response?.script_execution}
@@ -110,7 +112,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
         />
       ) : (
         <Empty
-          description="发送请求查看响应"
+          description={t('responseViewer.sendRequest')}
           style={{ marginTop: 60 }}
         />
       )}

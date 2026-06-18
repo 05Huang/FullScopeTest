@@ -81,7 +81,7 @@ const AiReviewModal = ({
           />
         </div>
       ) : (
-        <Spin spinning={loading} tip="AI 正在深度评审当前集合...">
+        <Spin spinning={loading} tip={t('aiReview.reviewing')}>
           {reviewSummary && (
             <div style={{ padding: '10px 0' }}>
               <Alert

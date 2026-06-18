@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { Modal, Input, List, Tag, Typography, Spin } from 'antd'
 import { SearchOutlined, ApiOutlined, GlobalOutlined, ThunderboltOutlined, SettingOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { globalSearchAI, GlobalSearchResult } from '@/services/aiSearchService'
 
 const { Text } = Typography
 
 const GlobalSearch = () => {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -105,7 +107,7 @@ const GlobalSearch = () => {
         <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0' }}>
           <Input
             prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: 18 }} />}
-            placeholder="使用自然语言搜索（例如：查找关于支付的所有接口和脚本）"
+            placeholder={t('globalSearch.naturalPlaceholder')}
             bordered={false}
             autoFocus
             value={query}

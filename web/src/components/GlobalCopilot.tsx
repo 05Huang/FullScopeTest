@@ -521,10 +521,10 @@ const GlobalCopilot: React.FC = () => {
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Input addonBefore="Base URL" placeholder={globalAiConfig?.base_url || "https://api.openai.com/v1"} value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)} />
                 <Input addonBefore="Model" placeholder={globalAiConfig?.model || "gpt-4o-mini"} value={aiModel} onChange={e => setAiModel(e.target.value)} />
-                <Input.Password addonBefore="API Key" placeholder={globalAiConfig?.api_key || "请输入模型提供商的 API Key"} value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} />
+                <Input.Password addonBefore="API Key" placeholder={globalAiConfig?.api_key || t('copilot.apiKeyPlaceholder')} value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} />
                 <Input addonBefore="Vision URL" placeholder={globalAiConfig?.vision_base_url || globalAiConfig?.base_url || "https://api.openai.com/v1"} value={aiVisionBaseUrl} onChange={e => setAiVisionBaseUrl(e.target.value)} />
                 <Input addonBefore="Vision Model" placeholder={globalAiConfig?.vision_model || "gpt-4o-mini"} value={aiVisionModel} onChange={e => setAiVisionModel(e.target.value)} />
-                <Input.Password addonBefore="Vision Key" placeholder={globalAiConfig?.vision_api_key || "请输入视觉模型 API Key"} value={aiVisionApiKey} onChange={e => setAiVisionApiKey(e.target.value)} />
+                <Input.Password addonBefore="Vision Key" placeholder={globalAiConfig?.vision_api_key || t('copilot.visionKeyPlaceholder')} value={aiVisionApiKey} onChange={e => setAiVisionApiKey(e.target.value)} />
                 <Button type="primary" block onClick={saveConfig}>保存配置</Button>
               </Space>
             </div>
