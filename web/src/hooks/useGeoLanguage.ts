@@ -4,6 +4,7 @@ import { detectRegion } from '@/services/geoService'
 
 const STORAGE_KEY = 'fst-language'
 const DISMISS_KEY = 'fst-geo-dismiss'
+const isDEV = (import.meta as any).env?.DEV === true
 
 /**
  * 演示系统智能语言检测 Hook
@@ -17,22 +18,19 @@ export function useGeoLanguage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('[GeoLanguage] Initializing...')
     const env = (import.meta as any).env || {}
-    console.log('[GeoLanguage] env:', JSON.stringify({ MODE: env.MODE, VITE_DEPLOY_ENV: env.VITE_DEPLOY_ENV, VITE_ENABLE_GEO: env.VITE_ENABLE_GEO }))
 
     // 显式禁用时跳过
     if (env.VITE_ENABLE_GEO === 'false') {
-      console.log('[GeoLanguage] Skipped — VITE_ENABLE_GEO=false')
+      if (isDEV) console.log('[GeoLanguage] Skipped — VITE_ENABLE_GEO=false')
       setLoading(false)
       return
     }
 
     // 生产环境且未显式启用时跳过
     const isProduction = env.MODE === 'production' && env.VITE_DEPLOY_ENV !== 'demo'
-    console.log('[GeoLanguage] isProduction:', isProduction)
     if (isProduction) {
-      console.log('[GeoLanguage] Skipped — production (set VITE_DEPLOY_ENV=demo to enable)')
+      if (isDEV) console.log('[GeoLanguage] Skipped — production')
       setLoading(false)
       return
     }
@@ -40,7 +38,7 @@ export function useGeoLanguage() {
     // 用户已手动选择过语言，不再提示
     const savedLang = localStorage.getItem(STORAGE_KEY)
     if (savedLang) {
-      console.log('[GeoLanguage] Skipped — user already selected language:', savedLang)
+      if (isDEV) console.log('[GeoLanguage] Skipped — user already selected:', savedLang)
       setLoading(false)
       return
     }
@@ -48,23 +46,17 @@ export function useGeoLanguage() {
     // 用户已关闭过提示
     const dismissed = localStorage.getItem(DISMISS_KEY)
     if (dismissed) {
-      console.log('[GeoLanguage] Skipped — user previously dismissed prompt')
+      if (isDEV) console.log('[GeoLanguage] Skipped — dismissed')
       setLoading(false)
       return
     }
 
-    console.log('[GeoLanguage] Calling detectRegion API...')
     detectRegion().then((geo) => {
-      console.log('[GeoLanguage] API response:', geo)
       if (geo && !geo.is_china) {
-        console.log('[GeoLanguage] ✅ Non-China user detected → showing prompt')
         setShowPrompt(true)
-      } else {
-        console.log('[GeoLanguage] ℹ️ China user or no data → no prompt')
       }
       setLoading(false)
-    }).catch((err) => {
-      console.error('[GeoLanguage] ❌ API error:', err)
+    }).catch(() => {
       setLoading(false)
     })
   }, [])
