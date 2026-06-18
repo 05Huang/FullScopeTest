@@ -18,6 +18,7 @@ import {
   Tabs,
   Row,
   Col,
+  Alert,
   type MenuProps,
 } from 'antd'
 import {
@@ -455,6 +456,16 @@ const AppTestScripts = () => {
           </Dropdown>
         </div>
       </div>
+
+      <Alert
+        message={t('appTest.executionNotice')}
+        description={t('appTest.executionNoticeDesc')}
+        type="warning"
+        showIcon
+        banner
+        style={{ marginBottom: 16 }}
+        className="fst-animate-in fst-animate-in-1"
+      />
 
       <div className="fst-ios-card fst-animate-in fst-animate-in-1">
         <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>

@@ -37,7 +37,7 @@
 - **接口测试**：完整的 HTTP/REST API 测试工作台，支持环境变量、前置/后置脚本、断言、cURL 导入导出、Mock Server
 - **Web 自动化**：基于 Playwright，支持在线编写、录制、视觉回归测试、VNC Live View 实时预览
 - **性能压测**：基于 Locust，支持分布式压测、实时监控大盘、历史对比、告警引擎
-- **APP 测试**：基于 Appium，支持 Android / iOS 双平台
+- **APP 测试**：Appium 脚本管理（支持 Android / iOS 脚本编写与存储，需配合外部 Appium Server 或设备农场执行）
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
 
 ### 企业级特性

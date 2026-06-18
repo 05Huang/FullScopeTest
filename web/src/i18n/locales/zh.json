@@ -905,7 +905,9 @@
     "disabled": "已禁用",
     "confirmDeleteScript": "确定删除此脚本？",
     "scriptSaved": "保存成功",
-    "scriptSaveFailed": "保存失败"
+    "scriptSaveFailed": "保存失败",
+    "executionNotice": "APP 测试需要外部 Appium Server",
+    "executionNoticeDesc": "APP 测试脚本的执行需要连接外部 Appium Server 或设备农场。请在 Appium 配置中填写您的 Appium Server 地址（如 http://your-host:4723），或部署设备农场后使用。"
   },
   "organizations": {
     "title": "组织管理",

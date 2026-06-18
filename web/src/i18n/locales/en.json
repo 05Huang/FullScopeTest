@@ -905,7 +905,9 @@
     "disabled": "Disabled",
     "confirmDeleteScript": "Delete this script?",
     "scriptSaved": "Saved successfully",
-    "scriptSaveFailed": "Save failed"
+    "scriptSaveFailed": "Save failed",
+    "executionNotice": "APP Testing requires an external Appium Server",
+    "executionNoticeDesc": "Executing APP test scripts requires connecting to an external Appium Server or Device Farm. Please configure your Appium Server URL in the Appium settings panel (e.g. http://your-host:4723)."
   },
   "organizations": {
     "title": "Organizations",

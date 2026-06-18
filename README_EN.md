@@ -128,7 +128,7 @@ Locust-based distributed load testing with configurable concurrent users and ste
 
 #### APP Mobile Testing (Appium)
 
-Appium-based mobile application automation supporting both Android and iOS. Configure package/activity (Android) or bundle_id (iOS) to connect real devices or emulators, write Appium Python scripts online and execute them asynchronously via Celery.
+Appium script management supporting both Android and iOS — write and store Appium Python scripts online. **Note**: Execution requires an external Appium Server or Device Farm connection. Configure package/activity (Android) or bundle_id (iOS) in the Appium config panel.
 
 #### Test Report Center
 
