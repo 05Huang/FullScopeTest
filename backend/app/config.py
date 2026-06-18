@@ -193,7 +193,7 @@ class TestingConfig(BaseConfig):
         'TEST_DATABASE_URL',
         'postgresql://localhost:5432/fullscopetest_test'
     )
-    # 测试环境禁用限流和 CSRF，启用 DEBUG（返回 reset_token 等开发信息）
+    # 测试环境禁用限流和 CSRF，启用 DEBUG
     RATELIMIT_ENABLED = False
     DEBUG = True
     WTF_CSRF_ENABLED = False
