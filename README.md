@@ -33,7 +33,7 @@
 
 ### 核心能力
 
-- **AI 赋能**：内置 AI Copilot，支持自然语言编排、脚本自动生成、智能错误分析与自愈、Prompt 版本管理与 A/B 测试
+- **AI 赋能**：内置 AI Copilot，支持自然语言编排、脚本自动生成、智能错误分析与自愈、Prompt 版本管理与 A/B 测试、语义去重
 - **接口测试**：完整的 HTTP/REST API 测试工作台，支持环境变量、前置/后置脚本、断言、cURL 导入导出、Mock Server
 - **Web 自动化**：基于 Playwright，支持在线编写、视觉回归测试、VNC Live View 实时预览（录制功能需本地 GUI 环境，远程服务器请使用 `playwright codegen` 本地录制后上传脚本）
 - **性能压测**：基于 Locust，支持分布式压测、实时监控大盘、历史对比、告警引擎
@@ -627,6 +627,8 @@ graph TD
 | [GitHub Actions 集成指南](docs/github-actions-integration.md) | 从零到一集成步骤、PR 自动触发、定时回归、手动触发 |
 | [GitLab CI 模板](docs/gitlab-ci-template.yml) | GitLab CI/CD YAML 模板示例 |
 | [性能基准测试](docs/performance-benchmark.md) | Flask v1 vs FastAPI v2 压测对比、P95 响应时间分析 |
+| [功能路线图](docs/ROADMAP.md) | 按季度规划的功能开发计划 |
+| [功能完整性审计](docs/feature-audit.md) | 14 项功能实现状态审计报告 |
 | [v1.0.0-rc1 发布说明](releases/v1.0.0-rc1.md) | 首个正式发布候选版本完整 Release Notes |
 
 ### 快速文档入口
