@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useBranding } from '@/hooks/useBranding'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
-import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, message, type TourProps } from 'antd'
+import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, FloatButton, message, type TourProps } from 'antd'
 import {
   HomeOutlined,
   ApiOutlined,
@@ -896,6 +896,7 @@ const MainLayout = () => {
           </div>
         </footer>
         <GlobalCopilot />
+        <FloatButton.BackTop visibilityHeight={300} />
       </div>
 
       {/* 用户引导 */}
