@@ -1,13 +1,17 @@
 """
-SSO 单点登录服务
+SSO 单点登录服务（Beta）
 
 提供 SSO 服务基类、OIDC 和 LDAP Provider 实现。
 支持环境变量配置，自动创建/关联本地用户。
+
+状态：Beta — 已实现完整 OIDC 授权码流程，但尚未经过真实 Provider 端到端测试。
 """
 import os
 import json
+import secrets
 import time
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -329,7 +333,3 @@ def find_or_create_sso_user(sso_info: dict, provider: str) -> User:
     db.session.commit()
     logger.info("SSO 自动创建用户", user_id=user.id, provider=provider, username=final_username)
     return user
-
-
-import secrets
-from datetime import datetime
