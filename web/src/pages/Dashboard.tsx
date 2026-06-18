@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Skeleton } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { reportService } from '@/services'
 import type { DashboardStats } from '@/services/reportService'
@@ -144,7 +145,7 @@ const Dashboard = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div className="fst-stat-label">{card.label}</div>
-                <div className="fst-stat-value">{loading ? '—' : card.value}</div>
+                <div className="fst-stat-value">{loading ? <Skeleton.Input active size="small" style={{ width: 60, height: 28 }} /> : card.value}</div>
               </div>
               <div className={`fst-stat-icon ${card.iconClass}`}>{card.icon}</div>
             </div>
@@ -180,7 +181,7 @@ const Dashboard = () => {
             </div>
           </div>
           {loading
-            ? <div style={{ height: 300, display: 'grid', placeItems: 'center', color: 'var(--fst-on-surface-muted)' }}>{t('common.loading')}</div>
+            ? <Skeleton active paragraph={{ rows: 8 }} />
             : <ReactECharts option={trendOption} style={{ height: 300 }} />
           }
         </div>
@@ -190,7 +191,7 @@ const Dashboard = () => {
             <div className="fst-ios-card-subtitle">{t('dashboard.distributionSubtitle')}</div>
           </div>
           {loading
-            ? <div style={{ height: 300, display: 'grid', placeItems: 'center', color: 'var(--fst-on-surface-muted)' }}>{t('common.loading')}</div>
+            ? <Skeleton active paragraph={{ rows: 8 }} />
             : <ReactECharts option={distributionOption} style={{ height: 300 }} />
           }
         </div>
