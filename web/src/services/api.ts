@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import { message } from 'antd'
 import { useAuthStore } from '@/stores/authStore'
 
 // API 响应类型定义
@@ -83,6 +84,26 @@ api.interceptors.response.use(
     if (errorRequestId) {
       lastRequestId = errorRequestId
     }
+
+    // 网络错误检测（断网或服务器无响应）
+    if (!error.response && error.code === 'ERR_NETWORK') {
+      message.error({
+        content: '网络连接已断开，请检查网络后重试',
+        duration: 5,
+        key: 'network-error',
+      })
+    }
+
+    // 500 错误提示
+    if (error.response?.status === 500) {
+      const rid = errorRequestId || lastRequestId
+      message.error({
+        content: `服务器错误${rid ? ` (ID: ${rid})` : ''}，请稍后重试`,
+        duration: 5,
+        key: 'server-error',
+      })
+    }
+
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
 
     // 401 错误，尝试刷新 token（通过 httpOnly Cookie）
