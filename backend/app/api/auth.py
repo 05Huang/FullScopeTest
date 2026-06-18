@@ -379,8 +379,10 @@ def forgot_password():
     请求体:
         email: 注册邮箱地址
 
-    注意: 当前实现直接返回 token（适用于无邮件服务的场景）。
-    生产环境建议集成邮件服务发送重置链接。
+    流程:
+        1. 用户提交邮箱 → 生成 token → 存储哈希到数据库
+        2. 通过 EmailService 发送重置链接邮件
+        3. 返回统一提示（不论用户是否存在，防止邮箱枚举攻击）
     """
     data = request.get_json()
     email = data['email'].strip().lower()
@@ -391,19 +393,21 @@ def forgot_password():
     if not user or not user.is_active:
         return success_response(message='如果该邮箱已注册，重置链接已发送')
 
-    # 生成重置 Token（有效期 30 分钟）
+    # 生成重置 Token（有效期 1 小时）
     reset_token = secrets.token_urlsafe(32)
     user.reset_token = generate_password_hash(reset_token)
-    user.reset_token_expires = datetime.utcnow() + timedelta(minutes=30)
+    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
     db.session.commit()
 
     logger.info('Password reset requested', user_id=user.id, email=email)
 
-    # 安全规范：不在响应中返回 reset_token
-    # 生产环境应通过邮件发送重置链接（见 P24-1 邮件服务集成）
-    # 当前无邮件服务时，管理员可通过 scripts/reset_password.py 命令行重置密码
-    # reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
-    # send_reset_email(user.email, reset_url)
+    # 通过邮件服务发送重置链接
+    from ..services.email_service import email_service
+    email_service.send_password_reset_email(
+        to=user.email,
+        username=user.username,
+        reset_token=reset_token,
+    )
 
     return success_response(
         message='如果该邮箱已注册，重置链接已发送'
