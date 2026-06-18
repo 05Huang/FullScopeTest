@@ -570,6 +570,42 @@ const MainLayout = () => {
             />
           </Popover>
         </div>
+
+        {/* ─── 版本号与环境标识 ─── */}
+        <div style={{
+          padding: collapsed ? '8px 0' : '8px 16px',
+          textAlign: 'center',
+          borderTop: '1px solid #f0f0f0',
+          marginTop: 'auto',
+        }}>
+          {collapsed ? (
+            <div style={{ fontSize: 10, color: '#999' }}>v1.0</div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span style={{ fontSize: 11, color: '#999' }}>v1.0.0</span>
+              {(import.meta as any).env?.VITE_DEPLOY_ENV === 'demo' && (
+                <span style={{
+                  fontSize: 10,
+                  color: '#fff',
+                  background: '#fa8c16',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  fontWeight: 600,
+                }}>Demo</span>
+              )}
+              {(import.meta as any).env?.MODE === 'development' && (
+                <span style={{
+                  fontSize: 10,
+                  color: '#fff',
+                  background: '#52c41a',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  fontWeight: 600,
+                }}>Dev</span>
+              )}
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* ─── Main Content ─── */}
