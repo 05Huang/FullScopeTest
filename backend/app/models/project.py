@@ -18,6 +18,8 @@ class Project(db.Model):
     description = db.Column(db.Text, comment='项目描述')
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='所有者 ID')
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=True, comment='组织 ID')
+    is_pinned = db.Column(db.Boolean, default=False, comment='是否置顶')
+    pinned_at = db.Column(db.DateTime, nullable=True, comment='置顶时间')
     settings = db.Column(db.JSON, default=dict, comment='项目设置')
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
@@ -39,6 +41,8 @@ class Project(db.Model):
             'description': self.description,
             'owner_id': self.owner_id,
             'organization_id': self.organization_id,
+            'is_pinned': self.is_pinned,
+            'pinned_at': self.pinned_at.isoformat() if self.pinned_at else None,
             'settings': self.settings,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

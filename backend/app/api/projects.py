@@ -45,7 +45,12 @@ def get_projects():
     if keyword:
         query = query.filter(Project.name.ilike(f'%{keyword}%'))
 
-    pagination = query.order_by(Project.created_at.desc()).paginate(
+    # 置顶项目排在最前，按置顶时间排序，然后按创建时间倒序
+    pagination = query.order_by(
+        Project.is_pinned.desc(),
+        Project.pinned_at.desc().nullslast(),
+        Project.created_at.desc(),
+    ).paginate(
         page=page, per_page=per_page, error_out=False
     )
 
@@ -202,3 +207,27 @@ def delete_project(project_id):
         cache.delete(projects_key(user_id))
 
     return success_response(message='删除成功')
+
+
+@api_bp.route('/projects/<int:project_id>/pin', methods=['PUT'])
+@jwt_required()
+def toggle_pin_project(project_id):
+    """置顶/取消置顶项目"""
+    user_id = get_current_user_id()
+    query = filter_by_owner_or_org(Project.query, Project, user_id)
+    project = query.filter_by(id=project_id).first()
+
+    if not project:
+        return error_response(404, '项目不存在')
+
+    project.is_pinned = not project.is_pinned
+    project.pinned_at = datetime.utcnow() if project.is_pinned else None
+    db.session.commit()
+
+    # 失效项目列表缓存
+    cache = get_cache_service()
+    if cache:
+        cache.delete(projects_key(user_id))
+
+    action = '置顶' if project.is_pinned else '取消置顶'
+    return success_response(data=project.to_dict(), message=f'{action}成功')
