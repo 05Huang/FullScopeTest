@@ -324,6 +324,10 @@ def register_blueprints(app):
     from .api.billing import billing_bp
     app.register_blueprint(billing_bp, url_prefix='/api/v1')
 
+    # 品牌配置 API
+    from .api.branding import branding_bp
+    app.register_blueprint(branding_bp, url_prefix='/api/v1')
+
     # 地理位置检测（无需认证）
     from .api.geo import geo_bp
     app.register_blueprint(geo_bp)
@@ -337,6 +341,7 @@ def register_blueprints(app):
         csrf.exempt(api_bp)
         csrf.exempt(admin_bp)
         csrf.exempt(billing_bp)
+        csrf.exempt(branding_bp)
         csrf.exempt(geo_bp)
 
 
