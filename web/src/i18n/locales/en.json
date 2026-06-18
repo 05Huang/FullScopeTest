@@ -1250,5 +1250,9 @@
     "description": "We detected you might prefer English. Would you like to switch the interface language?",
     "keepChinese": "Keep Chinese",
     "switchEnglish": "Switch to English"
+  },
+  "notFound": {
+    "message": "Sorry, the page you visited does not exist",
+    "backHome": "Back to Home"
   }
 }

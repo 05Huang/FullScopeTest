@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import ErrorBoundary from './components/ErrorBoundary'
 import LanguageSwitchPrompt from './components/LanguageSwitchPrompt'
+import NotFound from './pages/NotFound'
 import i18n from './i18n'
 import { useAuthStore } from './stores/authStore'
 
@@ -404,7 +405,7 @@ function App() {
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
       </Routes>
     </ErrorBoundary>
   )

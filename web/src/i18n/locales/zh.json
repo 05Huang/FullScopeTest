@@ -1250,5 +1250,9 @@
     "description": "我们检测到您可能更喜欢英文界面，是否切换语言？",
     "keepChinese": "保持中文",
     "switchEnglish": "Switch to English"
+  },
+  "notFound": {
+    "message": "抱歉，您访问的页面不存在",
+    "backHome": "返回首页"
   }
 }
