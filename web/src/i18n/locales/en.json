@@ -619,7 +619,9 @@
     "seconds": "s",
     "minutes": "m",
     "testRunPrefix": "Test #",
-    "confirmDeleteRecord": "Delete this record?"
+    "confirmDeleteRecord": "Delete this record?",
+    "shareLink": "Copy Link",
+    "linkCopied": "Link copied to clipboard"
   },
   "settings": {
     "title": "Settings",

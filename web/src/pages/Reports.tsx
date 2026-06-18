@@ -23,6 +23,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
+  CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
   EyeOutlined,
@@ -446,6 +447,18 @@ const Reports = () => {
               <Button type="text" size="small" icon={<DownloadOutlined />} />
             </Tooltip>
           </Dropdown>
+          <Tooltip title={t('reports.shareLink')}>
+            <Button
+              type="text"
+              size="small"
+              icon={<CopyOutlined />}
+              onClick={() => {
+                const url = `${window.location.origin}/reports?run=${record.id}`
+                navigator.clipboard.writeText(url)
+                message.success(t('reports.linkCopied'))
+              }}
+            />
+          </Tooltip>
           <Popconfirm title={t('reports.confirmDeleteRecord')} onConfirm={() => handleDelete(record.id)}>
             <Tooltip title={t("common.delete")}>
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />

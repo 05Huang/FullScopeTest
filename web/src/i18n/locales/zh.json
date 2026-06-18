@@ -619,7 +619,9 @@
     "seconds": "秒",
     "minutes": "分",
     "testRunPrefix": "测试执行 #",
-    "confirmDeleteRecord": "确定删除该记录吗？"
+    "confirmDeleteRecord": "确定删除该记录吗？",
+    "shareLink": "复制链接",
+    "linkCopied": "链接已复制到剪贴板"
   },
   "settings": {
     "title": "系统设置",
