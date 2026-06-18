@@ -1,0 +1,14 @@
+apiVersion: v2
+name: fullscopetest
+description: FullScopeTest — AI-Native 全链路自动化测试平台
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - testing
+  - automation
+  - api-testing
+  - playwright
+home: https://github.com/05Huang/FullScopeTest
+maintainers:
+  - name: FullScopeTest Team

@@ -622,6 +622,7 @@ graph TD
 | 文档 | 说明 |
 |------|------|
 | [部署文档](docs/deployment.md) | Docker Compose 部署（开发/生产）、环境变量说明、Troubleshooting |
+| [Kubernetes 部署指南](docs/kubernetes-deployment.md) | Helm Chart 部署、TLS 配置、生产环境建议 |
 | [API 参考文档](docs/api-reference.md) | 所有 v1 + v2 接口请求/响应示例、认证说明、错误码一览 |
 | [GitHub Actions 集成指南](docs/github-actions-integration.md) | 从零到一集成步骤、PR 自动触发、定时回归、手动触发 |
 | [GitLab CI 模板](docs/gitlab-ci-template.yml) | GitLab CI/CD YAML 模板示例 |

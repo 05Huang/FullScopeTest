@@ -736,6 +736,15 @@ celery -A app.extensions:celery worker --loglevel=info
 # 4. Configure Nginx reverse proxy (see nginx/ directory)
 ```
 
+#### Kubernetes (Helm)
+
+```bash
+# Quick start
+helm install fullscopetest deploy/helm/fullscopetest/
+
+# See docs/kubernetes-deployment.md for full guide
+```
+
 #### One-Click Deploy Script
 
 ```bash

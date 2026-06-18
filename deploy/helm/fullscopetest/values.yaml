@@ -1,0 +1,90 @@
+# FullScopeTest Helm Chart - 默认配置
+# 生产环境请覆盖以下值
+
+# 副本数
+replicaCount: 1
+
+# 后端 Flask 镜像
+backend:
+  image:
+    repository: fullscopetest/backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# 前端 React 镜像
+frontend:
+  image:
+    repository: fullscopetest/frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+
+# Celery Worker
+celery:
+  replicaCount: 1
+  image:
+    repository: fullscopetest/backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# Ingress 配置
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: fullscopetest.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: backend
+        - path: /
+          pathType: Prefix
+          backend: frontend
+  tls: []
+    # - secretName: fullscopetest-tls
+    #   hosts:
+    #     - fullscopetest.example.com
+
+# 环境变量
+env:
+  FLASK_ENV: production
+  DATABASE_URL: postgresql://postgres:postgres@postgresql:5432/fullscopetest
+  REDIS_URL: redis://redis:6379/0
+  JWT_SECRET_KEY: ""  # 必须在部署时覆盖
+  SECRET_KEY: ""      # 必须在部署时覆盖
+  CORS_ORIGINS: "*"
+
+# PostgreSQL（内置，生产环境建议使用外部数据库）
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: postgres
+    database: fullscopetest
+
+# Redis（内置，生产环境建议使用外部 Redis）
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false

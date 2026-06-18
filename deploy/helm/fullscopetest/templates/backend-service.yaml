@@ -1,0 +1,17 @@
+{{- if .Values.backend }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: {{ .Release.Name }}-backend
+spec:
+  type: {{ .Values.backend.service.type }}
+  ports:
+    - port: {{ .Values.backend.service.port }}
+      targetPort: {{ .Values.backend.service.port }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Release.Name }}-backend
+{{- end }}
