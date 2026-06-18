@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { useBranding } from '@/hooks/useBranding'
 import { Layout, Avatar, Dropdown, Button, Tour, ConfigProvider, Popover, Typography, Modal, Input, message, type TourProps } from 'antd'
 import {
   HomeOutlined,
@@ -171,6 +172,7 @@ const MainLayout = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const { branding } = useBranding()
   const { isAdmin } = useRole()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
   const { resolvedTheme, toggle: toggleTheme } = useThemeStore()
@@ -324,7 +326,7 @@ const MainLayout = () => {
 
   const tourSteps: TourProps['steps'] = [
     {
-      title: t('tour.step1Title') || '👋 欢迎使用 FullScopeTest',
+      title: t('tour.step1Title') || `👋 欢迎使用 ${branding.platform_name}`,
       description: t('tour.step1Desc') || '这是一个企业级 AI 测试平台，支持接口测试、Web 自动化、APP 测试、性能压测等全方位测试能力。',
       target: () => document.querySelector('.fst-app-logo') as HTMLElement,
     },
@@ -461,9 +463,9 @@ const MainLayout = () => {
           minWidth: 0,
         }}>
           {collapsed ? (
-            <img src="/logo-icon.webp" alt="FST" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
+            <img src={branding.logo_url || '/logo-icon.webp'} alt={branding.platform_name} style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
           ) : (
-            <img src="/logo-full.webp" alt="FullScopeTest" style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <img src={branding.logo_url || '/logo-full.webp'} alt={branding.platform_name} style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }} />
           )}
         </div>
 
@@ -884,6 +886,12 @@ const MainLayout = () => {
               </svg>
               {t('layout.accessibility') || '无障碍'}
             </span>
+            {branding.footer_text && (
+              <>
+                <span className="fst-site-footer-sep" aria-hidden="true" />
+                <span className="fst-site-footer-link">{branding.footer_text}</span>
+              </>
+            )}
           </div>
         </footer>
         <GlobalCopilot />
