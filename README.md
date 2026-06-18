@@ -306,8 +306,9 @@ graph TD
 
 ```mermaid
 erDiagram
+    Organization ||--o{ OrganizationMember : "has members"
     Organization ||--o{ Project : "owns"
-    Organization ||--o{ User : "has members"
+    User ||--o{ OrganizationMember : "belongs to"
     User ||--o{ Project : "owns"
     User ||--o{ WebTestScript : "creates"
     User ||--o{ TestRun : "triggers"
@@ -345,7 +346,14 @@ erDiagram
         string email UK
         string password_hash
         string role "admin | member | viewer"
+        boolean is_active
+    }
+    OrganizationMember {
+        int id PK
         int organization_id FK
+        int user_id FK
+        string role "owner | admin | member | viewer"
+        boolean is_active
     }
     Project {
         int id PK

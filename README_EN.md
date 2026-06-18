@@ -305,6 +305,9 @@ All API routes are mounted under a single `api_bp` blueprint (prefix `/api/v1`),
 
 ```mermaid
 erDiagram
+    Organization ||--o{ OrganizationMember : "has members"
+    Organization ||--o{ Project : "owns"
+    User ||--o{ OrganizationMember : "belongs to"
     User ||--o{ Project : "owns"
     User ||--o{ WebTestScript : "creates"
     User ||--o{ TestRun : "triggers"
@@ -327,12 +330,26 @@ erDiagram
 
     WebhookToken }o--|| Project : "belongs to"
 
+    Organization {
+        int id PK
+        string name
+        string invite_code UK
+        boolean is_active
+    }
+    OrganizationMember {
+        int id PK
+        int organization_id FK
+        int user_id FK
+        string role "owner | admin | member | viewer"
+        boolean is_active
+    }
     User {
         int id PK
         string username UK
         string email UK
         string password_hash
         string role "admin | member | viewer"
+        boolean is_active
     }
     Project {
         int id PK
