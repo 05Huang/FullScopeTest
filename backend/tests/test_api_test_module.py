@@ -284,6 +284,103 @@ class TestMockServer:
         assert resp.status_code == 404
 
 
+class TestCurlParser:
+    """cURL 解析器测试"""
+
+    def test_parse_simple_get(self):
+        """解析简单 GET 请求"""
+        from app.api.api_test import parse_curl
+        result = parse_curl("curl https://example.com/api")
+        assert result['method'] == 'GET'
+        assert result['url'] == 'https://example.com/api'
+
+    def test_parse_post_with_data(self):
+        """解析 POST 请求带 data"""
+        from app.api.api_test import parse_curl
+        result = parse_curl('curl -X POST https://example.com/api -d \'{"key": "value"}\'')
+        assert result['method'] == 'POST'
+        assert result['url'] == 'https://example.com/api'
+        assert result['body'] == '{"key": "value"}'
+
+    def test_parse_multiline_curl(self):
+        """解析多行 cURL（\\ 换行）"""
+        from app.api.api_test import parse_curl
+        curl_cmd = """curl -X POST \\
+  https://example.com/api \\
+  -H 'Content-Type: application/json' \\
+  -d '{"name": "test"}'"""
+        result = parse_curl(curl_cmd)
+        assert result['method'] == 'POST'
+        assert result['url'] == 'https://example.com/api'
+        assert result['headers']['Content-Type'] == 'application/json'
+        assert result['body'] == '{"name": "test"}'
+
+    def test_parse_data_raw(self):
+        """解析 --data-raw 参数"""
+        from app.api.api_test import parse_curl
+        result = parse_curl('curl https://example.com --data-raw "test=1&foo=2"')
+        assert result['method'] == 'POST'
+        assert result['body'] == 'test=1&foo=2'
+
+    def test_parse_compressed_ignored(self):
+        """--compressed 参数应被忽略"""
+        from app.api.api_test import parse_curl
+        result = parse_curl('curl --compressed https://example.com')
+        assert result['url'] == 'https://example.com'
+
+    def test_parse_empty_raises(self):
+        """空命令应抛出 ValueError"""
+        from app.api.api_test import parse_curl
+        import pytest
+        with pytest.raises(ValueError, match="为空"):
+            parse_curl("")
+
+    def test_parse_no_url_raises(self):
+        """无 URL 应抛出 ValueError"""
+        from app.api.api_test import parse_curl
+        import pytest
+        with pytest.raises(ValueError, match="未找到 URL"):
+            parse_curl("curl -X GET")
+
+    def test_import_curl_endpoint(self, client):
+        """测试导入 cURL 端点"""
+        user = _register_and_login(client)
+        headers = {"Authorization": f"Bearer {user['access_token']}"}
+
+        resp = client.post(
+            "/api/v1/api-test/import-curl",
+            json={"curl": 'curl -X POST https://example.com -H "Content-Type: application/json" -d \'{"a":1}\''},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()["data"]
+        assert data["method"] == "POST"
+        assert data["url"] == "https://example.com"
+        assert data["headers"]["Content-Type"] == "application/json"
+
+    def test_import_curl_multiline_endpoint(self, client):
+        """测试导入多行 cURL 端点"""
+        user = _register_and_login(client)
+        headers = {"Authorization": f"Bearer {user['access_token']}"}
+
+        curl_cmd = """curl -X PUT \\
+  https://api.example.com/users/1 \\
+  -H 'Authorization: Bearer token123' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"name": "updated"}'"""
+
+        resp = client.post(
+            "/api/v1/api-test/import-curl",
+            json={"curl": curl_cmd},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()["data"]
+        assert data["method"] == "PUT"
+        assert "users/1" in data["url"]
+        assert data["headers"]["Authorization"] == "Bearer token123"
+
+
 class TestHealthCheck:
     """健康检查测试"""
 

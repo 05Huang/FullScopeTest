@@ -641,3 +641,130 @@ def diff_versions():
         return success_response(data=result)
     except AppError as e:
         return error_response(e.code, e.message)
+
+
+import re
+import shlex
+
+
+def parse_curl(curl_command: str) -> dict:
+    """
+    解析 cURL 命令为结构化数据
+
+    支持：
+    - 多行 cURL（\\ 换行）
+    - --data-raw、--data-binary、-d 等变体
+    - --compressed 参数（忽略）
+    - 单引号和双引号
+
+    Args:
+        curl_command: cURL 命令字符串
+
+    Returns:
+        dict: {method, url, headers, body}
+
+    Raises:
+        ValueError: 解析失败时返回具体错误位置
+    """
+    # 预处理：合并多行（去除 \ 换行）
+    curl_command = curl_command.strip()
+    if not curl_command:
+        raise ValueError("cURL 命令为空")
+
+    # 合续行：将 \ + 换行替换为空格
+    curl_command = re.sub(r'\\\s*\n\s*', ' ', curl_command)
+
+    # 去掉开头的 curl 命令
+    if curl_command.startswith('curl '):
+        curl_command = curl_command[5:]
+    elif curl_command == 'curl':
+        raise ValueError("cURL 命令缺少参数")
+
+    # 使用 shlex 分词（正确处理引号）
+    try:
+        tokens = shlex.split(curl_command)
+    except ValueError as e:
+        raise ValueError(f"cURL 命令格式错误: {e}")
+
+    method = 'GET'
+    url = ''
+    headers = {}
+    body = ''
+    data_parts = []
+
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+
+        if token in ('-X', '--request'):
+            i += 1
+            if i >= len(tokens):
+                raise ValueError(f"参数 {token} 缺少值")
+            method = tokens[i].upper()
+
+        elif token in ('-H', '--header'):
+            i += 1
+            if i >= len(tokens):
+                raise ValueError(f"参数 {token} 缺少值")
+            header_str = tokens[i]
+            if ':' in header_str:
+                key, value = header_str.split(':', 1)
+                headers[key.strip()] = value.strip()
+
+        elif token in ('-d', '--data', '--data-raw', '--data-binary', '--data-urlencode'):
+            i += 1
+            if i >= len(tokens):
+                raise ValueError(f"参数 {token} 缺少值")
+            data_parts.append(tokens[i])
+            if method == 'GET':
+                method = 'POST'
+
+        elif token == '--compressed':
+            pass  # 忽略
+
+        elif token.startswith('-'):
+            # 未知参数，跳过
+            pass
+
+        elif not url and not token.startswith('-'):
+            url = token
+
+        i += 1
+
+    if data_parts:
+        body = '&'.join(data_parts)
+
+    if not url:
+        raise ValueError("cURL 命令中未找到 URL")
+
+    return {
+        'method': method,
+        'url': url,
+        'headers': headers,
+        'body': body,
+    }
+
+
+@api_bp.route("/api-test/import-curl", methods=["POST"])
+@jwt_required()
+def import_curl():
+    """
+    导入 cURL 命令
+
+    请求体:
+        curl: cURL 命令字符串（支持多行）
+
+    返回:
+        解析后的请求结构 {method, url, headers, body}
+    """
+    data = request.get_json()
+    curl_command = data.get('curl', '')
+
+    if not curl_command:
+        return error_response(400, '缺少 curl 参数')
+
+    try:
+        result = parse_curl(curl_command)
+        return success_response(data=result)
+    except ValueError as e:
+        return error_response(400, f'cURL 解析失败: {e}')
