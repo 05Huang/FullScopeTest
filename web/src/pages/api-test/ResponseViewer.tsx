@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { Card, Tabs, Space, Tag, Typography, Table, Empty } from 'antd'
 import MonacoEditor from '@monaco-editor/react'
 import ScriptTestResults from './components/ScriptTestResults'
+import { useThemeStore } from '@/stores/themeStore'
 
 const { Text } = Typography
 
@@ -27,6 +28,8 @@ interface ResponseViewerProps {
 
 const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
   const [responseTab, setResponseTab] = useState('body')
+  const { resolvedTheme } = useThemeStore()
+  const monacoTheme = resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'
 
   return (
     <Card
@@ -60,7 +63,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
                 <MonacoEditor
                   height={250}
                   language="json"
-                  theme="vs-light"
+                  theme={monacoTheme}
                   value={JSON.stringify(response.data, null, 2)}
                   options={{
                     readOnly: true,
