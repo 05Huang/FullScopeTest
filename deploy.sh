@@ -29,9 +29,10 @@ if [ "${SKIP_WEB_BUILD:-0}" != "1" ]; then
     sh -c "export NODE_OPTIONS=--max-old-space-size=1024 && npm ci && npm run build"
 fi
 
-# Sync built frontend to 1Panel OpenResty site directory (if present).
-if [ -d "/opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index" ] && [ -d "$APP_DIR/web/dist" ]; then
-  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/apps/openresty/openresty/www/sites/fullscopetest/index/
+# Sync built frontend to 1Panel site directory (if present).
+if [ -d "/opt/1panel/www/sites/test.huangxuan.chat" ] && [ -d "$APP_DIR/web/dist" ]; then
+  mkdir -p /opt/1panel/www/sites/test.huangxuan.chat/index
+  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/www/sites/test.huangxuan.chat/index/
 fi
 
 # Run pytest using a Python container (no host Python required).
