@@ -4,8 +4,9 @@
  * 从 ApiTestWorkspace 拆分而来，包含：
  * - 请求名称输入、URL + 方法选择 + 操作按钮
  * - 环境选择器
- * - 请求配置 Tabs（Params / Headers / Body / Scripts / Mock）
+ * - 请求配置 Tabs（Params / Headers / Body / Scripts / 断言 / Mock）
  */
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Card, Input, Button, Tabs, Select, Space, Table, Tag, Dropdown,
@@ -18,6 +19,7 @@ import {
 } from '@ant-design/icons'
 import MonacoEditor from '@monaco-editor/react'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
+import AssertionBuilder, { type AssertionRule } from './components/AssertionBuilder'
 
 const { Text } = Typography
 
@@ -51,6 +53,16 @@ interface RequestEditorProps {
   selectedCollectionId?: number; activeCollectionId?: number
   moreMenuItems: MenuProps['items']
   response?: any
+  /** 可视化断言规则 */
+  assertions: AssertionRule[]; setAssertions: (v: AssertionRule[]) => void
+  /** 最近一次执行的可视化断言结果 */
+  assertionResults?: {
+    total: number; passed: number; failed: number
+    details?: Array<{
+      name: string; passed: boolean; actual?: unknown
+      expected?: unknown; error?: string; assertion_type?: string
+    }>
+  }
 }
 
 const RequestEditor: React.FC<RequestEditorProps> = (p) => {
@@ -132,6 +144,19 @@ const RequestEditor: React.FC<RequestEditorProps> = (p) => {
           <MonacoEditor height={150} language="javascript" theme="vs-light"
             value={p.postScript} onChange={(v) => p.setPostScript(v || '')}
             options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false, automaticLayout: true }} />
+        )},
+        { key: 'visual-assertions', label: (
+          <Space size={4}>
+            <span>断言</span>
+            {p.assertions.length > 0 && <Badge count={p.assertions.length} size="small" style={{ backgroundColor: '#1890ff' }} />}
+          </Space>
+        ), children: (
+          <AssertionBuilder
+            assertions={p.assertions}
+            onChange={p.setAssertions}
+            assertionResults={p.assertionResults}
+            showResults={!!p.assertionResults}
+          />
         )},
         { key: 'mock', label: <Space size={4}><span>Mock</span>{p.mockEnabled && <Badge status="success" />}</Space>,
           children: (

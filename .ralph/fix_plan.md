@@ -1914,3 +1914,633 @@ if g.organization_id:
 | `cba6086` | P36-4 | 统一单例模式 — singleton 装饰器 |
 | `0b18302` | P36-5 | datetime.utcnow() 全局替换 |
 | `e21c008` | P36-6 | 关键 db.session.commit() 添加 try/except |
+
+---
+
+# 第八阶段：功能性补齐
+
+> 目标：补齐全面功能审计中发现的功能性不足，使平台达到竞品（Postman/Apifox/Katalon）同等水准。
+> 来源：2026-06-19 功能性审计，覆盖前后端全部页面与服务。
+
+---
+
+## P37：API 测试核心增强（🔴 严重）
+
+- [ ] P37-1: 接口测试 — 可视化断言构建器（🔴）
+- [ ] P37-2: 接口测试 — 多步骤链式请求编排（🔴）
+- [ ] P37-3: 接口测试 — 响应历史持久化与趋势（🟡）
+- [ ] P37-4: 接口测试 — GraphQL 测试 UI（🟡）
+- [ ] P37-5: 接口测试 — WebSocket 测试 UI（🟡）
+- [ ] P37-6: 接口测试 — 数据驱动 / CSV 参数化执行（🟡）
+- [ ] P37-7: 接口测试 — 内置变量函数库（🟡）
+
+---
+
+### P37-1: 接口测试 — 可视化断言构建器
+
+**现状**: 断言只能通过 JavaScript 后置脚本实现（`post_script`），非技术人员无法使用。
+
+**需求**: 新增可视化断言面板，支持以下条件类型：
+- 状态码断言（等于/不等于/属于范围）
+- 响应时间断言（小于/大于 N ms）
+- Header 断言（存在/不存在/值匹配）
+- Body 断言（JSONPath 提取 + 等于/包含/正则/类型检查）
+
+**前端**: `web/src/pages/api-test/` 下新增 `AssertionBuilder.tsx` 组件，集成到 RequestEditor 的新 Tab 页。断言结果展示在 `ResponseViewer.tsx` 的 test-results Tab。
+
+**后端**: `backend/app/services/api_execution_service.py` 执行后自动运行可视化断言，结果写入 `script_execution.assertions`。
+
+---
+
+### P37-2: 接口测试 — 多步骤链式请求编排
+
+**现状**: 每个用例独立执行，前置脚本可通过 `env` 变量传递数据，但无可视化编排。
+
+**需求**: 新增「场景编排」功能：
+- 拖拽排序多个请求步骤
+- 步骤间变量提取（从响应 Body/Header 提取值传给下一步）
+- 条件分支（if status=200 则执行步骤 A，否则步骤 B）
+- 循环（对数组响应逐项执行）
+
+**前端**: 新增 `web/src/pages/api-test/ScenarioEditor.tsx`，左侧步骤列表可拖拽，右侧配置提取规则和条件。
+
+**后端**: 新增 `backend/app/services/scenario_executor.py`，按步骤顺序执行，管理步骤间变量上下文。
+
+---
+
+### P37-3: 接口测试 — 响应历史持久化与趋势
+
+**现状**: `RequestHistory` 组件使用 localStorage 存储，刷新后丢失。
+
+**需求**:
+- 后端新增 `response_history` 表，记录每次请求的 URL/Method/Status/Time/Date
+- 前端新增响应历史面板，展示同一接口的历史响应列表
+- 支持响应时间趋势图（ECharts 折线图）
+- 支持两次历史响应的 Body Diff 对比
+
+**前端**: 新增 `web/src/pages/api-test/components/ResponseHistory.tsx`。
+
+**后端**: 新增 `backend/app/api/api_test.py` 中的 `/api-test/history` 端点。
+
+---
+
+### P37-4: 接口测试 — GraphQL 测试 UI
+
+**现状**: 后端有 `graphql_executor.py`，但前端 API 测试工作台只有 HTTP 方法下拉。
+
+**需求**:
+- 在 RequestEditor 中新增 `GraphQL` Body 类型选项
+- 提供 Schema 自动补全（从 endpoint introspection 获取）
+- Variables 面板（JSON 格式）
+- Query/Mutation/Subscription 切换
+
+**前端**: `web/src/pages/api-test/RequestEditor.tsx` 增加 GraphQL body 编辑模式。
+
+---
+
+### P37-5: 接口测试 — WebSocket 测试 UI
+
+**现状**: 后端有 `ws_executor.py`，但前端无对应 UI。
+
+**需求**:
+- 新增 WebSocket 测试页面（或 RequestEditor 中的 WS 模式）
+- 连接管理（connect/disconnect/reconnect）
+- 消息发送面板 + 消息接收时间线
+- 连接状态指示器
+
+**前端**: 新增 `web/src/pages/api-test/WebSocketPanel.tsx`。
+
+**后端**: `backend/app/api/api_test.py` 新增 `/api-test/ws/connect` 端点。
+
+---
+
+### P37-6: 接口测试 — 数据驱动 / CSV 参数化执行
+
+**现状**: 每次执行使用固定参数，无法批量运行不同数据。
+
+**需求**:
+- 支持上传 CSV 文件作为测试数据源
+- 执行时自动迭代每一行数据，替换用例中的变量
+- 执行结果按数据行分组展示
+- 支持预览前 5 行数据
+
+**前端**: `web/src/pages/api-test/components/DataDrivenModal.tsx`。
+
+**后端**: `backend/app/services/api_execution_service.py` 增加 `run_with_data_file` 方法。
+
+---
+
+### P37-7: 接口测试 — 内置变量函数库
+
+**现状**: 环境变量只有静态 key-value。
+
+**需求**: 提供动态变量函数，可在 URL/Header/Body 中使用：
+- `{{$randomEmail}}` / `{{$randomPhone}}` / `{{$randomName}}`
+- `{{$timestamp}}` / `{{$date}}` / `{{$uuid}}`
+- `{{$randomInt(min,max)}}` / `{{$randomString(length)}}`
+
+**前端**: `web/src/utils/variableFunctions.ts` + RequestEditor 中的变量自动补全。
+
+**后端**: `backend/app/utils/env_variables.py` 增加函数解析逻辑。
+
+---
+
+## P38：Web/APP 测试增强（🟡 中等）
+
+- [ ] P38-1: Web 测试 — 浏览器扩展录制方案（🟡）
+- [ ] P38-2: Web 测试 — 无代码可视化编排（🟡）
+- [ ] P38-3: Web 测试 — 移动端视口测试（🟢）
+- [ ] P38-4: APP 测试 — 设备管理 UI（🟡）
+- [ ] P38-5: APP 测试 — Appium Server 状态监控（🟢）
+
+---
+
+### P38-1: Web 测试 — 浏览器扩展录制方案
+
+**现状**: `WebTestRecorder.tsx` 依赖后端 Playwright 进程。
+
+**需求**: 开发 Chrome 扩展，在浏览器中直接录制用户操作并导出为测试步骤，无需后端依赖。
+
+**前端**: 新增 `web/src/extensions/chrome-recorder/` 目录。
+
+---
+
+### P38-2: Web 测试 — 无代码可视化编排
+
+**现状**: Web 测试脚本只能通过代码编辑器编写。
+
+**需求**: 提供拖拽式步骤编排面板：
+- 拖拽添加「点击/输入/等待/断言/截图」步骤
+- 每步配置参数（选择器、输入值、等待时间）
+- 实时预览执行效果
+
+**前端**: 新增 `web/src/pages/web-test/VisualEditor.tsx`。
+
+---
+
+### P38-3: Web 测试 — 移动端视口测试
+
+**现状**: Web 测试只支持桌面浏览器。
+
+**需求**: 支持选择预设设备视口（iPhone/iPad/Pixel）和自定义分辨率，验证页面响应式布局。
+
+**前端**: `WebTestScripts.tsx` 增加 viewport 配置选项。
+
+---
+
+### P38-4: APP 测试 — 设备管理 UI
+
+**现状**: `AppTestScripts.tsx` 只有脚本管理，无设备信息。
+
+**需求**:
+- 设备列表页面（已连接设备、设备状态、平台版本）
+- 设备详情（屏幕截图、日志、安装应用列表）
+- Appium Server 连接状态指示器
+
+**前端**: 新增 `web/src/pages/app-test/DeviceManager.tsx`。
+
+**后端**: 新增 `backend/app/api/app_test.py` 中的设备管理端点。
+
+---
+
+### P38-5: APP 测试 — Appium Server 状态监控
+
+**现状**: 无 Appium Server 健康检查。
+
+**需求**: 在 APP 测试页面顶部显示 Appium Server 连接状态，支持一键重启。
+
+**前端**: `AppTestScripts.tsx` 顶部增加状态卡片。
+
+---
+
+## P39：性能测试增强（🟡 中等）
+
+- [ ] P39-1: 性能测试 — 自动基线管理与退化检测（🟡）
+- [ ] P39-2: 性能测试 — 多步骤用户旅程场景（🟡）
+- [ ] P39-3: 性能测试 — 分布式压测支持（🟢）
+- [ ] P39-4: 性能测试 — 结果导出与分享（🟢）
+
+---
+
+### P39-1: 性能测试 — 自动基线管理与退化检测
+
+**现状**: `PerformanceDashboard.tsx` 只能手动选择两次运行对比。
+
+**需求**:
+- 首次运行自动设为基线
+- 后续运行自动与基线对比
+- 退化指标高亮（红色标注 P95 > 基线 20%+）
+- 基线历史管理（可手动切换基线版本）
+
+**前端**: `PerformanceDashboard.tsx` 增加基线对比 Tab。
+
+**后端**: 新增 `backend/app/models/perf_baseline.py` 和对应服务。
+
+---
+
+### P39-2: 性能测试 — 多步骤用户旅程场景
+
+**现状**: `PerfTestScenarios.tsx` 只支持单接口压测。
+
+**需求**:
+- 支持多步骤场景（登录 → 浏览 → 下单）
+- 每步配置 Think Time（模拟用户思考时间）
+- 步骤间数据传递（从响应中提取 token 等）
+- 条件分支（成功/失败走不同路径）
+
+**前端**: 新增 `web/src/pages/perf-test/ScenarioStepEditor.tsx`。
+
+---
+
+### P39-3: 性能测试 — 分布式压测支持
+
+**现状**: 性能测试在单机运行，受限于单机 CPU/内存/带宽。
+
+**需求**: 支持多节点分布式压测，通过 Master-Worker 架构分担负载。
+
+**后端**: 新增 `backend/app/services/distributed_perf_service.py`。
+
+---
+
+### P39-4: 性能测试 — 结果导出与分享
+
+**现状**: 性能测试结果只能在页面查看。
+
+**需求**: 支持导出为 CSV/PDF，生成分享链接（无需登录即可查看）。
+
+**前端**: `PerfTestResults.tsx` 增加导出按钮。
+
+---
+
+## P40：报告与仪表盘增强（🟡 中等）
+
+- [ ] P40-1: 报告 — 定时生成与邮件推送（🟡）
+- [ ] P40-2: 报告 — 自定义报告模板（🟢）
+- [ ] P40-3: 仪表盘 — 自定义 Widget 拖拽布局（🟡）
+- [ ] P40-4: 仪表盘 — 外部数据源 Widget（🟢）
+- [ ] P40-5: 报告 — 交互式钻取（🟢）
+
+---
+
+### P40-1: 报告 — 定时生成与邮件推送
+
+**现状**: 报告是手动查看或导出。
+
+**需求**:
+- 配置定时报告（每日/每周/每月）
+- 自动发送到指定邮箱列表
+- 报告内容可配置（摘要/详情/趋势）
+
+**前端**: 新增 `web/src/pages/ReportSchedules.tsx`。
+
+**后端**: 新增 `backend/app/services/report_scheduler_service.py` + Celery 定时任务。
+
+---
+
+### P40-2: 报告 — 自定义报告模板
+
+**现状**: 报告格式固定。
+
+**需求**: 支持自定义报告模板（选择展示哪些模块、排序、配色），保存为模板供复用。
+
+**前端**: 新增 `web/src/pages/ReportTemplateEditor.tsx`。
+
+---
+
+### P40-3: 仪表盘 — 自定义 Widget 拖拽布局
+
+**现状**: `Dashboard.tsx` 有 widget 选择但布局固定。
+
+**需求**:
+- 拖拽调整 Widget 位置和大小
+- Widget 类型：统计卡片、折线图、饼图、表格、iframe
+- 布局持久化到后端
+
+**前端**: 引入 `react-grid-layout` 库，重构 `Dashboard.tsx`。
+
+---
+
+### P40-4: 仪表盘 — 外部数据源 Widget
+
+**现状**: Widget 数据只能来自平台内部。
+
+**需求**: 支持配置外部 API 数据源（如 Prometheus/Grafana/Jenkins），在仪表盘中展示外部指标。
+
+**前端**: 新增 `web/src/components/widgets/ExternalDataWidget.tsx`。
+
+---
+
+### P40-5: 报告 — 交互式钻取
+
+**现状**: 报告详情是静态展示。
+
+**需求**: 点击图表中的数据点可钻取到具体用例列表，支持逐级下钻（总览 → 类型 → 用例 → 响应）。
+
+**前端**: `Reports.tsx` 增加点击事件处理和钻取路径。
+
+---
+
+## P41：CI/CD 与集成增强（🟡 中等）
+
+- [ ] P41-1: GitLab 集成（OAuth + Webhook）（🟡）
+- [ ] P41-2: Jenkins 插件 / Pipeline Step（🟡）
+- [ ] P41-3: GitHub Actions Workflow 模板（🟢）
+- [ ] P41-4: Azure DevOps Pipeline Task（🟢）
+- [ ] P41-5: 状态 Badge 生成（🟢）
+
+---
+
+### P41-1: GitLab 集成（OAuth + Webhook）
+
+**现状**: 后端有 `webhooks/gitlab.py` 路由，前端 `Integrations.tsx` 显示"即将推出"。
+
+**需求**:
+- GitLab OAuth 授权流程
+- Webhook 接收（Push/MR 事件触发测试）
+- MR 评论回写测试结果
+
+**前端**: `Integrations.tsx` 完善 GitLab 卡片。
+
+**后端**: 完善 `backend/app/services/gitlab_oauth_service.py`。
+
+---
+
+### P41-2: Jenkins 插件 / Pipeline Step
+
+**需求**: 提供 Jenkins Pipeline Step，可在 Jenkinsfile 中调用 FullScopeTest API 触发测试并获取结果。
+
+**实现**: 开发 Jenkins 插件（Java）或提供 `curl` 命令模板 + Pipeline 共享库。
+
+---
+
+### P41-3: GitHub Actions Workflow 模板
+
+**需求**: 提供可直接使用的 GitHub Actions Workflow YAML 模板，用户复制即可在 CI 中触发测试。
+
+**实现**: 在文档中提供模板，或在 CI/CD 页面一键生成。
+
+---
+
+### P41-4: Azure DevOps Pipeline Task
+
+**需求**: 提供 Azure DevOps Pipeline Task，支持在 Azure Pipelines 中调用。
+
+**实现**: 开发 Azure DevOps Extension 或提供 REST API 调用模板。
+
+---
+
+### P41-5: 状态 Badge 生成
+
+**需求**: 为每个测试集合/项目生成状态 Badge（SVG），可在 README 中嵌入，实时反映最新测试状态。
+
+**前端**: `web/src/pages/CICD.tsx` 增加 Badge 生成入口。
+
+**后端**: 新增 `backend/app/api/badge.py` 端点，动态生成 SVG。
+
+---
+
+## P42：数据管理与安全（🟡 中等）
+
+- [ ] P42-1: 测试数据生成 UI（AI 数据工厂前端）（🟡）
+- [ ] P42-2: 环境变量加密存储（Secrets 管理）（🟡）
+- [ ] P42-3: 变量引用追踪与冲突检测（🟢）
+- [ ] P42-4: 环境克隆与对比（🟢）
+- [ ] P42-5: 审计日志导出（CSV/JSON）（🟡）
+
+---
+
+### P42-1: 测试数据生成 UI（AI 数据工厂前端）
+
+**现状**: 后端 `data_factory_service.py` 已实现，但前端无对应页面。
+
+**需求**:
+- 新增测试数据生成页面
+- 配置数据 Schema（字段名 + 类型 + 规则）
+- AI 自动生成符合 Schema 的测试数据
+- 导出为 CSV/JSON
+
+**前端**: 新增 `web/src/pages/DataFactory.tsx`。
+
+---
+
+### P42-2: 环境变量加密存储（Secrets 管理）
+
+**现状**: 环境变量以明文存储在数据库中。
+
+**需求**:
+- 标记变量为「加密」类型
+- 加密变量在 UI 中显示为 `***`
+- 仅在执行时解密
+- 操作审计日志
+
+**前端**: `ApiTestEnvironments.tsx` 增加加密开关。
+
+**后端**: `backend/app/services/secrets_service.py` 使用 AES-256 加密。
+
+---
+
+### P42-3: 变量引用追踪与冲突检测
+
+**需求**: 展示每个环境变量被哪些用例引用，修改变量时提示影响范围，检测同名变量冲突。
+
+**前端**: `ApiTestEnvironments.tsx` 增加引用计数列。
+
+---
+
+### P42-4: 环境克隆与对比
+
+**需求**: 支持一键克隆环境、两个环境的变量 Diff 对比。
+
+**前端**: `ApiTestEnvironments.tsx` 增加克隆和对比按钮。
+
+---
+
+### P42-5: 审计日志导出（CSV/JSON）
+
+**现状**: `AuditLogs.tsx` 只有查看功能。
+
+**需求**: 支持按时间范围/操作类型/资源类型筛选后导出为 CSV/JSON。
+
+**前端**: `AuditLogs.tsx` 增加导出按钮。
+
+**后端**: `backend/app/api/audit_logs.py` 增加 `/audit-logs/export` 端点。
+
+---
+
+## P43：协作与效率提升（🟢 低优先级）
+
+- [ ] P43-1: 用例模板库（🟢）
+- [ ] P43-2: 批量操作增强（批量移动/复制/标签）（🟢）
+- [ ] P43-3: 通知规则引擎（条件过滤/频率限制）（🟡）
+- [ ] P43-4: 团队效能瓶颈分析（🟢）
+- [ ] P43-5: API 文档生成页面（🟡）
+- [ ] P43-6: Flaky Test 检测仪表盘（🟡）
+
+---
+
+### P43-1: 用例模板库
+
+**需求**: 提供内置用例模板（如 CRUD 模板、认证模板、分页模板），用户可一键使用并修改。支持自定义模板保存。
+
+**前端**: 新增 `web/src/pages/TestCaseTemplates.tsx`。
+
+---
+
+### P43-2: 批量操作增强
+
+**现状**: `BatchActionBar.tsx` 组件存在但功能有限。
+
+**需求**: 支持批量移动到其他集合、批量复制、批量添加/移除标签、批量启用/禁用。
+
+**前端**: 扩展 `BatchActionBar.tsx`。
+
+---
+
+### P43-3: 通知规则引擎
+
+**现状**: `NotificationSettings.tsx` 只有 3 个固定事件。
+
+**需求**:
+- 条件过滤（如「仅当失败率 > 20%」「仅特定项目」）
+- 通知频率限制（如每小时最多 1 条）
+- 静默时段（如 22:00-08:00 不通知）
+
+**前端**: `NotificationSettings.tsx` 增加规则配置面板。
+
+---
+
+### P43-4: 团队效能瓶颈分析
+
+**现状**: `TeamMetrics.tsx` 只展示基础指标。
+
+**需求**:
+- 自动识别瓶颈（谁的用例最多失败、哪个接口最不稳定）
+- 效能趋势对比（本周 vs 上周）
+- 目标设定与达成率
+
+**前端**: `TeamMetrics.tsx` 增加瓶颈分析 Tab。
+
+---
+
+### P43-5: API 文档生成页面
+
+**现状**: 后端 `swagger_gen.py` 有 Swagger 生成功能，但前端无对应页面。
+
+**需求**: 新增 API 文档页面，支持从测试用例自动生成 OpenAPI 文档，可在线预览和导出。
+
+**前端**: 新增 `web/src/pages/ApiDocumentation.tsx`。
+
+---
+
+### P43-6: Flaky Test 检测仪表盘
+
+**现状**: 后端 `flaky_detector_service.py` 已实现，但前端无展示。
+
+**需求**:
+- Flaky Test 列表（按不稳定程度排序）
+- 失败模式分析（同一用例的失败/通过交替模式）
+- 稳定性评分（0-100）
+- 修复建议
+
+**前端**: 新增 `web/src/pages/FlakyTestDashboard.tsx`。
+
+---
+
+## P44：平台体验与扩展（🟢 低优先级）
+
+- [ ] P44-1: 响应式布局 / 移动端适配（🟢）
+- [ ] P44-2: PWA 支持（离线访问/安装提示）（🟢）
+- [ ] P44-3: 实时协作（多人查看同一执行）（🟢）
+- [ ] P44-4: 插件/扩展架构（🟢）
+- [ ] P44-5: 测试覆盖率追踪（🟢）
+- [ ] P44-6: 接口覆盖率自动发现（🟢）
+
+---
+
+### P44-1: 响应式布局 / 移动端适配
+
+**现状**: `Login.tsx` 检测到移动端只弹 warning。
+
+**需求**: 关键页面（Dashboard/Reports/执行状态）支持移动端响应式布局，至少可在手机上查看数据。
+
+**实现**: 使用 Ant Design 的 `Grid` 响应式断点 + CSS Media Query。
+
+---
+
+### P44-2: PWA 支持
+
+**需求**: 添加 Service Worker 和 Manifest，支持离线查看缓存数据、安装到桌面、推送通知。
+
+**前端**: 新增 `web/src/service-worker.ts` + `web/public/manifest.json`。
+
+---
+
+### P44-3: 实时协作（多人查看同一执行）
+
+**现状**: WebSocket 只用于通知推送。
+
+**需求**: 支持多人同时查看同一测试执行的实时进度，看到其他人的光标位置（类似 Google Docs）。
+
+**实现**: 扩展 WebSocket 服务，新增协作频道。
+
+---
+
+### P44-4: 插件/扩展架构
+
+**需求**: 提供插件接口，允许用户自定义：
+- 通知渠道（如企业微信、Telegram）
+- 报告模板
+- AI 模型接入
+- 测试步骤类型
+
+**后端**: 新增 `backend/app/plugins/` 扩展框架。
+
+---
+
+### P44-5: 测试覆盖率追踪
+
+**需求**: 追踪需求→用例→执行的覆盖率矩阵，展示哪些需求已测试、哪些未覆盖。
+
+**前端**: 新增 `web/src/pages/TestCoverage.tsx`。
+
+---
+
+### P44-6: 接口覆盖率自动发现
+
+**需求**: 通过 Swagger/OpenAPI 文档自动发现所有接口，对比已有的测试用例，展示接口覆盖率。
+
+**前端**: 新增 `web/src/pages/ApiCoverage.tsx`。
+
+**后端**: 新增 `backend/app/services/api_coverage_service.py`。
+
+---
+
+## 第八阶段任务统计
+
+| 阶段 | 任务数 | 🔴 | 🟡 | 🟢 |
+|------|--------|-----|-----|-----|
+| P37 API 测试核心增强 | 7 | 2 | 5 | 0 |
+| P38 Web/APP 测试增强 | 5 | 0 | 3 | 2 |
+| P39 性能测试增强 | 4 | 0 | 2 | 2 |
+| P40 报告与仪表盘 | 5 | 0 | 3 | 2 |
+| P41 CI/CD 与集成 | 5 | 0 | 2 | 3 |
+| P42 数据管理与安全 | 5 | 0 | 3 | 2 |
+| P43 协作与效率 | 6 | 0 | 3 | 3 |
+| P44 平台体验与扩展 | 6 | 0 | 0 | 6 |
+| **总计** | **43** | **2** | **21** | **20** |
+
+---
+
+## 全阶段总进度汇总（含第八阶段）
+
+| 阶段 | 总数 | 已完成 | 未完成 |
+|------|------|--------|--------|
+| 第一阶段（P0-P9） | 34 | 34 | 0 |
+| 第二阶段（P10-P12） | 29 | 29 | 0 |
+| 第三阶段（P13-P22） | 63 | 63 | 0 |
+| 第四阶段（P23-P27） | 20 | 20 | 0 |
+| 第五阶段（P28-P30） | 30 | 30 | 0 |
+| 第六阶段（P31-P32） | 12 | 12 | 0 |
+| 第七阶段（P33-P36） | 30 | 30 | 0 |
+| **第八阶段（P37-P44）** | **43** | 0 | **43** |
+| **总计** | **261** | **218** | **43** |

@@ -23,6 +23,7 @@ from ..utils.env_variables import (
     get_environment_variables, merge_headers_with_env
 )
 from ..utils.js_executor import get_executor
+from ..utils.assertion_evaluator import get_assertion_evaluator
 from ..utils.script_context import (
     build_pre_script_context, build_post_script_context,
     apply_pre_script_changes, apply_env_changes, calculate_case_passed
@@ -144,8 +145,8 @@ class ApiExecutionService(BaseService):
         if not safe:
             return {'success': False, 'error': reason, 'script_execution': script_execution}
 
-        # 执行真实请求
-        return self._send_request(method, url, headers, params, body, body_type, timeout, script_execution, post_script, env_vars)
+        # 执行真实请求（携带可视化断言规则）
+        return self._send_request(method, url, headers, params, body, body_type, timeout, script_execution, post_script, env_vars, data.get('assertions'))
 
 
     def run_case(self, case_id: int, user_id: int, env_id: int = None):
@@ -286,7 +287,25 @@ class ApiExecutionService(BaseService):
                         'assertions': {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
                     }
 
-            has_script = bool(case.pre_script or case.post_script)
+            # ========== 可视化断言执行 ==========
+            if case.assertions:
+                try:
+                    evaluator = get_assertion_evaluator()
+                    assertion_result = evaluator.evaluate(case.assertions, {
+                        'status_code': response.status_code,
+                        'headers': dict(response.headers),
+                        'body': response_body,
+                        'response_time': round(elapsed_time, 2),
+                    })
+                    script_execution['visual_assertions'] = assertion_result
+                except Exception as e:
+                    self.logger.error('可视化断言执行异常', error=str(e))
+                    script_execution['visual_assertions'] = {
+                        'total': 0, 'passed': 0, 'failed': 0,
+                        'details': [], 'error': str(e)
+                    }
+
+            has_script = bool(case.pre_script or case.post_script or case.assertions)
             passed = calculate_case_passed(script_execution, response.status_code, has_script=has_script)
 
             case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -516,7 +535,7 @@ class ApiExecutionService(BaseService):
         }
 
 
-    def _send_request(self, method, url, headers, params, body, body_type, timeout, script_execution, post_script='', env_vars=None):
+    def _send_request(self, method, url, headers, params, body, body_type, timeout, script_execution, post_script='', env_vars=None, visual_assertions=None):
         """发送 HTTP 请求并处理响应"""
         start_time = time.time()
 
@@ -572,6 +591,24 @@ class ApiExecutionService(BaseService):
                     script_execution['post_script'] = {
                         'executed': True, 'passed': False, 'error': str(e),
                         'assertions': {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
+                    }
+
+            # ========== 可视化断言执行 ==========
+            if visual_assertions:
+                try:
+                    evaluator = get_assertion_evaluator()
+                    assertion_result = evaluator.evaluate(visual_assertions, {
+                        'status_code': response.status_code,
+                        'headers': dict(response.headers),
+                        'body': response_body,
+                        'response_time': round(elapsed_time, 2),
+                    })
+                    script_execution['visual_assertions'] = assertion_result
+                except Exception as e:
+                    self.logger.error('可视化断言执行异常', error=str(e))
+                    script_execution['visual_assertions'] = {
+                        'total': 0, 'passed': 0, 'failed': 0,
+                        'details': [], 'error': str(e)
                     }
 
             return {
@@ -786,7 +823,25 @@ class ApiExecutionService(BaseService):
                         'assertions': {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
                     }
 
-            has_script = bool(case.pre_script or case.post_script)
+            # ========== 可视化断言执行（集合执行） ==========
+            if case.assertions:
+                try:
+                    evaluator = get_assertion_evaluator()
+                    assertion_result = evaluator.evaluate(case.assertions, {
+                        'status_code': response.status_code,
+                        'headers': dict(response.headers),
+                        'body': response_body,
+                        'response_time': round(elapsed_time, 2),
+                    })
+                    script_execution['visual_assertions'] = assertion_result
+                except Exception as e:
+                    self.logger.error('可视化断言执行异常', error=str(e))
+                    script_execution['visual_assertions'] = {
+                        'total': 0, 'passed': 0, 'failed': 0,
+                        'details': [], 'error': str(e)
+                    }
+
+            has_script = bool(case.pre_script or case.post_script or case.assertions)
             passed = calculate_case_passed(script_execution, response.status_code, has_script=has_script)
 
             response_body_preview = _safe_text(response_body, limit=2000)

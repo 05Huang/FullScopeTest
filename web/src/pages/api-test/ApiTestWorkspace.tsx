@@ -79,6 +79,10 @@ const ApiTestWorkspace = () => {
   const [responseTab, setResponseTab] = useState('body')
   const [sending, setSending] = useState(false)
   const [response, setResponse] = useState<any>(null)
+  const [assertionResults, setAssertionResults] = useState<{
+    total: number; passed: number; failed: number
+    details?: Array<{ name: string; passed: boolean; actual?: unknown; expected?: unknown; error?: string; assertion_type?: string }>
+  } | undefined>(undefined)
   const [requestBody, setRequestBody] = useState('{}')
   const [bodyType, setBodyType] = useState('json')
   const [headers, setHeaders] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }])
@@ -93,6 +97,13 @@ const ApiTestWorkspace = () => {
   const [mockResponseBody, setMockResponseBody] = useState('{\n  "success": true,\n  "data": {}\n}')
   const [mockResponseHeaders, setMockResponseHeaders] = useState<{ key: string; value: string }[]>([{ key: 'Content-Type', value: 'application/json' }])
   const [mockDelayMs, setMockDelayMs] = useState(0)
+
+  // 可视化断言状态
+  const [assertions, setAssertions] = useState<Array<{
+    type: 'status_code' | 'response_time' | 'header' | 'body'
+    operator: string; expected_value: string | number
+    header_name?: string; body_path?: string; description?: string; enabled: boolean
+  }>>([])
 
   const [collections, setCollections] = useState<any[]>([])
   const [cases, setCases] = useState<any[]>([])
@@ -553,6 +564,8 @@ const ApiTestWorkspace = () => {
       setMockResponseBody(formData.mockResponseBody)
       setMockResponseHeaders(formData.mockResponseHeaders)
       setMockDelayMs(formData.mockDelayMs)
+      // 加载可视化断言规则
+      setAssertions(Array.isArray(caseData.assertions) ? caseData.assertions : [])
 
       // 保存原始表单数据用于比较
       setOriginalFormData(formData)
@@ -611,6 +624,7 @@ const ApiTestWorkspace = () => {
         body_type: bodyType,
         pre_script: preScript,
         post_script: postScript,
+        assertions: assertions.filter(a => a.enabled),
         environment_id: selectedEnvId,
         mock_enabled: mockEnabled,
         mock_response_code: mockResponseCode,
@@ -684,6 +698,7 @@ const ApiTestWorkspace = () => {
         body_type: bodyType,
         pre_script: preScript,
         post_script: postScript,
+        assertions: assertions.filter(a => a.enabled),
         environment_id: selectedEnvId,
         mock_enabled: mockEnabled,
         mock_response_code: mockResponseCode,
@@ -1809,6 +1824,7 @@ const ApiTestWorkspace = () => {
         env_id: selectedEnvId,
         pre_script: preScript,
         post_script: postScript,
+        assertions: assertions.filter(a => a.enabled),
         case_id: currentCaseId || undefined,
         mock_enabled: mockEnabled,
         mock_response_code: mockResponseCode,
@@ -1836,6 +1852,8 @@ const ApiTestWorkspace = () => {
             script_execution: respData.script_execution,
             is_mock: respData.is_mock,
           })
+          // 提取可视化断言结果
+          setAssertionResults(respData.script_execution?.visual_assertions || undefined)
           // 保存到请求历史
           saveToHistory({ method, url, status: respData.status_code, duration: respData.response_time || elapsed })
           message.success('请求发送成功')
@@ -2025,6 +2043,8 @@ const ApiTestWorkspace = () => {
           selectedCollectionId={selectedCollectionId} activeCollectionId={activeCollectionId}
           moreMenuItems={moreMenuItems}
           response={response}
+          assertions={assertions} setAssertions={setAssertions}
+          assertionResults={assertionResults}
         />
 
         {/* 响应区域 — 使用提取的 ResponseViewer 组件 */}

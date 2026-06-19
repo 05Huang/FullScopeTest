@@ -171,7 +171,12 @@ def calculate_case_passed(
     if post_script.get('executed') and not post_script.get('passed', True):
         return False
 
-    # 有脚本的情况，脚本通过则用例通过
+    # 检查可视化断言结果
+    visual_assertions = script_result.get('visual_assertions', {})
+    if visual_assertions.get('total', 0) > 0 and visual_assertions.get('failed', 0) > 0:
+        return False
+
+    # 有脚本或断言的情况，都通过则用例通过
     if has_script:
         return True
 

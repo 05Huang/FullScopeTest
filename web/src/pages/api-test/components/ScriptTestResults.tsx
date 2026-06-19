@@ -28,6 +28,20 @@ interface ScriptTestResultsProps {
         }>
       }
     }
+    /** 可视化断言结果 */
+    visual_assertions?: {
+      total: number
+      passed: number
+      failed: number
+      details?: Array<{
+        name: string
+        passed: boolean
+        actual?: unknown
+        expected?: unknown
+        error?: string
+        assertion_type?: string
+      }>
+    }
   }
 }
 
@@ -37,11 +51,12 @@ const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }
     return <Empty description={t("apiTest.noCases")} />
   }
 
-  const { pre_script, post_script } = scriptExecution
+  const { pre_script, post_script, visual_assertions } = scriptExecution
 
   const hasExecutedScript = (pre_script?.executed || post_script?.executed)
+  const hasVisualAssertions = (visual_assertions?.total ?? 0) > 0
 
-  if (!hasExecutedScript) {
+  if (!hasExecutedScript && !hasVisualAssertions) {
     return <Empty description={t("apiTest.noCases")} />
   }
 
@@ -132,6 +147,81 @@ const ScriptTestResults: React.FC<ScriptTestResultsProps> = ({ scriptExecution }
 
             {post_script.error && (
               <Text type="danger">{post_script.error}</Text>
+            )}
+          </Space>
+        </Card>
+      )}
+
+      {/* 可视化断言结果 */}
+      {hasVisualAssertions && visual_assertions && (
+        <Card size="small" title={<Space><Text strong>可视化断言</Text></Space>}>
+          <Space direction="vertical" style={{ width: "100%" }} size="small">
+            <Space>
+              {visual_assertions.failed === 0 ? (
+                <Tag icon={<CheckCircleOutlined />} color="success">{t("common.passed")}</Tag>
+              ) : (
+                <Tag icon={<CloseCircleOutlined />} color="error">{t("common.failed")}</Tag>
+              )}
+              <Text>总计: <Text strong>{visual_assertions.total}</Text></Text>
+              <Text type="success">通过: <Text strong>{visual_assertions.passed}</Text></Text>
+              {visual_assertions.failed > 0 && (
+                <Text type="danger">失败: <Text strong>{visual_assertions.failed}</Text></Text>
+              )}
+            </Space>
+
+            {/* 可视化断言详情 */}
+            {visual_assertions.details && visual_assertions.details.length > 0 && (
+              <Table
+                size="small"
+                dataSource={visual_assertions.details.map((d, i) => ({ ...d, key: i }))}
+                columns={[
+                  {
+                    title: t("common.status"),
+                    dataIndex: "passed",
+                    width: 60,
+                    render: (passed: boolean) => passed ? (
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                    ) : (
+                      <CloseCircleOutlined style={{ color: "#ff4d4f" }} />
+                    ),
+                  },
+                  {
+                    title: t("apiTest.assertionDesc"),
+                    dataIndex: "name",
+                    ellipsis: true,
+                  },
+                  {
+                    title: "实际值",
+                    dataIndex: "actual",
+                    width: 120,
+                    render: (val: unknown) => val !== undefined && val !== null ? (
+                      <Text code style={{ fontSize: 12 }}>{String(val)}</Text>
+                    ) : (
+                      <Text type="secondary">-</Text>
+                    ),
+                  },
+                  {
+                    title: "期望值",
+                    dataIndex: "expected",
+                    width: 120,
+                    render: (val: unknown) => val !== undefined && val !== null ? (
+                      <Text code style={{ fontSize: 12 }}>{String(val)}</Text>
+                    ) : (
+                      <Text type="secondary">-</Text>
+                    ),
+                  },
+                  {
+                    title: t("apiTest.errorMessage"),
+                    dataIndex: "error",
+                    render: (error: string) => error ? (
+                      <Text type="danger" style={{ fontSize: 12 }}>{error}</Text>
+                    ) : (
+                      <Text type="secondary">-</Text>
+                    ),
+                  },
+                ]}
+                pagination={false}
+              />
             )}
           </Space>
         </Card>
