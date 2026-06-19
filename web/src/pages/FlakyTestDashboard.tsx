@@ -37,7 +37,7 @@ const FlakyTestDashboard: React.FC = () => {
   const columns = [
     { title: "用例名", dataIndex: "case_name", ellipsis: true },
     { title: "稳定性评分", dataIndex: "stability_score", width: 150, render: (v: number) => (
-      <Tooltip title={v + "/100"><Progress percent={v} size="small" strokeColor={getScoreColor(v)} format={p => p + "%"} /></Tooltip>
+      <Tooltip title={v + '/100'}><Progress percent={v} size="small" strokeColor={getScoreColor(v)} format={p => p + '%'} /></Tooltip>
     )},
     { title: "总执行", dataIndex: "total_runs", width: 80 },
     { title: "Flaky 次数", dataIndex: "flaky_count", width: 100, render: (v: number) => <Tag color={v > 5 ? "error" : v > 2 ? "warning" : "default"}>{v}</Tag> },

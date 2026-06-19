@@ -57,8 +57,7 @@ const DataFactory: React.FC = () => {
   const handleExport = () => {
     if (generated.length === 0) return
     const headers = Object.keys(generated[0])
-    const csv = [headers.join(","), ...generated.map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))].join("
-")
+    const csv = [headers.join(","), ...generated.map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))].join('\n')
     const blob = new Blob([csv], { type: "text/csv" })
     const url = URL.createObjectURL(blob); const a = document.createElement("a")
     a.href = url; a.download = "test-data.csv"; a.click(); URL.revokeObjectURL(url)
