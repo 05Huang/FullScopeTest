@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import DOMPurify from 'dompurify'
 import {
   Button,
   Card,
@@ -616,7 +617,7 @@ const Reports = () => {
         ]}
         style={{ top: 20 }}
       >
-        <div style={{ height: '70vh', overflow: 'auto', borderRadius: 12, border: '1px solid var(--fst-outline-soft)' }} dangerouslySetInnerHTML={{ __html: reportHtml }} />
+        <div style={{ height: '70vh', overflow: 'auto', borderRadius: 12, border: '1px solid var(--fst-outline-soft)' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reportHtml) }} />
       </Modal>
     </div>
   )
