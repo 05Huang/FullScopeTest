@@ -103,7 +103,7 @@ const HealthMonitorPage = () => {
     { title: t('healthMonitor.lastCheck'), dataIndex: 'last_check_at', key: 'last_check', width: 160,
       render: (v: string | null) => v ? new Date(v).toLocaleString() : '-'
     },
-    { title: t('common.actions' || 'Actions'), key: 'actions', width: 200,
+    { title: t('common.actions') || 'Actions', key: 'actions', width: 200,
       render: (_: unknown, record: HealthMonitor) => (
         <Space>
           <Tooltip title={t('healthMonitor.manualCheck')}>
@@ -193,7 +193,7 @@ const HealthMonitorPage = () => {
           <Row gutter={[16, 16]}>
             <Col span={8}><Statistic title={t('healthMonitor.uptime')} value={statsData.uptime_percentage} suffix='%' precision={1} /></Col>
             <Col span={8}><Statistic title={t('healthMonitor.avgResponseTime')} value={statsData.avg_response_time} suffix='ms' precision={0} /></Col>
-            <Col span={8}><Statistic title={t('healthMonitor.total' || 'Total')} value={statsData.total_checks} /></Col>
+            <Col span={8}><Statistic title={t('healthMonitor.total') || 'Total'} value={statsData.total_checks} /></Col>
           </Row>
         ) : <Empty />}
       </Modal>

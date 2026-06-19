@@ -82,7 +82,7 @@ interface MockRequestLogData {
 
 const MockServers = () => {
   const { t } = useTranslation()
-  const currentProject = useProjectStore((s) => s.currentProject)
+  const currentProjectId = useProjectStore((s) => s.currentProjectId)
   const [servers, setServers] = useState<MockServerData[]>([])
   const [loading, setLoading] = useState(false)
   const [serverModalOpen, setServerModalOpen] = useState(false)
@@ -98,17 +98,17 @@ const MockServers = () => {
   const [ruleForm] = Form.useForm()
 
   const fetchServers = useCallback(async () => {
-    if (!currentProject?.id) return
+    if (!currentProjectId) return
     setLoading(true)
     try {
-      const res = await api.get('/mock-servers', { params: { project_id: currentProject.id } })
+      const res = await api.get('/mock-servers', { params: { project_id: currentProjectId } })
       setServers((res as any).data || [])
     } catch {
       message.error('获取 Mock 服务器列表失败')
     } finally {
       setLoading(false)
     }
-  }, [currentProject?.id])
+  }, [currentProjectId])
 
   useEffect(() => {
     fetchServers()
@@ -121,7 +121,7 @@ const MockServers = () => {
         await api.put(`/mock-servers/${editingServer.id}`, values)
         message.success('Mock 服务器已更新')
       } else {
-        await api.post('/mock-servers', { ...values, project_id: currentProject?.id })
+        await api.post('/mock-servers', { ...values, project_id: currentProjectId })
         message.success('Mock 服务器已创建')
       }
       setServerModalOpen(false)

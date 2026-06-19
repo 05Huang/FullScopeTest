@@ -64,6 +64,7 @@ export const createCase = (data: {
   body_type?: string
   pre_script?: string
   post_script?: string
+  assertions?: any[]
   collection_id?: number
   project_id?: number
   environment_id?: number
@@ -91,6 +92,7 @@ export const updateCase = (id: number, data: {
   body_type?: string
   pre_script?: string
   post_script?: string
+  assertions?: any[]
   collection_id?: number | null
   environment_id?: number | null
   mock_enabled?: boolean
@@ -119,6 +121,7 @@ export const executeRequest = (data: {
   env_id?: number
   pre_script?: string
   post_script?: string
+  assertions?: any[]
   case_id?: number
   mock_enabled?: boolean
   mock_response_code?: number
