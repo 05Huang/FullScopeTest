@@ -38,7 +38,7 @@ def list_users():
     query = query.order_by(User.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return success_response(data={
-        'items': [u.to_dict() for u in pagination.items],
+        'items': [u.to_dict(include_sensitive=True) for u in pagination.items],
         'total': pagination.total, 'page': page, 'per_page': per_page, 'pages': pagination.pages,
     })
 
@@ -51,7 +51,7 @@ def get_user(user_id):
     user = User.query.get(user_id)
     if not user:
         return error_response(404, '用户不存在')
-    return success_response(data=user.to_dict())
+    return success_response(data=user.to_dict(include_sensitive=True))
 
 @admin_bp.route('/admin/users/<int:user_id>/role', methods=['PATCH'])
 @jwt_required()

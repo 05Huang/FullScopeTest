@@ -49,9 +49,14 @@ class User(db.Model):
     # 关联
     projects = db.relationship('Project', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
 
-    def to_dict(self):
-        """转换为字典"""
-        return {
+    def to_dict(self, include_sensitive=False):
+        """
+        转换为字典
+
+        Args:
+            include_sensitive: 是否包含敏感字段（sso_provider 等），仅管理员接口使用
+        """
+        result = {
             'id': self.id,
             'username': self.username,
             'email': self.email,
@@ -60,8 +65,10 @@ class User(db.Model):
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None,
-            'sso_provider': self.sso_provider,
         }
+        if include_sensitive:
+            result['sso_provider'] = self.sso_provider
+        return result
 
     def has_permission(self, permission: str) -> bool:
         """
