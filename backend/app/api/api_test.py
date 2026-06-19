@@ -1209,3 +1209,30 @@ def parse_har_preview():
     except Exception as exc:
         logger.error('HAR 解析失败', error=str(exc))
         return error_response(500, f'HAR 解析失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/detect-changes', methods=['POST'])
+@jwt_required()
+def detect_api_changes():
+    """检测 API 响应结构变更"""
+    from ..services.api_change_detection_service import get_api_change_detection_service
+
+    data = request.get_json() or {}
+    case_id = data.get('case_id')
+    response_body = data.get('response_body', '')
+    status_code = data.get('status_code', 200)
+
+    if not case_id:
+        return error_response(400, '缺少 case_id')
+
+    try:
+        service = get_api_change_detection_service()
+        result = service.detect_changes(
+            case_id=case_id,
+            response_body=response_body,
+            status_code=status_code,
+        )
+        return success_response(data=result)
+    except Exception as exc:
+        logger.error('变更检测失败', case_id=case_id, error=str(exc))
+        return error_response(500, f'变更检测失败: {str(exc)}')

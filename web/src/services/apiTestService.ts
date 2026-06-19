@@ -390,6 +390,41 @@ export const importHar = (data: {
   return api.post('/api-test/import-har', data) as Promise<ApiResponse>
 }
 
+// ==================== API 变更检测 ====================
+
+export interface ChangeDetectionResult {
+  has_changes: boolean
+  is_first_record: boolean
+  changes: Array<{
+    type: 'added' | 'removed' | 'type_changed'
+    path: string
+    old_type?: string
+    new_type?: string
+    severity: 'info' | 'warning' | 'breaking'
+  }>
+  summary: string
+  previous_recorded_at?: string
+}
+
+/** 检测 API 响应结构变更 */
+export const detectApiChanges = (data: {
+  case_id: number
+  response_body: string
+  status_code?: number
+}): Promise<ApiResponse<ChangeDetectionResult>> => {
+  return api.post('/api-test/detect-changes', data) as Promise<ApiResponse<ChangeDetectionResult>>
+}
+
+// 导出服务对象
+export const apiTestService = {
+  har_content: string
+  project_id: number
+  collection_id?: number
+  collection_name?: string
+}): Promise<ApiResponse> => {
+  return api.post('/api-test/import-har', data) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const apiTestService = {
   getCollections,
@@ -419,4 +454,5 @@ export const apiTestService = {
   generateResponseSchema,
   parseHarPreview,
   importHar,
+  detectApiChanges,
 }
