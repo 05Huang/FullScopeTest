@@ -120,7 +120,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    command: celery -A app.tasks worker --loglevel=warning
+    command: celery -A app.extensions:celery worker --loglevel=warning
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
