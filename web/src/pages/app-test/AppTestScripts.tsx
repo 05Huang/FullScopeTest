@@ -110,6 +110,8 @@ const AppTestScripts = () => {
   const [editorScript, setEditorScript] = useState<AppTestScript | null>(null)
   const [scriptContent, setScriptContent] = useState('')
   const [configForm] = Form.useForm()
+  // P38-5: Appium Server 状态
+  const [appiumStatus, setAppiumStatus] = useState<{ connected: boolean; url: string; version?: string } | null>(null)
 
   useEffect(() => {
     loadData()
@@ -128,6 +130,16 @@ const AppTestScripts = () => {
       }
       if (collectionsRes.code === 200) {
         setCollections(collectionsRes.data || [])
+      }
+      // P38-5: 检查 Appium Server 状态
+      try {
+        const { default: apiClient } = await import('@/services/api')
+        const devRes = await apiClient.get('/app-test/devices')
+        if (devRes.data?.code === 200) {
+          setAppiumStatus(devRes.data.data?.server_status || null)
+        }
+      } catch {
+        setAppiumStatus({ connected: false, url: 'http://localhost:4723' })
       }
     } catch {
       message.error(t('appTest.loadFailed'))
@@ -408,6 +420,15 @@ const AppTestScripts = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="fst-stat-icon fst-stat-icon--primary"><MobileOutlined style={{ fontSize: 18 }} /></div>
           <h1 className="fst-page-title">{t('appTest.title')}</h1>
+          {/* P38-5: Appium Server 状态指示器 */}
+          {appiumStatus && (
+            <Tag
+              color={appiumStatus.connected ? 'success' : 'error'}
+              style={{ marginLeft: 8, fontSize: 12 }}
+            >
+              Appium: {appiumStatus.connected ? `已连接${appiumStatus.version ? ' v' + appiumStatus.version : ''}` : '未连接'}
+            </Tag>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="fst-btn fst-btn--ghost fst-btn--sm" onClick={loadData}><ReloadOutlined /> {t('common.refresh')}</button>
