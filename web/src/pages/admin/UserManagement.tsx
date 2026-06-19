@@ -68,7 +68,7 @@ const UserManagement: React.FC = () => {
     { title: 'Status', dataIndex: 'is_active', key: 'status', width: 100, render: (active: boolean, r: AdminUser) => (
       <Switch checked={active} onChange={() => handleToggleStatus(r)} disabled={r.username === 'huangxuan'} checkedChildren="On" unCheckedChildren="Off" size="small" />
     )},
-    { title: 'Created', dataIndex: 'created_at', key: 'created_at', width: 130, render: (v: string) => v ? new Date(v).toLocaleDateString() : '-' },
+    { title: 'Created', dataIndex: 'created_at', key: 'created_at', width: 130, render: (v: string) => v ? new Date(v).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-' },
     { title: 'Last Login', dataIndex: 'last_login', key: 'last_login', width: 130, render: (v: string) => {
       if (!v) return <Text type="secondary">Never</Text>
       const h = Math.floor((Date.now() - new Date(v).getTime()) / 3600000)
