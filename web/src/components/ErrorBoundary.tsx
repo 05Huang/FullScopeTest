@@ -23,7 +23,10 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo)
+    if (import.meta.env.DEV) {
+      console.error("Uncaught error:", error, errorInfo)
+    }
+    // 生产环境可接入 Sentry 等错误追踪服务
   }
 
   public render() {
