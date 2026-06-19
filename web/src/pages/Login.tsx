@@ -175,6 +175,8 @@ const Login = () => {
       })
       const data = (res as any)?.data || res
       if (data?.user) {
+        // 更新 authStore，确保路由守卫正确识别登录状态
+        setAuth(data.user)
         message.success(t('login.sso.ldapSuccess') || 'LDAP 登录成功')
         setLdapModalOpen(false)
         window.location.href = '/dashboard'
