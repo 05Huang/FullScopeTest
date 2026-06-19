@@ -149,6 +149,38 @@ def upgrade():
     )
 
 
+    # Fix columns missing from initial table definitions
+    fix_sqls = [
+        "ALTER TABLE branding_configs ADD COLUMN IF NOT EXISTS login_background_url VARCHAR(500)",
+        "ALTER TABLE mock_servers ADD COLUMN IF NOT EXISTS path_prefix VARCHAR(500) DEFAULT '/'",
+        "ALTER TABLE mock_servers ADD COLUMN IF NOT EXISTS is_enabled BOOLEAN DEFAULT true",
+        "ALTER TABLE mock_servers ADD COLUMN IF NOT EXISTS created_by INTEGER",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS name VARCHAR(200) DEFAULT 'rule'",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS match_method VARCHAR(10) DEFAULT '*'",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS match_path VARCHAR(500) DEFAULT '/'",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS match_query JSON DEFAULT '{}'::json",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS match_header JSON DEFAULT '{}'::json",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS match_body_contains VARCHAR(500) DEFAULT ''",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS response_code INTEGER DEFAULT 200",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS response_delay_ms INTEGER DEFAULT 0",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS is_stateful BOOLEAN DEFAULT false",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS state_sequence JSON DEFAULT '[]'::json",
+        "ALTER TABLE mock_rules ADD COLUMN IF NOT EXISTS current_state_idx INTEGER DEFAULT 0",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS query_params JSON DEFAULT '{}'::json",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS request_headers JSON DEFAULT '{}'::json",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS request_body TEXT DEFAULT ''",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS response_code INTEGER DEFAULT 200",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS response_body_preview VARCHAR(500) DEFAULT ''",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS matched_at TIMESTAMP",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS ip_address VARCHAR(50)",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS matched BOOLEAN DEFAULT false",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS response_headers JSON",
+        "ALTER TABLE mock_request_logs ADD COLUMN IF NOT EXISTS latency_ms INTEGER",
+    ]
+    for sql in fix_sqls:
+        op.execute(sql)
+
+
 def downgrade():
     for t in ['response_histories', 'perf_baselines', 'mock_request_logs', 'mock_rules', 'mock_servers', 'embedding_cache', 'dashboard_widgets', 'branding_configs', 'usage_records', 'subscriptions', 'billing_plans']:
         op.drop_table(t)
