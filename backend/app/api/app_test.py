@@ -291,3 +291,64 @@ def run_app_script(script_id):
             }
             db.session.commit()
             return error_response(500, f'执行失败: {str(e)}')
+
+
+@api_bp.route('/app-test/devices', methods=['GET'])
+@jwt_required()
+def get_devices():
+    """
+    获取 Appium Server 连接的设备列表
+
+    查询参数:
+        server_url: Appium Server 地址（默认 http://localhost:4723）
+    """
+    from ..core.logging import get_logger
+    logger = get_logger(__name__)
+
+    server_url = request.args.get('server_url', 'http://localhost:4723')
+
+    # 尝试连接 Appium Server 获取设备信息
+    try:
+        import requests as req
+        resp = req.get(f'{server_url}/status', timeout=5)
+        if resp.status_code == 200:
+            server_info = resp.json()
+            # 尝试获取 sessions 信息
+            try:
+                sessions_resp = req.get(f'{server_url}/sessions', timeout=5)
+                sessions = sessions_resp.json().get('value', []) if sessions_resp.status_code == 200 else []
+            except Exception:
+                sessions = []
+
+            return success_response(data={
+                'server_status': {
+                    'url': server_url,
+                    'connected': True,
+                    'version': server_info.get('value', {}).get('build', {}).get('version', 'unknown'),
+                    'device_count': len(sessions),
+                },
+                'devices': [
+                    {
+                        'id': s.get('id', ''),
+                        'name': s.get('capabilities', {}).get('deviceName', 'Unknown'),
+                        'platform': s.get('capabilities', {}).get('platformName', 'android').lower(),
+                        'version': s.get('capabilities', {}).get('platformVersion', 'unknown'),
+                        'model': s.get('capabilities', {}).get('deviceModel', s.get('capabilities', {}).get('deviceName', '')),
+                        'udid': s.get('capabilities', {}).get('udid', ''),
+                        'status': 'online',
+                        'screen_size': s.get('capabilities', {}).get('screenSize', ''),
+                    }
+                    for s in sessions
+                ],
+            })
+        else:
+            return success_response(data={
+                'server_status': {'url': server_url, 'connected': False},
+                'devices': [],
+            })
+    except Exception as e:
+        logger.debug('Appium Server 连接失败', server_url=server_url, error=str(e))
+        return success_response(data={
+            'server_status': {'url': server_url, 'connected': False},
+            'devices': [],
+        })
