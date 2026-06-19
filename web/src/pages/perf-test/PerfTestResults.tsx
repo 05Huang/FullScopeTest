@@ -411,12 +411,23 @@ const PerfTestResults = () => {
         <Card
           title={`${t('perfTest.resultAnalysis')} - ${selectedResult.scenario_name}`}
           extra={
-            <Button
-              type="text"
-              onClick={() => { setSelectedResult(null); setDetailMetrics([]) }}
-            >
-              {t('common.close')}
-            </Button>
+            <Space>
+              {/* P39-4: 结果导出 */}
+              <Button size="small" onClick={() => {
+                try {
+                  const csv = ['指标,值', ...detailMetrics.map(m => `${m.metric},${m.value}`)].join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = `perf-result-${selectedResult.scenario_name}.csv`; a.click()
+                  URL.revokeObjectURL(url)
+                  message.success('导出成功')
+                } catch { message.error('导出失败') }
+              }}>导出 CSV</Button>
+              <Button type="text" onClick={() => { setSelectedResult(null); setDetailMetrics([]) }}>
+                {t('common.close')}
+              </Button>
+            </Space>
           }
         >
           <Row gutter={16}>
