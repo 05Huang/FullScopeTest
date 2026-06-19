@@ -209,6 +209,25 @@ class ProductionConfig(BaseConfig):
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 
+    @staticmethod
+    def init_app(app):
+        """生产环境启动时校验关键配置项"""
+        BaseConfig.init_app(app) if hasattr(BaseConfig, 'init_app') else None
+
+        missing = []
+        if not app.config.get('SECRET_KEY'):
+            missing.append('SECRET_KEY')
+        if not app.config.get('JWT_SECRET_KEY'):
+            missing.append('JWT_SECRET_KEY')
+        if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+            missing.append('DATABASE_URL')
+
+        if missing:
+            raise RuntimeError(
+                f"生产环境缺少必需的环境变量: {', '.join(missing)}。"
+                f"请在 .env 或环境变量中设置后重启服务。"
+            )
+
     # 生产环境 Cookie 默认启用 Secure
     COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'true').lower() == 'true'
     JWT_COOKIE_SECURE = COOKIE_SECURE
