@@ -11,7 +11,7 @@ import json
 import secrets
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -312,7 +312,7 @@ def find_or_create_sso_user(sso_info: dict, provider: str) -> User:
     # 1. 按 SSO 标识查找
     user = User.query.filter_by(sso_provider=provider, sso_id=sso_id).first()
     if user:
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
         return user
 
@@ -323,7 +323,7 @@ def find_or_create_sso_user(sso_info: dict, provider: str) -> User:
             user.sso_provider = provider
             user.sso_id = sso_id
             user.sso_metadata = sso_info.get('metadata')
-            user.last_login = datetime.utcnow()
+            user.last_login = datetime.now(timezone.utc).replace(tzinfo=None)
             db.session.commit()
             logger.info("SSO 关联已有用户", user_id=user.id, provider=provider)
             return user

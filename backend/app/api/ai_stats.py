@@ -4,7 +4,7 @@ AI 能力统计 API
 提供 AI 功能的统计数据，用于前端看板展示。
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from flask import request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func, case
@@ -92,7 +92,7 @@ def get_success_rate_trend():
     days = request.args.get('days', 30, type=int)
     feature = request.args.get('feature', '').strip()
 
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     query = db.session.query(
         func.date(AIInvocationLog.created_at).label('date'),
@@ -139,7 +139,7 @@ def get_latency_trend():
     days = request.args.get('days', 30, type=int)
     feature = request.args.get('feature', '').strip()
 
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     query = db.session.query(
         func.date(AIInvocationLog.created_at).label('date'),
@@ -181,7 +181,7 @@ def get_token_consumption():
     """
     days = request.args.get('days', 30, type=int)
 
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     query = db.session.query(
         func.date(AIInvocationLog.created_at).label('date'),

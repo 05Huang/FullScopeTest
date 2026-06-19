@@ -3,7 +3,7 @@
 
 管理测试计划的 CRUD、执行轮次、用例结果和通过率趋势。
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import BaseService
 from ..extensions import db
 from ..models.test_plan import TestPlan, TestPlanRun, TestPlanCaseResult
@@ -168,7 +168,7 @@ class PlanService(BaseService):
             environment_name=environment_name,
             notes=notes,
             triggered_by=triggered_by,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
 
         with self.transaction():
@@ -245,7 +245,7 @@ class PlanService(BaseService):
         result.error_message = error_message
         result.result_detail = result_detail
         result.test_run_id = test_run_id
-        result.executed_at = datetime.utcnow()
+        result.executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         with self.transaction():
             self.add(result)
@@ -261,7 +261,7 @@ class PlanService(BaseService):
             raise NotFoundError("执行轮次", run_id)
 
         run.status = 'completed'
-        run.finished_at = datetime.utcnow()
+        run.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
         if run.started_at:
             run.duration = (run.finished_at - run.started_at).total_seconds()
 

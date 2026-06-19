@@ -6,7 +6,7 @@
 
 from flask import request, send_file
 from flask_jwt_extended import jwt_required
-from datetime import datetime
+from datetime import datetime, timezone
 import tempfile
 import markdown
 
@@ -180,7 +180,7 @@ def update_document(doc_id):
         doc.version = data['version']
     
     doc.updated_by = user_id
-    doc.updated_at = datetime.utcnow()
+    doc.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     
     db.session.commit()
     

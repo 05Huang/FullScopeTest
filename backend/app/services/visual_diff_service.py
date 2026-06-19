@@ -8,7 +8,7 @@
 
 import os
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Tuple, Dict, Any
 
 from PIL import Image, ImageChops, ImageDraw
@@ -226,7 +226,7 @@ class VisualDiffService:
 
         # 保存差异图
         project_id = baseline.project_id
-        diff_filename = f"diff_{test_run_id}_step{step_index}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.png"
+        diff_filename = f"diff_{test_run_id}_step{step_index}_{datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y%m%d%H%M%S')}.png"
         diff_relative_path = os.path.join(str(project_id), str(test_run_id), diff_filename)
 
         if base_path:

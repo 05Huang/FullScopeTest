@@ -7,7 +7,7 @@ API 密钥轮换服务
 import os
 import secrets
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List
 from ..core.logging import get_logger
 
@@ -34,19 +34,19 @@ class TokenRotationService:
         days = EXPIRY_OPTIONS.get(period)
         if days is None:
             return None
-        return datetime.utcnow() + timedelta(days=days)
+        return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=days)
 
     def is_expiring_soon(self, expires_at: Optional[datetime]) -> bool:
         """检查是否即将过期"""
         if expires_at is None:
             return False
-        return (expires_at - datetime.utcnow()).days <= ROTATION_WARNING_DAYS
+        return (expires_at - datetime.now(timezone.utc).replace(tzinfo=None)).days <= ROTATION_WARNING_DAYS
 
     def is_expired(self, expires_at: Optional[datetime]) -> bool:
         """检查是否已过期"""
         if expires_at is None:
             return False
-        return datetime.utcnow() > expires_at
+        return datetime.now(timezone.utc).replace(tzinfo=None) > expires_at
 
     def rotate_token(self, old_token_hash: str = None) -> Dict[str, Any]:
         """

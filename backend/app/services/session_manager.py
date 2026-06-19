@@ -4,7 +4,7 @@
 
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from ..core.logging import get_logger
 from ..utils.singleton import singleton_function
@@ -23,15 +23,15 @@ class UserSession:
         self.session_id = session_id or secrets.token_hex(32)
         self.ip_address = ip_address
         self.user_agent = user_agent
-        self.created_at = created_at or datetime.utcnow()
-        self.last_active = last_active or datetime.utcnow()
+        self.created_at = created_at or datetime.now(timezone.utc).replace(tzinfo=None)
+        self.last_active = last_active or datetime.now(timezone.utc).replace(tzinfo=None)
         self.is_active = is_active
 
     def is_expired(self):
         if not self.is_active: return True
-        return datetime.utcnow() - self.last_active > timedelta(seconds=SESSION_TIMEOUT)
+        return datetime.now(timezone.utc).replace(tzinfo=None) - self.last_active > timedelta(seconds=SESSION_TIMEOUT)
 
-    def touch(self): self.last_active = datetime.utcnow()
+    def touch(self): self.last_active = datetime.now(timezone.utc).replace(tzinfo=None)
 
     def to_dict(self):
         return {"session_id": self.session_id, "ip_address": self.ip_address, "user_agent": self.user_agent, "created_at": self.created_at.isoformat() if self.created_at else None, "last_active": self.last_active.isoformat() if self.last_active else None, "is_active": self.is_active, "is_expired": self.is_expired()}

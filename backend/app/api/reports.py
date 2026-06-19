@@ -6,7 +6,7 @@
 
 from flask import request, send_file
 from flask_jwt_extended import jwt_required
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import func, or_
 import io
 import json
@@ -228,7 +228,7 @@ def get_report_statistics():
     days = request.args.get('days', 7, type=int)
     
     # 计算时间范围
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
     
     # 构建基础查询
@@ -417,7 +417,7 @@ def export_report(run_id):
         # 导出 JSON 格式
         report_data = {
             'report': test_run.to_dict(),
-            'generated_at': datetime.utcnow().isoformat(),
+            'generated_at': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             'generated_by': 'FullScopeTest'
         }
         return success_response(data=report_data)
@@ -971,7 +971,7 @@ def get_response_percentiles():
     project_id = request.args.get('project_id', type=int)
     days = request.args.get('days', 7, type=int)
 
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
     # 查询 API 测试执行结果

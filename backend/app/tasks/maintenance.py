@@ -5,7 +5,7 @@ from app.models.web_test_script import WebTestScript
 from app.models.perf_test_scenario import PerfTestScenario
 from app.core.logging import get_logger
 from app.core.metrics import record_task_success, record_task_failure
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .common import _get_flask_app
 
@@ -31,7 +31,7 @@ def cleanup_old_results_task():
     with _get_flask_app().app_context():
         try:
             from datetime import timedelta
-            cutoff_date = datetime.utcnow() - timedelta(days=30)
+            cutoff_date = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
 
             # 清理 Web 测试结果
             old_scripts = WebTestScript.query.filter(

@@ -5,7 +5,7 @@
 评论支持 Markdown 格式，编辑和删除仅限作者和管理员。
 """
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import BaseService
 from ..extensions import db
 from ..models.comment import Comment
@@ -135,7 +135,7 @@ class CommentService(BaseService):
 
         comment.content = content.strip()
         comment.is_edited = True
-        comment.edited_at = datetime.utcnow()
+        comment.edited_at = datetime.now(timezone.utc).replace(tzinfo=None)
         comment.mentions = self._extract_mentions(content)
 
         with self.transaction():

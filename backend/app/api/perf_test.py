@@ -21,7 +21,7 @@ from ..services.perf_test_service import PerfTestService
 from ..utils.exceptions import NotFoundError, ValidationError
 from ..core.logging import get_logger
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = get_logger(__name__)
 
@@ -521,7 +521,7 @@ def run_scenario(scenario_id):
         step_load_enabled, step_users, step_duration = step_config
 
         scenario.status = 'running'
-        scenario.last_run_at = datetime.utcnow()
+        scenario.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
 
         task = run_perf_test_task.apply_async(
@@ -551,7 +551,7 @@ def run_scenario(scenario_id):
                 scenario.last_result = {
                     'success': False,
                     'error': f'Failed to submit: {str(e)}',
-                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z',
                 }
                 db.session.commit()
         except Exception:
@@ -723,7 +723,7 @@ def get_performance_results():
         page: 页码（默认 1）
         per_page: 每页数量（默认 20）
     """
-    from datetime import datetime as dt
+    from datetime import datetime, timezone as dt
 
     user_id = get_current_user_id()
     page = request.args.get('page', 1, type=int)

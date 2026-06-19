@@ -7,7 +7,7 @@
 - 缺陷发现率：失败用例占总用例的比例
 - 回归效率：回归测试的通过率和执行速度
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import func as sa_func
 from ..extensions import db
 from ..models.api_test_case import ApiTestCase
@@ -35,7 +35,7 @@ def get_team_metrics(project_id: int = None, days: int = 30) -> dict:
                        cases_per_week, defect_rate, regression_pass_rate}]
         }
     """
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     # 查询用例创建统计（按用户）
     case_query = db.session.query(

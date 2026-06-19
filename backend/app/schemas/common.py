@@ -3,7 +3,7 @@
 
 提供 API 通用的请求/响应 Schema，供 v2 端点复用。
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from pydantic import BaseModel, Field
 
@@ -17,7 +17,7 @@ class ApiResponse(BaseModel, Generic[T]):
     code: int = Field(200, description='状态码')
     message: str = Field('success', description='响应消息')
     data: Optional[T] = Field(None, description='响应数据')
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + 'Z')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z')
 
     class Config:
         json_schema_extra = {
@@ -203,7 +203,7 @@ class ErrorResponse(BaseModel):
     code: int = Field(..., description='HTTP 状态码')
     message: str = Field(..., description='错误消息')
     errors: Optional[Dict[str, Any]] = Field(None, description='详细错误信息')
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + 'Z')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z')
 
     class Config:
         json_schema_extra = {

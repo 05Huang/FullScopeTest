@@ -361,7 +361,7 @@ def export_environment(env_id):
 
     export_data = {
         'version': '1.0',
-        'export_time': datetime.utcnow().isoformat(),
+        'export_time': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
         'environment': {
             'name': env.name,
             'base_url': env.base_url,
@@ -412,7 +412,7 @@ def import_environment(project_id):
                     key, value = line.split('=', 1)
                     variables[key.strip()] = value.strip().strip('"\'')
 
-            env_name = f'导入的环境 {datetime.utcnow().strftime("%Y%m%d%H%M%S")}'
+            env_name = f'导入的环境 {datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y%m%d%H%M%S")}'
             env = Environment(
                 name=env_name,
                 project_id=project_id,
@@ -423,7 +423,7 @@ def import_environment(project_id):
         elif isinstance(import_data, dict):
             # JSON 格式
             env_info = import_data.get('environment', import_data)
-            env_name = env_info.get('name', f'导入的环境 {datetime.utcnow().strftime("%Y%m%d%H%M%S")}')
+            env_name = env_info.get('name', f'导入的环境 {datetime.now(timezone.utc).replace(tzinfo=None).strftime("%Y%m%d%H%M%S")}')
 
             # 查找同名环境
             existing = Environment.query.filter_by(

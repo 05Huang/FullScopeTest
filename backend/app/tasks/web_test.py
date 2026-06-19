@@ -9,7 +9,7 @@ from app.core.metrics import record_task_success, record_task_failure
 import os
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List
 
 from app.utils.sandbox import execute_script, check_script_safety
@@ -79,7 +79,7 @@ def _finalize_web_test_run(script, test_run, success, duration, result_payload):
         test_run.failed = 0 if success else 1
         test_run.error = 0 if success else 1
         test_run.duration = duration
-        test_run.finished_at = datetime.utcnow()
+        test_run.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
         test_run.results = [case_result]
         test_run_id = test_run.id
 
@@ -243,7 +243,7 @@ def run_web_test_task(self, script_id, user_id):
                 }
 
             script.status = 'running'
-            script.last_run_at = datetime.utcnow()
+            script.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
             # Create a unified test run when script is bound to a project.
             if script.project_id:
@@ -258,7 +258,7 @@ def run_web_test_task(self, script_id, user_id):
                     failed=0,
                     skipped=0,
                     error=0,
-                    started_at=datetime.utcnow(),
+                    started_at=datetime.now(timezone.utc).replace(tzinfo=None),
                     triggered_by='manual',
                     triggered_user_id=user_id,
                 )
@@ -319,7 +319,7 @@ def run_web_test_task(self, script_id, user_id):
                     'return_code': result_returncode,
                     'vision_results': vision_data,
                     'visual_diff_summaries': visual_diff_summaries,
-                    'timestamp': datetime.utcnow().isoformat(),
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                 }
                 test_run_id, report_id = _finalize_web_test_run(
                     script=script,
@@ -362,7 +362,7 @@ def run_web_test_task(self, script_id, user_id):
                         'success': False,
                         'error': str(e),
                         'vision_results': vision_data,
-                        'timestamp': datetime.utcnow().isoformat(),
+                        'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                     }
                     timeout_seconds = script.timeout / 1000 if script.timeout else 0
                     test_run_id, report_id = _finalize_web_test_run(

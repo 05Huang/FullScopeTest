@@ -5,7 +5,7 @@
 仅 super_admin 角色可访问。
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from ..extensions import db
 from ..models.user import User
@@ -28,7 +28,7 @@ class AdminService:
         total_projects = Project.query.count()
 
         # 最近 24 小时的执行量
-        since = datetime.utcnow() - timedelta(hours=24)
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
         daily_runs = TestRun.query.filter(TestRun.created_at >= since).count()
 
         return {

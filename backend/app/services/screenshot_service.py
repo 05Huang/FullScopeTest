@@ -5,7 +5,7 @@
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import current_app
 from ..extensions import db
 from ..models.visual_baseline import VisualBaseline
@@ -109,7 +109,7 @@ class ScreenshotService:
             existing.viewport_height = viewport_height
             existing.device_pixel_ratio = device_pixel_ratio
             existing.full_page = full_page
-            existing.updated_at = datetime.utcnow()
+            existing.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             db.session.commit()
 
             logger.info(
@@ -182,7 +182,7 @@ class ScreenshotService:
             raise ValueError(f"基准截图 {baseline_id} 不存在")
 
         baseline.approved_by = approved_by
-        baseline.approved_at = datetime.utcnow()
+        baseline.approved_at = datetime.now(timezone.utc).replace(tzinfo=None)
         baseline.status = 'active'
         db.session.commit()
 

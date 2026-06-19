@@ -221,7 +221,7 @@ def toggle_pin_project(project_id):
         return error_response(404, '项目不存在')
 
     project.is_pinned = not project.is_pinned
-    project.pinned_at = datetime.utcnow() if project.is_pinned else None
+    project.pinned_at = datetime.now(timezone.utc).replace(tzinfo=None) if project.is_pinned else None
     db.session.commit()
 
     # 失效项目列表缓存

@@ -6,7 +6,7 @@ from app.core.metrics import record_task_success, record_task_failure
 import subprocess
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.utils.sandbox import execute_script
 from .common import _get_flask_app
@@ -37,7 +37,7 @@ def run_app_test_task(self, script_id, user_id):
                 return {'success': False, 'error': 'Script not found'}
 
             script.status = 'running'
-            script.last_run_at = datetime.utcnow()
+            script.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             db.session.commit()
 
             self.update_state(state='PROGRESS', meta={'status': 'Running Appium test...'})
@@ -69,7 +69,7 @@ def run_app_test_task(self, script_id, user_id):
                 'return_code': sandbox_result.get('return_code'),
                 'error': sandbox_result.get('error'),
                 'script_hash': sandbox_result.get('script_hash'),
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             }
             db.session.commit()
 
@@ -94,7 +94,7 @@ def run_app_test_task(self, script_id, user_id):
                 script.last_result = {
                     'success': False,
                     'error': 'Execution timeout (5 minutes)',
-                    'timestamp': datetime.utcnow().isoformat(),
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                 }
                 db.session.commit()
             record_task_failure('run_app_test', time.time() - task_start_time)
@@ -106,7 +106,7 @@ def run_app_test_task(self, script_id, user_id):
                 script.last_result = {
                     'success': False,
                     'error': str(e),
-                    'timestamp': datetime.utcnow().isoformat(),
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                 }
                 db.session.commit()
             record_task_failure('run_app_test', time.time() - task_start_time)

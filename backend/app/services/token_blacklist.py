@@ -8,7 +8,7 @@ Token 黑名单服务
 """
 
 import redis
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -50,7 +50,7 @@ def blacklist_token(jti: str, expires_at: datetime) -> bool:
 
     try:
         # 计算剩余存活时间
-        ttl = expires_at - datetime.utcnow()
+        ttl = expires_at - datetime.now(timezone.utc).replace(tzinfo=None)
         if ttl.total_seconds() <= 0:
             return False  # Token 已过期，无需黑名单
 

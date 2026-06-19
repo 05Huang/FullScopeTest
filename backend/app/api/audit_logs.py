@@ -5,7 +5,7 @@
 审计日志不可修改/删除，仅支持查询。
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from flask import request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func as sa_func
@@ -99,7 +99,7 @@ def get_audit_stats():
         days: 统计天数（默认 30）
     """
     days = request.args.get('days', 30, type=int)
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     # 按操作类型统计
     action_stats = db.session.query(

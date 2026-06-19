@@ -6,7 +6,7 @@
 - GET /visual-diffs/{run_id}: 获取视觉差异记录
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -114,7 +114,7 @@ async def run_web_test(
 
         script.status = "running"
         script.last_status = "running"
-        script.last_run_at = datetime.utcnow()
+        script.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
 
         return RunWebResponse(

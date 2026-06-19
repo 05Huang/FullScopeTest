@@ -9,7 +9,7 @@ AI 模型管理与成本控制服务
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from ...extensions import db
 from ...models.ai_invocation_log import AIInvocationLog
@@ -62,7 +62,7 @@ class ModelManager:
         Returns:
             Dict: {used, budget, remaining, percentage, exceeded}
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         from sqlalchemy import func as sa_func
@@ -102,7 +102,7 @@ class ModelManager:
         Returns:
             Dict: 统计信息
         """
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
         query = AIInvocationLog.query.filter(AIInvocationLog.created_at >= since)
         if user_id:

@@ -160,14 +160,14 @@ def deactivate_prompt_version(version_id):
     将 is_active 设为 False，记录停用时间。
     不会物理删除数据，保留历史记录。
     """
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     pv = PromptVersion.query.get(version_id)
     if not pv:
         return error_response(404, 'Prompt 版本不存在')
 
     pv.is_active = False
-    pv.deactivated_at = datetime.utcnow()
+    pv.deactivated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.session.commit()
 
     logger.info('PromptVersion deactivated', id=pv.id, feature=pv.feature)

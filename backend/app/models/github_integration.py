@@ -4,7 +4,7 @@ GitHub 集成模型
 存储 GitHub App OAuth 认证信息和用户绑定关系
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from ..extensions import db
 
 
@@ -69,7 +69,7 @@ class GitHubIntegration(db.Model):
         """检查 Token 是否仍然有效"""
         if not self.is_active:
             return False
-        if self.token_expires_at and self.token_expires_at < datetime.utcnow():
+        if self.token_expires_at and self.token_expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
             return False
         return True
 

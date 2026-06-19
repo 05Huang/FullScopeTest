@@ -6,7 +6,7 @@ GDPR 数据合规服务
 
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List
 from ..extensions import db
 from ..models.user import User
@@ -38,7 +38,7 @@ class GDPRService:
         # 收集用户数据
         data = {
             "export_metadata": {
-                "exported_at": datetime.utcnow().isoformat(),
+                "exported_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                 "user_id": user_id,
                 "format": "GDPR_DATA_EXPORT",
             },
@@ -116,7 +116,7 @@ class GDPRService:
 
         # 标记为待删除（30 天后执行）
         if hasattr(user, "settings") and isinstance(user.settings, dict):
-            user.settings["deletion_requested_at"] = datetime.utcnow().isoformat()
+            user.settings["deletion_requested_at"] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
             db.session.commit()
 
         logger.info("账户删除请求已记录", user_id=user_id)

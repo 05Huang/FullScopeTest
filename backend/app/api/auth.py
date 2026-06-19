@@ -6,7 +6,7 @@
 
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from flask import request, current_app
 from flask_jwt_extended import (
@@ -328,7 +328,7 @@ def logout():
     exp_timestamp = jwt_data.get('exp')
 
     if jti and exp_timestamp:
-        from datetime import datetime
+        from datetime import datetime, timezone
         expires_at = datetime.utcfromtimestamp(exp_timestamp)
         blacklist_token(jti, expires_at)
 
@@ -397,7 +397,7 @@ def forgot_password():
     # 生成重置 Token（有效期 1 小时）
     reset_token = secrets.token_urlsafe(32)
     user.reset_token = generate_password_hash(reset_token)
-    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    user.reset_token_expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
     db.session.commit()
 
     logger.info('Password reset requested', user_id=user.id, email=email)
@@ -444,7 +444,7 @@ def reset_password():
 
     matched_user = None
     for user in users:
-        if user.reset_token_expires < datetime.utcnow():
+        if user.reset_token_expires < datetime.now(timezone.utc).replace(tzinfo=None):
             continue
         if check_password_hash(user.reset_token, token):
             matched_user = user

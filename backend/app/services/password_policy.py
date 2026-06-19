@@ -13,7 +13,7 @@
 """
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from ..core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -80,7 +80,7 @@ def record_login_failure(user_id: int, ip_address: str = None, username: str = N
         try:
             pipe = r.pipeline()
             pipe.hincrby(key, 'failures', 1)
-            pipe.hset(key, 'last_attempt', datetime.utcnow().isoformat())
+            pipe.hset(key, 'last_attempt', datetime.now(timezone.utc).replace(tzinfo=None).isoformat())
             pipe.expire(key, LOCKOUT_DURATION * 2)
             result = pipe.execute()
             failures = int(result[0])

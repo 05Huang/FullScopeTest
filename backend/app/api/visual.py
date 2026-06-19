@@ -73,8 +73,8 @@ def approve_baseline(baseline_id):
         return error_response(404, '基准截图不存在')
 
     baseline.approved_by = user_id
-    from datetime import datetime
-    baseline.approved_at = datetime.utcnow()
+    from datetime import datetime, timezone
+    baseline.approved_at = datetime.now(timezone.utc).replace(tzinfo=None)
     baseline.status = 'active'
     db.session.commit()
 

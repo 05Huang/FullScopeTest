@@ -7,7 +7,7 @@ GitHub OAuth 服务
 import os
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, Tuple
 
 from ..extensions import db
@@ -216,7 +216,7 @@ def create_or_update_integration(
     token_expires_at = None
     expires_in = token_data.get('expires_in')
     if expires_in:
-        token_expires_at = datetime.utcnow() + timedelta(seconds=int(expires_in))
+        token_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=int(expires_in))
 
     encrypted_access_token = encrypt_token(token_data['access_token'])
 
@@ -230,7 +230,7 @@ def create_or_update_integration(
         integration.github_email = github_user_data.get('email', '')
         integration.github_avatar = github_user_data.get('avatar_url', '')
         integration.is_active = True
-        integration.last_used_at = datetime.utcnow()
+        integration.last_used_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         # 处理 refresh token
         refresh_token = token_data.get('refresh_token')
@@ -238,7 +238,7 @@ def create_or_update_integration(
             integration.refresh_token_encrypted = encrypt_token(refresh_token)
             refresh_expires_in = token_data.get('refresh_token_expires_in')
             if refresh_expires_in:
-                integration.refresh_token_expires_at = datetime.utcnow() + timedelta(seconds=int(refresh_expires_in))
+                integration.refresh_token_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=int(refresh_expires_in))
 
         logger.info('GitHub integration updated', user_id=user_id, github_username=integration.github_username)
     else:
@@ -250,7 +250,7 @@ def create_or_update_integration(
             refresh_token_encrypted = encrypt_token(refresh_token)
             refresh_expires_in = token_data.get('refresh_token_expires_in')
             if refresh_expires_in:
-                refresh_token_expires_at = datetime.utcnow() + timedelta(seconds=int(refresh_expires_in))
+                refresh_token_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=int(refresh_expires_in))
 
         integration = GitHubIntegration(
             user_id=user_id,
@@ -265,7 +265,7 @@ def create_or_update_integration(
             refresh_token_encrypted=refresh_token_encrypted,
             refresh_token_expires_at=refresh_token_expires_at,
             is_active=True,
-            last_used_at=datetime.utcnow(),
+            last_used_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.session.add(integration)
         logger.info('GitHub integration created', user_id=user_id, github_username=integration.github_username)

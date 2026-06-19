@@ -6,7 +6,7 @@ Prompt 版本管理服务
 
 import random
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ...extensions import db
 from ...models.prompt_version import PromptVersion
@@ -163,13 +163,13 @@ class PromptVersionService:
                 pv.is_active = True
             else:
                 pv.is_active = False
-                pv.deactivated_at = datetime.utcnow()
+                pv.deactivated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         if traffic_weight is not None:
             pv.traffic_weight = max(0.0, min(1.0, traffic_weight))
         if change_notes is not None:
             pv.change_notes = change_notes
 
-        pv.updated_at = datetime.utcnow()
+        pv.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
 
         logger.info('Prompt version updated', version_id=version_id)
@@ -185,8 +185,8 @@ class PromptVersionService:
             return False
 
         pv.is_active = False
-        pv.deactivated_at = datetime.utcnow()
-        pv.updated_at = datetime.utcnow()
+        pv.deactivated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        pv.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
 
         logger.info('Prompt version deactivated', version_id=version_id)
@@ -250,7 +250,7 @@ class PromptVersionService:
         pv.avg_latency_ms = round(float(stats.avg_latency or 0), 2)
         pv.avg_tokens = round(float(stats.avg_tokens or 0), 2)
         pv.avg_cost = round(float(stats.avg_cost or 0), 8)
-        pv.updated_at = datetime.utcnow()
+        pv.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         db.session.commit()
 

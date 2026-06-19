@@ -138,7 +138,7 @@ def _generate_metersphere_format(openapi_schema):
         if tag not in merged:
             merged[tag] = {"name": tag, "apis": []}
         merged[tag]["apis"].extend(mod["apis"])
-    return {"project_name": "FullScopeTest", "version": "2.0.0", "description": openapi_schema.get("info", {}).get("description", ""), "modules": list(merged.values()), "import_time": datetime.utcnow().isoformat() + "Z"}
+    return {"project_name": "FullScopeTest", "version": "2.0.0", "description": openapi_schema.get("info", {}).get("description", ""), "modules": list(merged.values()), "import_time": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"}
 
 @router.get("/openapi/postman", summary="导出 Postman Collection", description="将当前 OpenAPI schema 转换为 Postman Collection v2.1 格式。", response_class=JSONResponse)
 async def export_postman_collection():

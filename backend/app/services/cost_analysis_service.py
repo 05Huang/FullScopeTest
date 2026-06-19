@@ -4,7 +4,7 @@
 量化测试执行的时间、资源和 AI Token 成本。
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from ..extensions import db
 from ..models.test_run import TestRun
@@ -31,7 +31,7 @@ class CostAnalysisService:
         Returns:
             Dict: 成本分析结果
         """
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
         # 测试执行成本
         run_query = TestRun.query.filter(TestRun.created_at >= since)

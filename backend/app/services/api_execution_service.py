@@ -7,7 +7,7 @@ API 测试执行 Service
 import json
 import time
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .base import BaseService
 from ..extensions import db
@@ -182,7 +182,7 @@ class ApiExecutionService(BaseService):
                 script_execution['pre_script'] = pre_result
 
                 if not pre_result.get('passed', True):
-                    case.last_run_at = datetime.utcnow()
+                    case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     case.last_status = 'failed'
                     db.session.commit()
                     return {'success': False, 'error': pre_result.get('error', '前置脚本执行失败'), 'script_execution': script_execution}
@@ -197,7 +197,7 @@ class ApiExecutionService(BaseService):
 
             except Exception as e:
                 self.logger.error('前置脚本执行异常', error=str(e))
-                case.last_run_at = datetime.utcnow()
+                case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 case.last_status = 'failed'
                 db.session.commit()
                 return {'success': False, 'error': f'前置脚本执行异常: {str(e)}', 'script_execution': script_execution}
@@ -205,7 +205,7 @@ class ApiExecutionService(BaseService):
 
         # Mock 处理
         if case.mock_enabled:
-            case.last_run_at = datetime.utcnow()
+            case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             case.last_status = 'passed'
             mock_result = {
                 'success': True,
@@ -237,7 +237,7 @@ class ApiExecutionService(BaseService):
         # SSRF 防护：校验最终 URL
         safe, reason = is_safe_url(url)
         if not safe:
-            case.last_run_at = datetime.utcnow()
+            case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             case.last_status = 'failed'
             db.session.commit()
             return {'success': False, 'error': reason, 'script_execution': script_execution}
@@ -289,7 +289,7 @@ class ApiExecutionService(BaseService):
             has_script = bool(case.pre_script or case.post_script)
             passed = calculate_case_passed(script_execution, response.status_code, has_script=has_script)
 
-            case.last_run_at = datetime.utcnow()
+            case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             case.last_status = 'passed' if passed else 'failed'
             db.session.commit()
 
@@ -303,7 +303,7 @@ class ApiExecutionService(BaseService):
             }
 
         except Exception as e:
-            case.last_run_at = datetime.utcnow()
+            case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             case.last_status = 'failed'
             db.session.commit()
             return {'success': False, 'error': str(e), 'script_execution': script_execution}
@@ -348,7 +348,7 @@ class ApiExecutionService(BaseService):
             total_cases=len(cases),
             environment_id=env_id,
             environment_name=unified_env_name if use_unified_env else '用例自身环境',
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc).replace(tzinfo=None),
             triggered_by='manual',
             triggered_user_id=user_id
         )
@@ -399,7 +399,7 @@ class ApiExecutionService(BaseService):
         test_run.passed = total_passed
         test_run.failed = total_failed
         test_run.duration = total_duration
-        test_run.finished_at = datetime.utcnow()
+        test_run.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
         test_run.results = results
 
         # 生成测试报告
@@ -623,7 +623,7 @@ class ApiExecutionService(BaseService):
         try:
             # Mock 处理
             if case.mock_enabled:
-                case.last_run_at = datetime.utcnow()
+                case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 case.last_status = 'passed'
                 mock_result = {
                     'case_id': case.id, 'name': case.name, 'method': case.method, 'url': case.url,
@@ -674,7 +674,7 @@ class ApiExecutionService(BaseService):
 
                     if not pre_result.get('passed', True):
                         elapsed_time = (time.time() - case_start_time) * 1000
-                        case.last_run_at = datetime.utcnow()
+                        case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
                         case.last_status = 'failed'
                         db.session.commit()
                         return {'result': {
@@ -696,7 +696,7 @@ class ApiExecutionService(BaseService):
                 except Exception as e:
                     self.logger.error('前置脚本执行异常', error=str(e))
                     elapsed_time = (time.time() - case_start_time) * 1000
-                    case.last_run_at = datetime.utcnow()
+                    case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     case.last_status = 'failed'
                     db.session.commit()
                     script_execution['pre_script'] = {'executed': True, 'passed': False, 'error': str(e)}
@@ -732,7 +732,7 @@ class ApiExecutionService(BaseService):
             safe, reason = is_safe_url(url)
             if not safe:
                 elapsed_time = (time.time() - case_start_time) * 1000
-                case.last_run_at = datetime.utcnow()
+                case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 case.last_status = 'failed'
                 db.session.commit()
                 return {'result': {
@@ -814,7 +814,7 @@ class ApiExecutionService(BaseService):
                     if isinstance(response_body, str) and response_body:
                         error_message = f'{error_message}: {response_body_preview}'
 
-            case.last_run_at = datetime.utcnow()
+            case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             case.last_status = 'passed' if passed else 'failed'
 
             if passed:
@@ -839,7 +839,7 @@ class ApiExecutionService(BaseService):
             elapsed_time = (time.time() - case_start_time) * 1000
             self.logger.error('执行用例失败', case_id=case.id, case_name=case.name, error=str(e), exc_info=True)
 
-            case.last_run_at = datetime.utcnow()
+            case.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             case.last_status = 'failed'
             db.session.commit()
 

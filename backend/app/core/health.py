@@ -19,7 +19,7 @@
 }
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, jsonify
 from sqlalchemy import text as sa_text
 from app.extensions import db, celery
@@ -46,7 +46,7 @@ def liveness_probe():
         'status': 'ok',
         'service': 'fullscopetest',
         'version': SERVICE_VERSION,
-        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z',
     }), 200
 
 
@@ -93,7 +93,7 @@ def readiness_probe():
         'service': 'fullscopetest',
         'version': SERVICE_VERSION,
         'checks': checks,
-        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z',
     }
 
     return jsonify(response), status_code

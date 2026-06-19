@@ -11,7 +11,7 @@ PDF 使用 ReportLab 生成，Excel 使用 openpyxl 生成。
 """
 import io
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from ..extensions import db
 from ..models.test_run import TestRun
@@ -182,7 +182,7 @@ def _query_runs(test_run_id, project_id, days, test_type) -> list:
     if test_type:
         query = query.filter_by(test_type=test_type)
     if days:
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         query = query.filter(TestRun.created_at >= since)
 
     return query.order_by(TestRun.created_at.desc()).limit(500).all()

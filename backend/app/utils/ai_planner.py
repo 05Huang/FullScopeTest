@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -373,6 +373,6 @@ def _to_int(value: Any) -> Optional[int]:
 
 
 def _default_name(prefix: str) -> str:
-    ts = datetime.utcnow().strftime("%m%d-%H%M%S")
+    ts = datetime.now(timezone.utc).replace(tzinfo=None).strftime("%m%d-%H%M%S")
     return f"{prefix} {ts}"
 

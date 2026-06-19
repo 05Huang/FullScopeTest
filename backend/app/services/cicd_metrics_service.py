@@ -4,7 +4,7 @@ CI/CD 指标服务
 提供 CI/CD 集成的统计和度量能力。
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 from ..extensions import db
 from ..models.test_run import TestRun
@@ -27,7 +27,7 @@ class CICDMetricsService:
         Returns:
             Dict: CI/CD 指标
         """
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         query = TestRun.query.filter(TestRun.created_at >= since)
         if project_id:
             query = query.filter_by(project_id=project_id)

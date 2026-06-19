@@ -12,7 +12,7 @@ Token 权限格式（新）：
     ['read-write'] → actions: ['read', 'write', 'execute']
 """
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from ..extensions import db
 from ..models.api_token import ApiToken, VALID_TOKEN_ACTIONS
@@ -51,12 +51,12 @@ def validate_token(token: str) -> Optional[ApiToken]:
         logger.warning("Token 已禁用", token_id=api_token.id)
         return None
 
-    if api_token.expires_at and api_token.expires_at < datetime.utcnow():
+    if api_token.expires_at and api_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
         logger.warning("Token 已过期", token_id=api_token.id, expires_at=api_token.expires_at)
         return None
 
     # 更新最后使用时间
-    api_token.last_used_at = datetime.utcnow()
+    api_token.last_used_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.session.commit()
 
     return api_token
@@ -127,7 +127,7 @@ def create_token(
     expires_at = None
     if expires_in_days:
         from datetime import timedelta
-        expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+        expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=expires_in_days)
 
     api_token = ApiToken(
         user_id=user_id,

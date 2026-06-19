@@ -11,7 +11,7 @@ import time
 import os
 import json
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.utils.sandbox import check_script_safety
 from .common import _get_flask_app, _build_step_stages, _inject_step_load_shape, _build_locust_command
@@ -100,7 +100,7 @@ def run_perf_test_task(
                 return {'success': False, 'error': '目标地址未配置'}
 
             scenario.status = 'running'
-            scenario.last_run_at = datetime.utcnow()
+            scenario.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             db.session.commit()
 
             # 解析 URL 获取 base_host 和 endpoint_path
@@ -117,7 +117,7 @@ def run_perf_test_task(
                 scenario.last_result = {
                     'success': False,
                     'error': f'脚本安全检查未通过: {safety_reason}',
-                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z',
                 }
                 db.session.commit()
                 record_task_failure('run_perf_test', time.time() - task_start_time)
@@ -149,7 +149,7 @@ def run_perf_test_task(
                 duration=run_time,
                 target_url=scenario.target_url,
                 status='running',
-                started_at=datetime.utcnow(),
+                started_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             db.session.add(perf_result)
             db.session.commit()
@@ -171,7 +171,7 @@ def run_perf_test_task(
                             elapsed = int(time.time() - test_start)
                             sample = PerformanceMetricSample(
                                 test_result_id=perf_result_id,
-                                timestamp=datetime.utcnow(),
+                                timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
                                 elapsed_seconds=elapsed,
                                 rps=stats['throughput'],
                                 active_users=user_count,
@@ -197,7 +197,7 @@ def run_perf_test_task(
                                 if not s.last_result:
                                     s.last_result = {}
                                 s.last_result['realtime'] = {
-                                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z',
                                     'stats': stats,
                                 }
                                 db.session.commit()
@@ -270,7 +270,7 @@ def run_perf_test_task(
                 'request_count': int(total_req),
                 'failure_count': int(total_fail),
                 'results': results,
-                'timestamp': datetime.utcnow().isoformat() + 'Z'
+                'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z'
             }
             db.session.commit()
 
@@ -280,7 +280,7 @@ def run_perf_test_task(
                 perf_result = PerformanceTestResult.query.get(perf_result_id)
                 if perf_result:
                     perf_result.status = 'completed' if proc.returncode == 0 else 'failed'
-                    perf_result.finished_at = datetime.utcnow()
+                    perf_result.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     perf_result.total_requests = int(total_req)
                     perf_result.total_failures = int(total_fail)
                     perf_result.error_rate = error_rate
@@ -320,7 +320,7 @@ def run_perf_test_task(
                 scenario.last_result = {
                     'success': False,
                     'error': str(e),
-                    'timestamp': datetime.utcnow().isoformat() + 'Z'
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + 'Z'
                 }
                 db.session.commit()
 
@@ -331,7 +331,7 @@ def run_perf_test_task(
                     perf_result = PerformanceTestResult.query.get(perf_result_id)
                     if perf_result:
                         perf_result.status = 'failed'
-                        perf_result.finished_at = datetime.utcnow()
+                        perf_result.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
                         db.session.commit()
             except Exception:
                 pass

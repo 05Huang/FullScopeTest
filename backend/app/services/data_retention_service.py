@@ -13,7 +13,7 @@
 
 import os
 import glob
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from ..core.logging import get_logger
 
@@ -46,7 +46,7 @@ def cleanup_raw_test_runs(app_context=None):
     from ..extensions import db
     from ..models.test_run import TestRun
 
-    cutoff = datetime.utcnow() - timedelta(days=RAW_RETENTION_DAYS)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=RAW_RETENTION_DAYS)
     stats = {"deleted_runs": 0, "cutoff_date": cutoff.isoformat()}
 
     try:
@@ -82,7 +82,7 @@ def cleanup_old_reports(app_context=None):
     from ..extensions import db
     from ..models.test_report import TestReport
 
-    cutoff = datetime.utcnow() - timedelta(days=RAW_RETENTION_DAYS)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=RAW_RETENTION_DAYS)
     stats = {"deleted_reports": 0}
 
     try:
@@ -122,7 +122,7 @@ def cleanup_old_screenshots(storage_path=None):
             os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "screenshots"),
         )
 
-    cutoff_ts = (datetime.utcnow() - timedelta(days=ATTACHMENT_RETENTION_DAYS)).timestamp()
+    cutoff_ts = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=ATTACHMENT_RETENTION_DAYS)).timestamp()
     stats = {"deleted_files": 0, "freed_bytes": 0}
 
     if not os.path.exists(storage_path):
@@ -164,7 +164,7 @@ def run_full_cleanup(storage_path=None):
         "raw_runs": cleanup_raw_test_runs(),
         "reports": cleanup_old_reports(),
         "screenshots": cleanup_old_screenshots(storage_path),
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
     }
     logger.info("=== 数据归档清理完成 ===", results=results)
     return results

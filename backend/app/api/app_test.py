@@ -4,7 +4,7 @@ APP 测试接口模块
 提供 APP 测试脚本和用例集的 CRUD 操作及执行功能
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import request
 from flask_jwt_extended import jwt_required
@@ -233,7 +233,7 @@ def run_app_script(script_id):
     else:
         # Celery 未启用时，同步执行
         script.status = 'running'
-        script.last_run_at = datetime.utcnow()
+        script.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
 
         try:
@@ -268,7 +268,7 @@ def run_app_script(script_id):
                     'stdout': result.stdout,
                     'stderr': result.stderr,
                     'return_code': result.returncode,
-                    'timestamp': datetime.utcnow().isoformat(),
+                    'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                 }
                 db.session.commit()
 
@@ -287,7 +287,7 @@ def run_app_script(script_id):
             script.last_result = {
                 'success': False,
                 'error': str(e),
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             }
             db.session.commit()
             return error_response(500, f'执行失败: {str(e)}')

@@ -36,7 +36,7 @@ import time
 import json
 import threading
 from queue import Queue, Empty
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import quote_plus
 import uuid
 
@@ -511,7 +511,7 @@ def run_web_collection(collection_id):
             )
             script.status = 'running'
             script.last_status = 'running'
-            script.last_run_at = datetime.utcnow()
+            script.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
             submitted.append({'script_id': script.id, 'task_id': task.id})
         except Exception as exc:
             skipped.append({'script_id': script.id, 'reason': str(exc)})
@@ -718,7 +718,7 @@ def run_script(script_id):
         # 提交成功后立即更新为 running，前端可及时感知状态
         script.status = 'running'
         script.last_status = 'running'
-        script.last_run_at = datetime.utcnow()
+        script.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
         
         return success_response(data={

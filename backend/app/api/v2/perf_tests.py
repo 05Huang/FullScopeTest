@@ -3,7 +3,7 @@
 import asyncio
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -247,7 +247,7 @@ async def run_scenario(scenario_id: int, data: ScenarioRunRequest = ScenarioRunR
         raise HTTPException(400, error)
     uc, sr, dur = numbers
     s.status = "running"
-    s.last_run_at = datetime.utcnow()
+    s.last_run_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.session.commit()
     task = run_perf_test_task.apply_async(
         args=[scenario_id, uc, sr, dur, sle, su, sd],

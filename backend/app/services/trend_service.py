@@ -7,7 +7,7 @@
 返回格式：
     [{"date": "2026-01-01", "api": 95.5, "web": 88.2, "perf": 92.0}]
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import func, case, and_
 from ..extensions import db
 from ..models.test_run import TestRun
@@ -35,7 +35,7 @@ def get_pass_rate_trend(
     Returns:
         [{date, api, web, perf, total_runs, total_passed, total_failed}]
     """
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     # 基础查询：已完成的执行记录
     query = TestRun.query.filter(
@@ -97,7 +97,7 @@ def get_dashboard_stats(project_id: int = None, days: int = 30) -> dict:
     Returns:
         {period_days, total_runs, pass_rate, by_type: {api: {...}, ...}, daily: [...]}
     """
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     query = TestRun.query.filter(TestRun.created_at >= since)
     if project_id:
