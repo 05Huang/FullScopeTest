@@ -493,6 +493,15 @@ def oidc_login_url():
     # 生成 state 参数防 CSRF
     state = secrets.token_urlsafe(32)
 
+    # 将 state 存入 Redis（TTL 5 分钟），回调时校验防止 CSRF
+    try:
+        from ..services.rate_limit_service import _get_redis
+        redis_client = _get_redis()
+        if redis_client:
+            redis_client.setex(f'oidc_state:{state}', 300, '1')
+    except Exception as exc:
+        logger.warning("OIDC state 存储失败（Redis 不可用）", error=str(exc))
+
     try:
         login_url = oidc_provider.get_login_url(redirect_uri, state)
     except Exception as exc:
@@ -503,13 +512,14 @@ def oidc_login_url():
 
 
 @api_bp.route('/auth/sso/oidc/callback', methods=['POST'])
-@validate_json('code')
+@validate_json('code', 'state')
 def oidc_callback():
     """
     处理 OIDC 回调
 
     请求体:
         code: 授权码
+        state: CSRF 防护参数（必须与登录时生成的一致）
         redirect_uri: 回调 URL（与登录时一致）
     """
     from ..services.sso_service import oidc_provider, find_or_create_sso_user
@@ -518,7 +528,22 @@ def oidc_callback():
 
     data = request.get_json()
     code = data['code']
+    state = data['state']
     redirect_uri = data.get('redirect_uri', '')
+
+    # 校验 state 参数防止 CSRF 登录攻击
+    try:
+        from ..services.rate_limit_service import _get_redis
+        redis_client = _get_redis()
+        if redis_client:
+            stored = redis_client.get(f'oidc_state:{state}')
+            if not stored:
+                logger.warning("OIDC state 校验失败", state=state[:8] + '...')
+                return error_response(403, '无效的 state 参数，可能存在 CSRF 攻击')
+            # 使用后立即删除，防止重放
+            redis_client.delete(f'oidc_state:{state}')
+    except Exception as exc:
+        logger.warning("OIDC state 校验异常（Redis 不可用，跳过校验）", error=str(exc))
 
     if not redirect_uri:
         frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5173')

@@ -200,6 +200,10 @@ const Login = () => {
         })
         const data = (res as any)?.data || res
         if (data?.login_url) {
+          // 保存 state 到 sessionStorage，回调时校验 CSRF
+          if (data.state) {
+            sessionStorage.setItem('oidc_state', data.state)
+          }
           window.location.href = data.login_url
         }
       } catch {

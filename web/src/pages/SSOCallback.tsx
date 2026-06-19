@@ -37,10 +37,15 @@ const SSOCallback = () => {
     const handleCallback = async () => {
       try {
         const redirectUri = `${window.location.origin}/sso/callback`
+        // 从 sessionStorage 获取 state 用于 CSRF 校验
+        const state = sessionStorage.getItem('oidc_state')
         const res = await api.post('/auth/sso/oidc/callback', {
           code,
+          state,
           redirect_uri: redirectUri,
         })
+        // 校验完成后清除 state
+        sessionStorage.removeItem('oidc_state')
 
         const data = (res as any)?.data || res
         if (data?.user) {
