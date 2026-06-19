@@ -273,6 +273,26 @@ def init_extensions(app):
     migrate.init_app(app, db)
     jwt.init_app(app)
 
+    # 在 JWT 中嵌入 token_version，用于支持批量注销
+    @jwt.additional_claims_loader
+    def add_token_version_claims(identity):
+        from .services.token_blacklist import get_user_token_version
+        try:
+            return {'token_version': get_user_token_version(int(identity))}
+        except (ValueError, TypeError):
+            return {'token_version': 0}
+
+    # 校验 token_version 是否仍然有效（密码修改后旧 Token 失效）
+    @jwt.token_verification_loader
+    def verify_token_version(jwt_header, jwt_payload):
+        from .services.token_blacklist import is_token_version_valid
+        identity = jwt_payload.get('sub')
+        token_version = jwt_payload.get('token_version', 0)
+        try:
+            return is_token_version_valid(int(identity), token_version)
+        except (ValueError, TypeError):
+            return True  # 校验异常时放行，避免误拒
+
     # CORS - 安全加固配置
     cors_origins = app.config.get('CORS_ORIGINS', ['http://localhost:3001'])
     cors_methods = app.config.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])

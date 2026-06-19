@@ -89,10 +89,51 @@ def blacklist_all_user_tokens(user_id: int) -> bool:
     """
     注销用户的所有 Token（用于修改密码等场景）
 
-    注意：当前实现依赖 JWT 的 jti 字段。
-    如果 JWT 配置中没有 jti，此方法会记录日志但无法完全注销。
+    通过递增 token_version 计数器实现：
+    - JWT 中嵌入 token_version claim
+    - 验证时比对 JWT 中的 version 与 Redis 存储的 version
+    - version 不匹配则拒绝 Token
     """
-    logger.info('All tokens blacklist requested', user_id=user_id)
-    # 实际的全量注销需要在 JWT 配置中启用 jti
-    # 或使用 Redis key pattern 匹配
-    return True
+    r = _get_redis()
+    if not r:
+        logger.warning('Cannot blacklist all tokens: Redis unavailable', user_id=user_id)
+        return False
+
+    try:
+        key = f'user:{user_id}:token_version'
+        new_version = r.incr(key)
+        # 设置过期时间 30 天，避免无限增长
+        r.expire(key, 30 * 24 * 3600)
+        logger.info('All user tokens blacklisted via version increment', user_id=user_id, new_version=new_version)
+        return True
+    except Exception as e:
+        logger.error('Failed to blacklist all user tokens', user_id=user_id, error=str(e))
+        return False
+
+
+def get_user_token_version(user_id: int) -> int:
+    """
+    获取用户当前 token 版本号
+
+    新 Token 创建时嵌入此版本号，验证时比对。
+    """
+    r = _get_redis()
+    if not r:
+        return 0  # Redis 不可用时默认版本 0
+
+    try:
+        key = f'user:{user_id}:token_version'
+        version = r.get(key)
+        return int(version) if version else 0
+    except Exception:
+        return 0
+
+
+def is_token_version_valid(user_id: int, token_version: int) -> bool:
+    """
+    校验 Token 的版本号是否有效
+
+    Token 中的 version 小于当前版本则已失效。
+    """
+    current_version = get_user_token_version(user_id)
+    return token_version >= current_version
