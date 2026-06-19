@@ -155,6 +155,16 @@ export const getMyPermissions = (
   ) as Promise<ApiResponse<{ role: string; permissions: PermissionMap }>>
 }
 
+/** P31-8: 获取指定成员的权限详情 */
+export const getMemberPermissions = (
+  orgId: number,
+  userId: number
+): Promise<ApiResponse<{ role: string; permissions: PermissionMap }>> => {
+  return api.get(
+    `/organizations/${orgId}/members/${userId}/permissions`
+  ) as Promise<ApiResponse<{ role: string; permissions: PermissionMap }>>
+}
+
 // ── 统一导出 ──────────────────────────────────────────────────────────────
 
 export const organizationService = {
@@ -172,6 +182,7 @@ export const organizationService = {
   deleteRole,
   getSystemRoles,
   getMyPermissions,
+  getMemberPermissions,
 }
 
 export default organizationService

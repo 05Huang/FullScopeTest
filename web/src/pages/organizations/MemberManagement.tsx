@@ -15,8 +15,12 @@ import {
   Tag,
   Popconfirm,
   Empty,
+  Drawer,
+  Typography,
+  Descriptions,
+  Collapse,
 } from 'antd'
-import { PlusOutlined, DeleteOutlined, UserSwitchOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, UserSwitchOutlined, EyeOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import organizationService, { OrganizationMember } from '@/services/organizationService'
@@ -41,6 +45,12 @@ const MemberManagement = ({ orgId, isAdmin, userRole }: MemberManagementProps) =
   const [editingMember, setEditingMember] = useState<OrganizationMember | null>(null)
   const [newRole, setNewRole] = useState('')
   const [roleLoading, setRoleLoading] = useState(false)
+
+  // P31-8: 权限详情抽屉状态
+  const [permDrawerOpen, setPermDrawerOpen] = useState(false)
+  const [permMember, setPermMember] = useState<OrganizationMember | null>(null)
+  const [permData, setPermData] = useState<{ role: string; permissions: Record<string, string[]> } | null>(null)
+  const [permLoading, setPermLoading] = useState(false)
 
   const fetchMembers = useCallback(async () => {
     setLoading(true)
@@ -118,6 +128,23 @@ const MemberManagement = ({ orgId, isAdmin, userRole }: MemberManagementProps) =
     }
   }
 
+  // P31-8: 查看成员权限详情
+  const handleViewPermissions = async (member: OrganizationMember) => {
+    setPermMember(member)
+    setPermDrawerOpen(true)
+    setPermLoading(true)
+    try {
+      const res = await organizationService.getMemberPermissions(orgId, member.user_id)
+      if (res.code === 200) {
+        setPermData(res.data)
+      }
+    } catch {
+      message.error(t('organizations.fetchPermissionsFailed') || '获取权限失败')
+    } finally {
+      setPermLoading(false)
+    }
+  }
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -188,6 +215,14 @@ const MemberManagement = ({ orgId, isAdmin, userRole }: MemberManagementProps) =
             width: 160,
             render: (_: unknown, record: OrganizationMember) => (
               <Space>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<EyeOutlined />}
+                  onClick={() => handleViewPermissions(record)}
+                >
+                  {t('organizations.viewPermissions') || '查看权限'}
+                </Button>
                 <Button
                   type="link"
                   size="small"
@@ -301,6 +336,44 @@ const MemberManagement = ({ orgId, isAdmin, userRole }: MemberManagementProps) =
           />
         </div>
       </Modal>
+
+      {/* P31-8: 成员权限详情抽屉 */}
+      <Drawer
+        title={t('organizations.memberPermissions') || '成员权限详情'}
+        open={permDrawerOpen}
+        onClose={() => { setPermDrawerOpen(false); setPermMember(null); setPermData(null) }}
+        width={480}
+      >
+        {permLoading ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>{t('common.loading') || '加载中...'}</div>
+        ) : permData ? (
+          <div>
+            <Descriptions column={1} bordered size="small" style={{ marginBottom: 16 }}>
+              <Descriptions.Item label={t('organizations.username') || '用户名'}>{permMember?.username || `User #${permMember?.user_id}`}</Descriptions.Item>
+              <Descriptions.Item label={t('organizations.role') || '角色'}><Tag color={getRoleColor(permData.role)}>{permData.role.toUpperCase()}</Tag></Descriptions.Item>
+            </Descriptions>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>{t('organizations.permissionsDetail') || '权限矩阵'}</div>
+            {permData.permissions && Object.keys(permData.permissions).length > 0 ? (
+              <Collapse
+                size="small"
+                items={Object.entries(permData.permissions).map(([resource, actions]) => ({
+                  key: resource,
+                  label: resource,
+                  children: (
+                    <Space wrap>
+                      {(actions as string[]).map((action: string) => (
+                        <Tag key={action} color="blue">{action}</Tag>
+                      ))}
+                    </Space>
+                  ),
+                }))}
+              />
+            ) : (
+              <Empty description={t('organizations.noPermissions') || '暂无权限数据'} />
+            )}
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   )
 }
