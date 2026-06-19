@@ -1421,7 +1421,13 @@
     "duplicateCase": "Duplicate Case"
   },
   "globalSearch": {
-    "naturalPlaceholder": "Search using natural language (e.g. find all APIs and scripts related to payment)"
+    "naturalPlaceholder": "Search using natural language (e.g. find all APIs and scripts related to payment)",
+    "apiCase": "API Case",
+    "webScript": "Web Script",
+    "perfScenario": "Perf Scenario",
+    "environment": "Environment",
+    "noResults": "No assets found",
+    "inputHint": "Type and press Enter to search"
   },
   "responseViewer": {
     "response": "Response",

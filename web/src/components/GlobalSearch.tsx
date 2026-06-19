@@ -56,10 +56,10 @@ const GlobalSearch = () => {
 
   const getTypeTag = (type: string) => {
     switch (type) {
-      case 'api_case': return <Tag color="blue">接口用例</Tag>
-      case 'web_script': return <Tag color="green">Web脚本</Tag>
-      case 'perf_scenario': return <Tag color="orange">性能场景</Tag>
-      case 'environment': return <Tag color="purple">环境变量</Tag>
+      case 'api_case': return <Tag color="blue">{t('globalSearch.apiCase')}</Tag>
+      case 'web_script': return <Tag color="green">{t('globalSearch.webScript')}</Tag>
+      case 'perf_scenario': return <Tag color="orange">{t('globalSearch.perfScenario')}</Tag>
+      case 'environment': return <Tag color="purple">{t('globalSearch.environment')}</Tag>
       default: return <Tag>{type}</Tag>
     }
   }
@@ -148,9 +148,9 @@ const GlobalSearch = () => {
               )}
             />
           ) : query ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#bfbfbf' }}>未找到相关资产</div>
+            <div style={{ textAlign: 'center', padding: 40, color: '#bfbfbf' }}>{t('globalSearch.noResults')}</div>
           ) : (
-            <div style={{ textAlign: 'center', padding: 40, color: '#bfbfbf' }}>输入内容并按回车搜索</div>
+            <div style={{ textAlign: 'center', padding: 40, color: '#bfbfbf' }}>{t('globalSearch.inputHint')}</div>
           )}
         </div>
       </Modal>

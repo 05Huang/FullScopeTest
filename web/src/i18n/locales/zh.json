@@ -1421,7 +1421,13 @@
     "duplicateCase": "复制用例"
   },
   "globalSearch": {
-    "naturalPlaceholder": "使用自然语言搜索（例如：查找关于支付的所有接口和脚本）"
+    "naturalPlaceholder": "使用自然语言搜索（例如：查找关于支付的所有接口和脚本）",
+    "apiCase": "接口用例",
+    "webScript": "Web脚本",
+    "perfScenario": "性能场景",
+    "environment": "环境变量",
+    "noResults": "未找到相关资产",
+    "inputHint": "输入内容并按回车搜索"
   },
   "responseViewer": {
     "response": "响应",
