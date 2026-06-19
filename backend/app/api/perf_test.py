@@ -837,3 +837,100 @@ def get_running_tests():
     } for s in running_scenarios]
 
     return success_response(data=user_tests)
+
+
+@api_bp.route('/perf-test/baselines', methods=['GET'])
+@jwt_required()
+def get_baselines():
+    """获取性能测试基线列表"""
+    from ..models.perf_baseline import PerfBaseline
+
+    current_user = get_current_user_id()
+    scenario_id = request.args.get('scenario_id', type=int)
+
+    query = PerfBaseline.query.filter_by(user_id=current_user)
+    if scenario_id:
+        query = query.filter_by(scenario_id=scenario_id)
+
+    baselines = query.order_by(PerfBaseline.created_at.desc()).all()
+    return success_response(data=[b.to_dict() for b in baselines])
+
+
+@api_bp.route('/perf-test/baselines', methods=['POST'])
+@jwt_required()
+def create_baseline():
+    """创建性能测试基线"""
+    from ..models.perf_baseline import PerfBaseline
+
+    current_user = get_current_user_id()
+    data = request.get_json()
+
+    scenario_id = data.get('scenario_id')
+    if not scenario_id:
+        return error_response(400, '缺少 scenario_id')
+
+    # 将同场景的其他基线设为非活跃
+    PerfBaseline.query.filter_by(
+        scenario_id=scenario_id, is_active=True
+    ).update({'is_active': False})
+
+    baseline = PerfBaseline(
+        scenario_id=scenario_id,
+        user_id=current_user,
+        name=data.get('name', f'基线 {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")}'),
+        metrics=data.get('metrics', {}),
+        run_id=data.get('run_id'),
+        is_active=True,
+    )
+    db.session.add(baseline)
+    db.session.commit()
+
+    return success_response(data=baseline.to_dict(), message='基线已创建', code=201)
+
+
+@api_bp.route('/perf-test/baselines/compare', methods=['POST'])
+@jwt_required()
+def compare_with_baseline():
+    """将当前运行结果与基线对比，检测退化"""
+    from ..models.perf_baseline import PerfBaseline
+
+    data = request.get_json()
+    scenario_id = data.get('scenario_id')
+    current_metrics = data.get('current_metrics', {})
+
+    if not scenario_id:
+        return error_response(400, '缺少 scenario_id')
+
+    baseline = PerfBaseline.query.filter_by(
+        scenario_id=scenario_id, is_active=True
+    ).first()
+
+    if not baseline:
+        return success_response(data={'has_baseline': False, 'message': '无活跃基线'})
+
+    base = baseline.metrics or {}
+    comparison = {}
+    degraded = []
+
+    # 对比关键指标
+    for key in ['p50', 'p90', 'p95', 'p99', 'avg', 'error_rate']:
+        base_val = base.get(key, 0)
+        curr_val = current_metrics.get(key, 0)
+        if base_val > 0:
+            change_pct = ((curr_val - base_val) / base_val) * 100
+            comparison[key] = {
+                'baseline': base_val,
+                'current': curr_val,
+                'change_pct': round(change_pct, 1),
+                'degraded': change_pct > 20,
+            }
+            if change_pct > 20:
+                degraded.append(key)
+
+    return success_response(data={
+        'has_baseline': True,
+        'baseline': baseline.to_dict(),
+        'comparison': comparison,
+        'degraded_metrics': degraded,
+        'is_degraded': len(degraded) > 0,
+    })
