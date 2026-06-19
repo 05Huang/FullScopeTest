@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Checkbox, message, Divider } from 'antd'
+import { Form, Input, Button, Checkbox, message, Divider, Modal } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
@@ -161,7 +161,37 @@ const Login = () => {
     fetchProviders()
   }, [])
 
+  // P31-7: LDAP 登录状态
+  const [ldapModalOpen, setLdapModalOpen] = useState(false)
+  const [ldapLoading, setLdapLoading] = useState(false)
+  const [ldapForm] = Form.useForm()
+
+  const handleLDAPLogin = async (values: { username: string; password: string }) => {
+    setLdapLoading(true)
+    try {
+      const res = await api.post('/auth/sso/ldap/login', {
+        username: values.username,
+        password: values.password,
+      })
+      const data = (res as any)?.data || res
+      if (data?.user) {
+        message.success(t('login.sso.ldapSuccess') || 'LDAP 登录成功')
+        setLdapModalOpen(false)
+        window.location.href = '/dashboard'
+      }
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || t('login.sso.ldapFailed') || 'LDAP 认证失败')
+    } finally {
+      setLdapLoading(false)
+    }
+  }
+
   const handleSSOLogin = useCallback(async (provider: string) => {
+    if (provider === 'ldap') {
+      ldapForm.resetFields()
+      setLdapModalOpen(true)
+      return
+    }
     if (provider === 'oidc') {
       try {
         const redirectUri = `${window.location.origin}/sso/callback`
@@ -537,6 +567,37 @@ const Login = () => {
         <footer className="fst-login-right-copyright">
           © 2024 FullScopeTest. All rights reserved.
         </footer>
+
+        {/* P31-7: LDAP 登录弹窗 */}
+        <Modal
+          title={t('login.sso.ldapTitle') || 'LDAP 登录'}
+          open={ldapModalOpen}
+          onCancel={() => setLdapModalOpen(false)}
+          footer={null}
+          destroyOnHidden
+        >
+          <Form form={ldapForm} layout="vertical" onFinish={handleLDAPLogin} style={{ marginTop: 16 }}>
+            <Form.Item
+              name="username"
+              label={t('login.username') || '用户名'}
+              rules={[{ required: true, message: t('login.usernameRequired') || '请输入用户名' }]}
+            >
+              <Input placeholder={t('login.sso.ldapUsernamePlaceholder') || 'LDAP 用户名'} />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label={t('login.password') || '密码'}
+              rules={[{ required: true, message: t('login.passwordRequired') || '请输入密码' }]}
+            >
+              <Input.Password placeholder={t('login.sso.ldapPasswordPlaceholder') || 'LDAP 密码'} />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" loading={ldapLoading} block>
+                {t('login.sso.ldapLoginBtn') || 'LDAP 登录'}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     </div>
   )

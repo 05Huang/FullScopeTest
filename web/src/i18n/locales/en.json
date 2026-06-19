@@ -66,7 +66,13 @@
       "redirecting": "Redirecting to dashboard...",
       "failed": "SSO Login Failed",
       "error": "SSO authentication failed. Please try again.",
-      "missingCode": "Missing authorization code"
+      "missingCode": "Missing authorization code",
+      "ldapTitle": "LDAP Login",
+      "ldapUsernamePlaceholder": "LDAP Username",
+      "ldapPasswordPlaceholder": "LDAP Password",
+      "ldapLoginBtn": "LDAP Login",
+      "ldapSuccess": "LDAP login successful",
+      "ldapFailed": "LDAP authentication failed"
     },
     "username": "Username",
     "password": "Password",
