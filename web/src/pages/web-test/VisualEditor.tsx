@@ -13,7 +13,7 @@ import {
 } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, PlayCircleOutlined, CodeOutlined,
-  DragOutlined, MousePointerOutlined, EditOutlined, ClockCircleOutlined,
+  DragOutlined, AimOutlined, EditOutlined, ClockCircleOutlined,
   CheckCircleOutlined, CameraOutlined, EyeOutlined, ReloadOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from "react-i18next"
@@ -40,13 +40,13 @@ interface VisualEditorProps {
 
 const ACTION_OPTIONS = [
   { value: "navigate", label: "导航", icon: <EyeOutlined />, color: "blue" },
-  { value: "click", label: "点击", icon: <MousePointerOutlined />, color: "green" },
+  { value: "click", label: "点击", icon: <AimOutlined />, color: "green" },
   { value: "fill", label: "输入", icon: <EditOutlined />, color: "cyan" },
   { value: "select", label: "选择", icon: <DragOutlined />, color: "purple" },
   { value: "wait", label: "等待", icon: <ClockCircleOutlined />, color: "orange" },
   { value: "assert", label: "断言", icon: <CheckCircleOutlined />, color: "red" },
   { value: "screenshot", label: "截图", icon: <CameraOutlined />, color: "magenta" },
-  { value: "hover", label: "悬停", icon: <MousePointerOutlined />, color: "geekblue" },
+  { value: "hover", label: "悬停", icon: <AimOutlined />, color: "geekblue" },
   { value: "press", label: "按键", icon: <DragOutlined />, color: "volcano" },
   { value: "scroll", label: "滚动", icon: <DragOutlined />, color: "gold" },
 ]
@@ -140,7 +140,7 @@ const VisualEditor: React.FC<VisualEditorProps> = ({ steps, onChange, onExecute,
           dataSource={steps.map((s, i) => ({ ...s, _index: i }))}
           columns={[
             { title: "#", width: 35, render: (_: any, __: any, i: number) => <Text type="secondary" style={{ fontSize: 11 }}>{i + 1}</Text> },
-            { title: "操作", width: 100, render: (_: any, r: WebTestStep & { _index: number }) => (
+            { title: "操作", width: 100, render: (_: any, r: any) => (
               <Select size="small" value={r.action} style={{ width: "100%" }}
                 onChange={v => updateStep(r.id, { action: v })}
                 options={ACTION_OPTIONS.map(a => ({ value: a.value, label: <Space size={4}>{a.icon}<span>{a.label}</span></Space> }))} />
@@ -157,7 +157,7 @@ const VisualEditor: React.FC<VisualEditorProps> = ({ steps, onChange, onExecute,
               <Input size="small" placeholder="可选" value={r.description}
                 onChange={e => updateStep(r.id, { description: e.target.value })} />
             )},
-            { title: "", width: 60, render: (_: any, r: WebTestStep & { _index: number }) => (
+            { title: "", width: 60, render: (_: any, r: any) => (
               <Space size={0}>
                 <Switch size="small" checked={r.enabled} onChange={v => updateStep(r.id, { enabled: v })} />
                 <Popconfirm title="删除？" onConfirm={() => removeStep(r.id)}><Button type="text" size="small" danger icon={<DeleteOutlined />} /></Popconfirm>
