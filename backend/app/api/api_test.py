@@ -542,6 +542,27 @@ def execute_request():
 
     try:
         result = execution_service.execute_request(data, user_id)
+        # 保存响应历史
+        if result.get("success"):
+            try:
+                from ..models.response_history import ResponseHistory
+                history = ResponseHistory(
+                    case_id=data.get('case_id'),
+                    user_id=user_id,
+                    url=data.get('url', ''),
+                    method=data.get('method', 'GET').upper(),
+                    status_code=result.get('status_code'),
+                    response_time=result.get('response_time'),
+                    response_size=result.get('response_size'),
+                    request_headers=data.get('headers'),
+                    response_headers=result.get('headers'),
+                    response_body=result.get('body'),
+                    environment_id=data.get('env_id'),
+                )
+                db.session.add(history)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         if result.get("success", True):
             return success_response(data=result)
         else:
@@ -837,3 +858,110 @@ def execute_scenario():
         logger = get_logger(__name__)
         logger.error('场景执行失败', error=str(e))
         return error_response(500, f'场景执行失败: {str(e)}')
+
+
+@api_bp.route('/api-test/history', methods=['GET'])
+@jwt_required()
+def get_response_history():
+    """
+    获取响应历史列表
+
+    查询参数:
+        case_id: 用例 ID（可选，不传则获取当前用户所有历史）
+        limit: 数量限制（默认 50）
+    """
+    from ..models.response_history import ResponseHistory
+
+    current_user = get_jwt_identity()
+    case_id = request.args.get('case_id', type=int)
+    limit = request.args.get('limit', 50, type=int)
+
+    query = ResponseHistory.query.filter_by(user_id=current_user)
+    if case_id:
+        query = query.filter_by(case_id=case_id)
+
+    histories = query.order_by(ResponseHistory.created_at.desc()).limit(limit).all()
+    return success_response(data=[h.to_dict() for h in histories])
+
+
+@api_bp.route('/api-test/history', methods=['POST'])
+@jwt_required()
+def save_response_history():
+    """
+    保存响应历史记录
+
+    请求体: 响应历史数据
+    """
+    from ..models.response_history import ResponseHistory
+
+    current_user = get_jwt_identity()
+    data = request.get_json()
+
+    try:
+        history = ResponseHistory(
+            case_id=data.get('case_id'),
+            user_id=current_user,
+            url=data.get('url', ''),
+            method=data.get('method', 'GET'),
+            status_code=data.get('status_code'),
+            response_time=data.get('response_time'),
+            response_size=data.get('response_size'),
+            request_headers=data.get('request_headers'),
+            request_body=data.get('request_body'),
+            response_headers=data.get('response_headers'),
+            response_body=data.get('response_body'),
+            error=data.get('error'),
+            environment_id=data.get('environment_id'),
+        )
+        db.session.add(history)
+        db.session.commit()
+        return success_response(data=history.to_dict(), message='历史记录已保存', code=201)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(500, f'保存失败: {str(e)}')
+
+
+@api_bp.route('/api-test/history/trend', methods=['GET'])
+@jwt_required()
+def get_response_history_trend():
+    """
+    获取响应时间趋势数据
+
+    查询参数:
+        case_id: 用例 ID（必填）
+        limit: 数据点数量（默认 30）
+    """
+    from ..models.response_history import ResponseHistory
+
+    current_user = get_jwt_identity()
+    case_id = request.args.get('case_id', type=int)
+    limit = request.args.get('limit', 30, type=int)
+
+    if not case_id:
+        return error_response(400, '缺少 case_id 参数')
+
+    histories = ResponseHistory.query.filter_by(
+        user_id=current_user, case_id=case_id
+    ).order_by(ResponseHistory.created_at.desc()).limit(limit).all()
+
+    trend = [{
+        'timestamp': h.created_at.isoformat() if h.created_at else None,
+        'response_time': h.response_time,
+        'status_code': h.status_code,
+    } for h in reversed(histories)]
+
+    return success_response(data=trend)
+
+
+@api_bp.route('/api-test/history/<int:history_id>', methods=['GET'])
+@jwt_required()
+def get_response_history_detail(history_id):
+    """获取响应历史详情"""
+    from ..models.response_history import ResponseHistory
+
+    current_user = get_jwt_identity()
+    history = ResponseHistory.query.filter_by(id=history_id, user_id=current_user).first()
+    if not history:
+        return error_response(404, '历史记录不存在')
+
+    return success_response(data=history.to_detail_dict())
