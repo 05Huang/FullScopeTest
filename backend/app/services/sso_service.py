@@ -185,6 +185,25 @@ class LDAPProvider(SSOProvider):
     def is_configured(self) -> bool:
         return bool(self.server_url and self.base_dn)
 
+    @staticmethod
+    def _escape_ldap_filter(value: str) -> str:
+        """
+        转义 LDAP 搜索过滤器中的特殊字符（RFC 4515）
+
+        防止 LDAP 注入攻击，如: *)(uid=*))(|(uid=*
+        """
+        # RFC 4515: * \ ( ) NUL 需要转义为 \xx 形式
+        escape_map = {
+            '*': '\\2a',
+            '\\': '\\5c',
+            '(': '\\28',
+            ')': '\\29',
+            '\x00': '\\00',
+        }
+        for char, escaped in escape_map.items():
+            value = value.replace(char, escaped)
+        return value
+
     def get_login_url(self, redirect_uri: str, state: str) -> str:
         # LDAP 通过用户名密码直接认证，不使用跳转 URL
         # 返回一个提示 URL，前端会显示 LDAP 登录表单
@@ -211,7 +230,9 @@ class LDAPProvider(SSOProvider):
             else:
                 conn = Connection(server, auto_bind=True)
 
-            search_dn = self.search_filter.format(username=username)
+            # 转义用户名中的 LDAP 特殊字符，防止 LDAP 注入
+            safe_username = self._escape_ldap_filter(username)
+            search_dn = self.search_filter.format(username=safe_username)
             conn.search(self.base_dn, search_dn, attributes=['*'])
 
             if not conn.entries:
