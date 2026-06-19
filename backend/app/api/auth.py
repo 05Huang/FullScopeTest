@@ -192,6 +192,7 @@ def login():
 
     # 更新最后登录时间
     user.update_last_login()
+    db.session.commit()
 
     # 生成 Token (identity 需要是字符串)
     access_token = create_access_token(identity=str(user.id))

@@ -123,10 +123,9 @@ class User(db.Model):
         return self.role == ROLE_ADMIN
 
     def update_last_login(self):
-        """更新最后登录时间"""
+        """更新最后登录时间（调用方需负责 commit）"""
         from datetime import timezone
         self.last_login = datetime.now(timezone.utc)
-        db.session.commit()
 
     def __repr__(self):
         return f'<User {self.username}>'

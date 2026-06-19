@@ -96,6 +96,7 @@ async def login_v2(request_data: LoginRequest):
         raise HTTPException(status_code=403, detail='账号已被禁用')
 
     user.update_last_login()
+    db.session.commit()
 
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
