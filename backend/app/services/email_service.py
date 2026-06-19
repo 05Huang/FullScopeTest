@@ -64,11 +64,17 @@ class SmtpEmailBackend(EmailBackend):
             else:
                 server = smtplib.SMTP(self.host, self.port, timeout=30)
 
-            if self.user:
-                server.login(self.user, self.password)
+            try:
+                if self.user:
+                    server.login(self.user, self.password)
 
-            server.sendmail(from_addr, [to], msg.as_string())
-            server.quit()
+                server.sendmail(from_addr, [to], msg.as_string())
+            finally:
+                # 确保连接始终关闭，防止连接泄漏
+                try:
+                    server.quit()
+                except Exception:
+                    pass
 
             logger.info("SMTP 邮件发送成功", to=to, subject=subject)
             return True
