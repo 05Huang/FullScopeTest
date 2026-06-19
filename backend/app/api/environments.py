@@ -466,3 +466,46 @@ def import_environment(project_id):
         )
     except Exception as e:
         return error_response(400, f'导入失败: {str(e)}')
+
+
+@api_bp.route('/environments/<int:env_id>/export-docker', methods=['GET'])
+@jwt_required()
+def export_environment_docker(env_id):
+    """导出环境配置为 Docker Compose 格式"""
+    user_id = get_current_user_id()
+
+    env = Environment.query.get(env_id)
+    if not env:
+        return error_response(404, '环境不存在')
+
+    project = Project.query.filter_by(id=env.project_id, owner_id=user_id).first()
+    if not project:
+        return error_response(403, '无权访问此环境')
+
+    # 构建 .env 文件内容
+    env_lines = [
+        f'# FullScopeTest 环境配置',
+        f'# 环境名称: {env.name}',
+        f'# 导出时间: {datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}',
+        '',
+        f'BASE_URL={env.base_url or ""}',
+    ]
+    for key, value in (env.variables or {}).items():
+        env_lines.append(f'{key}={value}')
+
+    # 构建 docker-compose snippet
+    compose_lines = [
+        '# FullScopeTest 环境配置片段',
+        '# 将以下内容添加到 docker-compose.yml 的 service 配置中',
+        f'# 环境: {env.name}',
+        '',
+        'environment:',
+    ]
+    for key, value in (env.variables or {}).items():
+        compose_lines.append(f'  - {key}=${{{key}}}')
+
+    return success_response(data={
+        'env_file': '\n'.join(env_lines),
+        'compose_snippet': '\n'.join(compose_lines),
+        'environment_name': env.name,
+    })
