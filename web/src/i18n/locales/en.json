@@ -967,6 +967,7 @@
     "deleteProjectConfirm": "Delete project \"{{name}}\"? This action cannot be undone.",
     "deleteProjectSuccess": "Project deleted successfully",
     "deleteProjectFailed": "Failed to delete project",
+    "pinToggleSuccess": "Project pin status updated",
     "user": "User",
     "envNotice": "You are in the production environment. Some features may be slower due to personal server limitations.",
     "switchToLight": "Switch to Light Mode",

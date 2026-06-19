@@ -24,6 +24,8 @@ import {
   DotChartOutlined,
   EditOutlined,
   DeleteOutlined,
+  PushpinOutlined,
+  PushpinFilled,
   TeamOutlined,
   FileSearchOutlined,
   KeyOutlined,
@@ -301,6 +303,19 @@ const MainLayout = () => {
         }
       },
     })
+  }
+
+  // P31-6: 置顶/取消置顶项目
+  const handleTogglePin = async (projectId: number) => {
+    try {
+      const res = await projectService.togglePinProject(projectId)
+      if (res.code === 200) {
+        message.success(res.message || t('layout.pinToggleSuccess') || '操作成功')
+        await fetchProjects()
+      }
+    } catch {
+      message.error(t('common.failed') || '操作失败')
+    }
   }
 
   // 加载项目列表
@@ -653,14 +668,32 @@ const MainLayout = () => {
               trigger={['click']}
               menu={{
                 items: [
-                  ...projects.map(p => ({
+                  // P31-6: 置顶项目排在前面
+                  ...[...projects].sort((a, b) => {
+                    if (a.is_pinned && !b.is_pinned) return -1
+                    if (!a.is_pinned && b.is_pinned) return 1
+                    return 0
+                  }).map(p => ({
                     key: `project-${p.id}`,
                     label: (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.is_pinned && <PushpinFilled style={{ fontSize: 12, color: '#2D6A64', marginRight: 6 }} />}
                           {p.name}
                         </span>
                         <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          {/* P31-6: 置顶/取消置顶按钮 */}
+                          {p.is_pinned ? (
+                            <PushpinFilled
+                              style={{ fontSize: 13, color: '#2D6A64', cursor: 'pointer' }}
+                              onClick={(e) => { e.stopPropagation(); handleTogglePin(p.id) }}
+                            />
+                          ) : (
+                            <PushpinOutlined
+                              style={{ fontSize: 13, color: '#999', cursor: 'pointer' }}
+                              onClick={(e) => { e.stopPropagation(); handleTogglePin(p.id) }}
+                            />
+                          )}
                           <EditOutlined
                             style={{ fontSize: 13, color: '#999' }}
                             onClick={(e) => {

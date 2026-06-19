@@ -967,6 +967,7 @@
     "deleteProjectConfirm": "确定删除项目「{{name}}」吗？此操作不可恢复。",
     "deleteProjectSuccess": "项目删除成功",
     "deleteProjectFailed": "项目删除失败",
+    "pinToggleSuccess": "项目置顶状态已更新",
     "user": "用户",
     "envNotice": "您目前处于线上环境，受限于个人服务器配置，部分功能性能可能会不理想。",
     "switchToLight": "切换到亮色模式",

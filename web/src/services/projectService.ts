@@ -4,6 +4,8 @@ export interface Project {
   id: number
   name: string
   description?: string
+  is_pinned?: boolean
+  pinned_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -34,10 +36,16 @@ export const deleteProject = (id: number): Promise<ApiResponse> => {
   return api.delete(`/projects/${id}`) as Promise<ApiResponse>
 }
 
+/** 置顶/取消置顶项目 */
+export const togglePinProject = (id: number): Promise<ApiResponse> => {
+  return api.put(`/projects/${id}/pin`) as Promise<ApiResponse>
+}
+
 export const projectService = {
   getProjects,
   getProject,
   createProject,
   updateProject,
   deleteProject,
+  togglePinProject,
 }
