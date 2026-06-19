@@ -555,6 +555,10 @@ def oidc_callback():
 
     user = find_or_create_sso_user(sso_info, 'oidc')
 
+    # 确保 SSO 用户有组织上下文（首次登录自动创建个人空间）
+    from ..middleware.tenant import ensure_user_has_organization
+    ensure_user_has_organization(user.id)
+
     # 生成 Token 并返回（与普通登录一致）
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
@@ -598,6 +602,10 @@ def ldap_login():
         return error_response(401, 'LDAP 认证失败，用户名或密码错误')
 
     user = find_or_create_sso_user(sso_info, 'ldap')
+
+    # 确保 SSO 用户有组织上下文（首次登录自动创建个人空间）
+    from ..middleware.tenant import ensure_user_has_organization
+    ensure_user_has_organization(user.id)
 
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
