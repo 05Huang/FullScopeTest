@@ -1488,3 +1488,394 @@
 | 第五阶段（P28-P30） | 30 | 30 | 0 |
 | 第六阶段（P31-P32） | 12 | 12 | 0 |
 | **总计** | **188** | **188** | **0** |
+
+---
+
+# 第七阶段：全量 Bug 修复
+
+> 目标：修复全面代码审计中发现的所有类型 Bug，涵盖安全漏洞、逻辑错误、资源泄漏、前端缺陷、数据一致性等。
+> 来源：2026-06-19 全面 Bug 审计，覆盖前后端 ~155K 行代码，审查 150+ 源文件。
+
+---
+
+## P33：安全类 Bug（🔴 严重）
+
+- [x] P33-1: XSS — Reports.tsx dangerouslySetInnerHTML 未转义（🔴）→ `db0beb8`
+- [x] P33-2: OIDC state 参数未校验 CSRF 风险（🔴）→ `99affb3`
+- [x] P33-3: LDAP 搜索过滤器注入风险（🔴）→ `9b2813b`
+- [x] P33-4: 生产环境 SECRET_KEY/JWT_SECRET_KEY 可为 None（🔴）→ `77a966e`
+- [x] P33-5: 登录页硬编码演示账号凭据（🔴）→ `ed48775`
+- [x] P33-6: SMTP 连接未用 context manager（🔴）→ `89d002a`
+
+---
+
+### P33-1: XSS — Reports.tsx dangerouslySetInnerHTML 未转义
+
+**文件**: `web/src/pages/Reports.tsx` 第 619 行
+
+**问题**: 使用 `dangerouslySetInnerHTML={{ __html: reportHtml }}` 直接渲染后端返回的 HTML，未经 DOMPurify 或任何转义。若后端报告内容被污染（存储型 XSS），恶意脚本会在用户浏览器中执行。
+
+**修复**: 安装 DOMPurify，渲染前调用 `DOMPurify.sanitize(reportHtml)`。
+
+---
+
+### P33-2: OIDC state 参数未校验（CSRF 风险）
+
+**文件**: `backend/app/api/auth.py` 第 494 行（生成 state），第 505-549 行（OIDC 回调未校验 state）
+
+**问题**: `oidc_login_url()` 生成 `state` 参数并返回给前端，但 `oidc_callback()` 处理回调时完全未校验 `state` 参数。攻击者可构造恶意回调 URL 诱骗用户登录攻击者账户（CSRF 登录攻击）。
+
+**修复**: 在 `oidc_callback` 中增加 `state` 参数校验，前端需在发起 OIDC 登录时将 state 存入 sessionStorage，回调时传回后端比对。
+
+---
+
+### P33-3: LDAP 搜索过滤器注入风险
+
+**文件**: `backend/app/services/sso_service.py` 第 214 行
+
+**问题**: `search_dn = self.search_filter.format(username=username)` 直接将用户输入的 `username` 插入 LDAP 搜索过滤器。若用户名包含 LDAP 特殊字符（如 `*`, `(`, `)`），可构造恶意过滤器绕过认证。
+
+**修复**: 对 `username` 进行 LDAP 特殊字符转义（参照 RFC 4515），或使用 ldap3 库的参数化搜索。
+
+---
+
+### P33-4: 生产环境 SECRET_KEY/JWT_SECRET_KEY 可为 None
+
+**文件**: `backend/app/config.py` 第 209-210 行
+
+**问题**: `ProductionConfig` 中 `SECRET_KEY = os.environ.get('SECRET_KEY')` 和 `JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')`，若环境变量未设置则为 `None`。Flask 和 JWT 库在 None 密钥下会直接崩溃或产生不可预测行为。
+
+**修复**: 在 `ProductionConfig.__init__` 或应用启动时检查这两个值，若为 None 则抛出明确错误信息，阻止应用启动。
+
+---
+
+### P33-5: 登录页硬编码演示账号凭据
+
+**文件**: `web/src/pages/Login.tsx` 第 233-236 行
+
+**问题**: 登录页面自动填充 `username: 'huangxuan', password: 'Test@123456'`，虽有条件判断 `!isRegister && !autoFilled.current`，但若构建时未正确设置环境变量，生产环境也会展示。同时 `message.open` 展示提示信息会暴露测试账号存在。
+
+**修复**: 将自动填充逻辑限制在 `import.meta.env.DEV === true` 条件下，生产构建完全移除。
+
+---
+
+### P33-6: SMTP 连接未用 context manager
+
+**文件**: `backend/app/services/email_service.py` 第 62-71 行
+
+**问题**: SMTP 连接使用手动 `server.quit()` 关闭，若 `server.login()` 或 `server.sendmail()` 抛出异常，连接不会被关闭，导致连接泄漏。
+
+**修复**: 使用 `try/finally` 或 Python 3 的 `with` 语句（需适配 SMTP 的 `__enter__`/`__exit__`）确保连接始终关闭。
+
+---
+
+## P34：逻辑类 Bug（🟡 中等）
+
+- [ ] P34-1: 租户中间件未校验用户对 org 的访问权（🔴）
+- [ ] P34-2: Token 黑名单 blacklist_all_user_tokens 是空操作（🟡）
+- [ ] P34-3: SSO OIDC 回调未设置用户组织（🟡）
+- [ ] P34-4: LDAP 登录后前端未更新 authStore（🟡）
+- [ ] P34-5: 登录失败/会话存储为内存重启丢失（🟡）
+- [ ] P34-6: Organization.to_dict() N+1 查询（🟡）
+- [ ] P34-7: User.update_last_login() 内部调用 commit（🟡）
+- [ ] P34-8: User.to_dict() 泄露 sso_provider（🟡）
+- [ ] P34-9: error_handler 500 在生产环境未记录 traceback（🟡）
+- [ ] P34-10: rate_limit_middleware docstring 位置错误（🟢）
+- [ ] P34-11: 管理员权限检查仅前端（🟡）
+- [ ] P34-12: api.ts 401 刷新失败后未 reject（🟡）
+
+---
+
+### P34-1: 租户中间件未校验用户对 org 的访问权
+
+**文件**: `backend/app/middleware/tenant.py` 第 118-120 行
+
+**问题**: 当用户有多个组织时，`X-Organization-ID` header 直接赋值给 `g.organization_id`，**未校验用户是否属于该组织**。攻击者可伪造 header 访问其他组织的数据。
+
+```python
+g.organization_id = request.headers.get('X-Organization-ID') or request.args.get('organization_id')
+if g.organization_id:
+    g.organization_id = int(g.organization_id)
+```
+
+**修复**: 在赋值后增加 `if g.organization_id and int(g.organization_id) not in org_ids: g.organization_id = None`。
+
+---
+
+### P34-2: Token 黑名单 blacklist_all_user_tokens 是空操作
+
+**文件**: `backend/app/services/token_blacklist.py` 第 88-98 行
+
+**问题**: `blacklist_all_user_tokens()` 仅记录日志并返回 True，实际上没有任何 Token 被黑名单化。修改密码后旧 Token 仍然有效。
+
+**修复**: 实现基于 Redis 的 Token 批量黑名单：维护 `user:{user_id}:token_version` 计数器，JWT 中嵌入 version，验证时比对。
+
+---
+
+### P34-3: SSO OIDC 回调未设置用户组织
+
+**文件**: `backend/app/api/auth.py` 第 505-549 行
+
+**问题**: OIDC 回调创建/关联用户后直接返回 Token，但未调用 `ensure_user_has_organization()`。若 SSO 用户首次登录，将没有组织上下文，所有需要 org_id 的 API 都会失败。
+
+**修复**: 在 `oidc_callback` 和 `ldap_login` 中，创建用户后调用 `ensure_user_has_organization(user.id)`。
+
+---
+
+### P34-4: LDAP 登录后前端未更新 authStore
+
+**文件**: `web/src/pages/Login.tsx` 第 169-187 行
+
+**问题**: `handleLDAPLogin` 成功后直接 `window.location.href = '/dashboard'`，未调用 `setAuth(data.user)` 更新 authStore。页面跳转后 authStore 中 `isAuthenticated` 仍为 false（或 localStorage 中的旧值），可能导致路由守卫拦截。
+
+**修复**: 在 `window.location.href` 赋值前调用 `setAuth(data.user)`。
+
+---
+
+### P34-5: 登录失败/会话存储为内存，重启丢失
+
+**文件**: `backend/app/services/password_policy.py` 第 32 行，`backend/app/services/session_manager.py` 第 43 行
+
+**问题**: `_login_failure_store` 和 `SessionManager._sessions` 都是 Python dict 内存存储。服务器重启后：(1) 账户锁定状态丢失，攻击者可无限尝试密码；(2) 所有会话丢失。
+
+**修复**: password_policy 已有 Redis 回退逻辑但未在所有路径使用。session_manager 需要 Redis/数据库持久化层。
+
+---
+
+### P34-6: Organization.to_dict() N+1 查询
+
+**文件**: `backend/app/models/organization.py` 第 54-55 行
+
+**问题**: `self.members.count()` 和 `self.projects.count()` 在每次序列化时触发独立 SQL 查询。列表接口返回 N 个组织时产生 2N 次额外查询。
+
+**修复**: 使用 `func.count()` 子查询或在查询时 `db.session.query(Organization, func.count(...)).join(...).group_by(...)` 预加载计数。
+
+---
+
+### P34-7: User.update_last_login() 内部调用 commit
+
+**文件**: `backend/app/models/user.py` 第 125-129 行
+
+**问题**: Model 方法内部调用 `db.session.commit()` 违反了事务管理最佳实践。若调用方在更大事务中调用此方法，commit 会提前提交部分数据，破坏原子性。
+
+**修复**: 移除 `db.session.commit()`，由调用方负责提交。
+
+---
+
+### P34-8: User.to_dict() 泄露 sso_provider
+
+**文件**: `backend/app/models/user.py` 第 63 行
+
+**问题**: `to_dict()` 返回 `sso_provider` 字段，通过 `GET /auth/me` 和登录响应暴露给前端。SSO 提供商信息属于内部配置，不应暴露给普通用户。
+
+**修复**: 仅在管理员接口中返回 `sso_provider`，普通 `to_dict()` 中移除。
+
+---
+
+### P34-9: error_handler 500 在生产环境未记录 traceback
+
+**文件**: `backend/app/middleware/error_handler.py` 第 100 行
+
+**问题**: `traceback=traceback.format_exc() if not is_production else None`，生产环境 500 错误不记录完整堆栈，极大增加线上问题排查难度。
+
+**修复**: 始终记录 traceback 到日志（`logger.error` 已记录 `error=str(e)`），但 traceback 参数应始终传入。可改为 `traceback=traceback.format_exc()` 移除条件判断。
+
+---
+
+### P34-10: rate_limit_middleware docstring 位置错误
+
+**文件**: `backend/app/middleware/rate_limit.py` 第 30-32 行
+
+**问题**: `check_rate_limit` 函数的 docstring 位于 `if` 语句之后，不符合 Python 规范，help() 和文档工具无法正确提取。
+
+**修复**: 将 docstring 移到函数体第一行。
+
+---
+
+### P34-11: 管理员权限检查仅前端
+
+**文件**: `web/src/pages/admin/UserManagement.tsx` 第 89-95 行
+
+**问题**: 前端通过 `if (!isAdmin)` 展示"Access Denied"页面，但后端 admin API 的权限检查需要确认。若后端缺少对应的 admin 角色校验，普通用户可直接调用 API。
+
+**修复**: 确认后端 admin API 端点都有 `@jwt_required()` + admin 角色校验装饰器。
+
+---
+
+### P34-12: api.ts 401 刷新失败后未 reject
+
+**文件**: `web/src/services/api.ts` 第 122-128 行
+
+**问题**: 401 刷新 token 失败的 catch 块中调用 `logout()` 和跳转后未 `return Promise.reject(error)`，原请求会以 undefined 结果 resolve，调用方可能误认为请求成功。
+
+**修复**: 在 catch 块末尾添加 `return Promise.reject(error)`。
+
+---
+
+## P35：前端缺陷（🟡 中等）
+
+- [ ] P35-1: GlobalSearch 三处硬编码中文未走 i18n（🟡）
+- [ ] P35-2: Register.tsx 是废弃页面应删除（🟡）
+- [ ] P35-3: 主题切换后 Monaco Editor 未响应（🟡）
+- [ ] P35-4: UserManagement 日期显示依赖浏览器 locale（🟢）
+- [ ] P35-5: ErrorBoundary console.error 在生产环境应移除（🟢）
+- [ ] P35-6: 翻转卡片 Register 页 logo 不一致（🟢）
+
+---
+
+### P35-1: GlobalSearch 三处硬编码中文未走 i18n
+
+**文件**: `web/src/components/GlobalSearch.tsx`
+
+- 第 59 行: `<Tag color="blue">接口用例</Tag>` → 应为 `t('globalSearch.apiCase')`
+- 第 60 行: `<Tag color="green">Web脚本</Tag>` → 应为 `t('globalSearch.webScript')`
+- 第 151 行: `"未找到相关资产"` → 应为 `t('globalSearch.noResults')`
+- 第 153 行: `"输入内容并按回车搜索"` → 应为 `t('globalSearch.inputHint')`
+
+---
+
+### P35-2: Register.tsx 是废弃页面
+
+**文件**: `web/src/pages/Register.tsx`
+
+**问题**: 独立的 Register 页面使用旧版 UI 风格（紫色渐变背景、Card 布局），与 Login.tsx 中集成的翻转注册表单完全不同。存在两套注册入口，用户体验混乱。且 Register.tsx 中的 logo 字母为 "E" 而非品牌 logo。
+
+**修复**: 删除 `Register.tsx`，确保路由 `/register` 指向 `Login.tsx` 的注册模式（已通过 `getModeFromPathname` 支持）。
+
+---
+
+### P35-3: 主题切换后 Monaco Editor 未响应
+
+**文件**: `web/src/pages/api-test/ResponseViewer.tsx` 第 99 行
+
+**问题**: Monaco Editor 的 `theme` prop 通过 `useThemeStore` 的 `resolvedTheme` 计算，但 Monaco Editor 实例在主题切换后不会自动重新渲染主题。需要调用 `monaco.editor.setTheme()` 或重新 mount 组件。
+
+**修复**: 给 Monaco Editor 组件加 `key={monacoTheme}` 强制重新挂载，或使用 `beforeMount` 回调注册自定义主题。
+
+---
+
+### P35-4: UserManagement 日期显示依赖浏览器 locale
+
+**文件**: `web/src/pages/admin/UserManagement.tsx` 第 71 行
+
+**问题**: `new Date(v).toLocaleDateString()` 输出格式取决于用户浏览器语言环境，中文浏览器显示 "2026/6/19"，英文浏览器显示 "6/19/2026"，导致 UI 不一致。
+
+**修复**: 使用统一格式 `new Date(v).toLocaleDateString('zh-CN')` 或自定义格式化函数。
+
+---
+
+### P35-5: ErrorBoundary console.error 在生产环境应移除
+
+**文件**: `web/src/components/ErrorBoundary.tsx` 第 26 行
+
+**问题**: `console.error("Uncaught error:", error, errorInfo)` 在生产环境仍会输出到控制台。虽不影响功能，但违反生产环境日志规范。
+
+**修复**: 使用 `if (import.meta.env.DEV)` 包裹，或替换为 Sentry 等错误追踪服务。
+
+---
+
+### P35-6: 翻转卡片 Register 页 logo 不一致
+
+**文件**: `web/src/pages/Register.tsx` 第 77 行
+
+**问题**: 独立 Register 页的 logo 为字母 "E"，而 Login.tsx 和 MainLayout 使用品牌 logo 图片。视觉不一致。
+
+**修复**: 随 P35-2 一起删除 Register.tsx。
+
+---
+
+## P36：代码质量与类型安全（🟢 低优先级）
+
+- [ ] P36-1: types/ 目录大量 any 类型（🟢）
+- [ ] P36-2: 20+ 处 console.error 在生产环境输出（🟢）
+- [ ] P36-3: password_policy 每次调用创建新 Redis 连接（🟡）
+- [ ] P36-4: 各服务单例模式手动实现不一致（🟢）
+- [ ] P36-5: 204 处 datetime.utcnow() 使用 deprecated API（🟢）
+- [ ] P36-6: 多处 db.session.commit() 缺少 try/except（🟡）
+
+---
+
+### P36-1: types/ 目录大量 any 类型
+
+**文件**: `web/src/types/` 目录下 12+ 处 `any`
+
+**问题**: `api-test.ts` 中 `body?: any`、`body: any`、`[key: string]: any` 等，`perf-test.ts` 中 `headers?: Record<string, any>`、`body?: any`，`web-test.ts` 中 `report: any`。TypeScript 类型安全名存实亡。
+
+**修复**: 逐步将 `any` 替换为具体类型，如 `body?: Record<string, unknown> | string`、`report: WebTestReport` 等。
+
+---
+
+### P36-2: 20+ 处 console.error 在生产环境输出
+
+**文件**: 分布在 `GlobalSearch.tsx`、`GlobalCopilot.tsx`、`NotificationPopover.tsx`、`useGeoLanguage.ts`、`useLocalStorage.ts`、`useTableOperations.ts`、`AIInsightsDashboard.tsx`、`ApiTestWorkspace.tsx` 等
+
+**问题**: 大量 `console.error` 在 catch 块中直接输出，生产环境会在用户控制台暴露内部错误信息。
+
+**修复**: 创建统一的 `logger` 工具（`web/src/utils/logger.ts`），生产环境静默或上报 Sentry。
+
+---
+
+### P36-3: password_policy 每次调用创建新 Redis 连接
+
+**文件**: `backend/app/services/password_policy.py` 第 40-51 行
+
+**问题**: `_get_redis()` 每次调用都 `redis_lib.from_url()` 创建新连接并 `ping()`，无连接池缓存。高频登录尝试场景下会创建大量短连接。
+
+**修复**: 使用模块级单例缓存连接，失败时重建，与 `rate_limit_service.py` 的模式保持一致。
+
+---
+
+### P36-4: 各服务单例模式手动实现不一致
+
+**文件**: `token_blacklist.py`、`session_manager.py`、`quota_enforcement_service.py`、`two_factor_service.py`、`ip_filter_service.py`、`data_masking_service.py` 等
+
+**问题**: 多个服务使用 `_instance = None` + `get_xxx_service()` 手动单例，但实现不一致：有的检查 None 重建，有的不检查；有的用 `global`，有的不用。
+
+**修复**: 提供统一的单例工具装饰器或基类，如 `@singleton` 装饰器。
+
+---
+
+### P36-5: 204 处 datetime.utcnow() 使用 deprecated API
+
+**文件**: 分布在 backend/app/ 全目录
+
+**问题**: Python 3.12+ 中 `datetime.utcnow()` 已标记为 deprecated，推荐使用 `datetime.now(timezone.utc)`。项目中 204 处使用旧 API。
+
+**修复**: 全局替换为 `datetime.now(timezone.utc)`，或创建工具函数 `utcnow()` 封装。
+
+---
+
+### P36-6: 多处 db.session.commit() 缺少 try/except
+
+**文件**: 分布在 backend/app/ 全目录（201 处 commit）
+
+**问题**: 大量 `db.session.commit()` 未包裹 try/except，若数据库操作失败（如唯一约束冲突、连接断开），异常会直接抛到上层，可能导致数据不一致（部分写入成功部分失败）。
+
+**修复**: 对关键业务路径的 commit 增加 try/except/rollback 处理，记录错误日志。
+
+---
+
+## 第七阶段任务统计
+
+| 阶段 | 任务数 | 🔴 | 🟡 | 🟢 |
+|------|--------|-----|-----|-----|
+| P33 安全类 Bug | 6 | 6 | 0 | 0 |
+| P34 逻辑类 Bug | 12 | 1 | 9 | 2 |
+| P35 前端缺陷 | 6 | 0 | 3 | 3 |
+| P36 代码质量 | 6 | 0 | 2 | 4 |
+| **总计** | **30** | **7** | **14** | **9** |
+
+---
+
+## 全阶段总进度汇总（最终）
+
+| 阶段 | 总数 | 已完成 | 未完成 |
+|------|------|--------|--------|
+| 第一阶段（P0-P9） | 34 | 34 | 0 |
+| 第二阶段（P10-P12） | 29 | 29 | 0 |
+| 第三阶段（P13-P22） | 63 | 63 | 0 |
+| 第四阶段（P23-P27） | 20 | 20 | 0 |
+| 第五阶段（P28-P30） | 30 | 30 | 0 |
+| 第六阶段（P31-P32） | 12 | 12 | 0 |
+| **第七阶段（P33-P36）** | **30** | 0 | **30** |
+| **总计** | **218** | **188** | **30** |
