@@ -231,13 +231,20 @@ def get_report_statistics():
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
     
-    # 构建基础查询
+    # 构建基础查询（组织级过滤，而非仅项目所有者）
+    from ..middleware.tenant import get_current_organization_id
+    org_id = get_current_organization_id()
+
     base_query = db.session.query(TestRun).join(
         Project, TestRun.project_id == Project.id
     ).filter(
-        Project.owner_id == user_id,
         TestRun.created_at >= start_date
     )
+
+    if org_id:
+        base_query = base_query.filter(Project.organization_id == org_id)
+    else:
+        base_query = base_query.filter(Project.owner_id == user_id)
     
     if project_id:
         base_query = base_query.filter(TestRun.project_id == project_id)
@@ -257,9 +264,13 @@ def get_report_statistics():
     ).join(
         Project, TestRun.project_id == Project.id
     ).filter(
-        Project.owner_id == user_id,
         TestRun.created_at >= start_date
     )
+
+    if org_id:
+        type_stats = type_stats.filter(Project.organization_id == org_id)
+    else:
+        type_stats = type_stats.filter(Project.owner_id == user_id)
     
     if project_id:
         type_stats = type_stats.filter(TestRun.project_id == project_id)
@@ -275,9 +286,13 @@ def get_report_statistics():
     ).join(
         Project, TestRun.project_id == Project.id
     ).filter(
-        Project.owner_id == user_id,
         TestRun.created_at >= start_date
     )
+
+    if org_id:
+        daily_stats = daily_stats.filter(Project.organization_id == org_id)
+    else:
+        daily_stats = daily_stats.filter(Project.owner_id == user_id)
     
     if project_id:
         daily_stats = daily_stats.filter(TestRun.project_id == project_id)
