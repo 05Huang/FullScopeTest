@@ -36,6 +36,7 @@ from .issue_link import IssueLink
 from .test_case_version import TestCaseVersion
 from .comment import Comment
 from .embedding_cache import EmbeddingCache
+from .mock_server import MockServer, MockRule, MockRequestLog
 
 __all__ = [
     'User',
@@ -79,4 +80,7 @@ __all__ = [
     'TestCaseVersion',
     'Comment',
     'EmbeddingCache',
+    'MockServer',
+    'MockRule',
+    'MockRequestLog',
 ]

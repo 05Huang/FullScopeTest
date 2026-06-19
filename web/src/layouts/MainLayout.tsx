@@ -413,6 +413,7 @@ const MainLayout = () => {
       { label: t('sidebar.cicdMain'), path: '/ci-cd' },
       { label: t('sidebar.triggerRules'), path: '/trigger-rules' },
     ]},
+    { icon: <ApiOutlined />, label: t('sidebar.mockServers') || 'Mock 服务器', path: '/mock-servers' },
     { icon: <BellOutlined />, label: t('sidebar.notifications'), path: '/notification-settings' },
     { icon: <BarChartOutlined />, label: t('sidebar.teamMetrics'), path: '/team-metrics' },
     { icon: <TeamOutlined />, label: t('sidebar.organizations'), path: '/organizations' },

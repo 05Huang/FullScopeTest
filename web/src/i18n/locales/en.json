@@ -258,7 +258,8 @@
     "notifications": "Notification Settings",
     "teamMetrics": "Team Metrics",
     "integrations": "Integrations",
-    "userManagement": "User Management"
+    "userManagement": "User Management",
+    "mockServers": "Mock Servers"
   },
   "admin": {
     "userManagement": "User Management",

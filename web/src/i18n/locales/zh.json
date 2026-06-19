@@ -258,7 +258,8 @@
     "notifications": "通知设置",
     "teamMetrics": "团队效能",
     "integrations": "集成管理",
-    "userManagement": "用户管理"
+    "userManagement": "用户管理",
+    "mockServers": "Mock 服务器"
   },
   "admin": {
     "userManagement": "用户管理",

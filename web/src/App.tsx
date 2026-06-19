@@ -44,6 +44,7 @@ const NotificationSettings = lazy(() => import('./pages/NotificationSettings'))
 const TeamMetrics = lazy(() => import('./pages/TeamMetrics'))
 const Integrations = lazy(() => import('./pages/Integrations'))
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'))
+const MockServers = lazy(() => import('./pages/MockServers'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -353,6 +354,16 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <AuditLogs />
+            </Suspense>
+          }
+        />
+
+        {/* Mock 服务器 */}
+        <Route
+          path="mock-servers"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <MockServers />
             </Suspense>
           }
         />
