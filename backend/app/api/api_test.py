@@ -1236,3 +1236,85 @@ def detect_api_changes():
     except Exception as exc:
         logger.error('变更检测失败', case_id=case_id, error=str(exc))
         return error_response(500, f'变更检测失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/bdd/parse', methods=['POST'])
+@jwt_required()
+def parse_bdd():
+    """解析 Gherkin/BDD 文本为测试用例结构"""
+    from ..services.bdd_parser_service import get_bdd_parser_service
+
+    data = request.get_json() or {}
+    gherkin_text = data.get('gherkin', '')
+    project_id = data.get('project_id')
+
+    if not gherkin_text:
+        return error_response(400, '缺少 Gherkin 文本')
+
+    try:
+        service = get_bdd_parser_service()
+        result = service.convert_to_test_cases(gherkin_text, project_id=project_id)
+        return success_response(data=result, message=f'解析完成，共 {result["total"]} 个用例')
+    except Exception as exc:
+        logger.error('BDD 解析失败', error=str(exc))
+        return error_response(500, f'BDD 解析失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/bdd/import', methods=['POST'])
+@jwt_required()
+def import_bdd():
+    """导入 Gherkin/BDD 文本为测试用例"""
+    from ..services.bdd_parser_service import get_bdd_parser_service
+
+    data = request.get_json() or {}
+    gherkin_text = data.get('gherkin', '')
+    project_id = data.get('project_id')
+    collection_id = data.get('collection_id')
+
+    if not gherkin_text:
+        return error_response(400, '缺少 Gherkin 文本')
+    if not project_id:
+        return error_response(400, '缺少 project_id')
+
+    try:
+        service = get_bdd_parser_service()
+        result = service.convert_to_test_cases(gherkin_text, project_id=project_id)
+
+        # 创建或使用已有集合
+        if not collection_id:
+            collection = ApiTestCollection(
+                name=result.get('feature_name', 'BDD 导入')[:200],
+                project_id=project_id,
+                description=f'从 BDD/Gherkin 导入，共 {result["total"]} 个场景',
+            )
+            db.session.add(collection)
+            db.session.flush()
+            collection_id = collection.id
+
+        created = 0
+        for case_data in result.get('cases', []):
+            case = ApiTestCase(
+                name=case_data.get('name', '未命名')[:200],
+                method=case_data.get('method', 'GET'),
+                url=case_data.get('url', ''),
+                headers=case_data.get('headers', {}),
+                body=case_data.get('body', ''),
+                body_type=case_data.get('body_type', 'json'),
+                description=case_data.get('description', ''),
+                assertions=case_data.get('assertions', []),
+                collection_id=collection_id,
+                project_id=project_id,
+                tags=case_data.get('tags', []),
+            )
+            db.session.add(case)
+            created += 1
+
+        db.session.commit()
+
+        return success_response(
+            data={'collection_id': collection_id, 'cases_count': created},
+            message=f'BDD 导入完成，共 {created} 个用例',
+        )
+    except Exception as exc:
+        logger.error('BDD 导入失败', error=str(exc))
+        return error_response(500, f'BDD 导入失败: {str(exc)}')
