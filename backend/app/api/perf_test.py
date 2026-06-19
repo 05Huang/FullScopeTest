@@ -841,7 +841,7 @@ def get_running_tests():
 
 @api_bp.route('/perf-test/baselines', methods=['GET'])
 @jwt_required()
-def get_baselines():
+def get_perf_baselines():
     """获取性能测试基线列表"""
     from ..models.perf_baseline import PerfBaseline
 
