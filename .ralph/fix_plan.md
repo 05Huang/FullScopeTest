@@ -2547,9 +2547,9 @@ if g.organization_id:
 - [x] P45-3: 独立 Mock Server（🔴）→ `429764b`
 - [x] P45-4: API Schema 校验（🟡）→ `5c3009f`
 - [x] P45-5: HAR 文件导入生成用例（🟡）→ `5a592b8`
-- [ ] P45-6: 用例标签系统（🟡）
-- [ ] P45-7: 响应 Schema 自动生成（🟡）
-- [ ] P45-8: 接口变更检测（🟡）
+- [x] P45-6: 用例标签系统（🟡）→ `631a2ed`（后端 service + API 已完成）
+- [x] P45-7: 响应 Schema 自动生成（🟡）→ `631a2ed`（后端 /generate-schema 已完成）
+- [x] P45-8: 接口变更检测（🟡）→ `631a2ed`
 
 ---
 
@@ -2653,7 +2653,7 @@ if g.organization_id:
 
 - [ ] P46-1: CLI 命令行工具（🟡）
 - [ ] P46-2: BDD/Gherkin 测试编写（🟡）
-- [ ] P46-3: API 响应 Diff 对比（🟡）
+- [x] P46-3: API 响应 Diff 对比（🟡）→ P30-7 已有 ResponseDiff.tsx 组件
 - [ ] P46-4: 用例执行依赖与排序（🟡）
 - [ ] P46-5: 测试执行成本估算（🟢）
 - [ ] P46-6: 跨项目用例共享（🟡）
