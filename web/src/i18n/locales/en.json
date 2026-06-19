@@ -776,6 +776,7 @@
     "notificationsTab": "Notifications",
     "notificationsHint": "Configure notification channels and subscription events. Supports DingTalk, Feishu, Slack, etc.",
     "promptManagementTab": "Prompt Management",
+    "brandingTab": "Branding",
     "notifyTestComplete": "Test Complete Notification",
     "notifyTestCompleteDesc": "Send notification when test execution completes",
     "notifyTestFailed": "Test Failed Notification",
@@ -823,6 +824,16 @@
     "deactivated": "Version deactivated",
     "activated": "Version activated",
     "statsRefreshed": "Stats refreshed"
+  },
+  "branding": {
+    "platformName": "Platform Name",
+    "logoUrl": "Logo URL",
+    "faviconUrl": "Favicon URL",
+    "primaryColor": "Primary Color",
+    "footerText": "Footer Text",
+    "footerPlaceholder": "© 2026 Your Company",
+    "saveSuccess": "Branding config updated",
+    "saveFailed": "Save failed"
   },
   "documents": {
     "title": "Test Documents",

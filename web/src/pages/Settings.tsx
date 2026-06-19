@@ -15,6 +15,8 @@ import integrationService from '../services/integrationService';
 import {
   promptVersionService, PromptVersion, PromptVersionPayload, PROMPT_FEATURES,
 } from '../services/promptVersionService';
+import { useBranding } from '../hooks/useBranding';
+import api from '../services/api';
 
 const { Text } = Typography;
 
@@ -618,6 +620,81 @@ const Settings: React.FC = () => {
     );
   };
 
+  /** P32-1: 品牌定制子组件 */
+  const BrandingTab: React.FC = () => {
+    const { branding } = useBranding();
+    const [form] = Form.useForm();
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+      form.setFieldsValue({
+        platform_name: branding.platform_name,
+        logo_url: branding.logo_url || '',
+        favicon_url: branding.favicon_url || '',
+        primary_color: branding.primary_color,
+        footer_text: branding.footer_text || '',
+      });
+    }, [branding, form]);
+
+    const handleSave = async () => {
+      try {
+        const values = await form.validateFields();
+        setSaving(true);
+        const payload: Record<string, string> = {};
+        if (values.platform_name) payload.platform_name = values.platform_name;
+        if (values.logo_url) payload.logo_url = values.logo_url;
+        if (values.favicon_url) payload.favicon_url = values.favicon_url;
+        if (values.primary_color) payload.primary_color = values.primary_color;
+        if (values.footer_text) payload.footer_text = values.footer_text;
+        const res = await api.put('/branding/config', payload);
+        if ((res as any).code === 200 || (res as any).data?.code === 200) {
+          message.success(t('branding.saveSuccess') || '品牌配置已更新');
+        }
+      } catch {
+        message.error(t('branding.saveFailed') || '保存失败');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div style={{ padding: '8px 0' }}>
+        <Form form={form} layout="vertical">
+          <Form.Item label={t('branding.platformName') || '平台名称'} name="platform_name">
+            <Input placeholder="FullScopeTest" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label={t('branding.logoUrl') || 'Logo URL'} name="logo_url">
+                <Input placeholder="/logo-full.webp" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={t('branding.faviconUrl') || 'Favicon URL'} name="favicon_url">
+                <Input placeholder="/favicon.ico" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label={t('branding.primaryColor') || '主色调'} name="primary_color">
+                <Input placeholder="#5FA59B" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={t('branding.footerText') || 'Footer 文案'} name="footer_text">
+                <Input placeholder={t('branding.footerPlaceholder') || '© 2026 Your Company'} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
+            {t('settings.saveBtn')}
+          </Button>
+        </Form>
+      </div>
+    );
+  };
+
   const hintBox = (text: string) => (
     <div style={{
       padding: '10px 14px',
@@ -981,6 +1058,17 @@ const Settings: React.FC = () => {
       ),
       children: (
         <PromptManagementTab />
+      ),
+    },
+    {
+      key: 'branding',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <GlobalOutlined /> {t('settings.brandingTab') || '品牌定制'}
+        </span>
+      ),
+      children: (
+        <BrandingTab />
       ),
     },
   ];

@@ -776,6 +776,7 @@
     "notificationsTab": "通知",
     "notificationsHint": "配置通知渠道和订阅事件，支持钉钉、飞书、Slack 等平台。",
     "promptManagementTab": "Prompt 管理",
+    "brandingTab": "品牌定制",
     "notifyTestComplete": "测试完成通知",
     "notifyTestCompleteDesc": "当测试执行完成时发送通知",
     "notifyTestFailed": "测试失败通知",
@@ -823,6 +824,16 @@
     "deactivated": "版本已停用",
     "activated": "版本已激活",
     "statsRefreshed": "统计数据已刷新"
+  },
+  "branding": {
+    "platformName": "平台名称",
+    "logoUrl": "Logo URL",
+    "faviconUrl": "Favicon URL",
+    "primaryColor": "主色调",
+    "footerText": "Footer 文案",
+    "footerPlaceholder": "© 2026 Your Company",
+    "saveSuccess": "品牌配置已更新",
+    "saveFailed": "保存失败"
   },
   "documents": {
     "title": "测试文档",
