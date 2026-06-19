@@ -139,6 +139,19 @@ export const runCollection = (collectionId: number, data?: { env_id?: number }):
   return api.post(`/api-test/collections/${collectionId}/run`, data || {}) as Promise<ApiResponse>
 }
 
+/** 获取测试执行进度 */
+export interface RunProgress {
+  current: number
+  total: number
+  passed: number
+  failed: number
+  status: string
+}
+
+export const getRunProgress = (runId: number): Promise<ApiResponse<RunProgress>> => {
+  return api.get(`/api-test/runs/${runId}/progress`) as Promise<ApiResponse<RunProgress>>
+}
+
 // ==================== AI Assistant ====================
 
 export const getAiConfig = (): Promise<ApiResponse<{
@@ -239,6 +252,7 @@ export const apiTestService = {
   executeRequest,
   runCase,
   runCollection,
+  getRunProgress,
   getAiConfig,
   saveAiConfig,
   generateAiPlan,
