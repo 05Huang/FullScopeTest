@@ -94,6 +94,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
                     </Tooltip>
                   </div>
                   <MonacoEditor
+                    key={monacoTheme}
                     height={250}
                     language="json"
                     theme={monacoTheme}
