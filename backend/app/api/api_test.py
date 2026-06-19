@@ -788,3 +788,52 @@ def import_curl():
         return success_response(data=result)
     except ValueError as e:
         return error_response(400, f'cURL 解析失败: {e}')
+
+
+@api_bp.route('/api-test/execute-scenario', methods=['POST'])
+@jwt_required()
+def execute_scenario():
+    """
+    执行场景编排（多步骤链式请求）
+
+    请求体:
+        steps: 步骤定义列表
+        env_id: 环境 ID（可选）
+        base_url: 基础 URL（可选）
+        variables: 初始变量（可选）
+
+    返回:
+        { total, passed, failed, duration, step_results, variables }
+    """
+    from ..services.scenario_executor import get_scenario_executor
+
+    current_user = get_jwt_identity()
+    data = request.get_json()
+    steps = data.get('steps', [])
+
+    if not steps:
+        return error_response(400, '缺少步骤定义')
+
+    # 获取环境变量
+    env_vars = {}
+    env_id = data.get('env_id')
+    if env_id:
+        from ..models.environment import Environment
+        env = Environment.query.filter_by(id=env_id).first()
+        if env:
+            env_vars = env.variables or {}
+
+    try:
+        executor = get_scenario_executor()
+        result = executor.execute_scenario(steps, {
+            'env_vars': env_vars,
+            'user_id': current_user,
+            'base_url': data.get('base_url', ''),
+            'variables': data.get('variables', {}),
+        })
+        return success_response(data=result)
+    except Exception as e:
+        from ..core.logging import get_logger
+        logger = get_logger(__name__)
+        logger.error('场景执行失败', error=str(e))
+        return error_response(500, f'场景执行失败: {str(e)}')
