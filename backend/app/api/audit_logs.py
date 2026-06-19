@@ -130,3 +130,63 @@ def get_audit_stats():
         'by_resource': {row.resource_type: row.count for row in resource_stats},
         'active_users': [{'user_id': row.user_id, 'count': row.count} for row in active_users],
     })
+
+
+@api_bp.route('/audit-logs/export', methods=['GET'])
+@jwt_required()
+def export_audit_logs():
+    """
+    导出审计日志为 CSV/JSON
+
+    查询参数:
+        format: csv 或 json（默认 csv）
+        action: 操作类型筛选
+        resource_type: 资源类型筛选
+        days: 时间范围（默认 30 天）
+    """
+    import csv
+    import io
+    from datetime import datetime, timedelta, timezone
+    from ..models.audit_log import AuditLog
+
+    current_user = get_current_user_id()
+    export_format = request.args.get('format', 'csv')
+    action_filter = request.args.get('action')
+    resource_filter = request.args.get('resource_type')
+    days = request.args.get('days', 30, type=int)
+
+    # 检查管理员权限
+    from ..models.user import User
+    user = db.session.get(User, current_user)
+    if not user or user.role not in ('admin', 'super_admin'):
+        return error_response(403, '仅管理员可导出审计日志')
+
+    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+    query = AuditLog.query.filter(AuditLog.created_at >= since)
+    if action_filter:
+        query = query.filter_by(action=action_filter)
+    if resource_filter:
+        query = query.filter_by(resource_type=resource_filter)
+
+    logs = query.order_by(AuditLog.created_at.desc()).limit(10000).all()
+
+    if export_format == 'json':
+        data = [log.to_dict() for log in logs]
+        return success_response(data=data)
+
+    # CSV 导出
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID', '用户ID', '操作', '资源类型', '资源ID', '详情', 'IP', '时间'])
+    for log in logs:
+        writer.writerow([
+            log.id, log.user_id, log.action, log.resource_type,
+            log.resource_id, str(log.details or ''), log.ip_address,
+            log.created_at.isoformat() if log.created_at else '',
+        ])
+
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=audit-logs-{days}d.csv'}
+    )
