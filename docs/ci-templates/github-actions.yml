@@ -1,0 +1,28 @@
+# FullScopeTest - GitHub Actions Integration Template
+# Copy to .github/workflows/api-test.yml
+
+name: API Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  api-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run API Tests
+        env:
+          FST_URL: ${{ secrets.FULLSCOPETEST_API_URL }}
+          FST_TOKEN: ${{ secrets.FULLSCOPETEST_API_TOKEN }}
+          COLLECTION_ID: ${{ vars.FST_COLLECTION_ID }}
+        run: |
+          curl -s -X POST "${FST_URL}/api/v1/api-test/collections/${COLLECTION_ID}/run" \
+            -H "Authorization: Bearer ${FST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{}" | jq .
