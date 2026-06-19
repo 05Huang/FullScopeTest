@@ -1221,6 +1221,24 @@ const WebTestScripts = () => {
           <Form.Item name="target_url" label="目标 URL">
             <Input placeholder="https://example.com" />
           </Form.Item>
+          {/* P38-3: 移动端视口测试 */}
+          <Form.Item name="viewport_preset" label="视口尺寸">
+            <Select
+              allowClear
+              placeholder="默认（桌面 1280x720）"
+              options={[
+                { value: 'desktop', label: '桌面 (1280x720)' },
+                { value: 'iphone_se', label: 'iPhone SE (375x667)' },
+                { value: 'iphone_14', label: 'iPhone 14 (390x844)' },
+                { value: 'iphone_14_pro_max', label: 'iPhone 14 Pro Max (430x932)' },
+                { value: 'ipad', label: 'iPad (768x1024)' },
+                { value: 'ipad_pro', label: 'iPad Pro (1024x1366)' },
+                { value: 'pixel_7', label: 'Pixel 7 (412x915)' },
+                { value: 'galaxy_s23', label: 'Galaxy S23 (360x780)' },
+                { value: 'custom', label: '自定义分辨率' },
+              ]}
+            />
+          </Form.Item>
         </Form>
       </Modal>
 
