@@ -19,8 +19,8 @@ const BUILTIN_TEMPLATES: Template[] = [
   {
     id: "crud_create", name: "CRUD - 创建", description: "标准创建资源用例模板", category: "CRUD",
     method: "POST", url_pattern: "{{base_url}}/api/resource",
-    headers: "{"Content-Type": "application/json"}",
-    body: "{"name": "test"}",
+    headers: '{"Content-Type": "application/json"}',
+    body: '{"name": "test"}',
     assertions: "status=201, body.data.id exists",
   },
   {
