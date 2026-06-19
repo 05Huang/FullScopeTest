@@ -6,6 +6,7 @@
 
 import secrets
 from datetime import datetime
+from sqlalchemy import func
 from ..extensions import db
 
 
@@ -41,6 +42,17 @@ class Organization(db.Model):
         return self.invite_code
 
     def to_dict(self):
+        # 使用子查询计算关联数量，避免 N+1 查询
+        member_count = db.session.query(func.count(OrganizationMember.id)).filter(
+            OrganizationMember.organization_id == self.id,
+            OrganizationMember.is_active == True
+        ).scalar() or 0
+
+        from .project import Project
+        project_count = db.session.query(func.count(Project.id)).filter(
+            Project.organization_id == self.id
+        ).scalar() or 0
+
         return {
             'id': self.id,
             'name': self.name,
@@ -51,8 +63,8 @@ class Organization(db.Model):
             'invite_code': self.invite_code,
             'settings': self.settings,
             'is_active': self.is_active,
-            'member_count': self.members.count(),
-            'project_count': self.projects.count(),
+            'member_count': member_count,
+            'project_count': project_count,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
