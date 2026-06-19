@@ -1102,3 +1102,52 @@ def filter_by_tags():
     except Exception as exc:
         logger.error('标签过滤失败', error=str(exc))
         return error_response(500, f'标签过滤失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/validate-schema', methods=['POST'])
+@jwt_required()
+def validate_response_schema():
+    """校验 API 响应是否符合 Schema"""
+    from ..services.schema_validation_service import get_schema_validation_service
+
+    data = request.get_json() or {}
+    schema = data.get('schema')
+    response_body = data.get('response_body', '')
+    status_code = data.get('status_code', 200)
+
+    if not schema:
+        return error_response(400, '缺少 schema 定义')
+
+    try:
+        service = get_schema_validation_service()
+        result = service.validate_response(
+            schema=schema,
+            response_body=response_body,
+            status_code=status_code,
+        )
+        return success_response(data=result)
+    except Exception as exc:
+        logger.error('Schema 校验失败', error=str(exc))
+        return error_response(500, f'Schema 校验失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/generate-schema', methods=['POST'])
+@jwt_required()
+def generate_response_schema():
+    """从 API 响应自动生成 JSON Schema"""
+    from ..services.schema_validation_service import get_schema_validation_service
+
+    data = request.get_json() or {}
+    response_body = data.get('response_body', '')
+    max_depth = data.get('max_depth', 5)
+
+    try:
+        service = get_schema_validation_service()
+        schema = service.generate_schema_from_response(
+            response_body=response_body,
+            max_depth=max_depth,
+        )
+        return success_response(data=schema, message='Schema 生成成功')
+    except Exception as exc:
+        logger.error('Schema 生成失败', error=str(exc))
+        return error_response(500, f'Schema 生成失败: {str(exc)}')

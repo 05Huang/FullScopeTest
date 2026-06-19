@@ -325,6 +325,33 @@ export const filterByTags = (data: {
   return api.post('/api-test/tags/filter', data) as Promise<ApiResponse>
 }
 
+// ==================== Schema 校验 ====================
+
+export interface SchemaValidationResult {
+  valid: boolean
+  errors: Array<{ path: string; message: string; type: string }>
+  warnings: Array<{ path: string; message: string; type: string }>
+  summary: string
+  total_issues: number
+}
+
+/** 校验响应是否符合 Schema */
+export const validateResponseSchema = (data: {
+  schema: Record<string, unknown>
+  response_body: string
+  status_code?: number
+}): Promise<ApiResponse<SchemaValidationResult>> => {
+  return api.post('/api-test/validate-schema', data) as Promise<ApiResponse<SchemaValidationResult>>
+}
+
+/** 从响应自动生成 JSON Schema */
+export const generateResponseSchema = (data: {
+  response_body: string
+  max_depth?: number
+}): Promise<ApiResponse<Record<string, unknown>>> => {
+  return api.post('/api-test/generate-schema', data) as Promise<ApiResponse<Record<string, unknown>>>
+}
+
 // 导出服务对象
 export const apiTestService = {
   getCollections,
@@ -350,4 +377,6 @@ export const apiTestService = {
   applyHealFix,
   getTagStats,
   filterByTags,
+  validateResponseSchema,
+  generateResponseSchema,
 }
