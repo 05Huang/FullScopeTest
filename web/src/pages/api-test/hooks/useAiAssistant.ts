@@ -1,3 +1,4 @@
+import logger from "@/utils/logger"
 import { useState, useEffect } from "react"
 import { message } from "antd"
 import { apiTestService, type AiPlanOperation } from "@/services/apiTestService"
@@ -70,7 +71,7 @@ export function useAiAssistant() {
         setAiVisionApiKey(res.data.vision_api_key || "")
       }
     } catch (e) {
-      console.error("Failed to load AI config", e)
+      logger.error("Failed to load AI config", e)
     } finally {
       setLoadingConfig(false)
     }

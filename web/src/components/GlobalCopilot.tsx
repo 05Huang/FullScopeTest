@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next'
 import { Button, Input, Card, Space, Avatar, Typography, Tooltip } from 'antd';
+import logger from '@/utils/logger';
 import { 
   UserOutlined, 
   SendOutlined, 
@@ -113,7 +114,7 @@ const GlobalCopilot: React.FC = () => {
             setGlobalAiConfig(res.data);
           }
         })
-        .catch(err => console.error('Failed to load global AI config', err));
+        .catch(err => logger.error('Failed to load global AI config', err));
     }
   }, [showConfig]);
 

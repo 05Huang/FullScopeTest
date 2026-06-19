@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import ReactECharts from 'echarts-for-react'
+import logger from '@/utils/logger'
 import type { ColumnsType } from 'antd/es/table'
 import { aiStatsService } from '@/services/aiStatsService'
 
@@ -71,7 +72,7 @@ const AIInsightsDashboard = () => {
       if (t?.code === 200) setTokenConsumption(t.data || [])
       if (v?.code === 200) setPromptVersions(v.data || [])
     } catch (err) {
-      console.error('[AIInsights] fetchData error:', err)
+      logger.error('[AIInsights] fetchData error:', err)
     } finally {
       setLoading(false)
     }

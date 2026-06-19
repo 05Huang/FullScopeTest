@@ -1,3 +1,4 @@
+import logger from "@/utils/logger"
 import React, { useState, useEffect } from 'react'
 import { Tag, Tooltip, Space, Typography, Divider } from 'antd'
 import { InfoCircleOutlined, CopyOutlined } from '@ant-design/icons'
@@ -36,7 +37,7 @@ const EnvironmentVariableHint: React.FC<Props> = ({ envId, showUsage = true }) =
         setEnv(res.data)
       }
     } catch (error) {
-      console.error('加载环境失败', error)
+      logger.error('加载环境失败', error)
     }
   }
 

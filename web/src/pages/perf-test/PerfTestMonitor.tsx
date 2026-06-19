@@ -1,3 +1,4 @@
+import logger from "@/utils/logger"
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import {
@@ -76,7 +77,7 @@ const PerfTestMonitor = () => {
         }
       }
     } catch (error) {
-      console.error('获取运行中测试失败', error)
+      logger.error('获取运行中测试失败', error)
     } finally {
       setLoading(false)
     }
@@ -127,7 +128,7 @@ const PerfTestMonitor = () => {
         })
       }
     } catch (error) {
-      console.error('获取实时数据失败', error)
+      logger.error('获取实时数据失败', error)
     }
   }
 

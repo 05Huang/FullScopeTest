@@ -1,3 +1,4 @@
+import logger from "@/utils/logger"
 import { useState, useEffect } from 'react'
 import {
   Layout,
@@ -108,7 +109,7 @@ const Documents = () => {
         setCategories(res.data || [])
       }
     } catch (error) {
-      console.error('获取分类失败', error)
+      logger.error('获取分类失败', error)
     }
   }
 
@@ -119,7 +120,7 @@ const Documents = () => {
         setTemplates(res.data || [])
       }
     } catch (error) {
-      console.error('获取模板失败', error)
+      logger.error('获取模板失败', error)
     }
   }
 

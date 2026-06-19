@@ -1,5 +1,6 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
+import logger from '@/utils/logger'
 import {
   Layout,
   Tree,
@@ -256,7 +257,7 @@ const ApiTestWorkspace = () => {
         })
       }
     } catch (error) {
-      console.error('恢复草稿失败', error)
+      logger.error('恢复草稿失败', error)
     }
   }
 
@@ -377,7 +378,7 @@ const ApiTestWorkspace = () => {
       // 标记数据已加载，启用 localStorage 自动保存
       setHasLoadedData(true)
     } catch (error) {
-      console.error('加载数据失败', error)
+      logger.error('加载数据失败', error)
     }
   }
 
@@ -1180,7 +1181,7 @@ const ApiTestWorkspace = () => {
         })
         savedCount++
       } catch (e) {
-        console.error('Failed to save case:', c.name, e)
+        logger.error('Failed to save case:', c.name, e)
       }
     }
     
@@ -1250,7 +1251,7 @@ const ApiTestWorkspace = () => {
         })
         successCount++
       } catch (e) {
-        console.error('保存用例失败:', e)
+        logger.error('保存用例失败:', e)
       }
     }
     message.success(`成功保存 ${successCount} 个补充用例`)

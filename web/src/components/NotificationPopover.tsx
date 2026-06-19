@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react'
 import { Popover, List, Avatar, Typography, Badge, Button, Spin } from 'antd'
+import logger from '@/utils/logger'
 import {
   BellOutlined,
   CheckCircleOutlined,
@@ -69,7 +70,7 @@ export const NotificationPopover: React.FC = () => {
         setUnreadCount(mappedNotifications.filter(n => !n.read).length)
       }
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+      logger.error('Failed to fetch notifications:', error)
     } finally {
       setLoading(false)
     }

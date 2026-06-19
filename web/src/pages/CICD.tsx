@@ -1,3 +1,4 @@
+import logger from "@/utils/logger"
 import React, { useState, useEffect } from 'react'
 import {
   Card,
@@ -95,7 +96,7 @@ const CICD: React.FC = () => {
       }
       setTargetOptions(options)
     } catch (error) {
-      console.error('Failed to load targets', error)
+      logger.error('Failed to load targets', error)
     }
   }
 

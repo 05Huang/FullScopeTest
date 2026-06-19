@@ -3,6 +3,7 @@ import { Modal, Input, List, Tag, Typography, Spin } from 'antd'
 import { SearchOutlined, ApiOutlined, GlobalOutlined, ThunderboltOutlined, SettingOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import logger from '@/utils/logger'
 import { globalSearchAI, GlobalSearchResult } from '@/services/aiSearchService'
 
 const { Text } = Typography
@@ -38,7 +39,7 @@ const GlobalSearch = () => {
         setResults(res.data.results)
       }
     } catch (e) {
-      console.error(e)
+      logger.error('全局搜索失败', e)
     } finally {
       setLoading(false)
     }

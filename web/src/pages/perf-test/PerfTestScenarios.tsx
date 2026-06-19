@@ -1,3 +1,4 @@
+import logger from "@/utils/logger"
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -409,7 +410,7 @@ const PerfTestScenarios = () => {
         message.error(result.message || '删除失败')
       }
     } catch (error: any) {
-      console.error('删除场景失败:', error)
+      logger.error('删除场景失败:', error)
       const errorMsg = error?.response?.data?.message || error?.message || '删除场景失败'
       message.error(errorMsg)
     }
@@ -446,7 +447,7 @@ const PerfTestScenarios = () => {
         return false
       }
     } catch (error: any) {
-      console.error('启动测试失败:', error)
+      logger.error('启动测试失败:', error)
       const errorMsg = error?.response?.data?.message || error?.message || '启动测试失败'
       if (!silent) {
         message.error(errorMsg)

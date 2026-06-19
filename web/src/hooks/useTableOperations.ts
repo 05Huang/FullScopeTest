@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react"
 import { message } from "antd"
+import logger from "@/utils/logger"
 
 interface UseTableOperationsOptions<T> {
   fetchFn: () => Promise<{ code: number; data?: T[] }>
@@ -23,7 +24,7 @@ export function useTableOperations<T extends { id: number }>(
         setData(result.data || [])
       }
     } catch (error) {
-      console.error("Failed to fetch data:", error)
+      logger.error("Failed to fetch data:", error)
       options.onError?.(error)
     } finally {
       setLoading(false)
@@ -43,7 +44,7 @@ export function useTableOperations<T extends { id: number }>(
         message.error(result.message || "删除失败")
       }
     } catch (error) {
-      console.error("Failed to delete item:", error)
+      logger.error("Failed to delete item:", error)
       message.error("删除失败")
       options.onError?.(error)
     }

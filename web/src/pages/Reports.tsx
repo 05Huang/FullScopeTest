@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
+import logger from '@/utils/logger'
 import {
   Button,
   Card,
@@ -154,7 +155,7 @@ const Reports = () => {
       setDailyTrend(statsData?.daily_trend || [])
     } catch (error) {
       message.error(t('reports.fetchDataFailed'))
-      console.error(error)
+      logger.error(error)
     } finally {
       setLoading(false)
     }
@@ -197,7 +198,7 @@ const Reports = () => {
       setHtmlModalVisible(true)
     } catch (error) {
       message.error(t('reports.fetchReportFailed'))
-      console.error(error)
+      logger.error(error)
     }
   }
 
@@ -213,7 +214,7 @@ const Reports = () => {
       message.success(t('reports.downloadStarted'))
     } catch (error) {
       message.error(t('reports.downloadFailed'))
-      console.error(error)
+      logger.error(error)
     }
   }
 
@@ -238,7 +239,7 @@ const Reports = () => {
       message.success(t('reports.downloadStarted'))
     } catch (error) {
       message.error(t('reports.downloadFailed'))
-      console.error(error)
+      logger.error(error)
     }
   }
 
@@ -257,7 +258,7 @@ const Reports = () => {
       fetchData()
     } catch (error) {
       message.error(t('reports.deleteFailed'))
-      console.error(error)
+      logger.error(error)
     }
   }
 
@@ -285,7 +286,7 @@ const Reports = () => {
       fetchData()
     } catch (error) {
       message.error(t('reports.batchDeleteFailed'))
-      console.error(error)
+      logger.error(error)
     } finally {
       setLoading(false)
     }
@@ -308,7 +309,7 @@ const Reports = () => {
       message.success(t('reports.downloadComplete'))
     } catch (error) {
       message.error(t('reports.batchDownloadFailed'))
-      console.error(error)
+      logger.error(error)
     }
   }
 
