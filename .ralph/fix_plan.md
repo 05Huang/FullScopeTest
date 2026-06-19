@@ -1167,3 +1167,324 @@
 | P29 用户体验小功能 | 15 | ~14 小时 |
 | P30 后端小功能 | 10 | ~10 小时 |
 | **总计** | **30** | **~29 小时（约 4 个工作日）** |
+
+---
+
+# 第六阶段：后端接口 × 前端消费对齐
+
+> 以下任务来自「后端 API 端点 vs 前端 Service/页面调用」的全量对照分析。
+> 共发现 30 个后端接口未被前端消费，其中 16 个为核心功能缺失、5 个为辅助功能缺失。
+> 目标：将后端已实现的能力全部暴露为用户可用功能。
+
+---
+
+## P31：核心功能对接（后端已有，前端缺失）
+
+### P31-1: Prompt 版本管理 — 完整 CRUD + 选择/刷新
+
+**问题**：后端已实现 6 个 Prompt 版本 API（列表/创建/详情/更新/删除/选择/刷新统计），前端仅在 `AIInsightsDashboard.tsx` 中调用了统计对比接口，**无法创建、编辑、删除、激活 Prompt 版本**。
+
+**涉及后端接口**：
+- `GET /ai/prompt-versions` — 版本列表
+- `POST /ai/prompt-versions` — 创建版本
+- `GET /ai/prompt-versions/<id>` — 版本详情
+- `PUT /ai/prompt-versions/<id>` — 更新版本
+- `DELETE /ai/prompt-versions/<id>` — 删除版本
+- `POST /ai/prompt-versions/select` — 激活版本
+- `POST /ai/prompt-versions/refresh-stats` — 刷新统计
+
+**修改范围**：
+- 新增 `web/src/services/promptVersionService.ts` — Prompt 版本服务层
+- 新增 `web/src/pages/Settings.tsx` 中的 "Prompt 管理" Tab
+- 修改 `web/src/pages/AIInsightsDashboard.tsx` — 添加管理入口
+
+**实现要求**：
+- Prompt 列表：表格展示 feature、name、version、is_active、traffic_weight、创建时间
+- 创建/编辑弹窗：feature 选择、name、system_prompt（Monaco Editor）、temperature、traffic_weight
+- 激活按钮：点击调用 `/select` 切换当前活跃版本
+- 刷新统计按钮：调用 `/refresh-stats` 更新数据
+- 删除：二次确认
+
+- [x] 完成 → `8abdc52`
+
+---
+
+### P31-2: 报告趋势与响应时间分位数 — Dashboard 增强
+
+**问题**：后端已实现 `/reports/trend`、`/reports/trend/stats`、`/reports/percentiles` 三个接口，前端 Dashboard 和 Reports 页面均未调用，缺少历史趋势和响应时间分析。
+
+**涉及后端接口**：
+- `GET /reports/trend` — 趋势数据
+- `GET /reports/trend/stats` — 趋势统计
+- `GET /reports/percentiles` — 响应时间分位数
+
+**修改范围**：
+- 修改 `web/src/services/reportService.ts` — 添加趋势和分位数 API 调用
+- 修改 `web/src/pages/Dashboard.tsx` — 添加趋势图表和分位数卡片
+
+**实现要求**：
+- Dashboard 新增"响应时间分位数"卡片：P50 / P90 / P95 / P99，与上周对比箭头
+- Dashboard 新增"质量趋势"折线图：按周/月的通过率趋势（调用 `/reports/trend`）
+- 趋势图支持时间范围选择：7 天 / 30 天 / 90 天
+- 使用 ECharts 折线图，配色遵循 `--fst-*` 变量
+
+- [x] 完成 → `bd04278`
+
+---
+
+### P31-3: 环境变量导入/导出/设为默认
+
+**问题**：后端已实现环境变量的导出（`/environments/<id>/export`）、导入（`/projects/<id>/environments/import`）、设为默认（`/environments/<id>/default`），前端均未调用。
+
+**涉及后端接口**：
+- `GET /environments/<id>/export` — 导出环境变量
+- `POST /projects/<id>/environments/import` — 导入环境变量
+- `POST /environments/<id>/default` — 设为默认环境
+
+**修改范围**：
+- 修改 `web/src/services/environmentService.ts` — 添加导入/导出/设为默认 API
+- 修改 `web/src/pages/api-test/ApiTestEnvironments.tsx` — 添加操作按钮
+
+**实现要求**：
+- 导出按钮：点击下载 JSON 文件（包含环境名 + 所有变量）
+- 导入按钮：上传 JSON 文件，预览将导入的变量，确认后导入
+- 设为默认：环境列表中每个环境添加"设为默认"按钮，当前默认环境高亮标记
+- 导入支持 `.env` 格式（`KEY=VALUE`）和 JSON 格式
+
+- [x] 完成 → `e893d6b`
+
+---
+
+### P31-4: cURL 导入专用端点对接
+
+**问题**：后端已实现 `/api-test/import-curl` 专用端点（支持多行 cURL、自动解析），前端未调用。当前 `ImportModal.tsx` 仅有 Postman 和 CSV 导入。
+
+**涉及后端接口**：
+- `POST /api-test/import-curl` — cURL 导入
+
+**修改范围**：
+- 修改 `web/src/services/apiTestService.ts` — 添加 cURL 导入 API
+- 修改 `web/src/pages/api-test/components/ImportModal.tsx` — 添加"从 cURL 导入"Tab
+
+**实现要求**：
+- ImportModal 新增第三个 Tab："从 cURL 导入"
+- 输入区域：Monaco Editor（plaintext 模式），支持粘贴多行 cURL
+- 解析预览：展示将生成的用例（方法、URL、Headers、Body）
+- 确认后导入到当前用例集
+- 支持从浏览器 Network 面板复制的 cURL
+
+- [x] 完成 → `8ed9510`
+
+---
+
+### P31-5: 测试执行进度查询
+
+**问题**：后端已实现 `/api-test/runs/<id>/progress` 进度查询端点，前端执行用例集时仅显示"执行中"，无法看到实时进度。
+
+**涉及后端接口**：
+- `GET /api-test/runs/<id>/progress` — 执行进度
+
+**修改范围**：
+- 修改 `web/src/services/apiTestService.ts` — 添加进度查询 API
+- 修改 `web/src/pages/api-test/TestRunner.tsx` — 展示进度条
+
+**实现要求**：
+- 执行开始后每 2 秒轮询 `/progress` 端点
+- 展示 Ant Design `Progress` 进度条：`"5/20 已完成 (4 通过, 1 失败)"`
+- 进度条颜色：通过率 > 80% 绿色，50-80% 黄色，< 50% 红色
+- 执行完成后自动停止轮询并刷新结果
+
+- [x] 完成 → `140ff7e`
+
+---
+
+### P31-6: 项目置顶功能
+
+**问题**：后端已实现 `/projects/<id>/pin` 置顶端点，前端项目列表和下拉菜单均未调用，常用项目需要翻找。
+
+**涉及后端接口**：
+- `PUT /projects/<id>/pin` — 置顶/取消置顶
+
+**修改范围**：
+- 修改 `web/src/services/projectService.ts` — 添加置顶 API
+- 修改 `web/src/layouts/MainLayout.tsx` — 项目下拉列表置顶排序 + 置顶图标
+
+**实现要求**：
+- 项目下拉列表中，置顶项目排在最前，用 📌 图标标记
+- 点击图标切换置顶状态
+- 置顶项目用分隔线与非置顶项目分开
+- 最多置顶 5 个项目
+
+- [x] 完成 → `ea29fc1`
+
+---
+
+### P31-7: SSO 配置查询 + LDAP 登录入口
+
+**问题**：后端已实现 `/auth/sso/config`（查询 SSO 配置）和 `/auth/sso/ldap/login`（LDAP 登录），前端仅有 OIDC 登录流程，缺少 LDAP 入口和配置展示。
+
+**涉及后端接口**：
+- `GET /auth/sso/config` — 查询 SSO 配置
+- `POST /auth/sso/ldap/login` — LDAP 登录
+
+**修改范围**：
+- 修改 `web/src/pages/Login.tsx` — LDAP 登录表单
+- 修改 `web/src/pages/Settings.tsx` — SSO 配置状态展示
+
+**实现要求**：
+- Login 页面：根据 `/auth/sso/config` 返回的 providers 列表动态显示登录按钮
+- LDAP 登录：用户名 + 密码表单，提交到 `/auth/sso/ldap/login`
+- Settings 集成 Tab：展示当前 SSO 配置状态（OIDC/LDAP 是否已配置）
+
+- [x] 完成 → `ccd5dfd`
+
+---
+
+### P31-8: 组织成员权限详情查看
+
+**问题**：后端已实现 `/organizations/<org_id>/members/<uid>/permissions` 查询成员详细权限，前端 `MemberManagement.tsx` 仅展示角色，无法查看具体权限列表。
+
+**涉及后端接口**：
+- `GET /organizations/<org_id>/members/<uid>/permissions` — 成员权限详情
+
+**修改范围**：
+- 修改 `web/src/services/organizationService.ts` — 添加权限查询 API
+- 修改 `web/src/pages/organizations/MemberManagement.tsx` — "查看权限"抽屉
+
+**实现要求**：
+- 成员列表每行添加"查看权限"按钮
+- 点击打开抽屉，展示该成员的权限矩阵（资源 × 操作）
+- 权限来源标注：继承自角色 / 单独授予
+- 仅管理员和组织 owner 可查看
+
+- [x] 完成 → `8e79633`
+
+---
+
+## P32：辅助功能对接
+
+### P32-1: 品牌配置写入 UI
+
+**问题**：后端已实现 `GET /branding/config`（前端已调用）和 `PUT /branding/config`（前端未调用），管理员无法通过 UI 修改品牌配置。
+
+**涉及后端接口**：
+- `PUT /branding/config` — 更新品牌配置
+
+**修改范围**：
+- 修改 `web/src/pages/Settings.tsx` — 添加"品牌定制"Tab（仅管理员可见）
+
+**实现要求**：
+- 配置项：平台名称、Logo URL、Favicon URL、主色调、Footer 文案
+- 预览功能：修改后实时预览效果
+- 保存按钮调用 `PUT /branding/config`
+- 重置按钮恢复默认值
+
+- [x] 完成 → `f98c07e`
+
+---
+
+### P32-2: 自定义仪表盘组件布局
+
+**问题**：后端已实现仪表盘组件 CRUD（`/dashboard/widgets`、`/dashboard/widgets/reset`、`/dashboard/widget-types`），前端 Dashboard 使用固定布局。
+
+**涉及后端接口**：
+- `GET /dashboard/widgets` — 获取用户组件配置
+- `PUT /dashboard/widgets` — 保存组件布局
+- `POST /dashboard/widgets/reset` — 重置为默认布局
+- `GET /dashboard/widget-types` — 获取可用组件类型
+
+**修改范围**：
+- 修改 `web/src/pages/Dashboard.tsx` — 可配置组件布局
+
+**实现要求**：
+- Dashboard 右上角添加"自定义布局"按钮
+- 编辑模式下可拖拽排列组件、添加/移除组件
+- 组件类型列表从 `/dashboard/widget-types` 获取
+- 保存布局调用 `PUT /dashboard/widgets`
+- "恢复默认"调用 `POST /dashboard/widgets/reset`
+
+- [x] 完成 → `9e3a506`
+
+---
+
+### P32-3: 视觉回归历史 API 封装到 Service 层
+
+**问题**：`/visual/history/<id>` 接口在 `VisualRegressionHistory.tsx` 中直接调用 `api.get()`，未封装到 `webTestService.ts`，违反分层架构。
+
+**涉及后端接口**：
+- `GET /visual/history/<id>` — 视觉回归历史
+
+**修改范围**：
+- 修改 `web/src/services/webTestService.ts` — 添加 `getVisualHistory` 方法
+- 修改 `web/src/pages/VisualRegressionHistory.tsx` — 使用 service 层调用
+
+**实现要求**：
+- `webTestService.ts` 新增：`getVisualHistory(testCaseId, params)`
+- `VisualRegressionHistory.tsx` 中 `api.get('/visual/history/...')` 替换为 `webTestService.getVisualHistory(...)`
+
+- [x] 完成 → `c68a5ee`
+
+---
+
+### P32-4: Mock 服务器 URL 展示
+
+**问题**：后端 `/api-test/mock/<id>` 端点已实现 Mock 服务器功能，前端保存了 `mock_enabled` 等字段，但未向用户展示 Mock URL。
+
+**涉及后端接口**：
+- `GET /api-test/mock/<id>` — Mock 响应（实际服务端点）
+
+**修改范围**：
+- 修改 `web/src/pages/api-test/RequestEditor.tsx` — Mock 面板中展示 Mock URL
+
+**实现要求**：
+- 当 `mock_enabled=true` 时，在 Mock 配置面板顶部展示 Mock URL：
+  `http://{host}/api/v1/api-test/mock/{case_id}`
+- 提供"复制 Mock URL"按钮
+- Mock URL 格式说明提示
+
+- [x] 完成 → `373e3d4`
+
+---
+
+## 进度跟踪
+
+| 任务 | 优先级 | 状态 | Commit |
+|------|--------|------|--------|
+| **P31: 核心功能对接** | | | |
+| P31-1 Prompt 版本管理 CRUD | 🔴 | ✅ 完成 | `8abdc52` |
+| P31-2 报告趋势与分位数 | 🔴 | ✅ 完成 | `bd04278` |
+| P31-3 环境变量导入/导出/默认 | 🔴 | ✅ 完成 | `e893d6b` |
+| P31-4 cURL 导入端点对接 | 🟡 | ✅ 完成 | `8ed9510` |
+| P31-5 测试执行进度查询 | 🟡 | ✅ 完成 | `140ff7e` |
+| P31-6 项目置顶 | 🟢 | ✅ 完成 | `ea29fc1` |
+| P31-7 SSO 配置查询 + LDAP 登录 | 🟡 | ✅ 完成 | `ccd5dfd` |
+| P31-8 组织成员权限详情 | 🟡 | ✅ 完成 | `8e79633` |
+| **P32: 辅助功能对接** | | | |
+| P32-1 品牌配置写入 UI | 🟡 | ✅ 完成 | `f98c07e` |
+| P32-2 自定义仪表盘布局 | 🟢 | ✅ 完成 | `9e3a506` |
+| P32-3 视觉回归历史 API 封装 | 🟢 | ✅ 完成 | `c68a5ee` |
+| P32-4 Mock 服务器 URL 展示 | 🟢 | ✅ 完成 | `373e3d4` |
+
+---
+
+## 第六阶段任务统计
+
+| 阶段 | 任务数 | 🔴 | 🟡 | 🟢 |
+|------|--------|-----|-----|-----|
+| P31 核心功能对接 | 8 | 3 | 4 | 1 |
+| P32 辅助功能对接 | 4 | 0 | 2 | 2 |
+| **总计** | **12** | **3** | **6** | **3** |
+
+---
+
+## 全阶段总进度汇总（更新）
+
+| 阶段 | 总数 | 已完成 | 未完成 |
+|------|------|--------|--------|
+| 第一阶段（P0-P9） | 34 | 34 | 0 |
+| 第二阶段（P10-P12） | 29 | 29 | 0 |
+| 第三阶段（P13-P22） | 63 | 63 | 0 |
+| 第四阶段（P23-P27） | 20 | 20 | 0 |
+| 第五阶段（P28-P30） | 30 | 30 | 0 |
+| 第六阶段（P31-P32） | 12 | 12 | 0 |
+| **总计** | **188** | **188** | **0** |
