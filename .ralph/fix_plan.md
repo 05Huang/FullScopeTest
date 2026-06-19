@@ -1571,18 +1571,18 @@
 
 ## P34：逻辑类 Bug（🟡 中等）
 
-- [ ] P34-1: 租户中间件未校验用户对 org 的访问权（🔴）
-- [ ] P34-2: Token 黑名单 blacklist_all_user_tokens 是空操作（🟡）
-- [ ] P34-3: SSO OIDC 回调未设置用户组织（🟡）
-- [ ] P34-4: LDAP 登录后前端未更新 authStore（🟡）
-- [ ] P34-5: 登录失败/会话存储为内存重启丢失（🟡）
-- [ ] P34-6: Organization.to_dict() N+1 查询（🟡）
-- [ ] P34-7: User.update_last_login() 内部调用 commit（🟡）
-- [ ] P34-8: User.to_dict() 泄露 sso_provider（🟡）
-- [ ] P34-9: error_handler 500 在生产环境未记录 traceback（🟡）
-- [ ] P34-10: rate_limit_middleware docstring 位置错误（🟢）
-- [ ] P34-11: 管理员权限检查仅前端（🟡）
-- [ ] P34-12: api.ts 401 刷新失败后未 reject（🟡）
+- [x] P34-1: 租户中间件未校验用户对 org 的访问权（🔴）→ `2648af6`
+- [x] P34-2: Token 黑名单 blacklist_all_user_tokens 是空操作（🟡）→ `350f5ea`
+- [x] P34-3: SSO OIDC 回调未设置用户组织（🟡）→ `94be138`
+- [x] P34-4: LDAP 登录后前端未更新 authStore（🟡）→ `f455a04`
+- [x] P34-5: 登录失败/会话存储为内存重启丢失（🟡）→ `d132645`
+- [x] P34-6: Organization.to_dict() N+1 查询（🟡）→ `0091456`
+- [x] P34-7: User.update_last_login() 内部调用 commit（🟡）→ `b14acf8`
+- [x] P34-8: User.to_dict() 泄露 sso_provider（🟡）→ `08105c5`
+- [x] P34-9: error_handler 500 在生产环境未记录 traceback（🟡）→ `d6ad730`
+- [x] P34-10: rate_limit_middleware docstring 位置错误（🟢）→ `dbcd0f9`
+- [x] P34-11: 管理员权限检查仅前端（🟡）→ `c9b6f50`
+- [x] P34-12: api.ts 401 刷新失败后未 reject（🟡）→ `3fc2c7e`
 
 ---
 
@@ -1714,12 +1714,12 @@ if g.organization_id:
 
 ## P35：前端缺陷（🟡 中等）
 
-- [ ] P35-1: GlobalSearch 三处硬编码中文未走 i18n（🟡）
-- [ ] P35-2: Register.tsx 是废弃页面应删除（🟡）
-- [ ] P35-3: 主题切换后 Monaco Editor 未响应（🟡）
-- [ ] P35-4: UserManagement 日期显示依赖浏览器 locale（🟢）
-- [ ] P35-5: ErrorBoundary console.error 在生产环境应移除（🟢）
-- [ ] P35-6: 翻转卡片 Register 页 logo 不一致（🟢）
+- [x] P35-1: GlobalSearch 三处硬编码中文未走 i18n（🟡）→ `6e54217`
+- [x] P35-2: Register.tsx 是废弃页面应删除（🟡）→ `4e21b24`
+- [x] P35-3: 主题切换后 Monaco Editor 未响应（🟡）→ `beed94e`
+- [x] P35-4: UserManagement 日期显示依赖浏览器 locale（🟢）→ `f6cd018`
+- [x] P35-5: ErrorBoundary console.error 在生产环境应移除（🟢）→ `68623f9`
+- [x] P35-6: 翻转卡片 Register 页 logo 不一致（🟢）→ 随 P35-2 一起删除
 
 ---
 
@@ -1786,12 +1786,12 @@ if g.organization_id:
 
 ## P36：代码质量与类型安全（🟢 低优先级）
 
-- [ ] P36-1: types/ 目录大量 any 类型（🟢）
-- [ ] P36-2: 20+ 处 console.error 在生产环境输出（🟢）
-- [ ] P36-3: password_policy 每次调用创建新 Redis 连接（🟡）
-- [ ] P36-4: 各服务单例模式手动实现不一致（🟢）
-- [ ] P36-5: 204 处 datetime.utcnow() 使用 deprecated API（🟢）
-- [ ] P36-6: 多处 db.session.commit() 缺少 try/except（🟡）
+- [x] P36-1: types/ 目录大量 any 类型（🟢）→ `ba5cff5`
+- [x] P36-2: 20+ 处 console.error 在生产环境输出（🟢）→ `3e910ee`
+- [x] P36-3: password_policy 每次调用创建新 Redis 连接（🟡）→ 随 P34-5 修复 (`d132645`)
+- [x] P36-4: 各服务单例模式手动实现不一致（🟢）→ `cba6086`
+- [x] P36-5: 204 处 datetime.utcnow() 使用 deprecated API（🟢）→ `0b18302`
+- [x] P36-6: 多处 db.session.commit() 缺少 try/except（🟡）→ `e21c008`
 
 ---
 
@@ -1877,5 +1877,40 @@ if g.organization_id:
 | 第四阶段（P23-P27） | 20 | 20 | 0 |
 | 第五阶段（P28-P30） | 30 | 30 | 0 |
 | 第六阶段（P31-P32） | 12 | 12 | 0 |
-| **第七阶段（P33-P36）** | **30** | 0 | **30** |
-| **总计** | **218** | **188** | **30** |
+| **第七阶段（P33-P36）** | **30** | **30** | **0** |
+| **总计** | **218** | **218** | **0** |
+
+---
+
+## 第七阶段提交汇总
+
+| Commit | 任务 | 说明 |
+|--------|------|------|
+| `db0beb8` | P33-1 | XSS — DOMPurify 净化 dangerouslySetInnerHTML |
+| `99affb3` | P33-2 | OIDC state 参数 CSRF 校验 |
+| `9b2813b` | P33-3 | LDAP 搜索过滤器注入防护 |
+| `77a966e` | P33-4 | 生产环境密钥缺失启动校验增强 |
+| `ed48775` | P33-5 | 登录页演示账号仅开发环境自动填充 |
+| `89d002a` | P33-6 | SMTP 连接 try/finally 防泄漏 |
+| `2648af6` | P34-1 | 租户中间件校验用户对组织的访问权 |
+| `350f5ea` | P34-2 | Token 批量黑名单 — 基于版本号 |
+| `94be138` | P34-3 | SSO 回调确保用户有组织上下文 |
+| `f455a04` | P34-4 | LDAP 登录成功后更新 authStore |
+| `d132645` | P34-5 | 密码策略 Redis 连接缓存 |
+| `0091456` | P34-6 | Organization.to_dict() 消除 N+1 查询 |
+| `b14acf8` | P34-7 | User.update_last_login() 移除内部 commit |
+| `08105c5` | P34-8 | User.to_dict() 不再泄露 sso_provider |
+| `d6ad730` | P34-9 | 生产环境 500 错误始终记录 traceback |
+| `dbcd0f9` | P34-10 | rate_limit docstring 位置修正 |
+| `c9b6f50` | P34-11 | 确认后端 admin API 已有权限校验 |
+| `3fc2c7e` | P34-12 | 401 刷新失败后明确 reject |
+| `6e54217` | P35-1 | GlobalSearch 硬编码中文 i18n 化 |
+| `4e21b24` | P35-2 | 删除废弃的 Register.tsx |
+| `beed94e` | P35-3 | Monaco Editor 主题切换响应修复 |
+| `f6cd018` | P35-4 | UserManagement 日期格式统一 |
+| `68623f9` | P35-5 | ErrorBoundary console.error 仅开发环境 |
+| `ba5cff5` | P36-1 | types/ any 类型替换为具体类型 |
+| `3e910ee` | P36-2 | 前端 console.error 统一替换为 logger |
+| `cba6086` | P36-4 | 统一单例模式 — singleton 装饰器 |
+| `0b18302` | P36-5 | datetime.utcnow() 全局替换 |
+| `e21c008` | P36-6 | 关键 db.session.commit() 添加 try/except |
