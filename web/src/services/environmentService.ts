@@ -59,6 +59,11 @@ export const importEnvironment = (projectId: number, data: {
 }
 
 
+/** 导出环境为 Docker Compose 格式 */
+export const exportDockerEnvironment = (envId: number): Promise<ApiResponse> => {
+  return api.get(`/environments/${envId}/export-docker`) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const environmentService = {
   getEnvironments,
@@ -69,4 +74,5 @@ export const environmentService = {
   setDefaultEnvironment,
   exportEnvironment,
   importEnvironment,
+  exportDockerEnvironment,
 }

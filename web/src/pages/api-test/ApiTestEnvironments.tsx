@@ -29,6 +29,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { environmentService } from '@/services'
 import { useTranslation } from 'react-i18next'
+import { useRole } from '@/hooks/useRole'
 import { useProjectStore } from '@/stores/projectStore'
 
 const { Title, Text } = Typography
@@ -47,6 +48,7 @@ interface Environment {
 
 const ApiTestEnvironments = () => {
   const { t } = useTranslation();
+  const { isAdmin } = useRole()
   const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(false)
   const [environments, setEnvironments] = useState<Environment[]>([])
@@ -165,6 +167,28 @@ const ApiTestEnvironments = () => {
       }
     } catch (error) {
       message.error(t('apiTest.environments.setFailed'))
+    }
+  }
+
+  // P48-6: 导出环境为 Docker Compose 格式
+  const handleDockerExport = async (id: number) => {
+    try {
+      const res = await environmentService.exportDockerEnvironment(id)
+      if (res.code === 200) {
+        const content = typeof res.data === 'string' ? res.data : JSON.stringify(res.data, null, 2)
+        const blob = new Blob([content], { type: 'text/yaml' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `docker-compose-env-${id}.yml`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        message.success(t('apiTest.environments.exportSuccess'))
+      }
+    } catch {
+      message.error(t('apiTest.environments.exportFailed'))
     }
   }
 
@@ -345,15 +369,15 @@ const ApiTestEnvironments = () => {
           <Popconfirm
             title={t('apiTest.environments.deleteConfirm')}
             onConfirm={() => handleDelete(record.id)}
-            disabled={record.is_default || record.is_active}
+            disabled={record.is_default || record.is_active || !isAdmin}
           >
-            <Tooltip title={(record.is_default || record.is_active) ? t('apiTest.environments.defaultNoDelete') : t('common.delete')}>
+            <Tooltip title={(record.is_default || record.is_active) ? t('apiTest.environments.defaultNoDelete') : (!isAdmin ? (t('common.noPermission') || 'No Permission') : t('common.delete'))}>
               <Button
                 type="text"
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                disabled={record.is_default || record.is_active}
+                disabled={record.is_default || record.is_active || !isAdmin}
               />
             </Tooltip>
           </Popconfirm>
@@ -363,6 +387,14 @@ const ApiTestEnvironments = () => {
               size="small"
               icon={<ExportOutlined />}
               onClick={() => handleExport(record.id)}
+            />
+          </Tooltip>
+          <Tooltip title="Docker Export">
+            <Button
+              type="text"
+              size="small"
+              icon={<ExportOutlined />}
+              onClick={() => handleDockerExport(record.id)}
             />
           </Tooltip>
         </Space>
