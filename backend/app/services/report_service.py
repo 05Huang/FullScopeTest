@@ -18,15 +18,26 @@ class ReportService(BaseService):
 
     def get_test_runs(self, user_id: int, project_id: int = None, test_type: str = None,
                       status: str = None, page: int = 1, per_page: int = 20):
-        """获取测试执行记录列表"""
+        """获取测试执行记录列表（组织级过滤）"""
+        from ..middleware.tenant import get_current_organization_id
+        from ..models.project import Project
+
+        org_id = get_current_organization_id()
+
         query = TestRun.query
 
+        # 组织级过滤
+        if org_id:
+            query = query.join(Project, TestRun.project_id == Project.id).filter(
+                Project.organization_id == org_id
+            )
+
         if project_id:
-            query = query.filter_by(project_id=project_id)
+            query = query.filter(TestRun.project_id == project_id)
         if test_type:
-            query = query.filter_by(test_type=test_type)
+            query = query.filter(TestRun.test_type == test_type)
         if status:
-            query = query.filter_by(status=status)
+            query = query.filter(TestRun.status == status)
 
         total = query.count()
         runs = query.order_by(TestRun.created_at.desc()) \
