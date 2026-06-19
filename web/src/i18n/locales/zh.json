@@ -286,6 +286,16 @@
     "preScript": "前置脚本",
     "postScript": "后置脚本",
     "mockServer": "Mock Server",
+    "mock": {
+      "enableMock": "启用 Mock",
+      "statusCode": "状态码",
+      "delayMs": "延迟(ms)",
+      "responseHeaders": "Mock 响应 Headers",
+      "responseBody": "Mock 响应 Body",
+      "addHeader": "添加 Header",
+      "mockUrl": "Mock URL",
+      "urlCopied": "Mock URL 已复制"
+    },
     "noCollections": "暂无测试集合",
     "noCases": "暂无测试用例",
     "environments": {

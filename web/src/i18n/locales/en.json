@@ -286,6 +286,16 @@
     "preScript": "Pre-request Script",
     "postScript": "Post-response Script",
     "mockServer": "Mock Server",
+    "mock": {
+      "enableMock": "Enable Mock",
+      "statusCode": "Status Code",
+      "delayMs": "Delay(ms)",
+      "responseHeaders": "Mock Response Headers",
+      "responseBody": "Mock Response Body",
+      "addHeader": "Add Header",
+      "mockUrl": "Mock URL",
+      "urlCopied": "Mock URL copied"
+    },
     "noCollections": "No test collections yet",
     "noCases": "No test cases yet",
     "environments": {

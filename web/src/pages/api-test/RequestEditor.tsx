@@ -137,6 +137,26 @@ const RequestEditor: React.FC<RequestEditorProps> = (p) => {
           children: (
             <div style={{ padding: '8px 0' }}>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                {/* P32-4: Mock URL 展示 */}
+                {p.mockEnabled && p.currentCaseId && (
+                  <div style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--fst-surface-dim, #f6f6f6)', border: '1px solid var(--fst-outline-soft, #e8e8e8)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Text style={{ fontSize: 12, color: 'var(--fst-on-surface-muted, #999)' }}>{t('apiTest.mock.mockUrl') || 'Mock URL'}</Text>
+                      <div style={{ fontSize: 13, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {`${window.location.origin}/api/v1/api-test/mock/${p.currentCaseId}`}
+                      </div>
+                    </div>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/api/v1/api-test/mock/${p.currentCaseId}`)
+                        message.success(t('apiTest.mock.urlCopied') || 'Mock URL 已复制')
+                      }}
+                    >
+                      {t('common.copy') || '复制'}
+                    </Button>
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                   <Space><Text>{t('apiTest.mock.enableMock')}:</Text><Switch checked={p.mockEnabled} onChange={p.setMockEnabled} size="small" /></Space>
                   <Space><Text>{t('apiTest.mock.statusCode')}:</Text><Select value={p.mockResponseCode} onChange={v => p.setMockResponseCode(v)} size="small" style={{width:90}}
