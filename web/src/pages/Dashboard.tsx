@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Skeleton } from 'antd'
+import { Skeleton, Tooltip, Button } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { reportService } from '@/services'
-import type { DashboardStats } from '@/services/reportService'
+import type { DashboardStats, QualityTrendItem, ResponsePercentiles } from '@/services/reportService'
 import { useProjectStore } from '@/stores/projectStore'
 import {
   ApiOutlined,
@@ -14,6 +14,8 @@ import {
   CloseCircleOutlined,
   ClockCircleOutlined,
   ArrowUpOutlined,
+  ArrowDownOutlined,
+  FieldTimeOutlined,
 } from '@ant-design/icons'
 
 interface DailyTrend {
@@ -36,6 +38,11 @@ const Dashboard = () => {
   const [trendPeriod, setTrendPeriod] = useState<'week' | 'month'>('month')
   const trendDays = trendPeriod === 'week' ? 7 : 30
 
+  // P31-2: 响应时间分位数与质量趋势
+  const [percentiles, setPercentiles] = useState<ResponsePercentiles | null>(null)
+  const [qualityTrend, setQualityTrend] = useState<QualityTrendItem[]>([])
+  const [qualityDays, setQualityDays] = useState(30)
+
   useEffect(() => {
     fetchDashboardData()
   }, [currentProjectId])
@@ -43,6 +50,14 @@ const Dashboard = () => {
   useEffect(() => {
     fetchTrend()
   }, [trendPeriod])
+
+  useEffect(() => {
+    fetchQualityTrend()
+  }, [qualityDays, currentProjectId])
+
+  useEffect(() => {
+    fetchPercentiles()
+  }, [currentProjectId])
 
   const fetchDashboardData = async () => {
     setLoading(true)
@@ -57,6 +72,20 @@ const Dashboard = () => {
     try {
       const statsRes = await reportService.getReportStatistics({ days: trendDays, project_id: currentProjectId })
       if (statsRes.code === 200) setDailyTrend(statsRes.data.daily_trend || [])
+    } catch { /* silent */ }
+  }
+
+  const fetchPercentiles = async () => {
+    try {
+      const res = await reportService.getResponsePercentiles({ project_id: currentProjectId, days: 7 })
+      if (res.code === 200) setPercentiles(res.data)
+    } catch { /* silent */ }
+  }
+
+  const fetchQualityTrend = async () => {
+    try {
+      const res = await reportService.getQualityTrend({ project_id: currentProjectId, days: qualityDays, granularity: 'week' })
+      if (res.code === 200) setQualityTrend(res.data || [])
     } catch { /* silent */ }
   }
 
@@ -101,6 +130,24 @@ const Dashboard = () => {
         { value: stats.perf_tests.total || 0, name: t('dashboard.perfTest'), itemStyle: { color: '#D4B483' } },
       ],
     }],
+  }
+
+  // P31-2: 质量趋势图选项（调用 /reports/trend 接口）
+  const qualityTrendOption = {
+    tooltip: { trigger: 'axis' },
+    legend: { data: [t('dashboard.qualityTrendModules.api') || 'API', t('dashboard.qualityTrendModules.web') || 'Web', t('dashboard.qualityTrendModules.perf') || '性能'], bottom: 0, textStyle: { fontSize: 12, color: '#7C8180' } },
+    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+    xAxis: {
+      type: 'category', boundaryGap: false,
+      data: qualityTrend.map(d => d.date),
+      axisLine: { lineStyle: { color: '#E8E8E8' } }, axisLabel: { color: '#7C8180', fontSize: 11 },
+    },
+    yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#F0F0F0' } }, axisLabel: { color: '#7C8180', fontSize: 11 } },
+    series: [
+      { name: 'API', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, data: qualityTrend.map(d => d.api || 0), itemStyle: { color: '#2D6A64' }, lineStyle: { width: 2 } },
+      { name: 'Web', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, data: qualityTrend.map(d => d.web || 0), itemStyle: { color: '#629B95' }, lineStyle: { width: 2 } },
+      { name: '性能', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, data: qualityTrend.map(d => d.perf || 0), itemStyle: { color: '#D4B483' }, lineStyle: { width: 2 } },
+    ],
   }
 
   const formatTime = (dateStr: string) => {
@@ -194,6 +241,84 @@ const Dashboard = () => {
             ? <Skeleton active paragraph={{ rows: 8 }} />
             : <ReactECharts option={distributionOption} style={{ height: 300 }} />
           }
+        </div>
+      </div>
+
+      {/* P31-2: 响应时间分位数 + 质量趋势 */}
+      <div className="fst-grid fst-animate-in fst-animate-in-2" style={{ gridTemplateColumns: '1fr 2fr' }}>
+        {/* 响应时间分位数卡片 */}
+        <div className="fst-ios-card">
+          <div className="fst-ios-card-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FieldTimeOutlined style={{ color: 'var(--fst-primary, #2D6A64)' }} />
+              <div className="fst-ios-card-title">{t('dashboard.percentiles') || '响应时间分位数'}</div>
+            </div>
+            <div className="fst-ios-card-subtitle">{t('dashboard.percentilesSubtitle') || '近 7 天 API 测试 P50/P90/P95/P99'}</div>
+          </div>
+          {loading ? (
+            <Skeleton active paragraph={{ rows: 4 }} />
+          ) : percentiles && percentiles.total_requests > 0 ? (
+            <div style={{ padding: '8px 0' }}>
+              {[
+                { label: 'P50', value: percentiles.p50, color: '#52c41a' },
+                { label: 'P90', value: percentiles.p90, color: '#2D6A64' },
+                { label: 'P95', value: percentiles.p95, color: percentiles.p95 > 2000 ? '#faad14' : '#2D6A64' },
+                { label: 'P99', value: percentiles.p99, color: percentiles.p99 > 5000 ? '#ff4d4f' : percentiles.p99 > 2000 ? '#faad14' : '#2D6A64' },
+              ].map((item) => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--fst-outline-soft, #f0f0f0)' }}>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--fst-on-surface-variant, #666)' }}>{item.label}</span>
+                  <span style={{ fontWeight: 700, fontSize: 16, color: item.color, fontVariantNumeric: 'tabular-nums' }}>
+                    {item.value >= 1000 ? `${(item.value / 1000).toFixed(2)}s` : `${item.value.toFixed(0)}ms`}
+                  </span>
+                </div>
+              ))}
+              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--fst-on-surface-muted, #999)' }}>
+                  {t('dashboard.totalRequests') || '总请求数'}: {percentiles.total_requests.toLocaleString()}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--fst-on-surface-muted, #999)' }}>
+                  {t('dashboard.avgLatency') || '平均'}: {percentiles.avg >= 1000 ? `${(percentiles.avg / 1000).toFixed(2)}s` : `${percentiles.avg.toFixed(0)}ms`}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="fst-empty" style={{ padding: '30px 0' }}>
+              <div className="fst-empty-icon"><FieldTimeOutlined /></div>
+              <div className="fst-empty-title">{t('dashboard.noPercentileData') || '暂无响应时间数据'}</div>
+              <div className="fst-empty-desc">{t('dashboard.noPercentileDataDesc') || '运行 API 测试后可查看分位数统计'}</div>
+            </div>
+          )}
+        </div>
+
+        {/* 质量趋势图 */}
+        <div className="fst-ios-card" role="region" aria-label={t('dashboard.qualityTrend') || '质量趋势'}>
+          <div className="fst-ios-card-header">
+            <div>
+              <div className="fst-ios-card-title">{t('dashboard.qualityTrend') || '质量趋势'}</div>
+              <div className="fst-ios-card-subtitle">{t('dashboard.qualityTrendSubtitle') || '按模块统计用例通过数量趋势'}</div>
+            </div>
+            <div className="fst-tabs" style={{ width: 'auto' }}>
+              <button className={`fst-tab ${qualityDays === 7 ? 'fst-tab--active' : ''}`} onClick={() => setQualityDays(7)}>
+                {t('dashboard.week') || '7天'}
+              </button>
+              <button className={`fst-tab ${qualityDays === 30 ? 'fst-tab--active' : ''}`} onClick={() => setQualityDays(30)}>
+                {t('dashboard.month') || '30天'}
+              </button>
+              <button className={`fst-tab ${qualityDays === 90 ? 'fst-tab--active' : ''}`} onClick={() => setQualityDays(90)}>
+                {t('dashboard.quarter') || '90天'}
+              </button>
+            </div>
+          </div>
+          {loading ? (
+            <Skeleton active paragraph={{ rows: 8 }} />
+          ) : qualityTrend.length > 0 ? (
+            <ReactECharts option={qualityTrendOption} style={{ height: 300 }} />
+          ) : (
+            <div className="fst-empty" style={{ padding: '60px 0' }}>
+              <div className="fst-empty-title">{t('dashboard.noQualityTrendData') || '暂无质量趋势数据'}</div>
+              <div className="fst-empty-desc">{t('dashboard.noQualityTrendDataDesc') || '运行测试后自动展示趋势图'}</div>
+            </div>
+          )}
         </div>
       </div>
 

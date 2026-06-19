@@ -222,6 +222,65 @@ export const exportSummaryExcel = (params?: {
   return api.get('/reports/export/excel', { params, responseType: 'blob' }).then((res: any) => res.data || res)
 }
 
+// ==================== 趋势与分位数 ====================
+
+/** 质量趋势数据 */
+export interface QualityTrendItem {
+  date: string
+  api?: number
+  web?: number
+  perf?: number
+  total_runs: number
+  total_passed: number
+  total_failed: number
+}
+
+/** 趋势统计汇总 */
+export interface TrendStats {
+  period_days: number
+  total_runs: number
+  pass_rate: number
+  by_type: Array<{ type: string; count: number; passed: number; failed: number }>
+  daily: Array<{ date: string; passed: number; failed: number }>
+}
+
+/** 响应时间分位数 */
+export interface ResponsePercentiles {
+  p50: number
+  p90: number
+  p95: number
+  p99: number
+  avg: number
+  min: number
+  max: number
+  total_requests: number
+}
+
+/** 获取质量趋势数据 */
+export const getQualityTrend = (params?: {
+  project_id?: number
+  days?: number
+  granularity?: 'day' | 'week' | 'month'
+}): Promise<ApiResponse<QualityTrendItem[]>> => {
+  return api.get('/reports/trend', { params }) as Promise<ApiResponse<QualityTrendItem[]>>
+}
+
+/** 获取趋势统计汇总 */
+export const getTrendStats = (params?: {
+  project_id?: number
+  days?: number
+}): Promise<ApiResponse<TrendStats>> => {
+  return api.get('/reports/trend/stats', { params }) as Promise<ApiResponse<TrendStats>>
+}
+
+/** 获取响应时间分位数 */
+export const getResponsePercentiles = (params?: {
+  project_id?: number
+  days?: number
+}): Promise<ApiResponse<ResponsePercentiles>> => {
+  return api.get('/reports/percentiles', { params }) as Promise<ApiResponse<ResponsePercentiles>>
+}
+
 // 导出服务对象
 export const reportService = {
   getTestRuns,
@@ -242,6 +301,9 @@ export const reportService = {
   exportTestRunPdf,
   exportTestRunCsv,
   exportSummaryExcel,
+  getQualityTrend,
+  getTrendStats,
+  getResponsePercentiles,
 }
 
 export default reportService

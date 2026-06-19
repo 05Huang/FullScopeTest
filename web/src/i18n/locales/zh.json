@@ -187,7 +187,23 @@
       "hoursAgo": "{{hours}}小时前",
       "daysAgo": "{{days}}天前"
     },
-    "noRecordsDesc": "您最近尚未启动任何测试运行，开始您的第一次自动化测试吧。"
+    "noRecordsDesc": "您最近尚未启动任何测试运行，开始您的第一次自动化测试吧。",
+    "percentiles": "响应时间分位数",
+    "percentilesSubtitle": "近 7 天 API 测试 P50/P90/P95/P99",
+    "totalRequests": "总请求数",
+    "avgLatency": "平均",
+    "noPercentileData": "暂无响应时间数据",
+    "noPercentileDataDesc": "运行 API 测试后可查看分位数统计",
+    "qualityTrend": "质量趋势",
+    "qualityTrendSubtitle": "按模块统计用例通过数量趋势",
+    "quarter": "90天",
+    "noQualityTrendData": "暂无质量趋势数据",
+    "noQualityTrendDataDesc": "运行测试后自动展示趋势图",
+    "qualityTrendModules": {
+      "api": "API",
+      "web": "Web",
+      "perf": "性能"
+    }
   },
   "sidebar": {
     "dashboard": "工作台",

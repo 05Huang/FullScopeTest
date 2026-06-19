@@ -187,7 +187,23 @@
       "hoursAgo": "{{hours}}h ago",
       "daysAgo": "{{days}}d ago"
     },
-    "noRecordsDesc": "You have not started any test runs recently."
+    "noRecordsDesc": "You have not started any test runs recently.",
+    "percentiles": "Response Time Percentiles",
+    "percentilesSubtitle": "P50/P90/P95/P99 for API tests (last 7 days)",
+    "totalRequests": "Total Requests",
+    "avgLatency": "Avg",
+    "noPercentileData": "No response time data",
+    "noPercentileDataDesc": "Run API tests to view percentile stats",
+    "qualityTrend": "Quality Trend",
+    "qualityTrendSubtitle": "Pass count trend by module",
+    "quarter": "90d",
+    "noQualityTrendData": "No quality trend data",
+    "noQualityTrendDataDesc": "Trends will appear after running tests",
+    "qualityTrendModules": {
+      "api": "API",
+      "web": "Web",
+      "perf": "Perf"
+    }
   },
   "sidebar": {
     "dashboard": "Dashboard",
