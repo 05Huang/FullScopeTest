@@ -238,6 +238,93 @@ export const reviewCollectionAI = (data: {
   return api.post('/api-test/ai/review-collection', data, { timeout: 120000 }) as Promise<ApiResponse<{ review_summary: string, suggested_cases: any[] }>>
 }
 
+// ==================== 智能测试选择 ====================
+
+export interface SmartSelectResult {
+  cases: Array<{
+    case: Record<string, unknown>
+    match_reason: string
+    estimated_time: number
+    score: number
+    history_bonus?: string
+  }>
+  reasoning: string
+  total_estimated_time: number
+  affected_paths: string[]
+}
+
+/** 智能测试选择 — 根据变更文件推荐用例 */
+export const smartTestSelect = (data: {
+  changed_files: string[]
+  project_id?: number
+  tags?: string[]
+  max_cases?: number
+}): Promise<ApiResponse<SmartSelectResult>> => {
+  return api.post('/api-test/smart-select', data) as Promise<ApiResponse<SmartSelectResult>>
+}
+
+// ==================== AI 用例自愈 ====================
+
+export interface HealSuggestion {
+  case_id: number
+  failure_reason: string
+  analysis: string
+  fixes: Array<{
+    field: string
+    current: string
+    suggested: string
+    reason: string
+  }>
+  confidence: number
+  can_auto_apply: boolean
+  original_case?: Record<string, unknown>
+}
+
+/** AI 用例自愈 — 获取修复建议 */
+export const healTestCase = (data: {
+  case_id: number
+  failure_info?: Record<string, unknown>
+}): Promise<ApiResponse<HealSuggestion>> => {
+  return api.post('/api-test/heal-case', data, { timeout: 120000 }) as Promise<ApiResponse<HealSuggestion>>
+}
+
+/** 应用 AI 自愈修复 */
+export const applyHealFix = (data: {
+  case_id: number
+  fixes: Array<{
+    field: string
+    current: string
+    suggested: string
+    reason: string
+  }>
+}): Promise<ApiResponse> => {
+  return api.post('/api-test/apply-heal', data) as Promise<ApiResponse>
+}
+
+// ==================== 标签管理 ====================
+
+export interface TagStat {
+  tag: string
+  count: number
+  percentage: number
+}
+
+/** 获取标签统计 */
+export const getTagStats = (projectId?: number): Promise<ApiResponse<TagStat[]>> => {
+  return api.get('/api-test/tags/stats', {
+    params: { project_id: projectId },
+  }) as Promise<ApiResponse<TagStat[]>>
+}
+
+/** 按标签过滤用例 */
+export const filterByTags = (data: {
+  tags: string[]
+  project_id?: number
+  match_all?: boolean
+}): Promise<ApiResponse> => {
+  return api.post('/api-test/tags/filter', data) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const apiTestService = {
   getCollections,
@@ -258,4 +345,9 @@ export const apiTestService = {
   generateAiPlan,
   synthesizeCasesAI,
   reviewCollectionAI,
+  smartTestSelect,
+  healTestCase,
+  applyHealFix,
+  getTagStats,
+  filterByTags,
 }

@@ -1484,5 +1484,67 @@
   "notFound": {
     "message": "抱歉，您访问的页面不存在",
     "backHome": "返回首页"
+  },
+  "smartSelect": {
+    "title": "智能测试选择",
+    "inputLabel": "变更文件列表（每行一个文件路径）",
+    "inputPlaceholder": "输入变更文件路径，例如：\napp/api/auth.py\napp/services/user_service.py\napp/models/order.py",
+    "analyze": "智能分析",
+    "analyzing": "正在分析变更文件并推荐测试用例...",
+    "reasoning": "选测理由",
+    "affectedPaths": "影响路径: {{count}} 个",
+    "casesFound": "推荐用例: {{count}} 个",
+    "estimatedTime": "预估耗时: {{time}} 分钟",
+    "selectAll": "全选",
+    "execute": "执行选中用例 ({{count}})",
+    "emptyHint": "输入变更文件路径后点击「智能分析」，系统将推荐需要执行的测试用例",
+    "enterFiles": "请输入变更文件路径",
+    "error": "智能选测失败，请重试",
+    "selectCases": "请至少选择一个用例"
+  },
+  "heal": {
+    "title": "AI 用例自愈",
+    "analysis": "失败分析",
+    "failureReason": "失败原因",
+    "confidence": "置信度",
+    "aiAnalysis": "AI 分析",
+    "fixSuggestions": "修复建议",
+    "current": "当前值",
+    "suggested": "建议值",
+    "applyFix": "应用修复",
+    "selectFixes": "请选择要应用的修复项",
+    "analyzing": "AI 正在分析失败原因并生成修复建议...",
+    "error": "获取修复建议失败，请重试",
+    "appliedSuccess": "修复已应用",
+    "applyError": "应用修复失败，请重试",
+    "canAutoApply": "置信度足够高，建议自动应用修复",
+    "noFixes": "未找到可修复项",
+    "emptyHint": "选择一个失败的用例，AI 将分析原因并提供修复建议"
+  },
+  "mockServer": {
+    "title": "Mock 服务器",
+    "name": "名称",
+    "description": "描述",
+    "path": "路径前缀",
+    "baseUrl": "Mock 基础 URL",
+    "rules": "规则列表",
+    "addRule": "添加规则",
+    "matchMethod": "匹配方法",
+    "matchPath": "匹配路径",
+    "statusCode": "状态码",
+    "responseBody": "响应体",
+    "delay": "延迟 (ms)",
+    "create": "创建 Mock 服务器",
+    "requests": "请求日志",
+    "noRequests": "暂无请求记录",
+    "enabled": "启用",
+    "disabled": "禁用"
+  },
+  "apiTest": {
+    "schemaValidation": "Schema 校验",
+    "harImport": "导入 HAR 文件",
+    "autoSchema": "自动生成 Schema",
+    "changeDetection": "变更检测",
+    "tagManage": "标签管理"
   }
 }

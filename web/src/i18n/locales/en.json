@@ -1484,5 +1484,67 @@
   "notFound": {
     "message": "Sorry, the page you visited does not exist",
     "backHome": "Back to Home"
+  },
+  "smartSelect": {
+    "title": "Smart Test Selection",
+    "inputLabel": "Changed files (one per line)",
+    "inputPlaceholder": "Enter changed file paths, e.g.:\napp/api/auth.py\napp/services/user_service.py\napp/models/order.py",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing changed files and recommending test cases...",
+    "reasoning": "Reasoning",
+    "affectedPaths": "Affected paths: {{count}}",
+    "casesFound": "Recommended cases: {{count}}",
+    "estimatedTime": "Est. time: {{time}} min",
+    "selectAll": "Select all",
+    "execute": "Execute selected ({{count}})",
+    "emptyHint": "Enter changed file paths and click Analyze to get test case recommendations",
+    "enterFiles": "Please enter changed file paths",
+    "error": "Smart selection failed, please try again",
+    "selectCases": "Please select at least one case"
+  },
+  "heal": {
+    "title": "AI Case Healing",
+    "analysis": "Failure Analysis",
+    "failureReason": "Failure reason",
+    "confidence": "Confidence",
+    "aiAnalysis": "AI Analysis",
+    "fixSuggestions": "Fix Suggestions",
+    "current": "Current",
+    "suggested": "Suggested",
+    "applyFix": "Apply Fix",
+    "selectFixes": "Please select fixes to apply",
+    "analyzing": "AI is analyzing failure and generating fix suggestions...",
+    "error": "Failed to get fix suggestions, please try again",
+    "appliedSuccess": "Fix applied successfully",
+    "applyError": "Failed to apply fix, please try again",
+    "canAutoApply": "Confidence is high enough, consider auto-applying",
+    "noFixes": "No fixable items found",
+    "emptyHint": "Select a failed case to get AI-powered fix suggestions"
+  },
+  "mockServer": {
+    "title": "Mock Server",
+    "name": "Name",
+    "description": "Description",
+    "path": "Path Prefix",
+    "baseUrl": "Mock Base URL",
+    "rules": "Rules",
+    "addRule": "Add Rule",
+    "matchMethod": "Match Method",
+    "matchPath": "Match Path",
+    "statusCode": "Status Code",
+    "responseBody": "Response Body",
+    "delay": "Delay (ms)",
+    "create": "Create Mock Server",
+    "requests": "Request Logs",
+    "noRequests": "No request logs yet",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "apiTest": {
+    "schemaValidation": "Schema Validation",
+    "harImport": "Import HAR File",
+    "autoSchema": "Auto-generate Schema",
+    "changeDetection": "Change Detection",
+    "tagManage": "Tag Management"
   }
 }

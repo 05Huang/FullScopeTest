@@ -965,3 +965,140 @@ def get_response_history_detail(history_id):
         return error_response(404, '历史记录不存在')
 
     return success_response(data=history.to_detail_dict())
+
+
+@api_bp.route('/api-test/smart-select', methods=['POST'])
+@jwt_required()
+def smart_test_select():
+    """智能测试选择 — 根据变更文件推荐测试用例"""
+    from ..services.ai.test_selector_service import get_test_selector_service
+    from ..utils import get_current_user_id
+    from ..models.project import Project
+    from ..utils.org_filter import filter_by_org_projects
+
+    data = request.get_json() or {}
+    changed_files = data.get('changed_files', [])
+    if not changed_files:
+        return error_response(400, '请提供变更文件列表')
+
+    project_id = data.get('project_id')
+    tags = data.get('tags', [])
+    max_cases = data.get('max_cases', 50)
+
+    # 权限校验：限定用户所属组织的项目
+    if project_id:
+        current_user = get_current_user_id()
+        project = Project.query.get(project_id)
+        if not project:
+            return error_response(404, '项目不存在')
+        # 组织隔离
+        from flask import g
+        if hasattr(g, 'organization_id') and g.organization_id:
+            if project.organization_id and project.organization_id != g.organization_id:
+                return error_response(403, '无权访问该项目')
+
+    try:
+        selector = get_test_selector_service()
+        result = selector.select_tests(
+            changed_files=changed_files,
+            project_id=project_id,
+            tags=tags if tags else None,
+            max_cases=max_cases,
+        )
+        return success_response(data=result, message='智能选测完成')
+    except Exception as exc:
+        logger.error('智能选测失败', error=str(exc))
+        return error_response(500, f'智能选测失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/heal-case', methods=['POST'])
+@jwt_required()
+def heal_test_case():
+    """AI 用例自愈 — 为失败用例生成修复建议"""
+    from ..services.ai.healing_service import HealingService
+
+    data = request.get_json() or {}
+    case_id = data.get('case_id')
+    failure_info = data.get('failure_info', {})
+
+    if not case_id:
+        return error_response(400, '缺少 case_id')
+
+    # 校验用例存在且属于当前用户的组织
+    case = ApiTestCase.query.get(case_id)
+    if not case:
+        return error_response(404, '用例不存在')
+
+    try:
+        current_user = get_jwt_identity()
+        service = HealingService()
+        result = service.heal_case(case_id=case_id, failure_info=failure_info, user_id=current_user)
+        return success_response(data=result, message='AI 修复建议生成成功')
+    except Exception as exc:
+        logger.error('AI 自愈失败', case_id=case_id, error=str(exc))
+        return error_response(500, f'AI 自愈失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/apply-heal', methods=['POST'])
+@jwt_required()
+def apply_heal_fix():
+    """应用 AI 自愈修复"""
+    from ..services.ai.healing_service import HealingService
+
+    data = request.get_json() or {}
+    case_id = data.get('case_id')
+    fixes = data.get('fixes', [])
+
+    if not case_id:
+        return error_response(400, '缺少 case_id')
+    if not fixes:
+        return error_response(400, '缺少修复项')
+
+    try:
+        current_user = get_jwt_identity()
+        service = HealingService()
+        result = service.apply_fix(case_id=case_id, fixes=fixes, user_id=current_user)
+        return success_response(data=result, message='修复已应用')
+    except Exception as exc:
+        logger.error('应用修复失败', case_id=case_id, error=str(exc))
+        return error_response(500, f'应用修复失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/tags/stats', methods=['GET'])
+@jwt_required()
+def get_tag_stats():
+    """获取标签统计"""
+    from ..services.tag_manager_service import get_tag_manager_service
+
+    project_id = request.args.get('project_id', type=int)
+
+    try:
+        service = get_tag_manager_service()
+        stats = service.get_tag_stats(project_id=project_id)
+        return success_response(data=stats)
+    except Exception as exc:
+        logger.error('获取标签统计失败', error=str(exc))
+        return error_response(500, f'获取标签统计失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/tags/filter', methods=['POST'])
+@jwt_required()
+def filter_by_tags():
+    """按标签过滤用例"""
+    from ..services.tag_manager_service import get_tag_manager_service
+
+    data = request.get_json() or {}
+    tags = data.get('tags', [])
+    project_id = data.get('project_id')
+    match_all = data.get('match_all', False)
+
+    if not tags:
+        return error_response(400, '请提供标签列表')
+
+    try:
+        service = get_tag_manager_service()
+        cases = service.filter_by_tags(tags=tags, project_id=project_id, match_all=match_all)
+        return success_response(data=cases, message=f'找到 {len(cases)} 个匹配用例')
+    except Exception as exc:
+        logger.error('标签过滤失败', error=str(exc))
+        return error_response(500, f'标签过滤失败: {str(exc)}')

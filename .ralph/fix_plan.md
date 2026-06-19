@@ -2531,7 +2531,323 @@ if g.organization_id:
 
 ---
 
-## 全阶段总进度汇总（含第八阶段）
+---
+
+# 第九阶段：功能性补齐（补充）
+
+> 目标：补齐深度审查中遗漏的功能性不足，聚焦测试工作流闭环和开发者体验。
+> 来源：2026-06-19 补充功能审计。
+
+---
+
+## P45：测试工作流闭环（🔴 严重）
+
+- [ ] P45-1: 智能测试选择 — 前端入口（🔴）
+- [ ] P45-2: 用例自愈 — 前端一键修复（🔴）
+- [ ] P45-3: 独立 Mock Server（🔴）
+- [ ] P45-4: API Schema 校验（🟡）
+- [ ] P45-5: HAR 文件导入生成用例（🟡）
+- [ ] P45-6: 用例标签系统（🟡）
+- [ ] P45-7: 响应 Schema 自动生成（🟡）
+- [ ] P45-8: 接口变更检测（🟡）
+
+---
+
+### P45-1: 智能测试选择 — 前端入口
+
+**现状**: 后端 `test_selector_service.py` 已实现基于变更文件推荐用例，但前端无入口。
+
+**需求**:
+- 在 CI/CD 页面或集合执行页面增加「智能选择」按钮
+- 输入变更文件列表（或关联 Git commit），自动推荐要执行的用例子集
+- 展示推荐理由（哪些接口路径受影响）
+- 一键执行推荐用例
+
+**前端**: 新增 `web/src/pages/api-test/components/SmartTestSelector.tsx`。
+
+---
+
+### P45-2: 用例自愈 — 前端一键修复
+
+**现状**: 后端 `healing_service.py` 已实现 `heal_case` 和 `apply_fix`，但前端无入口。
+
+**需求**:
+- 在测试执行结果页面，失败用例旁增加「AI 修复」按钮
+- 点击后调用 `heal_case` API，展示修复建议（字段、当前值、建议值、原因）
+- 用户确认后一键应用修复
+- 修复前展示 Diff 对比
+
+**前端**: 新增 `web/src/pages/api-test/components/HealSuggestionDrawer.tsx`。
+
+---
+
+### P45-3: 独立 Mock Server
+
+**现状**: 只有用例级 Mock（`mock_enabled` 字段），前端开发无法使用。
+
+**需求**:
+- 为每个项目/集合启动独立 Mock 端点（如 `https://mock.fullscopetest.com/{project_id}/{path}`）
+- 支持路径匹配、方法匹配、条件响应（根据请求参数返回不同响应）
+- 有状态 Mock（第一次调用返回 A，第二次返回 B）
+- Mock 请求日志（查看谁调用了 Mock 接口）
+
+**前端**: 新增 `web/src/pages/MockServers.tsx`。
+
+**后端**: 新增 `backend/app/api/mock_server.py` + `backend/app/services/mock_server_service.py`。
+
+---
+
+### P45-4: API Schema 校验
+
+**需求**: 导入 OpenAPI/Swagger Schema 后，每次执行自动校验响应是否符合 Schema。校验失败标记为 warning（不影响 pass/fail），但可在质量门禁中配置为阻断条件。
+
+**前端**: `ResponseViewer.tsx` 增加 Schema 校验结果 Tab。
+
+**后端**: 新增 `backend/app/services/schema_validation_service.py`。
+
+---
+
+### P45-5: HAR 文件导入生成用例
+
+**需求**: 支持导入浏览器 DevTools 或 Charles/Fiddler 导出的 `.har` 文件，自动解析 HTTP 请求并生成测试用例。
+
+**前端**: `ImportModal.tsx` 增加 HAR 导入类型。
+
+**后端**: 新增 `backend/app/services/har_import_service.py`。
+
+---
+
+### P45-6: 用例标签系统
+
+**需求**:
+- 支持给用例打多个标签（如 `smoke`、`regression`、`p0`、`auth`）
+- 按标签筛选用例列表
+- 按标签筛选执行集合（如「只跑 smoke 标签的用例」）
+- 标签管理页面（创建/删除/重命名/颜色配置）
+
+**前端**: `ApiTestCollections.tsx` 增加标签筛选，`SaveCaseModal.tsx` 增加标签选择。
+
+**后端**: 新增 `backend/app/models/tag.py` + `backend/app/services/tag_service.py`。
+
+---
+
+### P45-7: 响应 Schema 自动生成
+
+**需求**: 从实际 API 响应自动生成 JSON Schema，用户可基于此快速创建断言规则。支持多次响应合并（取并集）。
+
+**前端**: `ResponseViewer.tsx` 增加「生成 Schema」按钮。
+
+---
+
+### P45-8: 接口变更检测
+
+**需求**: 记录每次执行的响应结构（字段列表、类型），下次执行时自动对比。新增/删除/类型变化的字段高亮提示，帮助发现未通知的 API Breaking Change。
+
+**前端**: `ResponseViewer.tsx` 增加「变更检测」面板。
+
+**后端**: 新增 `backend/app/services/api_change_detection_service.py`。
+
+---
+
+## P46：开发者体验（🟡 中等）
+
+- [ ] P46-1: CLI 命令行工具（🟡）
+- [ ] P46-2: BDD/Gherkin 测试编写（🟡）
+- [ ] P46-3: API 响应 Diff 对比（🟡）
+- [ ] P46-4: 用例执行依赖与排序（🟡）
+- [ ] P46-5: 测试执行成本估算（🟢）
+- [ ] P46-6: 跨项目用例共享（🟡）
+- [ ] P46-7: Onboarding 引导完善（🟢）
+
+---
+
+### P46-1: CLI 命令行工具
+
+**需求**: 提供 `fst` CLI 工具，支持：
+- `fst run --collection 123 --env staging` — 执行集合
+- `fst run --tag smoke` — 按标签执行
+- `fst report --format junit` — 导出 JUnit 报告
+- `fst import --har traffic.har` — 导入 HAR 文件
+- CI/CD 中无需打开浏览器即可运行测试
+
+**实现**: 新增 `cli/` 目录，使用 Python Click 或 Typer 框架。
+
+---
+
+### P46-2: BDD/Gherkin 测试编写
+
+**需求**: 支持用 Gherkin 语法编写测试场景：
+```gherkin
+Feature: 用户登录
+  Scenario: 正常登录
+    Given 用户名 "testuser" 密码 "Test@123"
+    When POST /api/v1/auth/login
+    Then 状态码为 200
+    And 响应包含 "access_token"
+```
+自动转换为可执行的 API 测试用例。
+
+**前端**: 新增 `web/src/pages/api-test/components/BddEditor.tsx`。
+
+**后端**: 新增 `backend/app/services/bdd_parser_service.py`。
+
+---
+
+### P46-3: API 响应 Diff 对比
+
+**需求**: 选择两个不同环境（如 staging vs production）或两个不同时间点的同一接口响应，进行结构化 Diff 对比。
+
+**前端**: 新增 `web/src/pages/api-test/components/ResponseDiffView.tsx`。
+
+---
+
+### P46-4: 用例执行依赖与排序
+
+**需求**: 支持配置用例间的依赖关系（「用例 B 依赖用例 A 的响应」），集合执行时自动按依赖拓扑排序。
+
+**前端**: `CollectionManager.tsx` 增加依赖配置。
+
+**后端**: `backend/app/services/api_execution_service.py` 增加拓扑排序逻辑。
+
+---
+
+### P46-5: 测试执行成本估算
+
+**需求**: 执行集合前，基于历史平均执行时间预估总耗时，展示给用户。
+
+**前端**: `CollectionManager.tsx` 的执行确认弹窗中展示预估时间。
+
+---
+
+### P46-6: 跨项目用例共享
+
+**需求**: 支持将用例集标记为「共享」，其他项目可引用。共享用例集只读，修改需在源项目中进行。
+
+**前端**: `ApiTestCollections.tsx` 增加「引用共享集合」功能。
+
+**后端**: 新增 `backend/app/models/shared_collection.py`。
+
+---
+
+### P46-7: Onboarding 引导完善
+
+**现状**: MainLayout 有 Tour 引导（7 步），但核心工作页面无引导。
+
+**需求**: 为以下页面增加引导：
+- API 测试工作台：「如何发送第一个请求」
+- 集合管理：「如何创建集合」
+- 环境管理：「如何配置环境变量」
+- 性能测试：「如何创建压测场景」
+
+**前端**: 各页面增加 Tour 步骤配置。
+
+---
+
+## P47：运维与监控（🟡 中等）
+
+- [ ] P47-1: Webhook 调试器（🟡）
+- [ ] P47-2: API 健康监控 / Uptime 检查（🟡）
+- [ ] P47-3: 测试数据自动清理（🟡）
+- [ ] P47-4: 环境快照 / Docker 导出（🟢）
+- [ ] P47-5: 性能测试阶梯式加压（🟡）
+- [ ] P47-6: 用例执行历史 Diff（🟢）
+- [ ] P47-7: 接口变更自动告警（🟢）
+
+---
+
+### P47-1: Webhook 调试器
+
+**需求**: 新增 Webhook 调试页面：
+- 自动生成唯一 Webhook URL
+- 展示收到的所有请求（方法、Headers、Body、时间）
+- 支持重放请求（转发到指定 URL）
+- 请求历史保留 24 小时
+
+**前端**: 新增 `web/src/pages/WebhookDebugger.tsx`。
+
+**后端**: 新增 `backend/app/api/webhook_debugger.py`。
+
+---
+
+### P47-2: API 健康监控 / Uptime 检查
+
+**需求**:
+- 配置需要监控的 API 端点（URL + 预期状态码 + 间隔）
+- 定时执行健康检查（每 1/5/15/60 分钟）
+- 状态页面（可用率、响应时间趋势）
+- 故障告警（通知渠道复用现有通知配置）
+
+**前端**: 新增 `web/src/pages/HealthMonitor.tsx`。
+
+**后端**: 新增 `backend/app/services/health_monitor_service.py` + Celery 定时任务。
+
+---
+
+### P47-3: 测试数据自动清理
+
+**需求**:
+- 为每个用例配置清理策略（执行后 DELETE 创建的资源）
+- 集合执行完毕后自动执行清理步骤
+- 支持手动触发清理
+- 清理日志
+
+**前端**: `SaveCaseModal.tsx` 增加清理脚本配置。
+
+**后端**: 新增 `backend/app/services/cleanup_service.py`。
+
+---
+
+### P47-4: 环境快照 / Docker 导出
+
+**需求**: 将环境配置（变量、基 URL、Header）导出为 `.env` 文件或 `docker-compose.yml`，方便团队共享和 CI 使用。
+
+**前端**: `ApiTestEnvironments.tsx` 增加「导出为 Docker」按钮。
+
+---
+
+### P47-5: 性能测试阶梯式加压
+
+**现状**: `PerfTestScenarios.tsx` 只支持固定用户数。
+
+**需求**: 支持配置加压策略：
+- 阶梯式：每 30 秒增加 50 用户
+- 峰谷式：先加到 100 用户保持 5 分钟，再加到 200
+- 自定义曲线
+
+**前端**: `PerfTestScenarios.tsx` 增加加压策略配置面板。
+
+---
+
+### P47-6: 用例执行历史 Diff
+
+**需求**: 展示同一用例最近 N 次执行结果的 pass/fail 变化时间线。从 pass 变为 fail 的用例高亮标注。
+
+**前端**: 新增 `web/src/pages/api-test/components/CaseExecutionHistory.tsx`。
+
+---
+
+### P47-7: 接口变更自动告警
+
+**需求**: 当检测到 API 响应结构变更（新增/删除字段、类型变化）时，自动触发告警通知。
+
+**前端**: 在通知设置中增加「API 变更」事件类型。
+
+**后端**: 结合 P45-8 的变更检测服务，触发通知。
+
+---
+
+## 第九阶段任务统计
+
+| 阶段 | 任务数 | 🔴 | 🟡 | 🟢 |
+|------|--------|-----|-----|-----|
+| P45 测试工作流闭环 | 8 | 3 | 5 | 0 |
+| P46 开发者体验 | 7 | 0 | 5 | 2 |
+| P47 运维与监控 | 7 | 0 | 5 | 2 |
+| **总计** | **22** | **3** | **15** | **4** |
+
+---
+
+## 全阶段总进度汇总（含第九阶段）
 
 | 阶段 | 总数 | 已完成 | 未完成 |
 |------|------|--------|--------|
@@ -2542,5 +2858,6 @@ if g.organization_id:
 | 第五阶段（P28-P30） | 30 | 30 | 0 |
 | 第六阶段（P31-P32） | 12 | 12 | 0 |
 | 第七阶段（P33-P36） | 30 | 30 | 0 |
-| **第八阶段（P37-P44）** | **43** | **43** | **0** |
-| **总计** | **261** | **261** | **0** |
+| 第八阶段（P37-P44） | 43 | 43 | 0 |
+| **第九阶段（P45-P47）** | **22** | 0 | **22** |
+| **总计** | **283** | **261** | **22** |
