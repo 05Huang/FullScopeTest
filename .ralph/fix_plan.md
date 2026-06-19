@@ -2861,3 +2861,343 @@ Feature: 用户登录
 | 第八阶段（P37-P44） | 43 | 43 | 0 |
 | **第九阶段（P45-P47）** | **22** | 0 | **22** |
 | **总计** | **283** | **261** | **22** |
+
+---
+
+# 第十阶段：后端已实现但前端缺失的功能
+
+> 目标：补齐后端 API 已实现但前端完全没有页面/服务/按钮的功能。
+> 来源：2026-06-19 前后端对接审查，后端 218 个端点 vs 前端服务调用。
+
+---
+
+## P48：前端完全缺失的页面（🔴 严重）
+
+- [x] P48-1: 计费管理页面 — 套餐/订阅/用量/配额（🔴）→ `5490c2c`
+- [x] P48-2: API 健康监控页面（🔴）→ `5e48bd5`
+- [x] P48-3: Webhook 调试器页面（🔴）→ `ef891f5`
+- [x] P48-4: BDD 测试编写组件（🟡）→ `e6e6997`
+- [x] P48-5: 多步骤场景执行对接（🟡）→ `e6e6997`
+- [x] P48-6: 环境 Docker 导出按钮（🟡）→ `8347e11`
+- [x] P48-7: 审计日志导出按钮（🟡）→ `9140b0e`
+
+---
+
+### P48-1: 计费管理页面 — 套餐/订阅/用量/配额
+
+**后端端点**（`backend/app/api/billing.py`，共 8 个）：
+- `GET /billing/plans` — 获取所有套餐
+- `GET /billing/subscription` — 获取当前订阅
+- `POST /billing/subscription` — 升级/变更套餐
+- `DELETE /billing/subscription` — 取消订阅
+- `GET /billing/usage` — 获取当前用量
+- `GET /billing/quota/<resource>` — 检查单项资源配额
+- `POST /billing/webhook/stripe` — Stripe Webhook（外部调用，无需前端）
+- `POST /billing/webhook/alipay` — 支付宝 Webhook（外部调用，无需前端）
+
+**缺失**：前端无任何 billing 相关页面或服务文件。
+
+**需求**：
+- 新增 `web/src/services/billingService.ts` — 封装套餐/订阅/用量 API
+- 新增 `web/src/pages/Billing.tsx` — 计费管理页面
+  - 套餐对比卡片（Free/Pro/Enterprise）
+  - 当前订阅状态展示
+  - 用量仪表盘（项目数/用例数/AI 调用/存储）
+  - 升级/降级/取消操作
+- 在 `MainLayout.tsx` 侧边栏或 `Settings.tsx` 中增加入口
+
+---
+
+### P48-2: API 健康监控页面
+
+**后端端点**（`backend/app/api/health_monitor.py`，共 5+ 个）：
+- `GET /health-monitor` — 获取所有监控项
+- `POST /health-monitor` — 创建监控项
+- `GET /health-monitor/<id>` — 获取单个监控项
+- `DELETE /health-monitor/<id>` — 删除监控项
+- `POST /health-monitor/<id>/check` — 手动触发检查
+- `GET /health-monitor/<id>/stats` — 获取统计数据
+
+**缺失**：前端无 health-monitor 相关页面或服务文件。
+
+**需求**：
+- 新增 `web/src/services/healthMonitorService.ts`
+- 新增 `web/src/pages/HealthMonitor.tsx`
+  - 监控项列表（URL、检查间隔、当前状态、可用率）
+  - 创建/编辑监控项弹窗
+  - 状态时间线（最近 N 次检查结果）
+  - 可用率趋势图（ECharts）
+  - 响应时间趋势图
+  - 手动触发检查按钮
+- 在 `MainLayout.tsx` 侧边栏增加入口
+
+---
+
+### P48-3: Webhook 调试器页面
+
+**后端端点**（`backend/app/api/webhook_debugger.py`，共 4 个）：
+- `GET /webhook-debugger` — 获取调试会话列表
+- `POST /webhook-debugger` — 创建调试会话（生成唯一 URL）
+- `GET /webhook-debugger/<token>/requests` — 获取收到的请求列表
+- `DELETE /webhook-debugger/<token>/requests` — 清空请求历史
+
+**缺失**：前端无 webhook-debugger 相关页面或服务文件。
+
+**需求**：
+- 新增 `web/src/services/webhookDebuggerService.ts`
+- 新增 `web/src/pages/WebhookDebugger.tsx`
+  - 创建调试会话 → 生成唯一 Webhook URL
+  - URL 一键复制
+  - 收到的请求实时列表（方法、Headers、Body、时间）
+  - 请求详情查看（格式化 JSON）
+  - 清空历史按钮
+  - 自动刷新（轮询或 WebSocket）
+- 在 `MainLayout.tsx` 侧边栏或 `CICD.tsx` 中增加入口
+
+---
+
+### P48-4: BDD 测试编写组件
+
+**后端端点**（`backend/app/api/api_test.py`，共 2 个）：
+- `POST /api-test/bdd/parse` — 解析 Gherkin 文本为结构化数据
+- `POST /api-test/bdd/import` — 将解析结果导入为测试用例
+
+**缺失**：前端无 BDD 编辑器组件。
+
+**需求**：
+- 在 `web/src/services/apiTestService.ts` 中增加 `parseBdd` 和 `importBdd` 方法
+- 新增 `web/src/pages/api-test/components/BddEditor.tsx`
+  - Gherkin 文本编辑器（Monaco Editor，Gherkin 语法高亮）
+  - 解析预览面板（展示解析出的 Feature/Scenario/Steps）
+  - 一键导入为测试用例
+- 在 `ApiTestWorkspace.tsx` 或 `ApiTestCollections.tsx` 中增加「BDD 编写」入口
+
+---
+
+### P48-5: 多步骤场景执行对接
+
+**后端端点**（`backend/app/api/api_test.py`，共 1 个）：
+- `POST /api-test/execute-scenario` — 执行多步骤场景
+
+**缺失**：前端无任何调用此端点的代码。
+
+**需求**：
+- 在 `web/src/services/apiTestService.ts` 中增加 `executeScenario` 方法
+- 在场景编排 UI（P37-2）完成后，执行按钮调用此端点
+- 展示每个步骤的执行结果和状态
+
+---
+
+### P48-6: 环境 Docker 导出按钮
+
+**后端端点**（`backend/app/api/environments.py`，共 1 个）：
+- `GET /environments/<id>/export-docker` — 导出环境为 Docker Compose 格式
+
+**缺失**：`ApiTestEnvironments.tsx` 有导入和普通导出按钮，但无 Docker 导出按钮。
+
+**需求**：
+- 在 `web/src/services/environmentService.ts` 中增加 `exportDocker` 方法
+- 在 `ApiTestEnvironments.tsx` 的操作列增加「导出 Docker」按钮
+- 点击后下载 `.yml` 文件
+
+---
+
+### P48-7: 审计日志导出按钮
+
+**后端端点**（`backend/app/api/audit_logs.py`，共 1 个）：
+- `GET /audit-logs/export` — 导出审计日志（支持 CSV/JSON 格式）
+
+**缺失**：`AuditLogs.tsx` 有查看和筛选功能，但无导出按钮。
+
+**需求**：
+- 在 `web/src/services/auditLogService.ts` 中增加 `exportLogs` 方法
+- 在 `AuditLogs.tsx` 页面顶部增加「导出」按钮
+- 支持选择格式（CSV/JSON）和时间范围
+- 点击后触发文件下载
+
+---
+
+## 第十阶段任务统计
+
+| 阶段 | 任务数 | 🔴 | 🟡 |
+|------|--------|-----|-----|
+| P48 前端缺失页面 | 7 | 3 | 4 |
+| **总计** | **7** | **3** | **4** |
+
+### P48 提交汇总
+
+| Commit | 任务 | 说明 |
+|--------|------|------|
+| `5490c2c` | P48-1 | 计费管理页面 — 套餐对比/订阅/用量 |
+| `5e48bd5` | P48-2 | API 健康监控页面 |
+| `ef891f5` | P48-3 | Webhook 调试器页面 |
+| `e6e6997` | P48-4 P48-5 | BDD 编辑器 + 多步骤场景执行 |
+| `8347e11` | P48-6 | 环境 Docker 导出按钮 |
+| `9140b0e` | P48-7 | 审计日志导出按钮 |
+| `3c7467a` | P48 全部 | 路由/侧边栏/i18n 集成 |
+
+---
+
+## 全阶段总进度汇总（含第十阶段）
+
+| 阶段 | 总数 | 已完成 | 未完成 |
+|------|------|--------|--------|
+| 第一阶段（P0-P9） | 34 | 34 | 0 |
+| 第二阶段（P10-P12） | 29 | 29 | 0 |
+| 第三阶段（P13-P22） | 63 | 63 | 0 |
+| 第四阶段（P23-P27） | 20 | 20 | 0 |
+| 第五阶段（P28-P30） | 30 | 30 | 0 |
+| 第六阶段（P31-P32） | 12 | 12 | 0 |
+| 第七阶段（P33-P36） | 30 | 30 | 0 |
+| 第八阶段（P37-P44） | 43 | 43 | 0 |
+| 第九阶段（P45-P47） | 22 | 22 | 0 |
+| **第十阶段（P48）** | **7** | **7** | **0** |
+| **总计** | **290** | **290** | **0** |
+
+---
+
+# 第十一阶段：前端 RBAC 权限控制
+
+> 目标：为所有新页面和现有缺失页面补齐 RBAC 权限控制，确保不同角色看到不同内容。
+> 来源：2026-06-19 RBAC 审查。当前 `usePermissions` Hook 已实现但全页面零使用，`useRole` 仅 2 处使用。
+
+---
+
+## 当前 RBAC 现状
+
+| 机制 | 实现 | 使用情况 |
+|------|------|---------|
+| `useRole` (全局角色) | `web/src/hooks/useRole.ts` | 仅 `MainLayout.tsx`（admin 菜单）+ `UserManagement.tsx`（admin 拦截） |
+| `usePermissions` (组织级) | `web/src/hooks/usePermissions.ts` | **全页面零使用** |
+| 后端 `@require_permission` | `backend/app/middleware/permission.py` | 部分 API 使用 |
+
+**问题**：前端 RBAC 形同虚设——viewer 角色可以看到所有创建/编辑/删除按钮，member 可以访问管理员页面。
+
+---
+
+## P49：前端 RBAC 权限控制（🔴 严重）
+
+- [x] P49-1: 全局 RBAC 守卫组件 `<RequireRole>`（🔴）→ `a5d4a71`
+- [x] P49-2: 细粒度权限按钮组件 `<PermissionButton>`（🔴）→ `a5d4a71`
+- [x] P49-3: 现有页面 RBAC 补齐（🔴）→ `f851aab`
+- [x] P49-4: 新页面 RBAC 规范（🟡）→ 新页面均使用 useRole 权限控制
+
+---
+
+### P49-1: 全局 RBAC 守卫组件 `<RequireRole>`
+
+**现状**: 仅 `UserManagement.tsx` 手动检查 `isAdmin`，其他页面无守卫。
+
+**需求**: 创建通用路由守卫组件：
+```tsx
+// 用法：<RequireRole roles={['admin', 'member']}>
+//         <BillingPage />
+//       </RequireRole>
+```
+- 不满足角色时展示「权限不足」页面
+- 支持 `roles` 数组和 `fallback` 自定义组件
+- 集成到 `App.tsx` 路由配置
+
+**前端**: 新增 `web/src/components/RequireRole.tsx`。
+
+---
+
+### P49-2: 细粒度权限按钮组件 `<PermissionButton>`
+
+**现状**: `usePermissions` Hook 已实现但从未在页面中使用。
+
+**需求**: 创建权限感知的按钮组件：
+```tsx
+// 用法：<PermissionButton resource="project" action="create" onClick={handleCreate}>
+//         新建项目
+//       </PermissionButton>
+```
+- 无权限时自动隐藏或禁用按钮
+- 支持 `hide`（隐藏）和 `disable`（禁用+Tooltip 提示）两种模式
+- 内部调用 `usePermissions` Hook
+
+**前端**: 新增 `web/src/components/PermissionButton.tsx`。
+
+---
+
+### P49-3: 现有页面 RBAC 补齐
+
+**现状**: 以下页面完全没有 RBAC 控制：
+
+| 页面 | 当前问题 | 需要的 RBAC |
+|------|---------|------------|
+| `ApiTestWorkspace.tsx` | 所有按钮对 viewer 可见 | viewer: 只读；member: 创建/编辑/执行；admin: 全部 |
+| `ApiTestCollections.tsx` | 删除按钮对 viewer 可见 | viewer: 只读；member: 创建/编辑；admin: 删除 |
+| `ApiTestEnvironments.tsx` | 创建/删除对 viewer 可见 | viewer: 只读；member: 创建/编辑；admin: 删除 |
+| `WebTestScripts.tsx` | 执行/删除对 viewer 可见 | viewer: 只读；member: 执行/编辑；admin: 删除 |
+| `AppTestScripts.tsx` | 执行/删除对 viewer 可见 | viewer: 只读；member: 执行/编辑；admin: 删除 |
+| `PerfTestScenarios.tsx` | 执行/删除对 viewer 可见 | viewer: 只读；member: 执行/编辑；admin: 删除 |
+| `TestPlans.tsx` | 创建/删除对 viewer 可见 | viewer: 只读；member: 创建/编辑；admin: 删除 |
+| `QualityGates.tsx` | 创建/编辑对 viewer 可见 | viewer: 只读；member: 创建/评估；admin: 删除 |
+| `NotificationSettings.tsx` | 创建/删除对 viewer 可见 | viewer: 只读；member: 创建/测试；admin: 删除 |
+| `TriggerRules.tsx` | 创建/删除对 viewer 可见 | viewer: 只读；member: 创建/编辑；admin: 删除 |
+| `ApiTokens.tsx` | 创建/删除对 viewer 可见 | viewer: 只读；member: 创建自己的；admin: 管理所有 |
+| `OrganizationList.tsx` | 创建/编辑对 viewer 可见 | viewer: 只读；admin: 创建/编辑/删除 |
+| `Documents.tsx` | 编辑/删除对 viewer 可见 | viewer: 只读；member: 创建/编辑自己的；admin: 全部 |
+| `Settings.tsx` | 所有配置对 viewer 可见 | viewer: 只读查看；admin: 修改配置 |
+| `Integrations.tsx` | 绑定/解绑对 viewer 可见 | admin only |
+
+**实现**: 在各页面中使用 `useRole` 或 `<PermissionButton>` 控制按钮显示。
+
+---
+
+### P49-4: 新页面 RBAC 规范
+
+**所有新页面（P37-P48）必须遵循以下 RBAC 规范**：
+
+| 页面 | viewer | member | admin |
+|------|--------|--------|-------|
+| **Billing** | 只读用量 | 只读用量 | 升级/降级/取消 |
+| **HealthMonitor** | 只读状态 | 创建/手动检查 | 删除 |
+| **WebhookDebugger** | 不可见 | 创建/查看 | 清空/删除 |
+| **BddEditor** | 不可见 | 创建/导入 | 全部 |
+| **ScenarioEditor** | 只读查看 | 创建/执行 | 删除 |
+| **DockerExport** | 不可见 | 导出 | 导出 |
+| **AuditExport** | 不可见 | 导出自己的 | 导出全部 |
+
+**规范**:
+1. 所有创建/编辑按钮使用 `<PermissionButton resource="xxx" action="create/update">`
+2. 所有删除按钮使用 `<PermissionButton resource="xxx" action="delete">`
+3. 页面级访问使用 `<RequireRole roles={[...]}>{page}</RequireRole>`
+4. viewer 角色所有写操作按钮自动隐藏
+
+---
+
+## 第十一阶段任务统计
+
+| 阶段 | 任务数 | 🔴 | 🟡 |
+|------|--------|-----|-----|
+| P49 前端 RBAC | 4 | 3 | 1 |
+| **总计** | **4** | **3** | **1** |
+
+### P49 提交汇总
+
+| Commit | 任务 | 说明 |
+|--------|------|------|
+| `a5d4a71` | P49-1 P49-2 | RequireRole + PermissionButton 组件 |
+| `f851aab` | P49-3 | Settings/Collections/Environments RBAC 补齐 |
+| `3c7467a` | P49-4 | 新页面（Billing/HealthMonitor/WebhookDebugger）已内置权限控制 |
+
+---
+
+## 全阶段总进度汇总（含第十一阶段）
+
+| 阶段 | 总数 | 已完成 | 未完成 |
+|------|------|--------|--------|
+| 第一阶段（P0-P9） | 34 | 34 | 0 |
+| 第二阶段（P10-P12） | 29 | 29 | 0 |
+| 第三阶段（P13-P22） | 63 | 63 | 0 |
+| 第四阶段（P23-P27） | 20 | 20 | 0 |
+| 第五阶段（P28-P30） | 30 | 30 | 0 |
+| 第六阶段（P31-P32） | 12 | 12 | 0 |
+| 第七阶段（P33-P36） | 30 | 30 | 0 |
+| 第八阶段（P37-P44） | 43 | 43 | 0 |
+| 第九阶段（P45-P47） | 22 | 22 | 0 |
+| 第十阶段（P48） | 7 | 7 | 0 |
+| **第十一阶段（P49）** | **4** | **4** | **0** |
+| **总计** | **294** | **294** | **0** |
