@@ -7,7 +7,7 @@ export interface Project {
   name: string
   description?: string
   user_id: number
-  settings: Record<string, any>
+  settings: Record<string, unknown>
   created_at: string
   updated_at: string
 }
@@ -15,11 +15,11 @@ export interface Project {
 export interface ProjectCreateParams {
   name: string
   description?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }
 
 export interface ProjectUpdateParams {
   name?: string
   description?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }

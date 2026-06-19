@@ -10,8 +10,8 @@ export interface PerfTestScenario {
   description: string
   target_url: string
   method: string
-  headers?: Record<string, any>
-  body?: any
+  headers?: Record<string, string>
+  body?: Record<string, unknown> | string | null
   user_count: number
   spawn_rate: number
   duration: number

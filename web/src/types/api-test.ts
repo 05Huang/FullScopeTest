@@ -23,7 +23,7 @@ export interface ApiTestCase {
   description?: string
   headers: Record<string, string>
   params: Record<string, string>
-  body?: any
+  body?: Record<string, unknown> | string | null
   body_type: BodyType
   pre_script?: string
   post_script?: string
@@ -57,7 +57,7 @@ export interface TestExecutionResponse {
   success: boolean
   status_code: number
   headers: Record<string, string>
-  body: any
+  body: Record<string, unknown> | string
   response_time: number
   size: number
   script_execution?: ScriptExecutionResult
@@ -129,7 +129,7 @@ export type AiOperationType =
 // AI 计划操作
 export interface AiPlanOperation {
   type: AiOperationType
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // AI 计划结果
@@ -145,7 +145,7 @@ export interface AiExecutionLog {
   timestamp: number
   type: 'info' | 'success' | 'error' | 'warning'
   message: string
-  details?: any
+  details?: Record<string, unknown>
 }
 
 // Mock 配置

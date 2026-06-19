@@ -3,7 +3,7 @@
  */
 
 // API 响应基础结构
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T
@@ -35,7 +35,7 @@ export interface SortParams {
 
 // 过滤参数
 export interface FilterParams {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // 列表查询参数

@@ -59,6 +59,6 @@ export interface ExploreHistoryItem {
   start_url: string
   objective: string
   max_steps: number
-  report: any
+  report: Record<string, unknown> | null
   console_lines: string[]
 }
