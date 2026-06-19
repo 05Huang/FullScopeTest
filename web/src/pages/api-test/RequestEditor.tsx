@@ -128,11 +128,20 @@ const RequestEditor: React.FC<RequestEditorProps> = (p) => {
           <div>
             <Space style={{ marginBottom: 8 }}>
               <Select value={p.bodyType} onChange={p.setBodyType} size="small"
-                options={[{value:'none',label:'none'},{value:'json',label:'JSON'},{value:'form',label:'form-data'},{value:'urlencoded',label:'x-www-form-urlencoded'},{value:'raw',label:'raw'}]} />
+                options={[{value:'none',label:'none'},{value:'json',label:'JSON'},{value:'graphql',label:'GraphQL'},{value:'form',label:'form-data'},{value:'urlencoded',label:'x-www-form-urlencoded'},{value:'raw',label:'raw'}]} />
             </Space>
-            <MonacoEditor height={150} language={p.bodyType === 'json' ? 'json' : 'plaintext'} theme="vs-light"
-              value={p.requestBody} onChange={(v) => p.setRequestBody(v || '{}')}
-              options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false, automaticLayout: true }} />
+            {p.bodyType === 'graphql' ? (
+              <div>
+                <Text type="secondary" style={{ fontSize: 11, marginBottom: 4, display: 'block' }}>Query / Mutation</Text>
+                <MonacoEditor height={120} language="graphql" theme="vs-light"
+                  value={p.requestBody} onChange={(v) => p.setRequestBody(v || '')}
+                  options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false, automaticLayout: true }} />
+              </div>
+            ) : (
+              <MonacoEditor height={150} language={p.bodyType === 'json' ? 'json' : 'plaintext'} theme="vs-light"
+                value={p.requestBody} onChange={(v) => p.setRequestBody(v || '{}')}
+                options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false, automaticLayout: true }} />
+            )}
           </div>
         )},
         { key: 'pre-script', label: t('apiTest.preScript'), children: (
