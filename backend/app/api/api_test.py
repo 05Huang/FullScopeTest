@@ -1318,3 +1318,18 @@ def import_bdd():
     except Exception as exc:
         logger.error('BDD 导入失败', error=str(exc))
         return error_response(500, f'BDD 导入失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/collections/<int:collection_id>/estimate', methods=['GET'])
+@jwt_required()
+def estimate_collection_cost(collection_id):
+    """估算用例集执行成本"""
+    from ..services.test_cost_estimator import get_test_cost_estimator
+
+    try:
+        estimator = get_test_cost_estimator()
+        result = estimator.estimate_collection(collection_id)
+        return success_response(data=result)
+    except Exception as exc:
+        logger.error('成本估算失败', collection_id=collection_id, error=str(exc))
+        return error_response(500, f'成本估算失败: {str(exc)}')
