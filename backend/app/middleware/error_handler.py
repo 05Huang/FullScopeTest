@@ -92,12 +92,12 @@ def error_handler_middleware(app):
     def internal_error(e):
         request_id = getattr(g, 'request_id', '')
 
-        # 记录完整堆栈到日志（始终记录）
+        # 记录完整堆栈到日志（始终记录，生产环境也需要排查问题）
         logger.error(
             "服务器内部错误",
             request_id=request_id,
             error=str(e),
-            traceback=traceback.format_exc() if not is_production else None,
+            traceback=traceback.format_exc(),
         )
 
         response = {
