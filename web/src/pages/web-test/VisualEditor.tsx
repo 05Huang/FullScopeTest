@@ -56,34 +56,34 @@ const genId = () => "step_" + (++idCounter) + "_" + Date.now().toString(36)
 
 /** 将步骤列表转换为 Playwright 脚本 */
 function generateScript(steps: WebTestStep[]): string {
-  const lines: string[] = ["const { test, expect } = require("@playwright/test");", "", "test("录制的测试", async ({ page }) => {"];
+  const Q = '"'
+  const lines: string[] = ['const { test, expect } = require(' + Q + '@playwright/test' + Q + ');', '', 'test(' + Q + '录制的测试' + Q + ', async ({ page }) => {']
   steps.filter(s => s.enabled).forEach(step => {
-    const timeout = step.timeout !== 30000 ? ", { timeout: " + step.timeout + " }" : "";
-    const desc = step.description ? " // " + step.description : "";
+    const timeout = step.timeout !== 30000 ? ', { timeout: ' + step.timeout + ' }' : ''
+    const desc = step.description ? ' // ' + step.description : ''
     switch (step.action) {
-      case "navigate": lines.push("  await page.goto("" + step.value + "");" + desc); break;
-      case "click": lines.push("  await page.click("" + step.selector + """ + timeout + ");" + desc); break;
-      case "fill": lines.push("  await page.fill("" + step.selector + "", "" + step.value + """ + timeout + ");" + desc); break;
-      case "select": lines.push("  await page.selectOption("" + step.selector + "", "" + step.value + "");" + desc); break;
-      case "wait":
-        if (step.selector) lines.push("  await page.waitForSelector("" + step.selector + """ + timeout + ");" + desc);
-        else lines.push("  await page.waitForTimeout(" + (parseInt(step.value) || 1000) + ");" + desc);
-        break;
-      case "assert":
-        if (step.value === "visible") lines.push("  await expect(page.locator("" + step.selector + "")).toBeVisible();" + desc);
-        else if (step.value === "hidden") lines.push("  await expect(page.locator("" + step.selector + "")).toBeHidden();" + desc);
-        else if (step.value === "enabled") lines.push("  await expect(page.locator("" + step.selector + "")).toBeEnabled();" + desc);
-        else lines.push("  await expect(page.locator("" + step.selector + "")).toContainText("" + step.value + "");" + desc);
-        break;
-      case "screenshot": lines.push("  await page.screenshot({ path: "" + (step.value || "screenshot.png") + "" });" + desc); break;
-      case "hover": lines.push("  await page.hover("" + step.selector + "");" + desc); break;
-      case "press": lines.push("  await page.press("" + step.selector + "", "" + step.value + "");" + desc); break;
-      case "scroll": lines.push("  await page.evaluate(() => window.scrollBy(0, " + (parseInt(step.value) || 500) + "));" + desc); break;
+      case 'navigate': lines.push('  await page.goto(' + Q + step.value + Q + ');' + desc); break
+      case 'click': lines.push('  await page.click(' + Q + step.selector + Q + timeout + ');' + desc); break
+      case 'fill': lines.push('  await page.fill(' + Q + step.selector + Q + ', ' + Q + step.value + Q + timeout + ');' + desc); break
+      case 'select': lines.push('  await page.selectOption(' + Q + step.selector + Q + ', ' + Q + step.value + Q + ');' + desc); break
+      case 'wait':
+        if (step.selector) lines.push('  await page.waitForSelector(' + Q + step.selector + Q + timeout + ');' + desc)
+        else lines.push('  await page.waitForTimeout(' + (parseInt(step.value) || 1000) + ');' + desc)
+        break
+      case 'assert':
+        if (step.value === 'visible') lines.push('  await expect(page.locator(' + Q + step.selector + Q + ')).toBeVisible();' + desc)
+        else if (step.value === 'hidden') lines.push('  await expect(page.locator(' + Q + step.selector + Q + ')).toBeHidden();' + desc)
+        else if (step.value === 'enabled') lines.push('  await expect(page.locator(' + Q + step.selector + Q + ')).toBeEnabled();' + desc)
+        else lines.push('  await expect(page.locator(' + Q + step.selector + Q + ')).toContainText(' + Q + step.value + Q + ');' + desc)
+        break
+      case 'screenshot': lines.push('  await page.screenshot({ path: ' + Q + (step.value || 'screenshot.png') + Q + ' });' + desc); break
+      case 'hover': lines.push('  await page.hover(' + Q + step.selector + Q + ');' + desc); break
+      case 'press': lines.push('  await page.press(' + Q + step.selector + Q + ', ' + Q + step.value + Q + ');' + desc); break
+      case 'scroll': lines.push('  await page.evaluate(() => window.scrollBy(0, ' + (parseInt(step.value) || 500) + '));' + desc); break
     }
-  });
-  lines.push("});");
-  return lines.join("
-");
+  })
+  lines.push('});')
+  return lines.join('\n')
 }
 
 
