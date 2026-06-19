@@ -1151,3 +1151,61 @@ def generate_response_schema():
     except Exception as exc:
         logger.error('Schema 生成失败', error=str(exc))
         return error_response(500, f'Schema 生成失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/import-har', methods=['POST'])
+@jwt_required()
+def import_har():
+    """导入 HAR 文件生成测试用例"""
+    from ..services.har_import_service import get_har_import_service
+
+    data = request.get_json() or {}
+    har_content = data.get('har_content', '')
+    project_id = data.get('project_id')
+    collection_id = data.get('collection_id')
+    collection_name = data.get('collection_name', 'HAR 导入')
+
+    if not har_content:
+        return error_response(400, '缺少 HAR 内容')
+    if not project_id:
+        return error_response(400, '缺少 project_id')
+
+    try:
+        current_user = get_jwt_identity()
+        service = get_har_import_service()
+        result = service.import_to_collection(
+            har_content=har_content,
+            project_id=project_id,
+            collection_id=collection_id,
+            collection_name=collection_name,
+            user_id=current_user,
+        )
+        return success_response(data=result, message=f'导入完成，共 {result["cases_count"]} 个用例')
+    except ValidationError as exc:
+        return error_response(400, str(exc))
+    except Exception as exc:
+        logger.error('HAR 导入失败', error=str(exc))
+        return error_response(500, f'HAR 导入失败: {str(exc)}')
+
+
+@api_bp.route('/api-test/parse-har', methods=['POST'])
+@jwt_required()
+def parse_har_preview():
+    """解析 HAR 文件预览（不导入）"""
+    from ..services.har_import_service import get_har_import_service
+
+    data = request.get_json() or {}
+    har_content = data.get('har_content', '')
+
+    if not har_content:
+        return error_response(400, '缺少 HAR 内容')
+
+    try:
+        service = get_har_import_service()
+        result = service.parse_har(har_content)
+        return success_response(data=result, message='HAR 解析成功')
+    except ValidationError as exc:
+        return error_response(400, str(exc))
+    except Exception as exc:
+        logger.error('HAR 解析失败', error=str(exc))
+        return error_response(500, f'HAR 解析失败: {str(exc)}')

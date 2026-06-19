@@ -352,6 +352,44 @@ export const generateResponseSchema = (data: {
   return api.post('/api-test/generate-schema', data) as Promise<ApiResponse<Record<string, unknown>>>
 }
 
+// ==================== HAR 导入 ====================
+
+export interface HarParseResult {
+  entries: Array<{
+    name: string
+    method: string
+    url: string
+    headers: Record<string, string>
+    body: string
+    body_type: string
+    description: string
+  }>
+  summary: {
+    total_entries: number
+    parsed: number
+    skipped: number
+    methods: Record<string, number>
+    domains: string[]
+  }
+}
+
+/** 解析 HAR 文件预览（不导入） */
+export const parseHarPreview = (data: {
+  har_content: string
+}): Promise<ApiResponse<HarParseResult>> => {
+  return api.post('/api-test/parse-har', data) as Promise<ApiResponse<HarParseResult>>
+}
+
+/** 导入 HAR 文件生成测试用例 */
+export const importHar = (data: {
+  har_content: string
+  project_id: number
+  collection_id?: number
+  collection_name?: string
+}): Promise<ApiResponse> => {
+  return api.post('/api-test/import-har', data) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const apiTestService = {
   getCollections,
@@ -379,4 +417,6 @@ export const apiTestService = {
   filterByTags,
   validateResponseSchema,
   generateResponseSchema,
+  parseHarPreview,
+  importHar,
 }
