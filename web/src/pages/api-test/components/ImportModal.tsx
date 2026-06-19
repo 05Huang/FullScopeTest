@@ -1,7 +1,7 @@
 /**
  * API 导入弹窗组件
  *
- * 支持 Postman Collection (JSON) 和 CSV 文件导入。
+ * 支持 Postman Collection (JSON)、CSV 和 cURL 命令导入。
  * 提供模板下载、导入预览和结果展示。
  */
 import { useState } from 'react'
@@ -17,6 +17,7 @@ import {
   Divider,
   List,
   Tag,
+  Input,
   type UploadFile,
 } from 'antd'
 import {
@@ -25,6 +26,7 @@ import {
   FileTextOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  CodeOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import api from '@/services/api'
@@ -48,12 +50,16 @@ interface ImportResult {
 
 const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: ImportModalProps) => {
   const { t } = useTranslation()
-  const [importType, setImportType] = useState<'postman' | 'csv'>('postman')
+  const [importType, setImportType] = useState<'postman' | 'csv' | 'curl'>('postman')
   const [fileContent, setFileContent] = useState<string>('')
   const [fileName, setFileName] = useState<string>('')
   const [collectionId, setCollectionId] = useState<number | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
+
+  // P31-4: cURL 导入状态
+  const [curlInput, setCurlInput] = useState<string>('')
+  const [curlPreview, setCurlPreview] = useState<any>(null)
 
   const handleFileRead = (file: File) => {
     const reader = new FileReader()
@@ -67,6 +73,27 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
   }
 
   const handleImport = async () => {
+    // cURL 导入走单独逻辑
+    if (importType === 'curl') {
+      if (!curlInput.trim()) {
+        message.warning(t('apiTest.import.curlPlaceholder'))
+        return
+      }
+      setLoading(true)
+      try {
+        const res = await api.post('/api-test/import-curl', { curl: curlInput })
+        const data = (res as any)?.data || res
+        if (data) {
+          setCurlPreview(data)
+        }
+      } catch (err: any) {
+        message.error(err?.response?.data?.message || t('apiTest.import.curlParseFailed'))
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     if (!fileContent) {
       message.warning(t('apiTest.import.selectFile'))
       return
@@ -124,6 +151,8 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
     setFileName('')
     setResult(null)
     setCollectionId(undefined)
+    setCurlInput('')
+    setCurlPreview(null)
     onClose()
   }
 
@@ -134,13 +163,20 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
       onCancel={handleClose}
       width={600}
       footer={
-        result ? (
+        result || curlPreview ? (
           <Button onClick={handleClose}>{t('common.close')}</Button>
         ) : (
           <Space>
             <Button onClick={handleClose}>{t('common.cancel')}</Button>
-            <Button type="primary" onClick={handleImport} loading={loading} disabled={!fileContent}>
-              {t('apiTest.import.startImport')}
+            <Button
+              type="primary"
+              onClick={handleImport}
+              loading={loading}
+              disabled={importType === 'curl' ? !curlInput.trim() : !fileContent}
+            >
+              {importType === 'curl'
+                ? (t('apiTest.import.parseCurl') || '解析 cURL')
+                : t('apiTest.import.startImport')}
             </Button>
           </Space>
         )
@@ -156,17 +192,18 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
             </div>
             <Select
               value={importType}
-              onChange={(v) => { setImportType(v); setFileContent(''); setFileName('') }}
+              onChange={(v) => { setImportType(v); setFileContent(''); setFileName(''); setCurlPreview(null) }}
               style={{ width: '100%' }}
               options={[
                 { value: 'postman', label: 'Postman Collection (JSON)' },
                 { value: 'csv', label: 'CSV' },
+                { value: 'curl', label: 'cURL' },
               ]}
             />
           </div>
 
           {/* 目标集合 */}
-          {collections.length > 0 && (
+          {collections.length > 0 && importType !== 'curl' && (
             <div>
               <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>
                 {t('apiTest.import.targetCollection')}
@@ -182,6 +219,48 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
             </div>
           )}
 
+          {/* P31-4: cURL 输入 */}
+          {importType === 'curl' ? (
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>
+                {t('apiTest.import.curlInput') || 'cURL 命令'}
+              </div>
+              <Input.TextArea
+                rows={6}
+                value={curlInput}
+                onChange={(e) => setCurlInput(e.target.value)}
+                placeholder={'curl -X POST https://api.example.com/users \\\n  -H "Content-Type: application/json" \\\n  -d \'{"name": "test"}\''}
+                style={{ fontFamily: 'monospace', fontSize: 13 }}
+              />
+              {curlPreview && (
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: 'var(--fst-surface-variant, #f5f5f5)', border: '1px solid var(--fst-outline-soft, #e8e8e8)' }}>
+                  <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13 }}>{t('apiTest.import.curlPreview') || '解析预览'}</div>
+                  <div style={{ fontSize: 13, lineHeight: 2 }}>
+                    <div><strong>{t('apiTest.import.method') || '方法'}:</strong> <Tag color="blue">{curlPreview.method}</Tag></div>
+                    <div><strong>URL:</strong> <code>{curlPreview.url}</code></div>
+                    {curlPreview.headers && Object.keys(curlPreview.headers).length > 0 && (
+                      <div><strong>{t('apiTest.import.headers') || '请求头'}:</strong> {Object.keys(curlPreview.headers).length} {t('apiTest.import.count') || '个'}</div>
+                    )}
+                    {curlPreview.body && (
+                      <div><strong>{t('apiTest.import.body') || '请求体'}:</strong> <code style={{ fontSize: 12 }}>{typeof curlPreview.body === 'string' ? curlPreview.body : JSON.stringify(curlPreview.body)}</code></div>
+                    )}
+                  </div>
+                  <Button
+                    type="primary"
+                    size="small"
+                    style={{ marginTop: 8 }}
+                    onClick={() => {
+                      onSuccess()
+                      handleClose()
+                    }}
+                  >
+                    {t('apiTest.import.applyToEditor') || '应用到编辑器'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
           {/* 文件上传 */}
           <div>
             <div style={{ marginBottom: 6, fontWeight: 500, fontSize: 13 }}>
@@ -220,6 +299,8 @@ const ImportModal = ({ open, onClose, onSuccess, projectId, collections = [] }: 
               >
                 {t('apiTest.import.downloadTemplate')}
               </Button>
+            </>
+          )}
             </>
           )}
         </div>
