@@ -31,8 +31,8 @@ const BUILTIN_TEMPLATES: Template[] = [
   {
     id: "auth_login", name: "认证 - 登录", description: "用户登录认证模板", category: "认证",
     method: "POST", url_pattern: "{{base_url}}/api/auth/login",
-    headers: "{"Content-Type": "application/json"}",
-    body: "{"username": "{{username}}", "password": "{{password}}"}",
+    headers: '{"Content-Type": "application/json"}',
+    body: '{"username": "{{username}}", "password": "{{password}}"}',
     assertions: "status=200, body.access_token exists",
   },
   {

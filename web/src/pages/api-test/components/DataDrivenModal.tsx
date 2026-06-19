@@ -24,8 +24,7 @@ const DataDrivenModal: React.FC<DataDrivenModalProps> = ({ open, onClose, onExec
   const [fileName, setFileName] = useState("")
 
   const parseCSV = useCallback((text: string) => {
-    const lines = text.split("
-").filter(l => l.trim())
+    const lines = text.split('\n').filter(l => l.trim())
     if (lines.length < 2) { message.error("CSV 文件至少需要包含表头和一行数据"); return }
     const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""))
     const rows: Record<string, string>[] = []
