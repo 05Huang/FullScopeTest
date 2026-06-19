@@ -16,6 +16,7 @@ import {
   promptVersionService, PromptVersion, PromptVersionPayload, PROMPT_FEATURES,
 } from '../services/promptVersionService';
 import { useBranding } from '../hooks/useBranding';
+import { useRole } from '../hooks/useRole';
 import api from '../services/api';
 
 const { Text } = Typography;
@@ -191,6 +192,7 @@ const SettingsIntegrationsTab: React.FC = () => {
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const { isAdmin } = useRole();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { mode: themeMode, setMode: setThemeMode, resolvedTheme } = useThemeStore();
@@ -915,7 +917,7 @@ const Settings: React.FC = () => {
               </Col>
             </Row>
 
-            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
+            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} disabled={!isAdmin}>
               {t('settings.saveBtn')}
             </Button>
           </Form>
@@ -954,6 +956,7 @@ const Settings: React.FC = () => {
               <Select
                 defaultValue="24h"
                 style={{ width: 200 }}
+                disabled={!isAdmin}
                 options={[
                   { label: '1 小时', value: '1h' },
                   { label: '4 小时', value: '4h' },

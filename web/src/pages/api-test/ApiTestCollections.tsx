@@ -33,6 +33,7 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { apiTestService } from '@/services'
+import { useRole } from '@/hooks/useRole'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '@/stores/projectStore'
 
@@ -69,6 +70,7 @@ const methodColors: Record<string, string> = {
 
 const ApiTestCollections = () => {
   const { t } = useTranslation();
+  const { isAdmin } = useRole()
   const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(false)
   const [cases, setCases] = useState<TestCase[]>([])
@@ -378,12 +380,14 @@ const ApiTestCollections = () => {
           <Popconfirm
             title={t('apiTest.confirmDeleteCase')}
             onConfirm={() => handleDelete(record.id)}
+            disabled={!isAdmin}
           >
-            <Tooltip title={t("common.delete")}>
+            <Tooltip title={isAdmin ? t("common.delete") : t("common.noPermission") || "No Permission"}>
               <Button
                 type="text"
                 size="small"
                 danger
+                disabled={!isAdmin}
                 icon={<DeleteOutlined />}
               />
             </Tooltip>
@@ -398,7 +402,7 @@ const ApiTestCollections = () => {
     { key: 'run', icon: <PlayCircleOutlined />, label: t('apiTest.batchRun') },
     { key: 'export', icon: <ExportOutlined />, label: t('apiTest.exportCases') },
     { type: 'divider' },
-    { key: 'delete', icon: <DeleteOutlined />, label: t('apiTest.batchDelete'), danger: true },
+    { key: 'delete', icon: <DeleteOutlined />, label: t('apiTest.batchDelete'), danger: true, disabled: !isAdmin },
   ]
 
   return (
