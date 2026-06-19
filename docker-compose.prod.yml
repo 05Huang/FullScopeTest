@@ -82,7 +82,7 @@ services:
       dockerfile: docker/Dockerfile.backend
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "celery -A app.tasks inspect ping --timeout=5 | grep -q 'pong'"]
+      test: ["CMD-SHELL", "celery -A app.extensions:celery inspect ping --timeout=5 | grep -q 'pong'"]
       interval: 30s
       timeout: 10s
       retries: 3
