@@ -37,6 +37,27 @@ export const deleteEnvironment = (id: number): Promise<ApiResponse> => {
   return api.delete(`/environments/${id}`) as Promise<ApiResponse>
 }
 
+/** 设为默认环境 */
+export const setDefaultEnvironment = (id: number): Promise<ApiResponse> => {
+  return api.post(`/environments/${id}/default`) as Promise<ApiResponse>
+}
+
+/** 导出环境变量（JSON 格式） */
+export const exportEnvironment = (id: number): Promise<ApiResponse> => {
+  return api.get(`/environments/${id}/export`) as Promise<ApiResponse>
+}
+
+/** 导入环境变量 */
+export const importEnvironment = (projectId: number, data: {
+  name: string
+  base_url?: string
+  description?: string
+  variables?: Record<string, any>
+  is_default?: boolean
+}): Promise<ApiResponse> => {
+  return api.post(`/projects/${projectId}/environments/import`, data) as Promise<ApiResponse>
+}
+
 
 // 导出服务对象
 export const environmentService = {
@@ -45,4 +66,7 @@ export const environmentService = {
   getEnvironment,
   updateEnvironment,
   deleteEnvironment,
+  setDefaultEnvironment,
+  exportEnvironment,
+  importEnvironment,
 }

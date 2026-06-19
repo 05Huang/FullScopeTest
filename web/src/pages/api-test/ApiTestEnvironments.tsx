@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Card,
   Table,
@@ -13,6 +13,8 @@ import {
   Popconfirm,
   Tooltip,
   Switch,
+  Upload,
+  Select,
 } from 'antd'
 import {
   PlusOutlined,
@@ -21,6 +23,8 @@ import {
   DeleteOutlined,
   CopyOutlined,
   CheckCircleOutlined,
+  ExportOutlined,
+  ImportOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { environmentService } from '@/services'
@@ -50,6 +54,13 @@ const ApiTestEnvironments = () => {
   const [editingEnv, setEditingEnv] = useState<Environment | null>(null)
   const [searchText, setSearchText] = useState('')
   const [form] = Form.useForm()
+
+  // P31-3: 导入/导出状态
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importData, setImportData] = useState<any>(null)
+  const [importing, setImporting] = useState(false)
+  const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadData()
@@ -144,16 +155,104 @@ const ApiTestEnvironments = () => {
     }
   }
 
-  // 设为默认环境
+  // 设为默认环境（使用专用端点）
   const handleSetDefault = async (id: number) => {
     try {
-      const res = await environmentService.updateEnvironment(id, { is_default: true })
+      const res = await environmentService.setDefaultEnvironment(id)
       if (res.code === 200) {
         message.success(t('apiTest.environments.setDefaultSuccess'))
         loadData()
       }
     } catch (error) {
       message.error(t('apiTest.environments.setFailed'))
+    }
+  }
+
+  // P31-3: 导出环境变量
+  const handleExport = async (id: number) => {
+    try {
+      const res = await environmentService.exportEnvironment(id)
+      if (res.code === 200) {
+        const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `environment-${id}.json`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        message.success(t('apiTest.environments.exportSuccess'))
+      }
+    } catch {
+      message.error(t('apiTest.environments.exportFailed'))
+    }
+  }
+
+  // P31-3: 解析导入文件
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string
+        // 支持 JSON 和 .env 格式
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(content)
+          setImportData(parsed)
+        } else if (file.name.endsWith('.env')) {
+          // 解析 .env 格式: KEY=VALUE
+          const variables: Record<string, string> = {}
+          content.split('\n').forEach(line => {
+            const trimmed = line.trim()
+            if (trimmed && !trimmed.startsWith('#')) {
+              const eqIndex = trimmed.indexOf('=')
+              if (eqIndex > 0) {
+                const key = trimmed.slice(0, eqIndex).trim()
+                const value = trimmed.slice(eqIndex + 1).trim().replace(/^["']|["']$/g, '')
+                variables[key] = value
+              }
+            }
+          })
+          setImportData({ name: file.name.replace('.env', ''), variables })
+        } else {
+          message.error(t('apiTest.environments.importFormatError'))
+        }
+      } catch {
+        message.error(t('apiTest.environments.importParseError'))
+      }
+    }
+    reader.readAsText(file)
+    // 重置 input 以便重复选择同一文件
+    e.target.value = ''
+  }
+
+  // P31-3: 执行导入
+  const handleImportConfirm = async () => {
+    if (!importData || !currentProjectId) return
+    setImporting(true)
+    try {
+      const payload = {
+        name: importData.name || 'Imported Environment',
+        base_url: importData.base_url || '',
+        description: importData.description || '',
+        variables: importData.variables || {},
+        is_default: false,
+      }
+      const res = await environmentService.importEnvironment(currentProjectId, payload)
+      if (res.code === 200 || res.code === 201) {
+        message.success(t('apiTest.environments.importSuccess'))
+        setImportModalOpen(false)
+        setImportData(null)
+        loadData()
+      } else {
+        message.error(res.message || t('apiTest.environments.importFailed'))
+      }
+    } catch {
+      message.error(t('apiTest.environments.importFailed'))
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -258,6 +357,14 @@ const ApiTestEnvironments = () => {
               />
             </Tooltip>
           </Popconfirm>
+          <Tooltip title={t('apiTest.environments.export')}>
+            <Button
+              type="text"
+              size="small"
+              icon={<ExportOutlined />}
+              onClick={() => handleExport(record.id)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -278,6 +385,12 @@ const ApiTestEnvironments = () => {
             onChange={(e) => setSearchText(e.target.value)}
           />
           <Button
+            icon={<ImportOutlined />}
+            onClick={() => { setImportData(null); setImportModalOpen(true); }}
+          >
+            {t('apiTest.environments.import')}
+          </Button>
+          <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
@@ -286,7 +399,7 @@ const ApiTestEnvironments = () => {
               setIsModalOpen(true)
             }}
           >
-            新建环境
+            {t('apiTest.environments.newEnv')}
           </Button>
         </div>
 
@@ -309,6 +422,51 @@ const ApiTestEnvironments = () => {
         />
         </div>
       </div>
+
+      {/* P31-3: 导入环境变量弹窗 */}
+      <Modal
+        title={t('apiTest.environments.importTitle')}
+        open={importModalOpen}
+        onCancel={() => { setImportModalOpen(false); setImportData(null); }}
+        onOk={handleImportConfirm}
+        confirmLoading={importing}
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        okButtonProps={{ disabled: !importData }}
+      >
+        <div style={{ padding: '8px 0' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.env"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+          <Button
+            icon={<ImportOutlined />}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ marginBottom: 16 }}
+          >
+            {t('apiTest.environments.selectFile')}
+          </Button>
+          <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted, #999)', marginBottom: 16 }}>
+            {t('apiTest.environments.importFormats') || '支持 .json 和 .env 格式'}
+          </div>
+          {importData && (
+            <div style={{ padding: 12, borderRadius: 8, background: 'var(--fst-surface-variant, #f5f5f5)', border: '1px solid var(--fst-outline-soft, #e8e8e8)' }}>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>{t('apiTest.environments.importPreview')}</div>
+              <div><strong>{t('apiTest.environments.envName')}:</strong> {importData.name || '-'}</div>
+              {importData.base_url && <div><strong>Base URL:</strong> {importData.base_url}</div>}
+              {importData.variables && (
+                <div>
+                  <strong>{t('apiTest.environments.envVariables')}:</strong>{' '}
+                  {Object.keys(importData.variables).length} {t('apiTest.environments.variableCount')}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* 新建/编辑环境弹窗 */}
       <Modal

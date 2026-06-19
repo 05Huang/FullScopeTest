@@ -14,6 +14,9 @@ vi.mock("@/services/environmentService", () => ({
   environmentService: {
     getEnvironments: vi.fn().mockResolvedValue({ data: [] }),
     createEnvironment: vi.fn().mockResolvedValue({ data: {} }),
+    setDefaultEnvironment: vi.fn().mockResolvedValue({ code: 200 }),
+    exportEnvironment: vi.fn().mockResolvedValue({ code: 200, data: {} }),
+    importEnvironment: vi.fn().mockResolvedValue({ code: 200 }),
   },
 }))
 
@@ -54,7 +57,7 @@ describe("ApiTestEnvironments Page", () => {
 
   it("should render create button", () => {
     renderEnvironments()
-    expect(screen.getByText("新建环境")).toBeTruthy()
+    expect(screen.getByText("apiTest.environments.newEnv")).toBeTruthy()
   })
 
   it("should render updated at column", () => {
