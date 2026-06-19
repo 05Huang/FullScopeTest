@@ -209,6 +209,22 @@
       "api": "API",
       "web": "Web",
       "perf": "性能"
+    },
+    "customizeLayout": "自定义布局",
+    "selectWidgets": "选择要在仪表盘中显示的组件：",
+    "resetLayout": "恢复默认",
+    "widgetSaveSuccess": "布局已保存",
+    "widgetSaveFailed": "保存失败",
+    "widgetResetSuccess": "已恢复默认布局",
+    "widgetType": {
+      "pass_rate": "测试通过率",
+      "recent_runs": "最近执行",
+      "top_failures": "失败用例 Top 10",
+      "ai_usage": "AI 使用统计",
+      "team_activity": "团队活跃度",
+      "quality_gate": "质量门禁状态",
+      "sla": "SLA 达成率",
+      "cost_overview": "成本概览"
     }
   },
   "sidebar": {

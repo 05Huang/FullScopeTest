@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Skeleton, Tooltip, Button } from 'antd'
+import { Skeleton, Tooltip, Button, Modal, Checkbox, message, Space } from 'antd'
 import ReactECharts from 'echarts-for-react'
+import api from '@/services/api'
 import { reportService } from '@/services'
 import type { DashboardStats, QualityTrendItem, ResponsePercentiles } from '@/services/reportService'
 import { useProjectStore } from '@/stores/projectStore'
@@ -16,6 +17,7 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   FieldTimeOutlined,
+  SettingOutlined,
 } from '@ant-design/icons'
 
 interface DailyTrend {
@@ -43,6 +45,12 @@ const Dashboard = () => {
   const [qualityTrend, setQualityTrend] = useState<QualityTrendItem[]>([])
   const [qualityDays, setQualityDays] = useState(30)
 
+  // P32-2: 自定义仪表盘组件布局
+  const [widgetModalOpen, setWidgetModalOpen] = useState(false)
+  const [widgetTypes, setWidgetTypes] = useState<string[]>([])
+  const [selectedWidgets, setSelectedWidgets] = useState<string[]>([])
+  const [widgetLoading, setWidgetLoading] = useState(false)
+
   useEffect(() => {
     fetchDashboardData()
   }, [currentProjectId])
@@ -58,6 +66,11 @@ const Dashboard = () => {
   useEffect(() => {
     fetchPercentiles()
   }, [currentProjectId])
+
+  useEffect(() => {
+    fetchWidgetTypes()
+    fetchWidgets()
+  }, [])
 
   const fetchDashboardData = async () => {
     setLoading(true)
@@ -87,6 +100,65 @@ const Dashboard = () => {
       const res = await reportService.getQualityTrend({ project_id: currentProjectId, days: qualityDays, granularity: 'week' })
       if (res.code === 200) setQualityTrend(res.data || [])
     } catch { /* silent */ }
+  }
+
+  // P32-2: 获取组件类型列表
+  const fetchWidgetTypes = async () => {
+    try {
+      const res = await api.get('/dashboard/widget-types')
+      const data = (res as any)?.data?.data || (res as any)?.data || []
+      if (Array.isArray(data)) {
+        setWidgetTypes(data.map((w: any) => w.type || w.widget_type || w))
+      }
+    } catch { /* 静默 */ }
+  }
+
+  // 获取当前用户的组件配置
+  const fetchWidgets = async () => {
+    try {
+      const res = await api.get('/dashboard/widgets')
+      const data = (res as any)?.data?.data || (res as any)?.data || []
+      if (Array.isArray(data)) {
+        setSelectedWidgets(data.map((w: any) => w.widget_type || w.type))
+      }
+    } catch { /* 静默 */ }
+  }
+
+  // 保存组件布局
+  const handleSaveWidgets = async () => {
+    setWidgetLoading(true)
+    try {
+      const widgets = selectedWidgets.map((type, index) => ({
+        widget_type: type,
+        title: type,
+        position_x: 0,
+        position_y: index,
+        width: 1,
+        height: 1,
+        config: {},
+      }))
+      const res = await api.put('/dashboard/widgets', { widgets })
+      if ((res as any).code === 200 || (res as any).data?.code === 200) {
+        message.success(t('dashboard.widgetSaveSuccess') || '布局已保存')
+        setWidgetModalOpen(false)
+      }
+    } catch {
+      message.error(t('dashboard.widgetSaveFailed') || '保存失败')
+    } finally {
+      setWidgetLoading(false)
+    }
+  }
+
+  // 重置为默认布局
+  const handleResetWidgets = async () => {
+    try {
+      await api.post('/dashboard/widgets/reset')
+      message.success(t('dashboard.widgetResetSuccess') || '已恢复默认布局')
+      fetchWidgets()
+      setWidgetModalOpen(false)
+    } catch {
+      message.error(t('common.failed') || '重置失败')
+    }
   }
 
   const getPassRate = (passed: number, total: number) =>
@@ -181,8 +253,11 @@ const Dashboard = () => {
 
   return (
     <div className="fst-page" role="main" aria-label={t('dashboard.title')}>
-      <div className="fst-page-header fst-animate-in">
+      <div className="fst-page-header fst-animate-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="fst-page-title">{t('dashboard.title')}</h1>
+        <Button icon={<SettingOutlined />} onClick={() => { fetchWidgetTypes(); fetchWidgets(); setWidgetModalOpen(true) }}>
+          {t('dashboard.customizeLayout') || '自定义布局'}
+        </Button>
       </div>
 
       <div id="tour-step-dashboard-api" className="fst-stat-row fst-animate-in fst-animate-in-1"
@@ -359,6 +434,45 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      {/* P32-2: 自定义仪表盘组件布局弹窗 */}
+      <Modal
+        title={t('dashboard.customizeLayout') || '自定义仪表盘布局'}
+        open={widgetModalOpen}
+        onCancel={() => setWidgetModalOpen(false)}
+        onOk={handleSaveWidgets}
+        confirmLoading={widgetLoading}
+        okText={t('common.save') || '保存'}
+        cancelText={t('common.cancel') || '取消'}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Button onClick={handleResetWidgets}>{t('dashboard.resetLayout') || '恢复默认'}</Button>
+            <Space>
+              <Button onClick={() => setWidgetModalOpen(false)}>{t('common.cancel') || '取消'}</Button>
+              <Button type="primary" onClick={handleSaveWidgets} loading={widgetLoading}>{t('common.save') || '保存'}</Button>
+            </Space>
+          </div>
+        }
+      >
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--fst-on-surface-muted, #999)' }}>
+            {t('dashboard.selectWidgets') || '选择要在仪表盘中显示的组件：'}
+          </div>
+          <Checkbox.Group
+            value={selectedWidgets}
+            onChange={(values) => setSelectedWidgets(values as string[])}
+            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+          >
+            {(widgetTypes.length > 0 ? widgetTypes : [
+              'pass_rate', 'recent_runs', 'top_failures', 'ai_usage',
+              'team_activity', 'quality_gate', 'sla', 'cost_overview',
+            ]).map((type) => (
+              <Checkbox key={type} value={type} style={{ marginLeft: 0 }}>
+                {t('dashboard.widgetType.' + type) || type.replace(/_/g, ' ')}
+              </Checkbox>
+            ))}
+          </Checkbox.Group>
+        </div>
+      </Modal>
     </div>
   )
 }

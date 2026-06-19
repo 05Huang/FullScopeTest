@@ -209,6 +209,22 @@
       "api": "API",
       "web": "Web",
       "perf": "Perf"
+    },
+    "customizeLayout": "Customize Layout",
+    "selectWidgets": "Select widgets to display on the dashboard:",
+    "resetLayout": "Reset to Default",
+    "widgetSaveSuccess": "Layout saved",
+    "widgetSaveFailed": "Save failed",
+    "widgetResetSuccess": "Layout reset to default",
+    "widgetType": {
+      "pass_rate": "Pass Rate",
+      "recent_runs": "Recent Runs",
+      "top_failures": "Top 10 Failures",
+      "ai_usage": "AI Usage",
+      "team_activity": "Team Activity",
+      "quality_gate": "Quality Gate",
+      "sla": "SLA Achievement",
+      "cost_overview": "Cost Overview"
     }
   },
   "sidebar": {
