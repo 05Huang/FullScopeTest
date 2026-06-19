@@ -192,7 +192,11 @@ def login():
 
     # 更新最后登录时间
     user.update_last_login()
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("更新最后登录时间失败", user_id=user.id, error=str(exc))
 
     # 生成 Token (identity 需要是字符串)
     access_token = create_access_token(identity=str(user.id))
@@ -260,9 +264,14 @@ def update_profile():
         
     if 'avatar' in data:
         user.avatar = data['avatar']
-        
-    db.session.commit()
-    
+
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("更新用户资料失败", user_id=user_id, error=str(exc))
+        return error_response(500, '更新失败')
+
     return success_response(data=user.to_dict(), message='个人信息修改成功')
 
 
@@ -365,8 +374,13 @@ def change_password():
     
     # 更新密码
     user.password_hash = generate_password_hash(new_password)
-    db.session.commit()
-    
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("密码修改失败", user_id=user.id, error=str(exc))
+        return error_response(500, '密码修改失败')
+
     return success_response(message='密码修改成功')
 
 
@@ -398,7 +412,12 @@ def forgot_password():
     reset_token = secrets.token_urlsafe(32)
     user.reset_token = generate_password_hash(reset_token)
     user.reset_token_expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("密码重置 token 保存失败", user_id=user.id, error=str(exc))
+        return error_response(500, '密码重置请求失败')
 
     logger.info('Password reset requested', user_id=user.id, email=email)
 
