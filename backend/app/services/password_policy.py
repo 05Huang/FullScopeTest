@@ -31,6 +31,9 @@ LOCKOUT_DURATION = int(os.environ.get('LOCKOUT_DURATION_SECONDS', str(15 * 60)))
 
 _login_failure_store: dict = {}
 
+# Redis 连接缓存（模块级单例，避免每次调用创建新连接）
+_redis_client = None
+
 
 def _get_store_key(user_id: int) -> str:
     """获取存储键"""
@@ -38,16 +41,24 @@ def _get_store_key(user_id: int) -> str:
 
 
 def _get_redis():
-    """尝试获取 Redis 连接（生产环境）"""
+    """获取 Redis 连接（带缓存，失败时自动重建）"""
+    global _redis_client
+    if _redis_client is not None:
+        try:
+            _redis_client.ping()
+            return _redis_client
+        except Exception:
+            _redis_client = None
+
     try:
         import redis as redis_lib
         redis_url = os.environ.get('REDIS_URL')
         if redis_url:
-            r = redis_lib.from_url(redis_url, decode_responses=True)
-            r.ping()
-            return r
+            _redis_client = redis_lib.from_url(redis_url, decode_responses=True)
+            _redis_client.ping()
+            return _redis_client
     except Exception:
-        pass
+        _redis_client = None
     return None
 
 
