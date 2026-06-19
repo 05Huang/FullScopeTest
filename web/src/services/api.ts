@@ -120,10 +120,11 @@ api.interceptors.response.use(
         await refreshAccessToken()
         // 刷新成功，重试原请求（新的 access_token_cookie 已由浏览器自动携带）
         return api(originalRequest)
-      } catch {
-        // 刷新失败，登出
+      } catch (refreshError) {
+        // 刷新失败，登出并明确拒绝原请求
         useAuthStore.getState().logout()
         window.location.href = '/login'
+        return Promise.reject(refreshError)
       }
     }
 
