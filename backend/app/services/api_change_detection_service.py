@@ -220,6 +220,56 @@ class APIChangeDetectionService:
         return changes
 
 
+    def check_and_alert(
+        self,
+        case_id: int,
+        response_body: str,
+        status_code: int = 200,
+        case_name: str = '',
+    ) -> Dict[str, Any]:
+        """
+        检测变更并在发现 Breaking Change 时触发告警
+
+        Args:
+            case_id: 用例 ID
+            response_body: 响应体
+            status_code: 状态码
+            case_name: 用例名称（用于告警消息）
+
+        Returns:
+            Dict: 检测结果 + 是否触发告警
+        """
+        result = self.detect_changes(case_id, response_body, status_code)
+
+        breaking_changes = [c for c in result.get('changes', []) if c.get('severity') == 'breaking']
+
+        if breaking_changes:
+            alert_message = f'接口变更告警：用例「{case_name or case_id}」检测到 {len(breaking_changes)} 个 Breaking Change'
+            for change in breaking_changes:
+                alert_message += f'\n  - [{change["type"]}] {change["path"]}'
+
+            logger.warning('接口 Breaking Change 检测到', case_id=case_id, changes=len(breaking_changes))
+
+            # 尝试触发通知（如果通知服务可用）
+            try:
+                from .notification_service import get_notification_service
+                notify = get_notification_service()
+                notify.send_notification(
+                    title='接口变更告警',
+                    content=alert_message,
+                    level='warning',
+                )
+            except Exception:
+                pass  # 通知服务不可用时静默忽略
+
+            result['alert_triggered'] = True
+            result['alert_message'] = alert_message
+        else:
+            result['alert_triggered'] = False
+
+        return result
+
+
 _instance = None
 
 
