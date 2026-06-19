@@ -279,6 +279,14 @@ export const deleteBaseline = (baselineId: number): Promise<ApiResponse> => {
   return api.delete(`/visual/baselines/${baselineId}`) as Promise<ApiResponse>
 }
 
+/** P32-3: 获取视觉回归历史 */
+export const getVisualHistory = (testCaseId: number, params?: {
+  page?: number
+  per_page?: number
+}): Promise<ApiResponse> => {
+  return api.get(`/visual/history/${testCaseId}`, { params }) as Promise<ApiResponse>
+}
+
 // 导出服务对象
 export const webTestService = {
   getScripts,
@@ -302,5 +310,6 @@ export const webTestService = {
   getBaselines,
   approveBaseline,
   getVisualDiffs,
+  getVisualHistory,
   deleteBaseline,
 }

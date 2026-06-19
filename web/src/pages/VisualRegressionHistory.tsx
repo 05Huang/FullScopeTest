@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, Table, Tag, Typography, Spin, Empty, Row, Col, Image, Button } from 'antd'
 import { LineChartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
-import api from '@/services/api'
+import { webTestService } from '@/services/webTestService'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -35,8 +35,8 @@ const VisualRegressionHistory: React.FC = () => {
       if (!testCaseId) return
       setLoading(true)
       try {
-        const res = await api.get(`/visual/history/${testCaseId}`)
-        setHistory(res.data || [])
+        const res = await webTestService.getVisualHistory(Number(testCaseId))
+        setHistory((res as any).data || [])
       } catch (err) {
         console.error('Failed to fetch visual history:', err)
       } finally {
