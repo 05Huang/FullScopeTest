@@ -7,6 +7,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from ..core.logging import get_logger
+from ..utils.singleton import singleton_function
 
 logger = get_logger(__name__)
 
@@ -95,9 +96,6 @@ class SessionManager:
     def get_session_count(self, user_id): return len(self.get_user_sessions(user_id))
 
 
-_instance = None
-
+@singleton_function
 def get_session_manager():
-    global _instance
-    if _instance is None: _instance = SessionManager()
-    return _instance
+    return SessionManager()

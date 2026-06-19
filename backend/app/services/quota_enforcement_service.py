@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional
 from ..extensions import db
 from ..models.quota import Quota
 from ..core.logging import get_logger
+from ..utils.singleton import singleton_function
 
 logger = get_logger(__name__)
 
@@ -126,10 +127,7 @@ class QuotaService:
             logger.info("月度配额已重置", org_id=org_id, resource=resource_type)
 
 
-_instance = None
-
-
+@singleton_function
 def get_quota_service():
-    global _instance
-    if _instance is None: _instance = QuotaService()
+    return QuotaService()
     return _instance
