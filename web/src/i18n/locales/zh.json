@@ -254,7 +254,7 @@
     "apiTokens": "API Token",
     "testPlans": "测试计划",
     "qualityGates": "质量门禁",
-    "cicdMain": "CI/CD 与定时任务",
+    "cicdMain": "CI/CD 概览",
     "triggerRules": "触发规则",
     "notifications": "通知设置",
     "teamMetrics": "团队效能",
@@ -263,7 +263,11 @@
     "mockServers": "Mock 服务器",
     "billing": "计费管理",
     "healthMonitor": "健康监控",
-    "webhookDebugger": "Webhook 调试器"
+    "webhookDebugger": "Webhook 调试",
+    "visualRegression": "视觉回归",
+    "dataFactory": "数据工厂",
+    "flakyTests": "Flaky 检测",
+    "apiDocs": "API 文档"
   },
   "admin": {
     "userManagement": "用户管理",
@@ -435,7 +439,9 @@
       "importFormatError": "格式错误",
       "selectFile": "选择文件",
       "jsonError": "JSON 格式错误"
-    }
+    },
+    "workspace": "工作台",
+    "collections": "集合管理"
   },
   "webTest": {
     "title": "Web 自动化测试",
@@ -499,7 +505,8 @@
     "noCollections": "暂无集合",
     "noScriptContent": "脚本内容为空",
     "scriptNotExecuted": "脚本未执行",
-    "scriptSubmitted": "脚本已提交"
+    "scriptSubmitted": "脚本已提交",
+    "scripts": "Web 脚本"
   },
   "perfTest": {
     "title": "性能测试",
@@ -662,7 +669,12 @@
     "stopFailed": "停止失败",
     "testStarted": "测试已启动",
     "testStopped": "测试已停止",
-    "updateScenarioFailed": "更新场景失败"
+    "updateScenarioFailed": "更新场景失败",
+    "scenarios": "压测场景",
+    "monitor": "实时监控",
+    "results": "压测结果",
+    "dashboard": "性能面板",
+    "perfDashboard": "性能面板"
   },
   "ai": {
     "title": "AI 统计看板",

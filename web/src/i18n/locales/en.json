@@ -254,7 +254,7 @@
     "apiTokens": "API Tokens",
     "testPlans": "Test Plans",
     "qualityGates": "Quality Gates",
-    "cicdMain": "CI/CD & Schedules",
+    "cicdMain": "CI/CD Overview",
     "triggerRules": "Trigger Rules",
     "notifications": "Notification Settings",
     "teamMetrics": "Team Metrics",
@@ -263,7 +263,11 @@
     "mockServers": "Mock Servers",
     "billing": "Billing",
     "healthMonitor": "Health Monitor",
-    "webhookDebugger": "Webhook Debugger"
+    "webhookDebugger": "Webhook Debugger",
+    "visualRegression": "Visual Regression",
+    "dataFactory": "Data Factory",
+    "flakyTests": "Flaky Tests",
+    "apiDocs": "API Docs"
   },
   "admin": {
     "userManagement": "User Management",
@@ -435,7 +439,9 @@
       "importFormatError": "Format Error",
       "selectFile": "Select File",
       "jsonError": "Invalid JSON"
-    }
+    },
+    "workspace": "Workspace",
+    "collections": "Collections"
   },
   "webTest": {
     "title": "Web Automation Testing",
@@ -499,7 +505,8 @@
     "noCollections": "No collections",
     "noScriptContent": "Script is empty",
     "scriptNotExecuted": "Script not executed",
-    "scriptSubmitted": "Script submitted"
+    "scriptSubmitted": "Script submitted",
+    "scripts": "Web Scripts"
   },
   "perfTest": {
     "title": "Performance Testing",
@@ -662,7 +669,12 @@
     "stopFailed": "Stop failed",
     "testStarted": "Test started",
     "testStopped": "Test stopped",
-    "updateScenarioFailed": "Update scenario failed"
+    "updateScenarioFailed": "Update scenario failed",
+    "scenarios": "Scenarios",
+    "monitor": "Monitor",
+    "results": "Results",
+    "dashboard": "Dashboard",
+    "perfDashboard": "Performance Dashboard"
   },
   "ai": {
     "title": "AI Insights Dashboard",
