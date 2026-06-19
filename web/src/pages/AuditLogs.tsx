@@ -28,6 +28,7 @@ import {
   EyeOutlined,
   FileSearchOutlined,
   PieChartOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
@@ -314,6 +315,30 @@ const AuditLogs = () => {
           </Button>
           <Button icon={<ReloadOutlined />} onClick={fetchLogs}>
             {t('common.refresh')}
+          </Button>
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={async () => {
+              try {
+                const res = await auditLogService.exportAuditLogs({ format: 'csv', days: 30 })
+                if (res.code === 200 && res.data) {
+                  const blob = new Blob([res.data], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`
+                  document.body.appendChild(link)
+                  link.click()
+                  document.body.removeChild(link)
+                  URL.revokeObjectURL(url)
+                  message.success('导出成功')
+                }
+              } catch {
+                message.error('导出失败')
+              }
+            }}
+          >
+            {t('common.export') || '导出'}
           </Button>
         </Space>
       </div>

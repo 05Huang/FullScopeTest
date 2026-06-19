@@ -66,12 +66,23 @@ export const getAuditStats = (days?: number): Promise<ApiResponse<AuditStats>> =
   return api.get('/audit-logs/stats', { params: { days } }) as Promise<ApiResponse<AuditStats>>
 }
 
+/** 导出审计日志（CSV/JSON） */
+export const exportAuditLogs = (params?: {
+  format?: 'csv' | 'json'
+  action?: string
+  resource_type?: string
+  days?: number
+}): Promise<ApiResponse> => {
+  return api.get('/audit-logs/export', { params, responseType: 'blob' as any }) as Promise<ApiResponse>
+}
+
 // ── 统一导出 ──────────────────────────────────────────────────────────────
 
 export const auditLogService = {
   getAuditLogs,
   getAuditLog,
   getAuditStats,
+  exportAuditLogs,
 }
 
 export default auditLogService
