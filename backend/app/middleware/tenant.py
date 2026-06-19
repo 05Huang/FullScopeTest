@@ -118,6 +118,10 @@ def setup_tenant_hooks(app):
                     g.organization_id = request.headers.get('X-Organization-ID') or request.args.get('organization_id')
                     if g.organization_id:
                         g.organization_id = int(g.organization_id)
+                        # 校验用户是否属于该组织，防止越权访问
+                        if g.organization_id not in org_ids:
+                            logger.warning("用户尝试访问非所属组织", user_id=user_id, org_id=g.organization_id)
+                            g.organization_id = None
                 else:
                     g.organization_id = None
         except Exception:
