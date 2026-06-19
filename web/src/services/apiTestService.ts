@@ -415,14 +415,46 @@ export const detectApiChanges = (data: {
   return api.post('/api-test/detect-changes', data) as Promise<ApiResponse<ChangeDetectionResult>>
 }
 
-// 导出服务对象
-export const apiTestService = {
-  har_content: string
-  project_id: number
+// ==================== BDD/Gherkin ====================
+
+/** 解析 Gherkin 文本为结构化数据 */
+export const parseBdd = (data: {
+  content: string
   collection_id?: number
-  collection_name?: string
 }): Promise<ApiResponse> => {
-  return api.post('/api-test/import-har', data) as Promise<ApiResponse>
+  return api.post('/api-test/bdd/parse', data) as Promise<ApiResponse>
+}
+
+/** 将解析结果导入为测试用例 */
+export const importBdd = (data: {
+  feature: string
+  scenarios: Array<{
+    name: string
+    steps: Array<{ keyword: string; text: string }>
+  }>
+  collection_id?: number
+}): Promise<ApiResponse> => {
+  return api.post('/api-test/bdd/import', data) as Promise<ApiResponse>
+}
+
+// ==================== 多步骤场景执行 ====================
+
+/** 执行多步骤场景 */
+export const executeScenario = (data: {
+  steps: Array<{
+    case_id?: number
+    name: string
+    method: string
+    url: string
+    headers?: Record<string, string>
+    body?: string
+    extract?: Array<{ variable: string; path: string }>
+    condition?: { field: string; operator: string; value: string }
+  }>
+  environment_id?: number
+  variables?: Record<string, string>
+}): Promise<ApiResponse> => {
+  return api.post('/api-test/execute-scenario', data) as Promise<ApiResponse>
 }
 
 // 导出服务对象
@@ -455,4 +487,7 @@ export const apiTestService = {
   parseHarPreview,
   importHar,
   detectApiChanges,
+  parseBdd,
+  importBdd,
+  executeScenario,
 }
