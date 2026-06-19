@@ -420,6 +420,9 @@ const MainLayout = () => {
     { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
     { icon: <KeyOutlined />, label: t('sidebar.apiTokens'), path: '/api-tokens' },
     { icon: <LinkOutlined />, label: t('sidebar.integrations'), path: '/integrations' },
+    { icon: <CustomerServiceOutlined />, label: t('sidebar.billing'), path: '/billing' },
+    { icon: <SafetyOutlined />, label: t('sidebar.healthMonitor'), path: '/health-monitor' },
+    { icon: <ApiOutlined />, label: t('sidebar.webhookDebugger'), path: '/webhook-debugger' },
     { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
   ]

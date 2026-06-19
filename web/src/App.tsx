@@ -45,6 +45,9 @@ const TeamMetrics = lazy(() => import('./pages/TeamMetrics'))
 const Integrations = lazy(() => import('./pages/Integrations'))
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'))
 const MockServers = lazy(() => import('./pages/MockServers'))
+const Billing = lazy(() => import('./pages/Billing'))
+const HealthMonitor = lazy(() => import('./pages/HealthMonitor'))
+const WebhookDebugger = lazy(() => import('./pages/WebhookDebugger'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -364,6 +367,36 @@ function App() {
           element={
             <Suspense fallback={<PageLoading />}>
               <MockServers />
+            </Suspense>
+          }
+        />
+
+        {/* 计费管理 */}
+        <Route
+          path="billing"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <Billing />
+            </Suspense>
+          }
+        />
+
+        {/* API 健康监控 */}
+        <Route
+          path="health-monitor"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <HealthMonitor />
+            </Suspense>
+          }
+        />
+
+        {/* Webhook 调试器 */}
+        <Route
+          path="webhook-debugger"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <WebhookDebugger />
             </Suspense>
           }
         />
