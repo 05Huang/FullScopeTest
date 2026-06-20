@@ -35,11 +35,11 @@ interface RequestEditorProps {
   currentCaseId?: number; hasUnsavedChanges: boolean
   onNewCase: () => void; onSaveCase: () => void; onOpenSaveModal: () => void
   onDeleteCase: (id: number, name: string) => void
-  environments: any[]; selectedEnvId?: number; onSelectEnv: (id: number) => void
-  currentEnv: any; onApplyEnv: () => void
+  environments: Environment[]; selectedEnvId?: number; onSelectEnv: (id: number) => void
+  currentEnv: Environment | null; onApplyEnv: () => void
   activeTab: string; setActiveTab: (v: string) => void
-  params: { key: string; value: string }[]; setParams: (v: any) => void; paramsColumns: any[]
-  headers: { key: string; value: string }[]; setHeaders: (v: any) => void; headersColumns: any[]
+  params: { key: string; value: string }[]; setParams: (v: { key: string; value: string }[]) => void; paramsColumns: Array<Record<string, unknown>>
+  headers: { key: string; value: string }[]; setHeaders: (v: { key: string; value: string }[]) => void; headersColumns: Array<Record<string, unknown>>
   bodyType: string; setBodyType: (v: string) => void
   requestBody: string; setRequestBody: (v: string) => void
   preScript: string; setPreScript: (v: string) => void
@@ -47,12 +47,12 @@ interface RequestEditorProps {
   mockEnabled: boolean; setMockEnabled: (v: boolean) => void
   mockResponseCode: number; setMockResponseCode: (v: number) => void
   mockResponseBody: string; setMockResponseBody: (v: string) => void
-  mockResponseHeaders: { key: string; value: string }[]; setMockResponseHeaders: (v: any) => void
+  mockResponseHeaders: { key: string; value: string }[]; setMockResponseHeaders: (v: { key: string; value: string }[]) => void
   mockDelayMs: number; setMockDelayMs: (v: number) => void
   onOpenAiDrawer: () => void; onOpenSynthesize: () => void; onOpenReview: () => void
   selectedCollectionId?: number; activeCollectionId?: number
   moreMenuItems: MenuProps['items']
-  response?: any
+  response?: TestExecutionResponse | null
   /** 可视化断言规则 */
   assertions: AssertionRule[]; setAssertions: (v: AssertionRule[]) => void
   /** 最近一次执行的可视化断言结果 */
