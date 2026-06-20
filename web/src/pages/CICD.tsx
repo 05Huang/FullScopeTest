@@ -67,13 +67,13 @@ const CICD: React.FC = () => {
     setLoading(true)
     try {
       if (activeTab === 'webhooks') {
-        const response: any = await cicdService.getWebhooks(currentProjectId)
+        const response = await cicdService.getWebhooks(currentProjectId)
         setWebhooks(response.data || [])
       } else {
-        const response: any = await cicdService.getSchedules(currentProjectId)
+        const response = await cicdService.getSchedules(currentProjectId)
         setSchedules(response.data || [])
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(`${t('cicd.loadFailed')}: ${error.message}`)
     } finally {
       setLoading(false)
@@ -85,14 +85,14 @@ const CICD: React.FC = () => {
     try {
       let options: {label: string, value: number}[] = []
       if (type === 'api_collection') {
-        const response: any = await apiTestService.getCollections(currentProjectId)
-        options = (response.data || []).map((item: any) => ({ label: item.name, value: item.id }))
+        const response = await apiTestService.getCollections(currentProjectId)
+        options = (response.data || []).map((item: Record<string, unknown>) => ({ label: item.name, value: item.id }))
       } else if (type === 'web_collection') {
-        const response: any = await webTestService.getCollections(currentProjectId)
-        options = (response.data || []).map((item: any) => ({ label: item.name, value: item.id }))
+        const response = await webTestService.getCollections(currentProjectId)
+        options = (response.data || []).map((item: Record<string, unknown>) => ({ label: item.name, value: item.id }))
       } else if (type === 'perf_scenario') {
-        const response: any = await perfTestService.getScenarios(currentProjectId)
-        options = (response.data || []).map((item: any) => ({ label: item.name, value: item.id }))
+        const response = await perfTestService.getScenarios(currentProjectId)
+        options = (response.data || []).map((item: Record<string, unknown>) => ({ label: item.name, value: item.id }))
       }
       setTargetOptions(options)
     } catch (error) {
@@ -115,7 +115,7 @@ const CICD: React.FC = () => {
       setWebhookModalVisible(false)
       webhookForm.resetFields()
       fetchData()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.errorFields) return
       message.error(`${t('cicd.createFailed')}: ${error.message}`)
     }
@@ -126,7 +126,7 @@ const CICD: React.FC = () => {
       await cicdService.deleteWebhook(id)
       message.success(t('cicd.deleteSuccess'))
       fetchData()
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(`${t('cicd.deleteFailed')}: ${error.message}`)
     }
   }
@@ -153,7 +153,7 @@ const CICD: React.FC = () => {
       scheduleForm.resetFields()
       setEditingSchedule(null)
       fetchData()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.errorFields) return
       message.error(`${t('cicd.saveFailed')}: ${error.message}`)
     }
@@ -164,7 +164,7 @@ const CICD: React.FC = () => {
       await cicdService.updateSchedule(record.id, { is_active: checked })
       message.success(checked ? t('cicd.enabledTask') : t('cicd.disabledTask'))
       fetchData()
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(`${t('cicd.operationFailed')}: ${error.message}`)
     }
   }
@@ -174,7 +174,7 @@ const CICD: React.FC = () => {
       await cicdService.deleteSchedule(id)
       message.success(t('cicd.deleteSuccess'))
       fetchData()
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(`${t('cicd.deleteFailed')}: ${error.message}`)
     }
   }
@@ -200,7 +200,7 @@ const CICD: React.FC = () => {
     { 
       title: t('cicd.triggerUrl'), 
       key: 'url',
-      render: (_: any, record: WebhookToken) => {
+      render: (_: unknown, record: WebhookToken) => {
         const url = `${window.location.origin}/api/v1/triggers/${record.token}`
         return (
           <Paragraph copyable={{ text: url }} style={{ margin: 0, maxWidth: 300 }} ellipsis>
@@ -213,7 +213,7 @@ const CICD: React.FC = () => {
     {
       title: t('common.actions'),
       key: 'action',
-      render: (_: any, record: WebhookToken) => (
+      render: (_: unknown, record: WebhookToken) => (
         <Space>
           <Popconfirm title={t('cicd.confirmDelete')} onConfirm={() => handleDeleteWebhook(record.id)}>
             <Button type="text" danger icon={<DeleteOutlined />} />
@@ -232,13 +232,13 @@ const CICD: React.FC = () => {
       key: 'target_type',
       render: (text: string) => <Tag color="blue">{getTargetTypeName(text)}</Tag>
     },
-    { title: t('cicd.statusLabel'), key: 'is_active', render: (_: any, record: ScheduledTask) => (
+    { title: t('cicd.statusLabel'), key: 'is_active', render: (_: unknown, record: ScheduledTask) => (
       <Switch checked={record.is_active} onChange={(checked) => handleToggleSchedule(record, checked)} />
     )},
     {
       title: t('common.actions'),
       key: 'action',
-      render: (_: any, record: ScheduledTask) => (
+      render: (_: unknown, record: ScheduledTask) => (
         <Space>
           <Button 
             type="text" 
