@@ -10,7 +10,7 @@ export type AiOperationType =
 
 export interface AiPlanOperation {
   type: AiOperationType
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface AiPlanResult {
@@ -58,20 +58,20 @@ export const createCase = (data: {
   method: string
   url: string
   description?: string
-  headers?: Record<string, any>
-  params?: Record<string, any>
-  body?: any
+  headers?: Record<string, string>
+  params?: Record<string, string>
+  body?: Record<string, unknown> | string | null
   body_type?: string
   pre_script?: string
   post_script?: string
-  assertions?: any[]
+  assertions?: Array<Record<string, unknown>>
   collection_id?: number
   project_id?: number
   environment_id?: number
   mock_enabled?: boolean
   mock_response_code?: number
   mock_response_body?: string
-  mock_response_headers?: Record<string, any>
+  mock_response_headers?: Record<string, string>
   mock_delay_ms?: number
 }): Promise<ApiResponse> => {
   return api.post('/api-test/cases', data) as Promise<ApiResponse>
@@ -86,19 +86,19 @@ export const updateCase = (id: number, data: {
   method?: string
   url?: string
   description?: string
-  headers?: Record<string, any>
-  params?: Record<string, any>
-  body?: any
+  headers?: Record<string, string>
+  params?: Record<string, string>
+  body?: Record<string, unknown> | string | null
   body_type?: string
   pre_script?: string
   post_script?: string
-  assertions?: any[]
+  assertions?: Array<Record<string, unknown>>
   collection_id?: number | null
   environment_id?: number | null
   mock_enabled?: boolean
   mock_response_code?: number
   mock_response_body?: string
-  mock_response_headers?: Record<string, any>
+  mock_response_headers?: Record<string, string>
   mock_delay_ms?: number
 }): Promise<ApiResponse> => {
   return api.put(`/api-test/cases/${id}`, data) as Promise<ApiResponse>
@@ -113,20 +113,20 @@ export const deleteCase = (id: number): Promise<ApiResponse> => {
 export const executeRequest = (data: {
   method: string
   url: string
-  headers?: any
-  params?: any
-  body?: any
+  headers?: Record<string, string>
+  params?: Record<string, string>
+  body?: Record<string, unknown> | string | null
   body_type?: string
   timeout?: number
   env_id?: number
   pre_script?: string
   post_script?: string
-  assertions?: any[]
+  assertions?: Array<Record<string, unknown>>
   case_id?: number
   mock_enabled?: boolean
   mock_response_code?: number
   mock_response_body?: string
-  mock_response_headers?: Record<string, any>
+  mock_response_headers?: Record<string, string>
   mock_delay_ms?: number
 }): Promise<ApiResponse> => {
   return api.post('/api-test/execute', data) as Promise<ApiResponse>
@@ -217,7 +217,7 @@ export const generateAiPlan = (data: {
 }
 
 export const synthesizeCasesAI = (data: {
-  base_request: any
+  base_request: Record<string, unknown>
   count?: number
   base_url?: string
   model?: string
@@ -225,8 +225,8 @@ export const synthesizeCasesAI = (data: {
   vision_base_url?: string
   vision_model?: string
   vision_api_key?: string
-}): Promise<ApiResponse<{ cases: any[] }>> => {
-  return api.post('/api-test/ai/synthesize-cases', data, { timeout: 120000 }) as Promise<ApiResponse<{ cases: any[] }>>
+}): Promise<ApiResponse<{ cases: Array<Record<string, unknown>> }>> => {
+  return api.post('/api-test/ai/synthesize-cases', data, { timeout: 120000 }) as Promise<ApiResponse<{ cases: Array<Record<string, unknown>> }>>
 }
 
 export const reviewCollectionAI = (data: {
@@ -237,8 +237,8 @@ export const reviewCollectionAI = (data: {
   vision_base_url?: string
   vision_model?: string
   vision_api_key?: string
-}): Promise<ApiResponse<{ review_summary: string, suggested_cases: any[] }>> => {
-  return api.post('/api-test/ai/review-collection', data, { timeout: 120000 }) as Promise<ApiResponse<{ review_summary: string, suggested_cases: any[] }>>
+}): Promise<ApiResponse<{ review_summary: string, suggested_cases: Array<Record<string, unknown>> }>> => {
+  return api.post('/api-test/ai/review-collection', data, { timeout: 120000 }) as Promise<ApiResponse<{ review_summary: string, suggested_cases: Array<Record<string, unknown>> }>>
 }
 
 // ==================== 智能测试选择 ====================
