@@ -6,11 +6,11 @@
  * - 环境选择器
  * - 请求配置 Tabs（Params / Headers / Body / Scripts / 断言 / Mock）
  */
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Card, Input, Button, Tabs, Select, Space, Table, Tag, Dropdown,
-  Typography, Tooltip, Switch, InputNumber, Badge, message, type MenuProps,
+  Typography, Tooltip, Switch, InputNumber, Badge, message, AutoComplete, type MenuProps,
 } from 'antd'
 import {
   PlusOutlined, SendOutlined, SaveOutlined, DeleteOutlined,
@@ -68,6 +68,58 @@ interface RequestEditorProps {
 
 const RequestEditor: React.FC<RequestEditorProps> = (p) => {
   const { t } = useTranslation()
+  const urlInputRef = useRef<HTMLInputElement>(null)
+
+  // P29-12: 环境变量自动补全 — 检测 {{ 触发下拉
+  const [varOptions, setVarOptions] = useState<Array<{ value: string; label: React.ReactNode }>>([])
+  const [varDropdownOpen, setVarDropdownOpen] = useState(false)
+
+  const handleUrlChange = useCallback((value: string) => {
+    p.setUrl(value)
+    // 检测是否刚输入了 {{ 或正在 {{ 后输入变量名
+    const cursorPos = urlInputRef.current?.selectionStart || value.length
+    const beforeCursor = value.slice(0, cursorPos)
+    const lastOpenBrace = beforeCursor.lastIndexOf('{{')
+    if (lastOpenBrace >= 0 && !beforeCursor.slice(lastOpenBrace).includes('}}')) {
+      const partial = beforeCursor.slice(lastOpenBrace + 2).toLowerCase()
+      const envVars = p.currentEnv?.variables || {}
+      const options = Object.entries(envVars)
+        .filter(([key]) => !partial || key.toLowerCase().includes(partial))
+        .map(([key, val]) => ({
+          value: `{{${key}}}`,
+          label: (
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+              <span style={{ fontWeight: 500 }}>{key}</span>
+              <span style={{ color: '#999', fontSize: 12, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {String(val).slice(0, 20)}
+              </span>
+            </div>
+          ),
+        }))
+      if (options.length > 0) {
+        setVarOptions(options)
+        setVarDropdownOpen(true)
+      } else {
+        setVarDropdownOpen(false)
+      }
+    } else {
+      setVarDropdownOpen(false)
+    }
+  }, [p.currentEnv?.variables, p.setUrl])
+
+  const handleVarSelect = useCallback((value: string) => {
+    // 替换光标前的 {{ 为完整的 {{variable}}
+    const currentUrl = p.url
+    const cursorPos = urlInputRef.current?.selectionStart || currentUrl.length
+    const beforeCursor = currentUrl.slice(0, cursorPos)
+    const lastOpenBrace = beforeCursor.lastIndexOf('{{')
+    if (lastOpenBrace >= 0) {
+      const newUrl = currentUrl.slice(0, lastOpenBrace) + value + currentUrl.slice(cursorPos)
+      p.setUrl(newUrl)
+    }
+    setVarDropdownOpen(false)
+  }, [p.url, p.setUrl])
+
   return (
     <Card size="small" style={{ borderRadius: 8 }} bodyStyle={{ padding: 12 }}>
       <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -86,7 +138,24 @@ const RequestEditor: React.FC<RequestEditorProps> = (p) => {
           options={['GET','POST','PUT','DELETE','PATCH'].map(m => ({
             value: m, label: <span style={{ color: methodColors[m], fontWeight: 600 }}>{m}</span>,
           }))} />
-        <Input placeholder="请输入请求 URL" value={p.url} onChange={(e) => p.setUrl(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+        <AutoComplete
+          ref={urlInputRef as React.RefObject<unknown>}
+          value={p.url}
+          options={varOptions}
+          open={varDropdownOpen}
+          onSearch={handleUrlChange}
+          onSelect={handleVarSelect}
+          onChange={(val) => { p.setUrl(val); if (!val.includes('{{')) setVarDropdownOpen(false) }}
+          onBlur={() => setTimeout(() => setVarDropdownOpen(false), 200)}
+          style={{ flex: 1, minWidth: 200 }}
+          popupMatchSelectWidth={320}
+        >
+          <Input
+            placeholder={p.currentEnv?.variables && Object.keys(p.currentEnv.variables).length > 0
+              ? `请输入请求 URL（输入 {{ 触发变量补全）`
+              : '请输入请求 URL'}
+          />
+        </AutoComplete>
         <Button type="primary" icon={<SendOutlined />} loading={p.sending} onClick={p.onSend}>{t('copilot.send')}</Button>
         <Button icon={<FileAddOutlined />} onClick={p.onNewCase}>{t('apiTest.createCase')}</Button>
         <Button type={p.currentCaseId && p.hasUnsavedChanges ? "primary" : "default"} icon={<SaveOutlined />}
