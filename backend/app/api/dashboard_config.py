@@ -10,6 +10,7 @@ from ..extensions import db
 from ..models.dashboard_widget import DashboardWidget, WIDGET_TYPES, create_default_widgets
 from ..utils.response import success_response, error_response
 from ..utils import get_current_user_id
+from ..middleware.tenant import get_current_organization_id
 
 
 @api_bp.route('/dashboard/widgets', methods=['GET'])
@@ -17,14 +18,19 @@ from ..utils import get_current_user_id
 def get_widgets():
     """获取当前用户的仪表盘组件配置"""
     user_id = get_current_user_id()
+    org_id = get_current_organization_id()
 
-    widgets = DashboardWidget.query.filter_by(user_id=user_id).order_by(
+    query = DashboardWidget.query.filter_by(user_id=user_id)
+    if org_id:
+        query = query.filter_by(organization_id=org_id)
+
+    widgets = query.order_by(
         DashboardWidget.position_y, DashboardWidget.position_x
     ).all()
 
     # 如果用户没有配置，创建默认布局
-    if not widgets:
-        default_widgets = create_default_widgets(user_id)
+    if not widgets and org_id:
+        default_widgets = create_default_widgets(user_id, org_id)
         db.session.add_all(default_widgets)
         db.session.commit()
         widgets = default_widgets
@@ -37,6 +43,7 @@ def get_widgets():
 def update_widgets():
     """批量更新仪表盘组件配置（整体布局保存）"""
     user_id = get_current_user_id()
+    org_id = get_current_organization_id()
     data = request.get_json()
     widgets_data = data.get('widgets', [])
 
@@ -44,12 +51,16 @@ def update_widgets():
         return error_response(400, '缺少 widgets 数据')
 
     # 删除旧配置
-    DashboardWidget.query.filter_by(user_id=user_id).delete()
+    query = DashboardWidget.query.filter_by(user_id=user_id)
+    if org_id:
+        query = query.filter_by(organization_id=org_id)
+    query.delete()
 
     # 创建新配置
     for wd in widgets_data:
         widget = DashboardWidget(
             user_id=user_id,
+            organization_id=org_id or 0,
             widget_type=wd.get('widget_type', ''),
             title=wd.get('title', ''),
             config=wd.get('config', {}),
@@ -63,7 +74,10 @@ def update_widgets():
 
     db.session.commit()
 
-    widgets = DashboardWidget.query.filter_by(user_id=user_id).order_by(
+    query = DashboardWidget.query.filter_by(user_id=user_id)
+    if org_id:
+        query = query.filter_by(organization_id=org_id)
+    widgets = query.order_by(
         DashboardWidget.position_y, DashboardWidget.position_x
     ).all()
 
@@ -75,14 +89,20 @@ def update_widgets():
 def reset_widgets():
     """恢复默认仪表盘布局"""
     user_id = get_current_user_id()
+    org_id = get_current_organization_id()
 
-    DashboardWidget.query.filter_by(user_id=user_id).delete()
+    query = DashboardWidget.query.filter_by(user_id=user_id)
+    if org_id:
+        query = query.filter_by(organization_id=org_id)
+    query.delete()
 
-    default_widgets = create_default_widgets(user_id)
-    db.session.add_all(default_widgets)
-    db.session.commit()
+    if org_id:
+        default_widgets = create_default_widgets(user_id, org_id)
+        db.session.add_all(default_widgets)
+        db.session.commit()
+        return success_response(data=[w.to_dict() for w in default_widgets], message='已恢复默认布局')
 
-    return success_response(data=[w.to_dict() for w in default_widgets], message='已恢复默认布局')
+    return success_response(data=[], message='已恢复默认布局')
 
 
 @api_bp.route('/dashboard/widget-types', methods=['GET'])

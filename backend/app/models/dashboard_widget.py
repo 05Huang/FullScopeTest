@@ -15,6 +15,7 @@ class DashboardWidget(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, comment='用户 ID')
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, comment='组织 ID')
     widget_type = db.Column(db.String(50), nullable=False, comment='组件类型')
     title = db.Column(db.String(100), comment='组件标题')
     config = db.Column(db.JSON, default=dict, comment='组件配置')
@@ -54,16 +55,18 @@ WIDGET_TYPES = {
     'quality_gates': {'title': '质量门禁状态', 'default_width': 1, 'default_height': 1},
     'sla_rate': {'title': 'SLA 达成率', 'default_width': 1, 'default_height': 1},
     'cost_overview': {'title': '成本概览', 'default_width': 1, 'default_height': 1},
+    'external_data': {'title': '外部数据源', 'default_width': 2, 'default_height': 1},
 }
 
 
-def create_default_widgets(user_id: int):
+def create_default_widgets(user_id: int, organization_id: int):
     """为用户创建默认仪表盘布局"""
     widgets = []
     x, y = 0, 0
     for widget_type, config in WIDGET_TYPES.items():
         widget = DashboardWidget(
             user_id=user_id,
+            organization_id=organization_id,
             widget_type=widget_type,
             title=config['title'],
             position_x=x,

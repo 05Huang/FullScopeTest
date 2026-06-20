@@ -42,3 +42,5 @@ from . import notifications
 from . import mock_server
 from . import webhook_debugger
 from . import health_monitor
+from . import dashboard_config
+from . import badge
