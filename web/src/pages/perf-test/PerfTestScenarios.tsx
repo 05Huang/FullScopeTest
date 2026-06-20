@@ -59,7 +59,7 @@ interface PerfTestScenario {
   target_url: string
   method: string
   headers?: Record<string, any>
-  body?: any
+  body?: Record<string, unknown> | string | null
   user_count: number
   spawn_rate: number
   duration: number
@@ -135,7 +135,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(result.message || '加载失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(t('perfTest.loadScenariosFailed'))
     } finally {
       setLoading(false)
@@ -150,11 +150,11 @@ const PerfTestScenarios = () => {
   }, [])
 
   // 创建场景
-  const handleCreate = async (values: any) => {
+  const handleCreate = async (values: Record<string, unknown>) => {
     try {
       // 解析 headers 和 body JSON
       let headers: Record<string, any> | undefined = undefined
-      let body: any = undefined
+      let body: Record<string, unknown> | string | undefined = undefined
 
       if (values.headers) {
         try {
@@ -197,7 +197,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(result.message || '创建失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(t('perfTest.createScenarioFailed'))
     }
   }
@@ -225,7 +225,7 @@ const PerfTestScenarios = () => {
           spawn_rate: 1,
           step_load_enabled: false,
           script_content: res.data.script_content,
-        } as any)
+        } as Record<string, unknown>)
         
         if (createRes.code === 200 || createRes.code === 201) {
           loadScenarios()
@@ -234,7 +234,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(res.message || t('perfTest.aiGenerateFailed'))
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.response?.data?.message || t('perfTest.aiGenerateFailed'))
       failGeneration()
     }
@@ -254,7 +254,7 @@ const PerfTestScenarios = () => {
     try {
       const result = await perfTestService.updateScenario(currentScenario.id, {
         script_content: codeContent,
-      } as any)
+      } as Record<string, unknown>)
       if (result.code === 200) {
         message.success(t('perfTest.scriptUpdated'))
         const updatedScenario = result.data
@@ -270,7 +270,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(result.message || t('perfTest.scriptUpdateFailed'))
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(t('perfTest.scriptUpdateFailed'))
     } finally {
       setSavingCode(false)
@@ -278,11 +278,11 @@ const PerfTestScenarios = () => {
   }
 
   // 更新场景
-  const handleUpdate = async (id: number, values: any) => {
+  const handleUpdate = async (id: number, values: Record<string, unknown>) => {
     try {
       // 解析 headers 和 body JSON
       let headers: Record<string, any> | undefined = undefined
-      let body: any = undefined
+      let body: Record<string, unknown> | string | undefined = undefined
 
       if (values.headers) {
         try {
@@ -325,7 +325,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(result.message || '更新失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(t('perfTest.updateScenarioFailed'))
     }
   }
@@ -411,7 +411,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(result.message || '删除失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('删除场景失败:', error)
       const errorMsg = error?.response?.data?.message || error?.message || '删除场景失败'
       message.error(errorMsg)
@@ -448,7 +448,7 @@ const PerfTestScenarios = () => {
         setRunningIds((prev) => prev.filter((i) => i !== id))
         return false
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('启动测试失败:', error)
       const errorMsg = error?.response?.data?.message || error?.message || '启动测试失败'
       if (!silent) {
@@ -498,7 +498,7 @@ const PerfTestScenarios = () => {
       } else {
         message.error(result.message || '停止失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(t('perfTest.stopFailed'))
     }
   }

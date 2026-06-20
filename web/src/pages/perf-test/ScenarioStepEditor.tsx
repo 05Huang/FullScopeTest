@@ -31,13 +31,13 @@ const ScenarioStepEditor: React.FC<ScenarioStepEditorProps> = ({ steps, onChange
   const removeStep = (id: string) => onChange(steps.filter(s => s.id !== id))
 
   const columns = [
-    { title: "#", width: 30, render: (_: any, __: any, i: number) => <Text type="secondary" style={{ fontSize: 11 }}>{i + 1}</Text> },
-    { title: "步骤名", width: 120, render: (_: any, r: PerfScenarioStep) => <Input size="small" value={r.name} onChange={e => updateStep(r.id, { name: e.target.value })} /> },
-    { title: "方法", width: 80, render: (_: any, r: PerfScenarioStep) => <Select size="small" value={r.method} style={{ width: "100%" }} onChange={v => updateStep(r.id, { method: v })} options={["GET","POST","PUT","DELETE"].map(m => ({ value: m }))} /> },
-    { title: "URL", render: (_: any, r: PerfScenarioStep) => <Input size="small" placeholder="请求 URL" value={r.url} onChange={e => updateStep(r.id, { url: e.target.value })} /> },
-    { title: "思考时间", width: 100, render: (_: any, r: PerfScenarioStep) => <Tooltip title="ms"><InputNumber size="small" value={r.think_time_ms} min={0} step={500} style={{ width: 80 }} onChange={v => updateStep(r.id, { think_time_ms: v || 0 })} /></Tooltip> },
-    { title: "权重", width: 70, render: (_: any, r: PerfScenarioStep) => <InputNumber size="small" value={r.weight} min={1} max={100} style={{ width: 60 }} onChange={v => updateStep(r.id, { weight: v || 1 })} /> },
-    { title: "", width: 50, render: (_: any, r: PerfScenarioStep) => <Popconfirm title="删除？" onConfirm={() => removeStep(r.id)}><Button type="text" size="small" danger icon={<DeleteOutlined />} /></Popconfirm> },
+    { title: "#", width: 30, render: (_: Record<string, unknown>, __: Record<string, unknown>, i: number) => <Text type="secondary" style={{ fontSize: 11 }}>{i + 1}</Text> },
+    { title: "步骤名", width: 120, render: (_: Record<string, unknown>, r: PerfScenarioStep) => <Input size="small" value={r.name} onChange={e => updateStep(r.id, { name: e.target.value })} /> },
+    { title: "方法", width: 80, render: (_: Record<string, unknown>, r: PerfScenarioStep) => <Select size="small" value={r.method} style={{ width: "100%" }} onChange={v => updateStep(r.id, { method: v })} options={["GET","POST","PUT","DELETE"].map(m => ({ value: m }))} /> },
+    { title: "URL", render: (_: Record<string, unknown>, r: PerfScenarioStep) => <Input size="small" placeholder="请求 URL" value={r.url} onChange={e => updateStep(r.id, { url: e.target.value })} /> },
+    { title: "思考时间", width: 100, render: (_: Record<string, unknown>, r: PerfScenarioStep) => <Tooltip title="ms"><InputNumber size="small" value={r.think_time_ms} min={0} step={500} style={{ width: 80 }} onChange={v => updateStep(r.id, { think_time_ms: v || 0 })} /></Tooltip> },
+    { title: "权重", width: 70, render: (_: Record<string, unknown>, r: PerfScenarioStep) => <InputNumber size="small" value={r.weight} min={1} max={100} style={{ width: 60 }} onChange={v => updateStep(r.id, { weight: v || 1 })} /> },
+    { title: "", width: 50, render: (_: Record<string, unknown>, r: PerfScenarioStep) => <Popconfirm title="删除？" onConfirm={() => removeStep(r.id)}><Button type="text" size="small" danger icon={<DeleteOutlined />} /></Popconfirm> },
   ]
 
   return (

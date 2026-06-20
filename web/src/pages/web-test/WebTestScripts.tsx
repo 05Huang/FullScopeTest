@@ -99,7 +99,7 @@ interface ExploreHistoryItem {
   start_url: string
   objective: string
   max_steps: number
-  report: any
+  report: Record<string, unknown>
   console_lines: string[]
 }
 
@@ -133,7 +133,7 @@ const loadExploreHistory = (userId?: number): ExploreHistoryItem[] => {
   }
 }
 
-const trimExploreReport = (report: any) => {
+const trimExploreReport = (report: Record<string, unknown>) => {
   const safeReport = report || {}
   return {
     ...safeReport,
@@ -209,7 +209,7 @@ const WebTestScripts = () => {
 
   // Visual Diff State
   const [isVisualDiffModalOpen, setIsVisualDiffModalOpen] = useState(false)
-  const [selectedVisualDiff, setSelectedVisualDiff] = useState<any>(null)
+  const [selectedVisualDiff, setSelectedVisualDiff] = useState<Record<string, unknown> | null>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -220,7 +220,7 @@ const WebTestScripts = () => {
       })
       if (result.code === 200) {
         const rawScripts = result.data || []
-        const normalizedScripts = rawScripts.map((script: any) => ({
+        const normalizedScripts = rawScripts.map((script: Record<string, unknown>) => ({
           ...script,
           status: normalizeScriptStatus(script.status),
           last_run_duration: script.last_run_duration ?? script.last_duration,
@@ -233,7 +233,7 @@ const WebTestScripts = () => {
       } else {
         message.error(result.message || '加载失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error('加载脚本列表失败')
     } finally {
       setLoading(false)
@@ -291,7 +291,7 @@ const WebTestScripts = () => {
     start_url: string
     objective: string
     max_steps: number
-    report: any
+    report: Record<string, unknown>
     console_lines: string[]
   }) => {
     addExploreHistory({
@@ -307,7 +307,7 @@ const WebTestScripts = () => {
   // clearExploreHistory is now from the hook
 
   // 创建脚本
-  const handleCreate = async (values: any) => {
+  const handleCreate = async (values: Record<string, unknown>) => {
     try {
       const result = await webTestService.createScript({
         name: values.name,
@@ -325,7 +325,7 @@ const WebTestScripts = () => {
       } else {
         message.error(result.message || '创建失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error('创建脚本失败')
     }
   }
@@ -366,7 +366,7 @@ const WebTestScripts = () => {
       } else {
         message.error(res.message || '生成失败')
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.response?.data?.message || '生成失败')
     } finally {
       setAiGenerating(false)
@@ -380,7 +380,7 @@ const WebTestScripts = () => {
       return
     }
     const runtimeConsoleLines: string[] = []
-    let reportForHistory: any = null
+    let reportForHistory: Record<string, unknown> | null = null
     const pushExploreLog = (line: string) => {
       const timestamp = new Date().toLocaleTimeString()
       const text = `[${timestamp}] ${line}`
@@ -407,7 +407,7 @@ const WebTestScripts = () => {
     try {
       pushExploreLog('已发送流式探索请求到后端')
       let streamError = ''
-      let finalReport: any = null
+      let finalReport: Record<string, unknown> | null = null
       await webTestService.exploreWebAppAIStream({
         start_url: exploreStartUrl,
         objective: exploreObjective,
@@ -492,7 +492,7 @@ const WebTestScripts = () => {
           )
         }
         const actions = Array.isArray(finalReport.actions_taken) ? finalReport.actions_taken : []
-        actions.slice(0, 30).forEach((item: any, index: number) => {
+        actions.slice(0, 30).forEach((item: Record<string, unknown>, index: number) => {
           const actionType = item.type || item.action || 'unknown'
           const target = item.target_id || '-'
           const reason = item.reason || ''
@@ -520,7 +520,7 @@ const WebTestScripts = () => {
         pushExploreLog('未收到探索结果')
         message.error('探索失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = error.response?.data?.message || error.message || '探索失败'
       reportForHistory = {
         start_url: exploreStartUrl,
@@ -561,7 +561,7 @@ const WebTestScripts = () => {
   }
 
   // 更新脚本
-  const handleUpdate = async (id: number, values: any) => {
+  const handleUpdate = async (id: number, values: Record<string, unknown>) => {
     try {
       const result = await webTestService.updateScript(id, {
         name: values.name,
@@ -579,7 +579,7 @@ const WebTestScripts = () => {
       } else {
         message.error(result.message || '更新失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error('更新脚本失败')
     }
   }
@@ -594,7 +594,7 @@ const WebTestScripts = () => {
       } else {
         message.error(result.message || '删除失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error('删除脚本失败')
     }
   }
@@ -621,7 +621,7 @@ const WebTestScripts = () => {
         setRunningIds((prev) => prev.filter((i) => i !== id))
         return false
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (!silent) {
         message.error('执行脚本失败')
       }
@@ -669,7 +669,7 @@ const WebTestScripts = () => {
       } else {
         message.error(result.message || '更新脚本代码失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error('更新脚本代码失败')
     } finally {
       setSavingCode(false)
@@ -712,7 +712,7 @@ const WebTestScripts = () => {
       } else {
         message.error(res.message || 'AI 诊断失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(error.response?.data?.message || 'AI 诊断失败')
     } finally {
       setAiHealing(false)
@@ -846,7 +846,7 @@ const WebTestScripts = () => {
     }
   }
 
-  const handleCreateCollection = async (values: any) => {
+  const handleCreateCollection = async (values: Record<string, unknown>) => {
     try {
       if (editingCollection) {
         const result = await webTestService.updateCollection(editingCollection.id, {
