@@ -35,6 +35,7 @@ export interface ApiTestCase {
   mock_response_body?: string
   mock_response_headers?: Record<string, string>
   mock_delay_ms?: number
+  assertions?: Array<Record<string, unknown>>
   created_at: string
   updated_at: string
 }
@@ -100,6 +101,7 @@ export interface Environment {
   id: number
   name: string
   project_id: number
+  base_url?: string
   variables: Record<string, string>
   headers: Record<string, string>
   created_at: string

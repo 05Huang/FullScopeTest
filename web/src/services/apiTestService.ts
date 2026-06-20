@@ -10,6 +10,21 @@ export type AiOperationType =
 
 export interface AiPlanOperation {
   type: AiOperationType
+  collection_id?: number | string
+  collection_name?: string
+  environment_id?: number | string
+  environment_name?: string
+  case_id?: number | string
+  case_name?: string
+  name?: string
+  description?: string
+  method?: string
+  url?: string
+  body?: unknown
+  body_type?: string
+  base_url?: string
+  variables?: unknown
+  headers?: unknown
   [key: string]: unknown
 }
 

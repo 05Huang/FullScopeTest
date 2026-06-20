@@ -74,7 +74,8 @@ const CICD: React.FC = () => {
         setSchedules(response.data || [])
       }
     } catch (error: unknown) {
-      message.error(`${t('cicd.loadFailed')}: ${error.message}`)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      message.error(`${t('cicd.loadFailed')}: ${err.message}`)
     } finally {
       setLoading(false)
     }
@@ -116,8 +117,9 @@ const CICD: React.FC = () => {
       webhookForm.resetFields()
       fetchData()
     } catch (error: unknown) {
-      if (error.errorFields) return
-      message.error(`${t('cicd.createFailed')}: ${error.message}`)
+      const err = error as { response?: { data?: { message?: string } }; message?: string; errorFields?: unknown }
+      if (err.errorFields) return
+      message.error(`${t('cicd.createFailed')}: ${err.message}`)
     }
   }
 
@@ -127,7 +129,8 @@ const CICD: React.FC = () => {
       message.success(t('cicd.deleteSuccess'))
       fetchData()
     } catch (error: unknown) {
-      message.error(`${t('cicd.deleteFailed')}: ${error.message}`)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      message.error(`${t('cicd.deleteFailed')}: ${err.message}`)
     }
   }
 
@@ -154,8 +157,9 @@ const CICD: React.FC = () => {
       setEditingSchedule(null)
       fetchData()
     } catch (error: unknown) {
-      if (error.errorFields) return
-      message.error(`${t('cicd.saveFailed')}: ${error.message}`)
+      const err = error as { response?: { data?: { message?: string } }; message?: string; errorFields?: unknown }
+      if (err.errorFields) return
+      message.error(`${t('cicd.saveFailed')}: ${err.message}`)
     }
   }
 
@@ -165,7 +169,8 @@ const CICD: React.FC = () => {
       message.success(checked ? t('cicd.enabledTask') : t('cicd.disabledTask'))
       fetchData()
     } catch (error: unknown) {
-      message.error(`${t('cicd.operationFailed')}: ${error.message}`)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      message.error(`${t('cicd.operationFailed')}: ${err.message}`)
     }
   }
 
@@ -175,7 +180,8 @@ const CICD: React.FC = () => {
       message.success(t('cicd.deleteSuccess'))
       fetchData()
     } catch (error: unknown) {
-      message.error(`${t('cicd.deleteFailed')}: ${error.message}`)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      message.error(`${t('cicd.deleteFailed')}: ${err.message}`)
     }
   }
 

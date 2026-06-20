@@ -20,6 +20,7 @@ import {
 import MonacoEditor from '@monaco-editor/react'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
 import AssertionBuilder, { type AssertionRule } from './components/AssertionBuilder'
+import type { Environment, TestExecutionResponse } from '@/types'
 
 const { Text } = Typography
 
