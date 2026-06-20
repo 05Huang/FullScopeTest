@@ -328,8 +328,42 @@ class ApiExecutionService(BaseService):
             return {'success': False, 'error': str(e), 'script_execution': script_execution}
 
 
-    def run_collection(self, collection_id: int, user_id: int, env_id: int = None):
-        """批量执行集合中的所有用例，并生成测试报告"""
+    def create_pending_run(self, collection_id: int, user_id: int, env_id: int = None) -> int:
+        """P30-5: 创建待执行的 run 记录并返回 run_id（用于异步模式）"""
+        collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
+        if not collection:
+            raise NotFoundError('集合', collection_id)
+
+        cases = ApiTestCase.query.filter_by(collection_id=collection_id, is_enabled=True).all()
+        if not cases:
+            raise ValidationError('集合中没有可执行的用例')
+
+        env = db.session.get(Environment, env_id) if env_id else None
+        project_id = self._resolve_project_id(collection, env, cases, user_id)
+
+        test_run = TestRun(
+            project_id=project_id,
+            test_type='api',
+            test_object_id=collection_id,
+            test_object_name=collection.name,
+            status='running',
+            total_cases=len(cases),
+            environment_id=env_id,
+            environment_name=env.name if env else '用例自身环境',
+            started_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            triggered_by='manual',
+            triggered_user_id=user_id
+        )
+        db.session.add(test_run)
+        db.session.commit()
+        return test_run.id
+
+    def run_collection(self, collection_id: int, user_id: int, env_id: int = None, existing_run_id: int = None):
+        """批量执行集合中的所有用例，并生成测试报告
+
+        Args:
+            existing_run_id: P30-5 — 若传入则复用已创建的 run 记录（异步模式）
+        """
         collection = ApiTestCollection.query.filter_by(id=collection_id, user_id=user_id).first()
         if not collection:
             raise NotFoundError('集合', collection_id)
@@ -357,22 +391,27 @@ class ApiExecutionService(BaseService):
         # 确定 project_id
         project_id = self._resolve_project_id(collection, env, cases, user_id)
 
-        # 创建测试执行记录
-        test_run = TestRun(
-            project_id=project_id,
-            test_type='api',
-            test_object_id=collection_id,
-            test_object_name=collection.name,
-            status='running',
-            total_cases=len(cases),
-            environment_id=env_id,
-            environment_name=unified_env_name if use_unified_env else '用例自身环境',
-            started_at=datetime.now(timezone.utc).replace(tzinfo=None),
-            triggered_by='manual',
-            triggered_user_id=user_id
-        )
-        db.session.add(test_run)
-        db.session.commit()
+        # 复用已有 run 记录或创建新的
+        if existing_run_id:
+            test_run = db.session.get(TestRun, existing_run_id)
+            if not test_run:
+                raise NotFoundError('执行记录', existing_run_id)
+        else:
+            test_run = TestRun(
+                project_id=project_id,
+                test_type='api',
+                test_object_id=collection_id,
+                test_object_name=collection.name,
+                status='running',
+                total_cases=len(cases),
+                environment_id=env_id,
+                environment_name=unified_env_name if use_unified_env else '用例自身环境',
+                started_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                triggered_by='manual',
+                triggered_user_id=user_id
+            )
+            db.session.add(test_run)
+            db.session.commit()
 
         results = []
         total_passed = 0

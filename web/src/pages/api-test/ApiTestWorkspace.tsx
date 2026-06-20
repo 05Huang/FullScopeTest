@@ -48,7 +48,7 @@ import { useAiAssistant } from './hooks/useAiAssistant'
 import RequestEditor from './RequestEditor'
 import ResponseViewer from './ResponseViewer'
 import EnvironmentSelector from './EnvironmentSelector'
-import TestRunner from './TestRunner'
+import TestRunner, { type CollectionProgress } from './TestRunner'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
@@ -79,6 +79,7 @@ const ApiTestWorkspace = () => {
   const [activeTab, setActiveTab] = useState('params')
   const [responseTab, setResponseTab] = useState('body')
   const [sending, setSending] = useState(false)
+  const [collectionProgress, setCollectionProgress] = useState<CollectionProgress | null>(null)
   const [response, setResponse] = useState<TestExecutionResponse | null>(null)
   const [assertionResults, setAssertionResults] = useState<{
     total: number; passed: number; failed: number
@@ -2056,7 +2057,7 @@ const ApiTestWorkspace = () => {
         />
 
         {/* 响应区域 — 使用提取的 ResponseViewer 组件 */}
-        <TestRunner sending={sending} onResend={handleSend} response={response} />
+        <TestRunner sending={sending} onResend={handleSend} response={response} progress={collectionProgress} />
         <ResponseViewer response={response} />
       </Content>
 

@@ -596,14 +596,30 @@ def run_case(case_id):
 @api_bp.route("/api-test/collections/<int:collection_id>/run", methods=["POST"])
 @jwt_required()
 def run_collection(collection_id):
-    """批量执行集合中的所有用例，并生成测试报告"""
+    """批量执行集合中的所有用例，并生成测试报告
+
+    P30-5: 支持 async=true 参数，后台执行并返回 run_id，前端可轮询 /runs/<id>/progress
+    """
     user_id = get_current_user_id()
     data = request.get_json() or {}
     env_id = data.get("env_id") if "env_id" in data else request.args.get("env_id", type=int)
+    run_async = data.get("async", False)
 
     try:
-        result = execution_service.run_collection(collection_id, user_id, env_id)
-        return success_response(data=result, message="测试执行完成")
+        if run_async:
+            # P30-5: 异步模式 — 先创建 run 记录，后台线程执行，立即返回 run_id
+            import threading
+            run_id = execution_service.create_pending_run(collection_id, user_id, env_id)
+            def _run_in_background():
+                try:
+                    execution_service.run_collection(collection_id, user_id, env_id, existing_run_id=run_id)
+                except Exception as bg_exc:
+                    logger.error("background collection run failed", run_id=run_id, error=str(bg_exc))
+            threading.Thread(target=_run_in_background, daemon=True).start()
+            return success_response(data={'run_id': run_id, 'status': 'running'}, message="测试已在后台开始执行")
+        else:
+            result = execution_service.run_collection(collection_id, user_id, env_id)
+            return success_response(data=result, message="测试执行完成")
     except NotFoundError as exc:
         return error_response(404, str(exc))
     except ValidationError as exc:
