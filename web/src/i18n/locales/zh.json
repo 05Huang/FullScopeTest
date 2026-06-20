@@ -222,6 +222,7 @@
     },
     "customizeLayout": "自定义布局",
     "selectWidgets": "选择要在仪表盘中显示的组件：",
+    "noWidgets": "暂无组件，请点击右上角「自定义布局」添加",
     "resetLayout": "恢复默认",
     "widgetSaveSuccess": "布局已保存",
     "widgetSaveFailed": "保存失败",

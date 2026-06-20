@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Skeleton, Tooltip, Button, Modal, Checkbox, message, Space } from 'antd'
-import ReactECharts from 'echarts-for-react'
+import { Skeleton, Button, Modal, Checkbox, message, Space } from 'antd'
 import api from '@/services/api'
 import { reportService } from '@/services'
 import type { DashboardStats, QualityTrendItem, ResponsePercentiles } from '@/services/reportService'
@@ -12,16 +11,10 @@ import {
   GlobalOutlined,
   ThunderboltOutlined,
   FileTextOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined,
-  FieldTimeOutlined,
   SettingOutlined,
 } from '@ant-design/icons'
-import EmptyState from '@/components/EmptyState'
-import ExternalDataWidget from '@/components/widgets/ExternalDataWidget'
+import DashboardWidgetGrid, { type WidgetConfig } from '@/components/widgets/DashboardWidgetGrid'
 
 interface DailyTrend {
   date: string
@@ -49,10 +42,11 @@ const Dashboard = () => {
   const [qualityTrend, setQualityTrend] = useState<QualityTrendItem[]>([])
   const [qualityDays, setQualityDays] = useState(30)
 
-  // P32-2: 自定义仪表盘组件布局
+  // P26-3: 自定义仪表盘组件布局
   const [widgetModalOpen, setWidgetModalOpen] = useState(false)
   const [widgetTypes, setWidgetTypes] = useState<string[]>([])
   const [selectedWidgets, setSelectedWidgets] = useState<string[]>([])
+  const [widgets, setWidgets] = useState<WidgetConfig[]>([])
   const [widgetLoading, setWidgetLoading] = useState(false)
 
   useEffect(() => {
@@ -126,6 +120,7 @@ const Dashboard = () => {
       const res = await api.get('/dashboard/widgets')
       const data = res?.data?.data || res?.data || []
       if (Array.isArray(data)) {
+        setWidgets(data as WidgetConfig[])
         setSelectedWidgets(data.map((w: Record<string, unknown>) => (w.widget_type || w.type) as string))
       }
     } catch { /* 静默 */ }
@@ -156,6 +151,25 @@ const Dashboard = () => {
     }
   }
 
+  // P26-3: 拖拽重排回调 — 保存新顺序到后端
+  const handleWidgetReorder = async (reordered: WidgetConfig[]) => {
+    setWidgets(reordered)
+    setSelectedWidgets(reordered.map(w => w.widget_type))
+    try {
+      const payload = reordered.map((w, i) => ({
+        widget_type: w.widget_type,
+        title: w.title || w.widget_type,
+        position_x: w.position_x || 0,
+        position_y: i,
+        width: w.width || 1,
+        height: w.height || 1,
+        config: w.config || {},
+        is_visible: w.is_visible !== false,
+      }))
+      await api.put('/dashboard/widgets', { widgets: payload })
+    } catch { /* 静默 */ }
+  }
+
   // 重置为默认布局
   const handleResetWidgets = async () => {
     try {
@@ -171,92 +185,12 @@ const Dashboard = () => {
   const getPassRate = (passed: number, total: number) =>
     total > 0 ? Math.round((passed / total) * 100) : 0
 
-  const trendOption = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: [t('common.passed'), t('common.failed')], bottom: 0, textStyle: { fontSize: 12, color: '#7C8180' } },
-    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-    xAxis: {
-      type: 'category', boundaryGap: false,
-      data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.date) : [t('dashboard.weekdays.mon'), t('dashboard.weekdays.tue'), t('dashboard.weekdays.wed'), t('dashboard.weekdays.thu'), t('dashboard.weekdays.fri'), t('dashboard.weekdays.sat'), t('dashboard.weekdays.sun')],
-      axisLine: { lineStyle: { color: '#E8E8E8' } }, axisLabel: { color: '#7C8180', fontSize: 11 },
-    },
-    yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#F0F0F0' } }, axisLabel: { color: '#7C8180', fontSize: 11 } },
-    series: [
-      {
-        name: t('common.passed'), type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
-        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(45,106,100,0.25)' }, { offset: 1, color: 'rgba(45,106,100,0.02)' }] } },
-        data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.passed) : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#2D6A64' }, lineStyle: { width: 2.5 },
-      },
-      {
-        name: t('common.failed'), type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
-        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(199,84,80,0.15)' }, { offset: 1, color: 'rgba(199,84,80,0.02)' }] } },
-        data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.failed) : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#C75450' }, lineStyle: { width: 2.5 },
-      },
-    ],
-  }
-
-  const distributionOption = {
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(255,255,255,0.96)', borderColor: '#E8E8E8', borderRadius: 12, textStyle: { fontSize: 13 } },
-    legend: { bottom: 0, textStyle: { fontSize: 12, color: '#7C8180' } },
-    series: [{
-      type: 'pie', radius: ['42%', '72%'], center: ['50%', '45%'],
-      avoidLabelOverlap: false, itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 3 }, label: { show: false },
-      data: [
-        { value: stats.api_tests.total || 0, name: t('dashboard.apiTest'), itemStyle: { color: '#2D6A64' } },
-        { value: stats.web_tests.total || 0, name: t('dashboard.webTest'), itemStyle: { color: '#629B95' } },
-        { value: stats.perf_tests.total || 0, name: t('dashboard.perfTest'), itemStyle: { color: '#D4B483' } },
-      ],
-    }],
-  }
-
-  // P31-2: 质量趋势图选项（调用 /reports/trend 接口）
-  const qualityTrendOption = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: [t('dashboard.qualityTrendModules.api') || 'API', t('dashboard.qualityTrendModules.web') || 'Web', t('dashboard.qualityTrendModules.perf') || '性能'], bottom: 0, textStyle: { fontSize: 12, color: '#7C8180' } },
-    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-    xAxis: {
-      type: 'category', boundaryGap: false,
-      data: qualityTrend.map(d => d.date),
-      axisLine: { lineStyle: { color: '#E8E8E8' } }, axisLabel: { color: '#7C8180', fontSize: 11 },
-    },
-    yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#F0F0F0' } }, axisLabel: { color: '#7C8180', fontSize: 11 } },
-    series: [
-      { name: 'API', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, data: qualityTrend.map(d => d.api || 0), itemStyle: { color: '#2D6A64' }, lineStyle: { width: 2 } },
-      { name: 'Web', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, data: qualityTrend.map(d => d.web || 0), itemStyle: { color: '#629B95' }, lineStyle: { width: 2 } },
-      { name: '性能', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, data: qualityTrend.map(d => d.perf || 0), itemStyle: { color: '#D4B483' }, lineStyle: { width: 2 } },
-    ],
-  }
-
-  const formatTime = (dateStr: string) => {
-    if (!dateStr) return '-'
-    const diff = Date.now() - new Date(dateStr).getTime()
-    const m = Math.floor(diff / 60000), h = Math.floor(diff / 3600000), d = Math.floor(diff / 86400000)
-    if (m < 1) return t('dashboard.time.justNow')
-    if (m < 60) return t('dashboard.time.minutesAgo', { minutes: m })
-    if (h < 24) return t('dashboard.time.hoursAgo', { hours: h })
-    if (d < 7) return t('dashboard.time.daysAgo', { days: d })
-    return new Date(dateStr).toLocaleDateString()
-  }
-
   const statCards = [
     { label: t('dashboard.apiTestCases'), value: stats.api_tests.total.toLocaleString(), icon: <ApiOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--primary', trend: `${getPassRate(stats.api_tests.passed, stats.api_tests.total)}%`, trendType: 'up' as const, navigateTo: '/api-test/workspace' },
     { label: t('dashboard.webTestScripts'), value: stats.web_tests.total.toLocaleString(), icon: <GlobalOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--secondary', trend: `${getPassRate(stats.web_tests.passed, stats.web_tests.total)}%`, trendType: 'up' as const, navigateTo: '/web-test/scripts' },
     { label: t('dashboard.perfTestScenarios'), value: stats.perf_tests.total.toLocaleString(), icon: <ThunderboltOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--tertiary', badge: `${t('dashboard.runningCount', { count: stats.perf_tests.running })}`, trendType: 'badge' as const, navigateTo: '/perf-test/scenarios' },
     { label: t('dashboard.recentTests'), value: stats.recent_runs.length.toLocaleString(), icon: <FileTextOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--info', trend: t('dashboard.recentRuns'), trendType: 'info' as const, navigateTo: '/reports' },
   ]
-
-  const statusConfig: Record<string, { cls: string; icon: React.ReactNode; text: string }> = {
-    success: { cls: 'fst-badge--success', icon: <CheckCircleOutlined />, text: t('common.success') },
-    passed: { cls: 'fst-badge--success', icon: <CheckCircleOutlined />, text: t('common.passed') },
-    failed: { cls: 'fst-badge--error', icon: <CloseCircleOutlined />, text: t('common.failed') },
-    running: { cls: 'fst-badge--primary', icon: <ClockCircleOutlined />, text: t('common.running') },
-    pending: { cls: 'fst-badge--warning', icon: <ClockCircleOutlined />, text: t('common.pending') },
-  }
-
-  const typeColors: Record<string, string> = { api: '#2D6A64', web: '#629B95', performance: '#D4B483', perf: '#D4B483' }
-  const typeLabels: Record<string, string> = { api: 'API', web: 'Web', performance: t('dashboard.perfTest'), perf: t('dashboard.perfTest') }
 
   return (
     <div className="fst-page" role="main" aria-label={t('dashboard.title')}>
@@ -296,170 +230,21 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="fst-grid fst-animate-in fst-animate-in-2" style={{ gridTemplateColumns: '2fr 1fr' }}>
-        <div className="fst-ios-card" role="region" aria-label={t('dashboard.testTrend')}>
-          <div className="fst-ios-card-header">
-            <div>
-              <div className="fst-ios-card-title">{t('dashboard.testTrend')}</div>
-              <div className="fst-ios-card-subtitle">{t('dashboard.trendSubtitle')}</div>
-            </div>
-            <div className="fst-tabs" style={{ width: 'auto' }}>
-              <button
-                className={`fst-tab ${trendPeriod === 'week' ? 'fst-tab--active' : ''}`}
-                onClick={() => setTrendPeriod('week')}
-              >
-                {t('dashboard.week')}
-              </button>
-              <button
-                className={`fst-tab ${trendPeriod === 'month' ? 'fst-tab--active' : ''}`}
-                onClick={() => setTrendPeriod('month')}
-              >
-                {t('dashboard.month')}
-              </button>
-            </div>
-          </div>
-          {loading
-            ? <Skeleton active paragraph={{ rows: 8 }} />
-            : <ReactECharts option={trendOption} style={{ height: 300 }} />
-          }
-        </div>
-        <div className="fst-ios-card">
-          <div className="fst-ios-card-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-            <div className="fst-ios-card-title">{t('dashboard.testDistribution')}</div>
-            <div className="fst-ios-card-subtitle">{t('dashboard.distributionSubtitle')}</div>
-          </div>
-          {loading
-            ? <Skeleton active paragraph={{ rows: 8 }} />
-            : <ReactECharts option={distributionOption} style={{ height: 300 }} />
-          }
-        </div>
+      {/* P26-3: 动态组件网格 — 根据用户选择的组件渲染，支持拖拽排列 */}
+      <div className="fst-animate-in fst-animate-in-2" style={{ marginTop: 8 }}>
+        <DashboardWidgetGrid
+          widgets={widgets}
+          data={{
+            stats,
+            dailyTrend,
+            percentiles,
+            qualityTrend,
+            loading,
+          }}
+          onReorder={handleWidgetReorder}
+          onNavigate={(path) => navigate(path)}
+        />
       </div>
-
-      {/* P31-2: 响应时间分位数 + 质量趋势 */}
-      <div className="fst-grid fst-animate-in fst-animate-in-2" style={{ gridTemplateColumns: '1fr 2fr' }}>
-        {/* 响应时间分位数卡片 */}
-        <div className="fst-ios-card">
-          <div className="fst-ios-card-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FieldTimeOutlined style={{ color: 'var(--fst-primary, #2D6A64)' }} />
-              <div className="fst-ios-card-title">{t('dashboard.percentiles') || '响应时间分位数'}</div>
-            </div>
-            <div className="fst-ios-card-subtitle">{t('dashboard.percentilesSubtitle') || '近 7 天 API 测试 P50/P90/P95/P99'}</div>
-          </div>
-          {loading ? (
-            <Skeleton active paragraph={{ rows: 4 }} />
-          ) : percentiles && percentiles.total_requests > 0 ? (
-            <div style={{ padding: '8px 0' }}>
-              {[
-                { label: 'P50', value: percentiles.p50, color: '#52c41a' },
-                { label: 'P90', value: percentiles.p90, color: '#2D6A64' },
-                { label: 'P95', value: percentiles.p95, color: percentiles.p95 > 2000 ? '#faad14' : '#2D6A64' },
-                { label: 'P99', value: percentiles.p99, color: percentiles.p99 > 5000 ? '#ff4d4f' : percentiles.p99 > 2000 ? '#faad14' : '#2D6A64' },
-              ].map((item) => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--fst-outline-soft, #f0f0f0)' }}>
-                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--fst-on-surface-variant, #666)' }}>{item.label}</span>
-                  <span style={{ fontWeight: 700, fontSize: 16, color: item.color, fontVariantNumeric: 'tabular-nums' }}>
-                    {item.value >= 1000 ? `${(item.value / 1000).toFixed(2)}s` : `${item.value.toFixed(0)}ms`}
-                  </span>
-                </div>
-              ))}
-              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: 'var(--fst-on-surface-muted, #999)' }}>
-                  {t('dashboard.totalRequests') || '总请求数'}: {percentiles.total_requests.toLocaleString()}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--fst-on-surface-muted, #999)' }}>
-                  {t('dashboard.avgLatency') || '平均'}: {percentiles.avg >= 1000 ? `${(percentiles.avg / 1000).toFixed(2)}s` : `${percentiles.avg.toFixed(0)}ms`}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="fst-empty" style={{ padding: '30px 0' }}>
-              <div className="fst-empty-icon"><FieldTimeOutlined /></div>
-              <div className="fst-empty-title">{t('dashboard.noPercentileData') || '暂无响应时间数据'}</div>
-              <div className="fst-empty-desc">{t('dashboard.noPercentileDataDesc') || '运行 API 测试后可查看分位数统计'}</div>
-            </div>
-          )}
-        </div>
-
-        {/* 质量趋势图 */}
-        <div className="fst-ios-card" role="region" aria-label={t('dashboard.qualityTrend') || '质量趋势'}>
-          <div className="fst-ios-card-header">
-            <div>
-              <div className="fst-ios-card-title">{t('dashboard.qualityTrend') || '质量趋势'}</div>
-              <div className="fst-ios-card-subtitle">{t('dashboard.qualityTrendSubtitle') || '按模块统计用例通过数量趋势'}</div>
-            </div>
-            <div className="fst-tabs" style={{ width: 'auto' }}>
-              <button className={`fst-tab ${qualityDays === 7 ? 'fst-tab--active' : ''}`} onClick={() => setQualityDays(7)}>
-                {t('dashboard.week') || '7天'}
-              </button>
-              <button className={`fst-tab ${qualityDays === 30 ? 'fst-tab--active' : ''}`} onClick={() => setQualityDays(30)}>
-                {t('dashboard.month') || '30天'}
-              </button>
-              <button className={`fst-tab ${qualityDays === 90 ? 'fst-tab--active' : ''}`} onClick={() => setQualityDays(90)}>
-                {t('dashboard.quarter') || '90天'}
-              </button>
-            </div>
-          </div>
-          {loading ? (
-            <Skeleton active paragraph={{ rows: 8 }} />
-          ) : qualityTrend.length > 0 ? (
-            <ReactECharts option={qualityTrendOption} style={{ height: 300 }} />
-          ) : (
-            <div className="fst-empty" style={{ padding: '60px 0' }}>
-              <div className="fst-empty-title">{t('dashboard.noQualityTrendData') || '暂无质量趋势数据'}</div>
-              <div className="fst-empty-desc">{t('dashboard.noQualityTrendDataDesc') || '运行测试后自动展示趋势图'}</div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="fst-ios-card fst-animate-in fst-animate-in-3" style={{ overflow: 'hidden' }}>
-        <div className="fst-ios-card-header">
-          <div className="fst-ios-card-title">{t('dashboard.recentExecutions')}</div>
-        </div>
-        {stats.recent_runs.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {stats.recent_runs.map((item: Record<string, unknown>, idx: number) => {
-              const st = statusConfig[item.status] || { cls: '', icon: null, text: item.status }
-              const color = typeColors[item.test_type] || '#999'
-              return (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 12, transition: 'background 150ms ease' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--fst-surface-dim)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--fst-on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.test_object_name || `Test #${item.id}`}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)' }}>
-                        {typeLabels[item.test_type] || item.test_type} · {formatTime(item.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                  <span className={`fst-badge ${st.cls}`} style={{ flexShrink: 0 }}>{st.icon} {st.text}</span>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <EmptyState
-            variant="reports"
-            title={t('dashboard.noRecords')}
-            subtitle={t('dashboard.noRecordsDesc')}
-          />
-        )}
-      </div>
-
-      {/* 外部数据源 Widget（当用户选择了 external_data 组件时显示） */}
-      {selectedWidgets.includes('external_data') && (
-        <div style={{ marginTop: 16 }} className="fst-animate-in fst-animate-in-3">
-          <ExternalDataWidget
-            title={t('dashboard.widgetType.external_data') || 'External Data'}
-            onConfigure={() => setWidgetModalOpen(true)}
-          />
-        </div>
-      )}
 
       {/* P32-2: 自定义仪表盘组件布局弹窗 */}
       <Modal

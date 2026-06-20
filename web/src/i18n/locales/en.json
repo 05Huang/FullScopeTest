@@ -222,6 +222,7 @@
     },
     "customizeLayout": "Customize Layout",
     "selectWidgets": "Select widgets to display on the dashboard:",
+    "noWidgets": "No widgets yet. Click \"Customize Layout\" to add widgets.",
     "resetLayout": "Reset to Default",
     "widgetSaveSuccess": "Layout saved",
     "widgetSaveFailed": "Save failed",
