@@ -33,6 +33,7 @@ import {
 import type { DataNode } from 'antd/es/tree'
 import { apiTestService, type AiPlanOperation } from '@/services/apiTestService'
 import { environmentService } from '@/services/environmentService'
+import type { ApiTestCase, ApiTestCollection, Environment, TestExecutionResponse } from '@/types'
 import { useProjectStore } from '@/stores/projectStore'
 import CollectionManager from './CollectionManager'
 import EnvironmentVariableHint from './EnvironmentVariableHint'
@@ -78,7 +79,7 @@ const ApiTestWorkspace = () => {
   const [activeTab, setActiveTab] = useState('params')
   const [responseTab, setResponseTab] = useState('body')
   const [sending, setSending] = useState(false)
-  const [response, setResponse] = useState<any>(null)
+  const [response, setResponse] = useState<TestExecutionResponse | null>(null)
   const [assertionResults, setAssertionResults] = useState<{
     total: number; passed: number; failed: number
     details?: Array<{ name: string; passed: boolean; actual?: unknown; expected?: unknown; error?: string; assertion_type?: string }>
@@ -105,8 +106,8 @@ const ApiTestWorkspace = () => {
     header_name?: string; body_path?: string; description?: string; enabled: boolean
   }>>([])
 
-  const [collections, setCollections] = useState<any[]>([])
-  const [cases, setCases] = useState<any[]>([])
+  const [collections, setCollections] = useState<ApiTestCollection[]>([])
+  const [cases, setCases] = useState<ApiTestCase[]>([])
   const [treeData, setTreeData] = useState<DataNode[]>([])
   const [selectedTreeKeys, setSelectedTreeKeys] = useState<React.Key[]>([])
   const [expandedTreeKeys, setExpandedTreeKeys] = useState<React.Key[]>([])
@@ -115,9 +116,9 @@ const ApiTestWorkspace = () => {
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>()
   const [activeCollectionId, setActiveCollectionId] = useState<number | undefined>()
   const [searchText, setSearchText] = useState('')
-  const [environments, setEnvironments] = useState<any[]>([])
+  const [environments, setEnvironments] = useState<Environment[]>([])
   const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>()
-  const [currentEnv, setCurrentEnv] = useState<any>(null)
+  const [currentEnv, setCurrentEnv] = useState<Environment | null>(null)
   const [sidebarTab, setSidebarTab] = useState<string>('cases') // 侧边栏标签页
   const [hasLoadedData, setHasLoadedData] = useState(false) // 标记数据是否已加载
 
@@ -172,7 +173,13 @@ const ApiTestWorkspace = () => {
   })
   const [currentCaseId, setCurrentCaseId] = useState<number | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [originalFormData, setOriginalFormData] = useState<any>(null)
+  const [originalFormData, setOriginalFormData] = useState<{
+    name: string; method: string; url: string; requestBody: string
+    headers: { key: string; value: string }[]; params: { key: string; value: string }[]
+    preScript: string; postScript: string; mockEnabled: boolean
+    mockResponseCode: number; mockResponseBody: string
+    mockResponseHeaders: { key: string; value: string }[]; mockDelayMs: number
+  } | null>(null)
 
   // 加载用例数据
   useEffect(() => {
@@ -375,7 +382,7 @@ const ApiTestWorkspace = () => {
         const savedEnvId = localStorage.getItem(storageKey)
         if (savedEnvId) {
           const envId = parseInt(savedEnvId)
-          const env = envs.find((e: any) => e.id === envId)
+          const env = envs.find((e) => e.id === envId)
           if (env) {
             setSelectedEnvId(envId)
             setCurrentEnv(env)
@@ -393,7 +400,7 @@ const ApiTestWorkspace = () => {
     }
   }
 
-  const buildTreeData = (collectionsData: any[], casesData: any[]) => {
+  const buildTreeData = (collectionsData: ApiTestCollection[], casesData: ApiTestCase[]) => {
     const tree: DataNode[] = []
     
     // 添加集合节点
@@ -841,13 +848,13 @@ const ApiTestWorkspace = () => {
       )
     }
 
-    const isPlainObject = (value: any) => {
+    const isPlainObject = (value: unknown): value is Record<string, unknown> => {
       if (!value || typeof value !== 'object') return false
       if (Array.isArray(value)) return false
       return Object.getPrototypeOf(value) === Object.prototype
     }
 
-    const resolveTemplateValue = (input: any): any => {
+    const resolveTemplateValue = (input: unknown): unknown => {
       if (typeof input === 'string') {
         const key = exactPlaceholderKey(input)
         if (key && Object.prototype.hasOwnProperty.call(templateVars, key)) {
@@ -1169,7 +1176,7 @@ const ApiTestWorkspace = () => {
       } else {
         message.error(res.message || '生成失败')
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.response?.data?.message || '生成失败')
     } finally {
       setAiSynthesizing(false)
@@ -1236,7 +1243,7 @@ const ApiTestWorkspace = () => {
       } else {
         message.error(res.message || '评审失败')
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.response?.data?.message || '评审失败')
     } finally {
       setAiReviewing(false)
@@ -1276,9 +1283,9 @@ const ApiTestWorkspace = () => {
     loadData() // 刷新左侧列表
   }
 
-  const normalizeAiObject = (value: any): Record<string, any> => {
+  const normalizeAiObject = (value: unknown): Record<string, unknown> => {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return value
+      return value as Record<string, unknown>
     }
     return {}
   }
@@ -1289,11 +1296,12 @@ const ApiTestWorkspace = () => {
       return
     }
 
-    const extractAiExecutionErrorParts = (error: any): string[] => {
-      const response = error?.response
+    const extractAiExecutionErrorParts = (error: unknown): string[] => {
+      const errObj = error as { response?: { data?: { errors?: unknown[]; message?: string; detail?: string } }; message?: string } | undefined
+      const response = errObj?.response
       const data = response?.data
       const segments: string[] = []
-      const pushSegment = (value: any) => {
+      const pushSegment = (value: unknown) => {
         const text = String(value || '').trim()
         if (!text) return
         if (!segments.includes(text)) {
@@ -1313,7 +1321,7 @@ const ApiTestWorkspace = () => {
 
       if (data?.errors) {
         if (Array.isArray(data.errors)) {
-          const briefErrors = data.errors.slice(0, 5).map((item: any) => {
+          const briefErrors = data.errors.slice(0, 5).map((item: unknown) => {
             if (typeof item === 'string') return item
             return item?.message || item?.msg || JSON.stringify(item)
           })
@@ -1333,7 +1341,7 @@ const ApiTestWorkspace = () => {
       }
 
       if (segments.length === 0) {
-        pushSegment(error?.message)
+        pushSegment(errObj?.message)
       }
       if (segments.length === 0) {
         return ['unknown error']
@@ -1382,16 +1390,16 @@ const ApiTestWorkspace = () => {
       const createdEnvironmentMap = new Map<string, number>()
       const createdCaseMap = new Map<string, number>()
 
-      const resolveCollectionId = (op: any): number | undefined => {
+      const resolveCollectionId = (op: AiPlanOperation): number | undefined => {
         if (op.collection_id) return Number(op.collection_id)
         if (op.collection_name && createdCollectionMap.has(op.collection_name)) {
           return createdCollectionMap.get(op.collection_name)
         }
         if (op.collection_name) {
-          const found = localCollections.find((c: any) => c.name === op.collection_name)
+          const found = localCollections.find((c) => c.name === op.collection_name)
           if (found) return found.id
         }
-        
+
         // Fallback: If we created a collection in this run, use the latest one
         if (createdCollectionMap.size > 0) {
            const ids = Array.from(createdCollectionMap.values())
@@ -1401,31 +1409,31 @@ const ApiTestWorkspace = () => {
         return activeCollectionId
       }
 
-      const resolveEnvironmentId = (op: any): number | undefined => {
+      const resolveEnvironmentId = (op: AiPlanOperation): number | undefined => {
         if (op.environment_id) return Number(op.environment_id)
         if (op.environment_name && createdEnvironmentMap.has(op.environment_name)) {
           return createdEnvironmentMap.get(op.environment_name)
         }
         if (op.environment_name) {
-          const found = localEnvironments.find((e: any) => e.name === op.environment_name)
+          const found = localEnvironments.find((e) => e.name === op.environment_name)
           if (found) return found.id
         }
         return selectedEnvId
       }
 
-      const resolveCaseId = (op: any): number | undefined => {
+      const resolveCaseId = (op: AiPlanOperation): number | undefined => {
         if (op.case_id) return Number(op.case_id)
         if (op.case_name && createdCaseMap.has(op.case_name)) {
           return createdCaseMap.get(op.case_name)
         }
         if (op.case_name) {
-          const found = localCases.find((c: any) => c.name === op.case_name)
+          const found = localCases.find((c) => c.name === op.case_name)
           if (found) return found.id
         }
         return currentCaseId || undefined
       }
 
-      const inferAiCaseMethod = (op: any): string => {
+      const inferAiCaseMethod = (op: AiPlanOperation): string => {
         const rawMethod = String(op.method || '').trim().toUpperCase()
         const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
         if (allowedMethods.includes(rawMethod)) return rawMethod
@@ -1450,10 +1458,10 @@ const ApiTestWorkspace = () => {
         return 'GET'
       }
 
-      const buildRunCaseFailureReasons = (runData: any): string[] => {
+      const buildRunCaseFailureReasons = (runData: unknown): string[] => {
         if (!runData || typeof runData !== 'object') return ['unknown reason']
         const parts: string[] = []
-        const pushPart = (value: any) => {
+        const pushPart = (value: unknown) => {
           const text = String(value || '').trim()
           if (!text) return
           if (!parts.includes(text)) {
@@ -1517,7 +1525,7 @@ const ApiTestWorkspace = () => {
           if (op.type === 'update_environment') {
             const envId = resolveEnvironmentId(op)
             if (!envId) throw new Error('environment id is required for update_environment')
-            const updatePayload: any = {}
+            const updatePayload: Record<string, unknown> = {}
             if (op.name) updatePayload.name = op.name
             if (op.base_url) updatePayload.base_url = op.base_url
             if (op.variables) updatePayload.variables = normalizeAiObject(op.variables)
@@ -1612,7 +1620,7 @@ const ApiTestWorkspace = () => {
           }
 
           appendAiLog('info', `${opTitle} ignored (unsupported type)`)
-        } catch (error: any) {
+        } catch (error: unknown) {
           const errorParts = extractAiExecutionErrorParts(error)
           appendAiLog('error', `${opTitle} failed: ${errorParts[0]}`)
           errorParts.slice(1).forEach((part, detailIndex) => {
@@ -1624,7 +1632,7 @@ const ApiTestWorkspace = () => {
       await loadData()
       appendAiLog('success', 'AI workflow completed')
       message.success('AI workflow completed')
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorParts = extractAiExecutionErrorParts(error)
       appendAiLog('error', `AI workflow failed: ${errorParts[0]}`)
       errorParts.slice(1).forEach((part, detailIndex) => {
@@ -1651,7 +1659,7 @@ const ApiTestWorkspace = () => {
       key: 'index',
       width: 60,
       align: 'center' as const,
-      render: (_: any, __: any, index: number) => (
+      render: (_: unknown, __: unknown, index: number) => (
         <Text type="secondary">{index + 1}</Text>
       ),
     },
@@ -1659,7 +1667,7 @@ const ApiTestWorkspace = () => {
       title: t('apiTest.paramName'),
       dataIndex: 'key',
       key: 'key',
-      render: (_: any, record: any, index: number) => (
+      render: (_: unknown, record: Record<string, unknown>, index: number) => (
         <Input
           placeholder={t('apiTest.paramName')}
           size="small"
@@ -1676,7 +1684,7 @@ const ApiTestWorkspace = () => {
       title: t('apiTest.paramValue'),
       dataIndex: 'value',
       key: 'value',
-      render: (_: any, record: any, index: number) => (
+      render: (_: unknown, record: Record<string, unknown>, index: number) => (
         <Input
           placeholder={t('apiTest.paramValue')}
           size="small"
@@ -1693,7 +1701,7 @@ const ApiTestWorkspace = () => {
       title: t('common.actions'),
       key: 'action',
       width: 80,
-      render: (_: any, __: any, index: number) => (
+      render: (_: unknown, __: unknown, index: number) => (
         <Button
           type="text"
           danger
@@ -1715,7 +1723,7 @@ const ApiTestWorkspace = () => {
       key: 'index',
       width: 60,
       align: 'center' as const,
-      render: (_: any, __: any, index: number) => (
+      render: (_: unknown, __: unknown, index: number) => (
         <Text type="secondary">{index + 1}</Text>
       ),
     },
@@ -1723,7 +1731,7 @@ const ApiTestWorkspace = () => {
       title: t('apiTest.headerName'),
       dataIndex: 'key',
       key: 'key',
-      render: (_: any, record: any, index: number) => (
+      render: (_: unknown, record: Record<string, unknown>, index: number) => (
         <Input
           placeholder={t('apiTest.headerName')}
           size="small"
@@ -1740,7 +1748,7 @@ const ApiTestWorkspace = () => {
       title: t('apiTest.headers'),
       dataIndex: 'value',
       key: 'value',
-      render: (_: any, record: any, index: number) => (
+      render: (_: unknown, record: Record<string, unknown>, index: number) => (
         <Input
           placeholder={t('apiTest.headerValue')}
           size="small"
@@ -1757,7 +1765,7 @@ const ApiTestWorkspace = () => {
       title: t('common.actions'),
       key: 'action',
       width: 80,
-      render: (_: any, __: any, index: number) => (
+      render: (_: unknown, __: unknown, index: number) => (
         <Button
           type="text"
           danger
@@ -1879,7 +1887,7 @@ const ApiTestWorkspace = () => {
         })
         message.error(result.message || '请求失败')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const elapsed = Date.now() - startTime
       setResponse({
         status: 0,
@@ -1946,7 +1954,7 @@ const ApiTestWorkspace = () => {
                         event.preventDefault()
                         // 只有测试用例节点才显示右键菜单
                         if ('caseData' in node) {
-                          const caseData = (node as any).caseData
+                          const caseData = (node as unknown as { caseData: { id: number; name: string } }).caseData
                           setContextMenuState({
                             visible: true,
                             x: event.clientX,
