@@ -24,24 +24,40 @@ const ROUTE_LABEL_MAP: Record<string, string> = {
   scenarios: 'perfTest.scenarios',
   monitor: 'perfTest.monitor',
   results: 'perfTest.results',
-  'perf-dashboard': 'perfTest.dashboard',
-  'alert-rules': 'perfTest.alertRules',
+  alerts: 'sidebar.alertRules',
   reports: 'sidebar.reports',
   settings: 'sidebar.settings',
   profile: 'sidebar.profile',
   organizations: 'sidebar.organizations',
   'audit-logs': 'sidebar.auditLogs',
-  'user-management': 'admin.userManagement',
-  documents: 'sidebar.documents',
+  users: 'sidebar.userManagement',
+  docs: 'sidebar.documents',
   'quality-gates': 'sidebar.qualityGates',
   'test-plans': 'sidebar.testPlans',
+  'test-plan-runs': 'testPlan.runDetail',
   'ai-insights': 'sidebar.aiInsights',
-  'visual-regression': 'sidebar.visualRegression',
+  'visual-history': 'sidebar.visualRegression',
   integrations: 'sidebar.integrations',
-  tokens: 'sidebar.apiTokens',
-  notifications: 'sidebar.notifications',
+  'api-tokens': 'sidebar.apiTokens',
+  'notification-settings': 'sidebar.notifications',
   'team-metrics': 'sidebar.teamMetrics',
+  'ci-cd': 'sidebar.cicd',
+  'trigger-rules': 'sidebar.triggerRules',
+  'mock-servers': 'sidebar.mockServers',
+  billing: 'sidebar.billing',
+  'health-monitor': 'sidebar.healthMonitor',
+  'webhook-debugger': 'sidebar.webhookDebugger',
+  devices: 'sidebar.deviceManager',
+  'data-factory': 'sidebar.dataFactory',
+  'flaky-tests': 'sidebar.flakyTests',
+  'api-docs': 'sidebar.apiDocs',
+  'report-schedules': 'sidebar.reportSchedules',
+  'report-templates': 'sidebar.reportTemplates',
+  'test-templates': 'sidebar.testTemplates',
 }
+
+// 纯前缀段：不产生独立面包屑条目，仅用于路径拼接
+const PREFIX_SEGMENTS = new Set(['admin'])
 
 const PageBreadcrumb: React.FC = () => {
   const { t } = useTranslation()
@@ -63,22 +79,26 @@ const PageBreadcrumb: React.FC = () => {
         </span>
       ),
     },
-    ...pathSegments.map((segment, index) => {
-      const path = '/' + pathSegments.slice(0, index + 1).join('/')
-      const isLast = index === pathSegments.length - 1
-      const labelKey = ROUTE_LABEL_MAP[segment]
-      const label = labelKey ? t(labelKey) : segment
+    ...pathSegments.reduce<Array<{ title: React.ReactNode }>>((acc, segment, originalIndex) => {
+        // 跳过纯前缀段
+        if (PREFIX_SEGMENTS.has(segment)) return acc
 
-      return {
-        title: isLast ? (
-          <span>{label}</span>
-        ) : (
-          <span onClick={() => navigate(path)} style={{ cursor: 'pointer' }}>
-            {label}
-          </span>
-        ),
-      }
-    }),
+        const path = '/' + pathSegments.slice(0, originalIndex + 1).join('/')
+        const isLast = originalIndex === pathSegments.length - 1
+        const labelKey = ROUTE_LABEL_MAP[segment]
+        const label = labelKey ? t(labelKey) : segment
+
+        acc.push({
+          title: isLast ? (
+            <span>{label}</span>
+          ) : (
+            <span onClick={() => navigate(path)} style={{ cursor: 'pointer' }}>
+              {label}
+            </span>
+          ),
+        })
+        return acc
+      }, []),
   ]
 
   return (

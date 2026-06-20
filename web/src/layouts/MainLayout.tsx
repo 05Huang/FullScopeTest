@@ -35,6 +35,8 @@ import {
   LinkOutlined,
   SunOutlined,
   MoonOutlined,
+  RobotOutlined,
+  BugOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -47,6 +49,8 @@ import PageBreadcrumb from '../components/PageBreadcrumb'
 import SessionWarning from '../components/SessionWarning'
 import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
+import ShortcutHelpModal from '../components/ShortcutHelpModal'
+import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut'
 
 const { Content, Footer } = Layout
 const { Text } = Typography
@@ -178,7 +182,7 @@ const MainLayout = () => {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { branding } = useBranding()
-  const { isAdmin } = useRole()
+  const { isAdmin, isMember } = useRole()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
   const { resolvedTheme, toggle: toggleTheme } = useThemeStore()
   const [projectModalOpen, setProjectModalOpen] = useState(false)
@@ -324,6 +328,10 @@ const MainLayout = () => {
   }, [fetchProjects])
 
   const [tourOpen, setTourOpen] = useState(false)
+  const [shortcutModalOpen, setShortcutModalOpen] = useState(false)
+
+  // Ctrl+/ 打开快捷键帮助
+  useKeyboardShortcut('/', () => setShortcutModalOpen(prev => !prev), { ctrl: true })
 
   useEffect(() => {
     // 检查是否是首次访问首页
@@ -391,12 +399,15 @@ const MainLayout = () => {
       { label: t('sidebar.workspace'), path: '/api-test/workspace' },
       { label: t('sidebar.collections'), path: '/api-test/collections' },
       { label: t('sidebar.environments'), path: '/api-test/environments' },
+      { label: t('sidebar.apiDocs'), path: '/api-docs' },
+      { label: t('sidebar.testTemplates'), path: '/test-templates' },
     ]},
     { icon: <GlobalOutlined />, label: t('sidebar.webTest'), path: '/web-test', children: [
       { label: t('sidebar.scripts'), path: '/web-test/scripts' },
     ]},
     { icon: <MobileOutlined />, label: t('sidebar.appTest'), path: '/app-test', children: [
       { label: t('sidebar.scripts'), path: '/app-test/scripts' },
+      ...(isAdmin ? [{ label: t('sidebar.deviceManager'), path: '/app-test/devices' }] : []),
     ]},
     { icon: <ThunderboltOutlined />, label: t('sidebar.perfTest'), path: '/perf-test', children: [
       { label: t('sidebar.scenarios'), path: '/perf-test/scenarios' },
@@ -406,24 +417,32 @@ const MainLayout = () => {
       { label: t('sidebar.alertRules'), path: '/perf-test/alerts' },
     ]},
     { icon: <BarChartOutlined />, label: t('sidebar.reports'), path: '/reports' },
+    ...(isMember ? [
+      { icon: <FileTextOutlined />, label: t('sidebar.reportSchedules'), path: '/report-schedules' },
+      { icon: <FileTextOutlined />, label: t('sidebar.reportTemplates'), path: '/report-templates' },
+    ] : []),
     { icon: <ExperimentOutlined />, label: t('sidebar.testPlans'), path: '/test-plans' },
     { icon: <SafetyOutlined />, label: t('sidebar.qualityGates'), path: '/quality-gates' },
     { icon: <DotChartOutlined />, label: t('sidebar.aiInsights'), path: '/ai-insights' },
+    { icon: <RobotOutlined />, label: t('sidebar.dataFactory'), path: '/data-factory' },
+    { icon: <BugOutlined />, label: t('sidebar.flakyTests'), path: '/flaky-tests' },
     { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd', children: [
       { label: t('sidebar.cicdMain'), path: '/ci-cd' },
       { label: t('sidebar.triggerRules'), path: '/trigger-rules' },
     ]},
-    { icon: <ApiOutlined />, label: t('sidebar.mockServers') || 'Mock 服务器', path: '/mock-servers' },
+    { icon: <ApiOutlined />, label: t('sidebar.mockServers'), path: '/mock-servers' },
     { icon: <BellOutlined />, label: t('sidebar.notifications'), path: '/notification-settings' },
     { icon: <BarChartOutlined />, label: t('sidebar.teamMetrics'), path: '/team-metrics' },
     { icon: <TeamOutlined />, label: t('sidebar.organizations'), path: '/organizations' },
-    { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
     { icon: <KeyOutlined />, label: t('sidebar.apiTokens'), path: '/api-tokens' },
     { icon: <LinkOutlined />, label: t('sidebar.integrations'), path: '/integrations' },
-    { icon: <CustomerServiceOutlined />, label: t('sidebar.billing'), path: '/billing' },
     { icon: <SafetyOutlined />, label: t('sidebar.healthMonitor'), path: '/health-monitor' },
     { icon: <ApiOutlined />, label: t('sidebar.webhookDebugger'), path: '/webhook-debugger' },
     { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
+    ...(isAdmin ? [
+      { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
+      { icon: <CustomerServiceOutlined />, label: t('sidebar.billing'), path: '/billing' },
+    ] : []),
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
   ]
 
@@ -989,6 +1008,9 @@ const MainLayout = () => {
       >
         <Tour open={tourOpen} onClose={handleTourClose} steps={tourSteps} />
       </ConfigProvider>
+
+      {/* 快捷键帮助弹窗 */}
+      <ShortcutHelpModal open={shortcutModalOpen} onClose={() => setShortcutModalOpen(false)} />
 
       {/* 创建项目弹窗 */}
       <Modal

@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import ErrorBoundary from './components/ErrorBoundary'
 import LanguageSwitchPrompt from './components/LanguageSwitchPrompt'
+import RequireRole from './components/RequireRole'
 import NotFound from './pages/NotFound'
 import i18n from './i18n'
 import { useAuthStore } from './stores/authStore'
@@ -48,6 +49,13 @@ const MockServers = lazy(() => import('./pages/MockServers'))
 const Billing = lazy(() => import('./pages/Billing'))
 const HealthMonitor = lazy(() => import('./pages/HealthMonitor'))
 const WebhookDebugger = lazy(() => import('./pages/WebhookDebugger'))
+const DataFactory = lazy(() => import('./pages/DataFactory'))
+const FlakyTestDashboard = lazy(() => import('./pages/FlakyTestDashboard'))
+const TestCaseTemplates = lazy(() => import('./pages/TestCaseTemplates'))
+const ReportSchedules = lazy(() => import('./pages/ReportSchedules'))
+const ReportTemplateEditor = lazy(() => import('./pages/ReportTemplateEditor'))
+const ApiDocumentation = lazy(() => import('./pages/ApiDocumentation'))
+const DeviceManager = lazy(() => import('./pages/app-test/DeviceManager'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -351,12 +359,14 @@ function App() {
           }
         />
 
-        {/* 审计日志 */}
+        {/* 审计日志（admin） */}
         <Route
           path="audit-logs"
           element={
             <Suspense fallback={<PageLoading />}>
-              <AuditLogs />
+              <RequireRole roles={['admin']}>
+                <AuditLogs />
+              </RequireRole>
             </Suspense>
           }
         />
@@ -371,12 +381,14 @@ function App() {
           }
         />
 
-        {/* 计费管理 */}
+        {/* 计费管理（admin） */}
         <Route
           path="billing"
           element={
             <Suspense fallback={<PageLoading />}>
-              <Billing />
+              <RequireRole roles={['admin']}>
+                <Billing />
+              </RequireRole>
             </Suspense>
           }
         />
@@ -442,7 +454,87 @@ function App() {
           path="admin/users"
           element={
             <Suspense fallback={<PageLoading />}>
-              <UserManagement />
+              <RequireRole roles={['admin']}>
+                <UserManagement />
+              </RequireRole>
+            </Suspense>
+          }
+        />
+
+        {/* AI 数据工厂（member+） */}
+        <Route
+          path="data-factory"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <RequireRole roles={['admin', 'member']}>
+                <DataFactory />
+              </RequireRole>
+            </Suspense>
+          }
+        />
+
+        {/* Flaky 检测（viewer+） */}
+        <Route
+          path="flaky-tests"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <FlakyTestDashboard />
+            </Suspense>
+          }
+        />
+
+        {/* 用例模板库（viewer+） */}
+        <Route
+          path="test-templates"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <TestCaseTemplates />
+            </Suspense>
+          }
+        />
+
+        {/* API 文档生成（viewer+） */}
+        <Route
+          path="api-docs"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <ApiDocumentation />
+            </Suspense>
+          }
+        />
+
+        {/* 定时报告（member+） */}
+        <Route
+          path="report-schedules"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <RequireRole roles={['admin', 'member']}>
+                <ReportSchedules />
+              </RequireRole>
+            </Suspense>
+          }
+        />
+
+        {/* 报告模板编辑器（member+） */}
+        <Route
+          path="report-templates"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <RequireRole roles={['admin', 'member']}>
+                <ReportTemplateEditor />
+              </RequireRole>
+            </Suspense>
+          }
+        />
+
+        {/* 设备管理（admin） */}
+        <Route
+          path="app-test/devices"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <RequireRole roles={['admin']}>
+                <DeviceManager />
+              </RequireRole>
             </Suspense>
           }
         />
