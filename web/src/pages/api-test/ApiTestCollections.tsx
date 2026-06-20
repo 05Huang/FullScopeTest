@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Card,
   Collapse,
+  Skeleton,
   Table,
   Button,
   Space,
@@ -486,6 +487,8 @@ const ApiTestCollections = () => {
               ),
             }))}
           />
+        ) : loading ? (
+          <Skeleton active paragraph={{ rows: 10 }} style={{ padding: '16px 0' }} />
         ) : (
           <Table
             rowSelection={{
@@ -499,7 +502,6 @@ const ApiTestCollections = () => {
               c.url?.toLowerCase().includes(searchText.toLowerCase())
             )}
             rowKey="id"
-            loading={loading}
             pagination={{
               total: cases.length,
               showTotal: (total) => `${t('common.total')} ${total}`,

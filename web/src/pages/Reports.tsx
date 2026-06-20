@@ -12,6 +12,7 @@ import {
   Popconfirm,
   Row,
   Select,
+  Skeleton,
   Space,
   Statistic,
   Table,
@@ -595,6 +596,9 @@ const Reports = () => {
           ]}
         />
         <div className="fst-table-wrap">
+          {loading ? (
+            <Skeleton active paragraph={{ rows: 10 }} style={{ padding: '16px 0' }} />
+          ) : (
           <Table
             rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
             columns={columns}
@@ -605,7 +609,6 @@ const Reports = () => {
                 run.environment_name?.toLowerCase().includes(filters.keyword.toLowerCase()),
             )}
             rowKey="id"
-            loading={loading}
             pagination={{
               ...pagination,
               showTotal: (total) => `${total} items`,
@@ -614,6 +617,7 @@ const Reports = () => {
               onChange: (page, pageSize) => setPagination((prev) => ({ ...prev, current: page, pageSize })),
             }}
           />
+          )}
         </div>
       </div>
 
