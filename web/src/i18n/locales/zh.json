@@ -226,7 +226,17 @@
     "widgetSaveSuccess": "布局已保存",
     "widgetSaveFailed": "保存失败",
     "widgetResetSuccess": "已恢复默认布局",
-    "widgetType": "组件类型"
+    "widgetType": {
+      "pass_rate": "通过率统计",
+      "recent_runs": "最近执行记录",
+      "failed_top10": "失败用例 Top 10",
+      "ai_usage": "AI 使用统计",
+      "team_activity": "团队活跃度",
+      "quality_gates": "质量门禁状态",
+      "sla_rate": "SLA 达成率",
+      "cost_overview": "成本概览",
+      "external_data": "外部数据源"
+    }
   },
   "sidebar": {
     "dashboard": "工作台",
@@ -267,7 +277,11 @@
     "visualRegression": "视觉回归",
     "dataFactory": "数据工厂",
     "flakyTests": "Flaky 检测",
-    "apiDocs": "API 文档"
+    "apiDocs": "API 文档",
+    "deviceManager": "设备管理",
+    "reportSchedules": "定时报告",
+    "reportTemplates": "报告模板",
+    "testTemplates": "用例模板"
   },
   "admin": {
     "userManagement": "用户管理",
@@ -1714,5 +1728,148 @@
     "extend": "延长会话",
     "logout": "重新登录",
     "refreshing": "正在刷新"
+  },
+  "dataFactory": {
+    "title": "AI 数据工厂",
+    "subtitle": "配置数据 Schema，AI 自动生成测试数据",
+    "schema": "数据 Schema",
+    "fieldName": "字段名",
+    "fieldType": "类型",
+    "fieldRule": "规则",
+    "addField": "添加字段",
+    "rowCount": "生成行数",
+    "rowSuffix": " 行",
+    "generate": "AI 生成",
+    "generating": "生成中...",
+    "exportCsv": "导出 CSV",
+    "preview": "预览 (前 10 行)",
+    "generateSuccess": "生成完成",
+    "generateFailed": "生成失败",
+    "addOneField": "请至少添加一个字段",
+    "types": {
+      "string": "字符串",
+      "number": "数字",
+      "email": "邮箱",
+      "phone": "手机号",
+      "name": "姓名",
+      "date": "日期",
+      "boolean": "布尔值",
+      "uuid": "UUID",
+      "address": "地址",
+      "url": "URL"
+    }
+  },
+  "flakyTests": {
+    "title": "Flaky Test 检测",
+    "subtitle": "检测不稳定测试用例，分析失败模式",
+    "caseName": "用例名",
+    "stabilityScore": "稳定性评分",
+    "totalRuns": "总执行",
+    "flakyCount": "Flaky 次数",
+    "failurePattern": "失败模式",
+    "suggestion": "修复建议",
+    "refresh": "刷新",
+    "fetchFailed": "获取数据失败"
+  },
+  "testTemplates": {
+    "title": "用例模板库",
+    "subtitle": "内置用例模板，快速创建测试用例",
+    "searchPlaceholder": "搜索模板",
+    "use": "使用",
+    "copied": "模板已复制到剪贴板",
+    "noTemplates": "未找到匹配的模板",
+    "categories": {
+      "crud": "CRUD",
+      "auth": "认证",
+      "monitor": "监控"
+    }
+  },
+  "reportSchedules": {
+    "title": "定时报告",
+    "subtitle": "管理定时报告任务，自动发送测试报告",
+    "create": "创建定时报告",
+    "name": "名称",
+    "frequency": "频率",
+    "recipients": "收件人",
+    "status": "状态",
+    "nextRun": "下次执行",
+    "enabled": "启用",
+    "disabled": "停用",
+    "delete": "删除",
+    "deleteConfirm": "确定删除此定时报告吗？",
+    "createSuccess": "定时报告已创建",
+    "createFailed": "创建失败",
+    "deleteSuccess": "定时报告已删除",
+    "fetchFailed": "获取定时报告失败",
+    "namePlaceholder": "每日测试报告",
+    "emailPlaceholder": "多个邮箱用逗号分隔",
+    "frequencies": {
+      "daily": "每日",
+      "weekly": "每周",
+      "monthly": "每月"
+    }
+  },
+  "reportTemplates": {
+    "title": "报告模板编辑器",
+    "subtitle": "自定义报告模板：选择展示模块、排序、配色",
+    "templateName": "模板名称",
+    "themeColor": "主题配色",
+    "reportModules": "报告模块",
+    "moduleHint": "勾选要包含的模块，按顺序展示",
+    "save": "保存模板",
+    "saveSuccess": "模板已保存",
+    "saveFailed": "保存失败",
+    "themes": {
+      "default": "默认蓝",
+      "green": "清新绿",
+      "dark": "暗夜黑",
+      "warm": "暖橙"
+    },
+    "modules": {
+      "summary": "执行摘要",
+      "passRate": "通过率统计",
+      "duration": "执行时长",
+      "failedCases": "失败用例详情",
+      "trend": "质量趋势",
+      "envInfo": "环境信息",
+      "aiAnalysis": "AI 分析",
+      "screenshots": "截图附件"
+    }
+  },
+  "deviceManager": {
+    "title": "设备管理",
+    "subtitle": "查看已连接设备列表、设备状态、Appium Server 连接状态",
+    "appiumServer": "Appium Server",
+    "serverUrl": "服务器地址",
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "refresh": "刷新",
+    "deviceList": "已连接设备",
+    "noDevices": "未检测到设备。请确认 Appium Server 已启动且设备已连接。",
+    "deviceName": "设备名",
+    "platform": "平台",
+    "version": "系统版本",
+    "model": "型号",
+    "resolution": "分辨率",
+    "status": "状态",
+    "online": "在线",
+    "offline": "离线",
+    "busy": "忙碌",
+    "fetchFailed": "获取设备列表失败"
+  },
+  "apiDocsGen": {
+    "title": "API 文档生成",
+    "subtitle": "从测试用例自动生成 OpenAPI 文档",
+    "selectCollection": "选择用例集",
+    "format": "格式",
+    "generate": "生成文档",
+    "generating": "生成中...",
+    "copy": "复制",
+    "download": "下载",
+    "generateSuccess": "文档生成完成",
+    "generateFailed": "生成失败",
+    "copied": "已复制",
+    "selectHint": "选择用例集后点击生成",
+    "selectCollectionWarning": "请选择用例集"
   }
 }

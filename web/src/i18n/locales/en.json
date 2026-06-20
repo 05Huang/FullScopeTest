@@ -226,7 +226,17 @@
     "widgetSaveSuccess": "Layout saved",
     "widgetSaveFailed": "Save failed",
     "widgetResetSuccess": "Layout reset to default",
-    "widgetType": "Widget Type"
+    "widgetType": {
+      "pass_rate": "Pass Rate",
+      "recent_runs": "Recent Runs",
+      "failed_top10": "Top 10 Failures",
+      "ai_usage": "AI Usage",
+      "team_activity": "Team Activity",
+      "quality_gates": "Quality Gates",
+      "sla_rate": "SLA Compliance",
+      "cost_overview": "Cost Overview",
+      "external_data": "External Data"
+    }
   },
   "sidebar": {
     "dashboard": "Dashboard",
@@ -267,7 +277,11 @@
     "visualRegression": "Visual Regression",
     "dataFactory": "Data Factory",
     "flakyTests": "Flaky Tests",
-    "apiDocs": "API Docs"
+    "apiDocs": "API Docs",
+    "deviceManager": "Device Manager",
+    "reportSchedules": "Report Schedules",
+    "reportTemplates": "Report Templates",
+    "testTemplates": "Test Templates"
   },
   "admin": {
     "userManagement": "User Management",
@@ -1714,5 +1728,148 @@
     "extend": "Extend",
     "logout": "Re-login",
     "refreshing": "Refreshing..."
+  },
+  "dataFactory": {
+    "title": "AI Data Factory",
+    "subtitle": "Configure data schema, AI auto-generates test data",
+    "schema": "Data Schema",
+    "fieldName": "Field Name",
+    "fieldType": "Type",
+    "fieldRule": "Rule",
+    "addField": "Add Field",
+    "rowCount": "Row Count",
+    "rowSuffix": " rows",
+    "generate": "AI Generate",
+    "generating": "Generating...",
+    "exportCsv": "Export CSV",
+    "preview": "Preview (first 10 rows)",
+    "generateSuccess": "Generation complete",
+    "generateFailed": "Generation failed",
+    "addOneField": "Please add at least one field",
+    "types": {
+      "string": "String",
+      "number": "Number",
+      "email": "Email",
+      "phone": "Phone",
+      "name": "Name",
+      "date": "Date",
+      "boolean": "Boolean",
+      "uuid": "UUID",
+      "address": "Address",
+      "url": "URL"
+    }
+  },
+  "flakyTests": {
+    "title": "Flaky Test Detection",
+    "subtitle": "Detect unstable test cases and analyze failure patterns",
+    "caseName": "Case Name",
+    "stabilityScore": "Stability Score",
+    "totalRuns": "Total Runs",
+    "flakyCount": "Flaky Count",
+    "failurePattern": "Failure Pattern",
+    "suggestion": "Suggestion",
+    "refresh": "Refresh",
+    "fetchFailed": "Failed to fetch data"
+  },
+  "testTemplates": {
+    "title": "Test Case Templates",
+    "subtitle": "Built-in templates for quick test case creation",
+    "searchPlaceholder": "Search templates",
+    "use": "Use",
+    "copied": "Template copied to clipboard",
+    "noTemplates": "No matching templates found",
+    "categories": {
+      "crud": "CRUD",
+      "auth": "Auth",
+      "monitor": "Monitor"
+    }
+  },
+  "reportSchedules": {
+    "title": "Report Schedules",
+    "subtitle": "Manage scheduled report tasks, auto-send test reports",
+    "create": "Create Schedule",
+    "name": "Name",
+    "frequency": "Frequency",
+    "recipients": "Recipients",
+    "status": "Status",
+    "nextRun": "Next Run",
+    "enabled": "Active",
+    "disabled": "Disabled",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this scheduled report?",
+    "createSuccess": "Schedule created",
+    "createFailed": "Creation failed",
+    "deleteSuccess": "Schedule deleted",
+    "fetchFailed": "Failed to fetch schedules",
+    "namePlaceholder": "Daily test report",
+    "emailPlaceholder": "Multiple emails separated by commas",
+    "frequencies": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    }
+  },
+  "reportTemplates": {
+    "title": "Report Template Editor",
+    "subtitle": "Customize report templates: select modules, order, and theme",
+    "templateName": "Template Name",
+    "themeColor": "Theme Color",
+    "reportModules": "Report Modules",
+    "moduleHint": "Select modules to include, displayed in order",
+    "save": "Save Template",
+    "saveSuccess": "Template saved",
+    "saveFailed": "Save failed",
+    "themes": {
+      "default": "Default Blue",
+      "green": "Fresh Green",
+      "dark": "Dark Night",
+      "warm": "Warm Orange"
+    },
+    "modules": {
+      "summary": "Executive Summary",
+      "passRate": "Pass Rate Stats",
+      "duration": "Execution Duration",
+      "failedCases": "Failed Cases Detail",
+      "trend": "Quality Trend",
+      "envInfo": "Environment Info",
+      "aiAnalysis": "AI Analysis",
+      "screenshots": "Screenshots"
+    }
+  },
+  "deviceManager": {
+    "title": "Device Manager",
+    "subtitle": "View connected devices, device status, and Appium Server connection",
+    "appiumServer": "Appium Server",
+    "serverUrl": "Server URL",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "refresh": "Refresh",
+    "deviceList": "Connected Devices",
+    "noDevices": "No devices detected. Please ensure Appium Server is running and devices are connected.",
+    "deviceName": "Device Name",
+    "platform": "Platform",
+    "version": "OS Version",
+    "model": "Model",
+    "resolution": "Resolution",
+    "status": "Status",
+    "online": "Online",
+    "offline": "Offline",
+    "busy": "Busy",
+    "fetchFailed": "Failed to fetch devices"
+  },
+  "apiDocsGen": {
+    "title": "API Documentation",
+    "subtitle": "Auto-generate OpenAPI docs from test cases",
+    "selectCollection": "Select Collection",
+    "format": "Format",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "copy": "Copy",
+    "download": "Download",
+    "generateSuccess": "Documentation generated",
+    "generateFailed": "Generation failed",
+    "copied": "Copied",
+    "selectHint": "Select a collection and click Generate",
+    "selectCollectionWarning": "Please select a collection"
   }
 }
