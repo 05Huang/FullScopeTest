@@ -25,11 +25,13 @@ import {
   HistoryOutlined,
   UnorderedListOutlined,
   LineChartOutlined,
+  MessageOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import ReactECharts from 'echarts-for-react'
 import testPlanService, { TestPlan, TestPlanRun, TrendPoint } from '@/services/testPlanService'
+import CommentSection from '@/components/CommentSection'
 
 const { Title, Text } = Typography
 
@@ -347,6 +349,18 @@ const TestPlanDetail = () => {
                 <Empty description={t('testPlans.noTrendData')} />
               ),
             },
+            ...(planIdNum ? [{
+              key: 'comments',
+              label: (
+                <span>
+                  <MessageOutlined style={{ marginRight: 6 }} />
+                  {t('common.comments') || '评论'}
+                </span>
+              ),
+              children: (
+                <CommentSection resourceType="test_plan" resourceId={planIdNum} />
+              ),
+            }] : []),
           ]}
         />
       </Card>

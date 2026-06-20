@@ -1,6 +1,7 @@
 import logger from "@/utils/logger"
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
+import { wsService } from '@/services/websocketService'
 import {
   Card,
   Row,
@@ -50,9 +51,19 @@ const PerfTestMonitor = () => {
   useEffect(() => {
     fetchRunningTests()
 
-    // 定时刷新（每2秒刷新一次，更实时）
+    // 尝试 WebSocket 实时推送
+    wsService.connect()
+    const unsubPerf = wsService.on('perf_metrics', (data: unknown) => {
+      // WebSocket 推送时立即刷新
+      fetchRunningTests()
+    })
+
+    // 定时刷新（每2秒刷新一次，WebSocket 不可用时作为兜底）
     const interval = setInterval(fetchRunningTests, 2000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      unsubPerf()
+    }
   }, [])
 
   const fetchRunningTests = async () => {

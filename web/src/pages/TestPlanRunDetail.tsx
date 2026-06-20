@@ -31,6 +31,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import testPlanService, { TestPlanRun } from '@/services/testPlanService'
+import { useRunProgress } from '@/hooks/useRunProgress'
 
 const { Title, Text } = Typography
 
@@ -43,6 +44,11 @@ const TestPlanRunDetail = () => {
 
   const runIdNum = runId ? parseInt(runId, 10) : null
 
+  // 运行进度轮询（当运行状态为 running 时自动轮询）
+  const { progress: runProgress, start: startPolling } = useRunProgress({
+    autoStop: (p) => p.status === 'success' || p.status === 'failed' || p.status === 'completed',
+  })
+
   const fetchRun = useCallback(async () => {
     if (!runIdNum) return
     setLoading(true)
@@ -50,17 +56,28 @@ const TestPlanRunDetail = () => {
       const res = await testPlanService.getTestPlanRun(runIdNum)
       if (res.code === 200 && res.data) {
         setRun(res.data)
+        // 如果运行仍在进行中，启动进度轮询
+        if (res.data.status === 'running' || res.data.status === 'pending') {
+          startPolling(runIdNum)
+        }
       }
     } catch {
       message.error(t('testPlans.fetchRunFailed'))
     } finally {
       setLoading(false)
     }
-  }, [runIdNum, t])
+  }, [runIdNum, t, startPolling])
 
   useEffect(() => {
     fetchRun()
   }, [fetchRun])
+
+  // 当轮询进度更新时刷新运行详情
+  useEffect(() => {
+    if (runProgress && (runProgress.status === 'success' || runProgress.status === 'failed' || runProgress.status === 'completed')) {
+      fetchRun()
+    }
+  }, [runProgress, fetchRun])
 
   const getStatusIcon = (status: string) => {
     switch (status) {

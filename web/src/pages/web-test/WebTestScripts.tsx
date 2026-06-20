@@ -35,6 +35,7 @@ import {
   EyeOutlined,
   RobotOutlined,
   GlobalOutlined,
+  DragOutlined,
 } from '@ant-design/icons'
 import VisualDiffViewer from '@/components/VisualDiffViewer'
 import LogViewerModal from './components/LogViewerModal'
@@ -44,6 +45,7 @@ import MonacoEditor from '@monaco-editor/react'
 import { webTestService } from '@/services/webTestService'
 import { runWithConcurrency } from '@/utils/runWithConcurrency'
 import ScriptList from './ScriptList'
+import VisualEditor, { type WebTestStep } from './VisualEditor'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -171,6 +173,8 @@ const WebTestScripts = () => {
   const [isEditingCode, setIsEditingCode] = useState(false)
   const [codeContent, setCodeContent] = useState('')
   const [savingCode, setSavingCode] = useState(false)
+  const [visualSteps, setVisualSteps] = useState<WebTestStep[]>([])
+  const [editorMode, setEditorMode] = useState<'code' | 'visual'>('code')
   
   // AI Script Generation State
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
@@ -1643,6 +1647,18 @@ const WebTestScripts = () => {
         }
         width={800}
       >
+        {/* 编辑器模式切换 */}
+        <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+          <Button size="small" type={editorMode === 'code' ? 'primary' : 'default'} icon={<CodeOutlined />} onClick={() => setEditorMode('code')}>
+            代码
+          </Button>
+          <Button size="small" type={editorMode === 'visual' ? 'primary' : 'default'} icon={<DragOutlined />} onClick={() => setEditorMode('visual')}>
+            可视化
+          </Button>
+        </div>
+        {editorMode === 'visual' ? (
+          <VisualEditor steps={visualSteps} onChange={setVisualSteps} />
+        ) : (
         <MonacoEditor
           height={400}
           language="python"
@@ -1665,6 +1681,7 @@ const WebTestScripts = () => {
             automaticLayout: true,
           }}
         />
+        )}
       </Modal>
 
       {/* 执行日志模态框 */}

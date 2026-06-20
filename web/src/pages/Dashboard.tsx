@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Skeleton, Tooltip, Button, Modal, Checkbox, message, Space } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import api from '@/services/api'
@@ -19,6 +20,8 @@ import {
   FieldTimeOutlined,
   SettingOutlined,
 } from '@ant-design/icons'
+import EmptyState from '@/components/EmptyState'
+import ExternalDataWidget from '@/components/widgets/ExternalDataWidget'
 
 interface DailyTrend {
   date: string
@@ -28,6 +31,7 @@ interface DailyTrend {
 
 const Dashboard = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { currentProjectId } = useProjectStore()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats>({
@@ -106,8 +110,11 @@ const Dashboard = () => {
   const fetchWidgetTypes = async () => {
     try {
       const res = await api.get('/dashboard/widget-types')
-      const data = (res as any)?.data?.data || (res as any)?.data || []
-      if (Array.isArray(data)) {
+      const data = (res as any)?.data?.data || (res as any)?.data || {}
+      // API 返回的是字典对象，提取 key 作为类型列表
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        setWidgetTypes(Object.keys(data))
+      } else if (Array.isArray(data)) {
         setWidgetTypes(data.map((w: any) => w.type || w.widget_type || w))
       }
     } catch { /* 静默 */ }
@@ -234,10 +241,10 @@ const Dashboard = () => {
   }
 
   const statCards = [
-    { label: t('dashboard.apiTestCases'), value: stats.api_tests.total.toLocaleString(), icon: <ApiOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--primary', trend: `${getPassRate(stats.api_tests.passed, stats.api_tests.total)}%`, trendType: 'up' as const },
-    { label: t('dashboard.webTestScripts'), value: stats.web_tests.total.toLocaleString(), icon: <GlobalOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--secondary', trend: `${getPassRate(stats.web_tests.passed, stats.web_tests.total)}%`, trendType: 'up' as const },
-    { label: t('dashboard.perfTestScenarios'), value: stats.perf_tests.total.toLocaleString(), icon: <ThunderboltOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--tertiary', badge: `${t('dashboard.runningCount', { count: stats.perf_tests.running })}`, trendType: 'badge' as const },
-    { label: t('dashboard.recentTests'), value: stats.recent_runs.length.toLocaleString(), icon: <FileTextOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--info', trend: t('dashboard.recentRuns'), trendType: 'info' as const },
+    { label: t('dashboard.apiTestCases'), value: stats.api_tests.total.toLocaleString(), icon: <ApiOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--primary', trend: `${getPassRate(stats.api_tests.passed, stats.api_tests.total)}%`, trendType: 'up' as const, navigateTo: '/api-test/workspace' },
+    { label: t('dashboard.webTestScripts'), value: stats.web_tests.total.toLocaleString(), icon: <GlobalOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--secondary', trend: `${getPassRate(stats.web_tests.passed, stats.web_tests.total)}%`, trendType: 'up' as const, navigateTo: '/web-test/scripts' },
+    { label: t('dashboard.perfTestScenarios'), value: stats.perf_tests.total.toLocaleString(), icon: <ThunderboltOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--tertiary', badge: `${t('dashboard.runningCount', { count: stats.perf_tests.running })}`, trendType: 'badge' as const, navigateTo: '/perf-test/scenarios' },
+    { label: t('dashboard.recentTests'), value: stats.recent_runs.length.toLocaleString(), icon: <FileTextOutlined style={{ fontSize: 20 }} />, iconClass: 'fst-stat-icon--info', trend: t('dashboard.recentRuns'), trendType: 'info' as const, navigateTo: '/reports' },
   ]
 
   const statusConfig: Record<string, { cls: string; icon: React.ReactNode; text: string }> = {
@@ -263,7 +270,16 @@ const Dashboard = () => {
       <div id="tour-step-dashboard-api" className="fst-stat-row fst-animate-in fst-animate-in-1"
            role="region" aria-label={t('dashboard.title') + ' - 统计概览'} aria-live="polite">
         {statCards.map((card, i) => (
-          <div key={i} className="fst-stat-card" aria-label={`${card.label}: ${loading ? '加载中' : card.value}`}>
+          <div
+            key={i}
+            className="fst-stat-card"
+            aria-label={`${card.label}: ${loading ? '加载中' : card.value}`}
+            onClick={() => card.navigateTo && navigate(card.navigateTo)}
+            style={{ cursor: card.navigateTo ? 'pointer' : 'default' }}
+            role={card.navigateTo ? 'link' : undefined}
+            tabIndex={card.navigateTo ? 0 : undefined}
+            onKeyDown={(e) => { if (card.navigateTo && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); navigate(card.navigateTo) } }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div className="fst-stat-label">{card.label}</div>
@@ -427,13 +443,24 @@ const Dashboard = () => {
             })}
           </div>
         ) : (
-          <div className="fst-empty">
-            <div className="fst-empty-icon"><ClockCircleOutlined /></div>
-            <div className="fst-empty-title">{t('dashboard.noRecords')}</div>
-            <div className="fst-empty-desc">{t('dashboard.noRecordsDesc')}</div>
-          </div>
+          <EmptyState
+            variant="reports"
+            title={t('dashboard.noRecords')}
+            subtitle={t('dashboard.noRecordsDesc')}
+          />
         )}
       </div>
+
+      {/* 外部数据源 Widget（当用户选择了 external_data 组件时显示） */}
+      {selectedWidgets.includes('external_data') && (
+        <div style={{ marginTop: 16 }} className="fst-animate-in fst-animate-in-3">
+          <ExternalDataWidget
+            title={t('dashboard.widgetType.external_data') || 'External Data'}
+            onConfigure={() => setWidgetModalOpen(true)}
+          />
+        </div>
+      )}
+
       {/* P32-2: 自定义仪表盘组件布局弹窗 */}
       <Modal
         title={t('dashboard.customizeLayout') || '自定义仪表盘布局'}
@@ -463,8 +490,8 @@ const Dashboard = () => {
             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
           >
             {(widgetTypes.length > 0 ? widgetTypes : [
-              'pass_rate', 'recent_runs', 'top_failures', 'ai_usage',
-              'team_activity', 'quality_gate', 'sla', 'cost_overview',
+              'pass_rate', 'recent_runs', 'failed_top10', 'ai_usage',
+              'team_activity', 'quality_gates', 'sla_rate', 'cost_overview', 'external_data',
             ]).map((type) => (
               <Checkbox key={type} value={type} style={{ marginLeft: 0 }}>
                 {t('dashboard.widgetType.' + type) || type.replace(/_/g, ' ')}

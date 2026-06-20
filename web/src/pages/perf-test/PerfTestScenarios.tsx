@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAiScriptGenerator } from './hooks/useAiScriptGenerator'
+import ScenarioStepEditor, { type PerfScenarioStep } from './ScenarioStepEditor'
 import {
   Card,
   Table,
@@ -98,6 +99,7 @@ const PerfTestScenarios = () => {
   const [form] = Form.useForm()
 
   // Code Editor State
+  const [scenarioSteps, setScenarioSteps] = useState<PerfScenarioStep[]>([])
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false)
   const [currentScenario, setCurrentScenario] = useState<PerfTestScenario | null>(null)
   const [isEditingCode, setIsEditingCode] = useState(false)
@@ -737,6 +739,7 @@ const PerfTestScenarios = () => {
             onClick={() => {
               setEditingScenario(null)
               form.resetFields()
+              setScenarioSteps([])
               setIsModalOpen(true)
             }}
           >
@@ -933,6 +936,10 @@ const PerfTestScenarios = () => {
             }}
           </Form.Item>
         </Form>
+        {/* 多步骤用户旅程编辑器 */}
+        <div style={{ marginTop: 16 }}>
+          <ScenarioStepEditor steps={scenarioSteps} onChange={setScenarioSteps} />
+        </div>
       </Modal>
 
       {/* AI 辅助生成弹窗 */}

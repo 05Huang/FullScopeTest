@@ -41,6 +41,7 @@ import { useTranslation } from 'react-i18next'
 import { reportService } from '@/services'
 import api from '@/services/api'
 import { useProjectStore } from '@/stores/projectStore'
+import BatchActionBar from '@/components/BatchActionBar'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -585,6 +586,14 @@ const Reports = () => {
             </Dropdown>
           </div>
         </div>
+        <BatchActionBar
+          selectedKeys={selectedRowKeys}
+          onClearSelection={() => setSelectedRowKeys([])}
+          actions={[
+            { key: 'download', label: t('reports.batchDownload'), icon: <DownloadOutlined />, onClick: handleBatchDownload },
+            { key: 'delete', label: t('reports.batchDelete'), icon: <DeleteOutlined />, danger: true, confirmTitle: t('common.confirm'), onClick: () => handleBatchDelete() },
+          ]}
+        />
         <div className="fst-table-wrap">
           <Table
             rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
