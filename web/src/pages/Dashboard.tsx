@@ -110,12 +110,12 @@ const Dashboard = () => {
   const fetchWidgetTypes = async () => {
     try {
       const res = await api.get('/dashboard/widget-types')
-      const data = (res as any)?.data?.data || (res as any)?.data || {}
+      const data = res?.data?.data || res?.data || {}
       // API 返回的是字典对象，提取 key 作为类型列表
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         setWidgetTypes(Object.keys(data))
       } else if (Array.isArray(data)) {
-        setWidgetTypes(data.map((w: any) => w.type || w.widget_type || w))
+        setWidgetTypes(data.map((w: Record<string, unknown>) => (w.type || w.widget_type || w) as string))
       }
     } catch { /* 静默 */ }
   }
@@ -124,9 +124,9 @@ const Dashboard = () => {
   const fetchWidgets = async () => {
     try {
       const res = await api.get('/dashboard/widgets')
-      const data = (res as any)?.data?.data || (res as any)?.data || []
+      const data = res?.data?.data || res?.data || []
       if (Array.isArray(data)) {
-        setSelectedWidgets(data.map((w: any) => w.widget_type || w.type))
+        setSelectedWidgets(data.map((w: Record<string, unknown>) => (w.widget_type || w.type) as string))
       }
     } catch { /* 静默 */ }
   }
@@ -145,7 +145,7 @@ const Dashboard = () => {
         config: {},
       }))
       const res = await api.put('/dashboard/widgets', { widgets })
-      if ((res as any).code === 200 || (res as any).data?.code === 200) {
+      if (res?.code === 200 || res?.data?.code === 200) {
         message.success(t('dashboard.widgetSaveSuccess') || '布局已保存')
         setWidgetModalOpen(false)
       }
@@ -177,7 +177,7 @@ const Dashboard = () => {
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     xAxis: {
       type: 'category', boundaryGap: false,
-      data: dailyTrend.length > 0 ? dailyTrend.map((d: any) => d.date) : [t('dashboard.weekdays.mon'), t('dashboard.weekdays.tue'), t('dashboard.weekdays.wed'), t('dashboard.weekdays.thu'), t('dashboard.weekdays.fri'), t('dashboard.weekdays.sat'), t('dashboard.weekdays.sun')],
+      data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.date) : [t('dashboard.weekdays.mon'), t('dashboard.weekdays.tue'), t('dashboard.weekdays.wed'), t('dashboard.weekdays.thu'), t('dashboard.weekdays.fri'), t('dashboard.weekdays.sat'), t('dashboard.weekdays.sun')],
       axisLine: { lineStyle: { color: '#E8E8E8' } }, axisLabel: { color: '#7C8180', fontSize: 11 },
     },
     yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#F0F0F0' } }, axisLabel: { color: '#7C8180', fontSize: 11 } },
@@ -185,13 +185,13 @@ const Dashboard = () => {
       {
         name: t('common.passed'), type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
         areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(45,106,100,0.25)' }, { offset: 1, color: 'rgba(45,106,100,0.02)' }] } },
-        data: dailyTrend.length > 0 ? dailyTrend.map((d: any) => d.passed) : [0, 0, 0, 0, 0, 0, 0],
+        data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.passed) : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#2D6A64' }, lineStyle: { width: 2.5 },
       },
       {
         name: t('common.failed'), type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
         areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(199,84,80,0.15)' }, { offset: 1, color: 'rgba(199,84,80,0.02)' }] } },
-        data: dailyTrend.length > 0 ? dailyTrend.map((d: any) => d.failed) : [0, 0, 0, 0, 0, 0, 0],
+        data: dailyTrend.length > 0 ? dailyTrend.map((d) => d.failed) : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#C75450' }, lineStyle: { width: 2.5 },
       },
     ],
@@ -419,7 +419,7 @@ const Dashboard = () => {
         </div>
         {stats.recent_runs.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {stats.recent_runs.map((item: any, idx: number) => {
+            {stats.recent_runs.map((item: Record<string, unknown>, idx: number) => {
               const st = statusConfig[item.status] || { cls: '', icon: null, text: item.status }
               const color = typeColors[item.test_type] || '#999'
               return (
