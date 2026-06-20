@@ -1,12 +1,25 @@
 import { useState, useRef } from "react"
 
+export interface ExploreReport {
+  status?: string
+  total_steps_executed?: number
+  errors_found?: unknown[]
+  error_summary?: { critical?: number; warning?: number; info?: number }
+  actions_taken?: Array<Record<string, unknown>>
+  error_message?: string
+  start_url?: string
+  objective?: string
+  visited_urls?: string[]
+  [key: string]: unknown
+}
+
 export interface ExploreHistoryItem {
   id: string
   started_at: string
   start_url: string
   objective: string
   max_steps: number
-  report: any
+  report: ExploreReport
   console_lines: string[]
 }
 
@@ -39,7 +52,7 @@ export function useWebExplorer(userId?: number) {
   const [exploreObjective, setExploreObjective] = useState("尽可能多地点击不同页面并寻找报错")
   const [exploreMaxSteps, setExploreMaxSteps] = useState(10)
   const [exploreRunning, setExploreRunning] = useState(false)
-  const [exploreReport, setExploreReport] = useState<any>(null)
+  const [exploreReport, setExploreReport] = useState<ExploreReport | null>(null)
   const [exploreConsoleLines, setExploreConsoleLines] = useState<string[]>([])
   const [exploreHistory, setExploreHistory] = useState<ExploreHistoryItem[]>(
     () => loadExploreHistory(userId)

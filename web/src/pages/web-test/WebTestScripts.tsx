@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react'
-import { useWebExplorer } from './hooks/useWebExplorer'
+import { useWebExplorer, type ExploreReport } from './hooks/useWebExplorer'
 import {
   Card,
   Table,
@@ -99,7 +99,7 @@ interface ExploreHistoryItem {
   start_url: string
   objective: string
   max_steps: number
-  report: Record<string, unknown>
+  report: ExploreReport
   console_lines: string[]
 }
 
@@ -133,7 +133,7 @@ const loadExploreHistory = (userId?: number): ExploreHistoryItem[] => {
   }
 }
 
-const trimExploreReport = (report: Record<string, unknown>) => {
+const trimExploreReport = (report: ExploreReport) => {
   const safeReport = report || {}
   return {
     ...safeReport,
@@ -209,7 +209,10 @@ const WebTestScripts = () => {
 
   // Visual Diff State
   const [isVisualDiffModalOpen, setIsVisualDiffModalOpen] = useState(false)
-  const [selectedVisualDiff, setSelectedVisualDiff] = useState<Record<string, unknown> | null>(null)
+  const [selectedVisualDiff, setSelectedVisualDiff] = useState<{
+    baselineId: number; baselineImagePath: string; currentImagePath: string
+    diffPercentage: number; status: string
+  } | null>(null)
 
   // 加载脚本列表
   const loadScripts = async () => {
@@ -222,8 +225,8 @@ const WebTestScripts = () => {
         const rawScripts = result.data || []
         const normalizedScripts = rawScripts.map((script: Record<string, unknown>) => ({
           ...script,
-          status: normalizeScriptStatus(script.status),
-          last_run_duration: script.last_run_duration ?? script.last_duration,
+          status: normalizeScriptStatus(script.status as string | undefined),
+          last_run_duration: (script.last_run_duration ?? script.last_duration) as number | undefined,
         }))
         setScripts(normalizedScripts)
         const running = normalizedScripts
@@ -310,11 +313,11 @@ const WebTestScripts = () => {
   const handleCreate = async (values: Record<string, unknown>) => {
     try {
       const result = await webTestService.createScript({
-        name: values.name,
-        description: values.description,
-        collection_id: values.collection_id ?? null,
-        target_url: values.target_url,
-        browser: values.browser,
+        name: values.name as string,
+        description: values.description as string | undefined,
+        collection_id: (values.collection_id as number | undefined) ?? null,
+        target_url: values.target_url as string | undefined,
+        browser: values.browser as string | undefined,
       })
       if (result.code === 200 || result.code === 201) {
         message.success(t('webTest.createSuccess'))
@@ -367,7 +370,8 @@ const WebTestScripts = () => {
         message.error(res.message || '生成失败')
       }
     } catch (e: unknown) {
-      message.error(e.response?.data?.message || '生成失败')
+      const err = e as { response?: { data?: { message?: string } }; message?: string }
+      message.error(err.response?.data?.message || err.message || '生成失败')
     } finally {
       setAiGenerating(false)
     }
@@ -380,7 +384,7 @@ const WebTestScripts = () => {
       return
     }
     const runtimeConsoleLines: string[] = []
-    let reportForHistory: Record<string, unknown> | null = null
+    let reportForHistory: ExploreReport | null = null
     const pushExploreLog = (line: string) => {
       const timestamp = new Date().toLocaleTimeString()
       const text = `[${timestamp}] ${line}`
@@ -407,7 +411,7 @@ const WebTestScripts = () => {
     try {
       pushExploreLog('已发送流式探索请求到后端')
       let streamError = ''
-      let finalReport: Record<string, unknown> | null = null
+      let finalReport: ExploreReport | null = null
       await webTestService.exploreWebAppAIStream({
         start_url: exploreStartUrl,
         objective: exploreObjective,
@@ -426,9 +430,9 @@ const WebTestScripts = () => {
             pushExploreLog(line)
           }
         },
-        onReport: (report) => {
-          finalReport = report
-          setExploreReport(report)
+        onReport: (report: Record<string, unknown>) => {
+          finalReport = report as ExploreReport
+          setExploreReport(report as ExploreReport)
         },
         onProgress: (progress) => {
           if (!progress || typeof progress !== 'object') return
@@ -468,39 +472,41 @@ const WebTestScripts = () => {
           pushExploreLog(`服务端异常: ${streamError}`)
         }
       })
+      const report = finalReport as ExploreReport | null
       if (streamError) {
+        const base = report || {} as ExploreReport
         reportForHistory = {
-          ...(finalReport || {}),
+          ...base,
           start_url: exploreStartUrl,
           objective: exploreObjective,
           status: 'failed',
           error_message: streamError,
-          total_steps_executed: finalReport?.total_steps_executed || 0,
-          errors_found: finalReport?.errors_found || [],
-          actions_taken: finalReport?.actions_taken || [],
-          error_summary: finalReport?.error_summary || { critical: 0, warning: 0, info: 0 },
+          total_steps_executed: base.total_steps_executed || 0,
+          errors_found: base.errors_found || [],
+          actions_taken: base.actions_taken || [],
+          error_summary: base.error_summary || { critical: 0, warning: 0, info: 0 },
         }
         message.error(streamError)
-      } else if (finalReport) {
-        reportForHistory = finalReport
-        pushExploreLog(`任务返回状态: ${finalReport.status || 'unknown'}`)
-        pushExploreLog(`执行步数: ${finalReport.total_steps_executed || 0}`)
-        pushExploreLog(`发现错误数: ${finalReport.errors_found?.length || 0}`)
-        if (finalReport.error_summary) {
+      } else if (report) {
+        reportForHistory = report
+        pushExploreLog(`任务返回状态: ${report.status || 'unknown'}`)
+        pushExploreLog(`执行步数: ${report.total_steps_executed || 0}`)
+        pushExploreLog(`发现错误数: ${report.errors_found?.length || 0}`)
+        if (report.error_summary) {
           pushExploreLog(
-            `错误分级统计: critical=${finalReport.error_summary.critical || 0}, warning=${finalReport.error_summary.warning || 0}, info=${finalReport.error_summary.info || 0}`
+            `错误分级统计: critical=${report.error_summary.critical || 0}, warning=${report.error_summary.warning || 0}, info=${report.error_summary.info || 0}`
           )
         }
-        const actions = Array.isArray(finalReport.actions_taken) ? finalReport.actions_taken : []
+        const actions = Array.isArray(report.actions_taken) ? report.actions_taken : []
         actions.slice(0, 30).forEach((item: Record<string, unknown>, index: number) => {
           const actionType = item.type || item.action || 'unknown'
           const target = item.target_id || '-'
           const reason = item.reason || ''
           pushExploreLog(`步骤 ${index + 1}: ${actionType} -> ${target} ${reason}`)
         })
-        if (finalReport.status === 'failed') {
-          pushExploreLog(`失败原因: ${finalReport.error_message || '未知错误'}`)
-          message.error(finalReport.error_message || '探索性测试失败')
+        if (report.status === 'failed') {
+          pushExploreLog(`失败原因: ${report.error_message || '未知错误'}`)
+          message.error(report.error_message || '探索性测试失败')
         } else {
           pushExploreLog('探索任务已完成')
           message.success('探索性测试完成')
@@ -521,7 +527,8 @@ const WebTestScripts = () => {
         message.error('探索失败')
       }
     } catch (error: unknown) {
-      const errorMessage = error.response?.data?.message || error.message || '探索失败'
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const errorMessage = err.response?.data?.message || err.message || '探索失败'
       reportForHistory = {
         start_url: exploreStartUrl,
         objective: exploreObjective,
@@ -564,11 +571,11 @@ const WebTestScripts = () => {
   const handleUpdate = async (id: number, values: Record<string, unknown>) => {
     try {
       const result = await webTestService.updateScript(id, {
-        name: values.name,
-        description: values.description,
-        collection_id: values.collection_id ?? null,
-        target_url: values.target_url,
-        browser: values.browser,
+        name: values.name as string,
+        description: values.description as string | undefined,
+        collection_id: (values.collection_id as number | undefined) ?? null,
+        target_url: values.target_url as string | undefined,
+        browser: values.browser as string | undefined,
       })
       if (result.code === 200) {
         message.success(t('webTest.editSuccess'))
@@ -713,7 +720,8 @@ const WebTestScripts = () => {
         message.error(res.message || 'AI 诊断失败')
       }
     } catch (error: unknown) {
-      message.error(error.response?.data?.message || 'AI 诊断失败')
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      message.error(err.response?.data?.message || 'AI 诊断失败')
     } finally {
       setAiHealing(false)
     }
@@ -850,8 +858,8 @@ const WebTestScripts = () => {
     try {
       if (editingCollection) {
         const result = await webTestService.updateCollection(editingCollection.id, {
-          name: values.name,
-          description: values.description,
+          name: values.name as string,
+          description: values.description as string | undefined,
         })
         if (result.code === 200) {
           message.success(t('webTest.collectionEditSuccess'))
@@ -863,8 +871,8 @@ const WebTestScripts = () => {
         }
       } else {
         const result = await webTestService.createCollection({
-          name: values.name,
-          description: values.description,
+          name: values.name as string,
+          description: values.description as string | undefined,
         })
         if (result.code === 200 || result.code === 201) {
           message.success(t('webTest.collectionCreateSuccess'))

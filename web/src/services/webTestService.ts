@@ -153,8 +153,8 @@ export const exploreWebAppAIStream = async (
   options: {
     token?: string | null
     onLog?: (line: string) => void
-    onReport?: (report: any) => void
-    onProgress?: (progress: any) => void
+    onReport?: (report: Record<string, unknown>) => void
+    onProgress?: (progress: Record<string, unknown>) => void
     onLiveView?: (payload: { url?: string }) => void
     onError?: (message: string) => void
     signal?: AbortSignal
