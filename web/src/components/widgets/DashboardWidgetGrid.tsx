@@ -119,15 +119,12 @@ const WidgetContent: React.FC<{
       }
       return (
         <div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
-            <span style={{ fontSize: 36, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: rate >= 80 ? '#52c41a' : rate >= 60 ? '#faad14' : '#ff4d4f', lineHeight: 1 }}>{rate}%</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)' }}>{t('dashboard.passRate') || '通过率'}</span>
-              <span style={{ fontSize: 11, color: 'var(--fst-on-surface-muted)', fontVariantNumeric: 'tabular-nums' }}>{apiPassed}/{apiTotal} {t('dashboard.cases') || '条用例'}</span>
-            </div>
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 32, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: rate >= 80 ? '#52c41a' : rate >= 60 ? '#faad14' : '#ff4d4f' }}>{rate}%</span>
+            <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)', marginTop: 4 }}>{t('dashboard.passRate') || '通过率'} · {apiPassed}/{apiTotal}</div>
           </div>
-          {trendData.length > 0 && <ReactECharts option={option} style={{ height: 140 }} />}
-          {trendData.length === 0 && <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fst-on-surface-muted)', fontSize: 13 }}>{t('dashboard.noRecords') || '暂无趋势数据'}</div>}
+          {trendData.length > 0 && <ReactECharts option={option} style={{ height: 130 }} />}
+          {trendData.length === 0 && <div style={{ height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fst-on-surface-muted)', fontSize: 13 }}>{t('dashboard.noTrendData') || '暂无趋势数据'}</div>}
         </div>
       )
     }
