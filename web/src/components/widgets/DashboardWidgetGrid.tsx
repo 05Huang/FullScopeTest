@@ -118,7 +118,7 @@ const WidgetContent: React.FC<{
         }],
       }
       return (
-        <div>
+        <div onClick={() => onNavigate?.('/reports')} style={{ cursor: 'pointer' }}>
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
             <span style={{ fontSize: 32, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: rate >= 80 ? '#52c41a' : rate >= 60 ? '#faad14' : '#ff4d4f' }}>{rate}%</span>
             <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)', marginTop: 4 }}>{t('dashboard.passRate') || '通过率'} · {apiPassed}/{apiTotal}</div>
@@ -152,9 +152,9 @@ const WidgetContent: React.FC<{
     case 'failed_top10': {
       const runs = stats?.recent_runs || []
       const failed = runs.filter((r) => r.status === 'failed').slice(0, 10)
-      if (failed.length === 0) return <div style={{ padding: 20, textAlign: 'center', color: 'var(--fst-on-surface-muted)' }}>{t('dashboard.noRecords')}</div>
+      if (failed.length === 0) return <div onClick={() => onNavigate?.('/reports')} style={{ padding: 20, textAlign: 'center', color: 'var(--fst-on-surface-muted)', cursor: 'pointer' }}>{t('dashboard.noRecords')}</div>
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div onClick={() => onNavigate?.('/reports')} style={{ display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer' }}>
           {failed.map((item: Record<string, unknown>, idx: number) => (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: 13 }}>
               <span style={{ width: 18, textAlign: 'center', color: '#ff4d4f', fontWeight: 600, fontSize: 12 }}>{idx + 1}</span>
@@ -200,7 +200,7 @@ const WidgetContent: React.FC<{
 
     case 'team_activity':
       return (
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+        <div onClick={() => onNavigate?.('/reports')} style={{ textAlign: 'center', padding: '16px 0', cursor: 'pointer' }}>
           <TeamOutlined style={{ fontSize: 32, color: '#629B95', marginBottom: 8 }} />
           <div style={{ fontSize: 24, fontWeight: 700 }}>{(stats?.api_tests.total || 0) + (stats?.web_tests.total || 0)}</div>
           <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)' }}>{t('dashboard.widgetType.team_activity')}</div>
@@ -212,7 +212,7 @@ const WidgetContent: React.FC<{
       const passed = (stats?.api_tests.passed || 0) + (stats?.web_tests.passed || 0)
       const rate = total > 0 ? Math.round((passed / total) * 100) : 0
       return (
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+        <div onClick={() => onNavigate?.('/quality-gates')} style={{ textAlign: 'center', padding: '16px 0', cursor: 'pointer' }}>
           <SafetyOutlined style={{ fontSize: 32, color: rate >= 80 ? '#52c41a' : '#faad14', marginBottom: 8 }} />
           <div style={{ fontSize: 24, fontWeight: 700, color: rate >= 80 ? '#52c41a' : '#faad14' }}>{rate >= 80 ? 'PASS' : 'WARN'}</div>
           <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)' }}>{t('dashboard.widgetType.quality_gates')}</div>
@@ -237,12 +237,12 @@ const WidgetContent: React.FC<{
           data: [{ value: rate }],
         }],
       }
-      return <ReactECharts option={option} style={{ height: 160 }} />
+      return <div onClick={() => onNavigate?.('/reports')} style={{ cursor: 'pointer' }}><ReactECharts option={option} style={{ height: 160 }} /></div>
     }
 
     case 'cost_overview':
       return (
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+        <div onClick={() => onNavigate?.('/reports')} style={{ textAlign: 'center', padding: '16px 0', cursor: 'pointer' }}>
           <DollarOutlined style={{ fontSize: 32, color: '#D4B483', marginBottom: 8 }} />
           <div style={{ fontSize: 24, fontWeight: 700 }}>¥0</div>
           <div style={{ fontSize: 12, color: 'var(--fst-on-surface-muted)' }}>{t('dashboard.widgetType.cost_overview')}</div>
