@@ -137,7 +137,7 @@ const WidgetContent: React.FC<{
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {runs.map((item: Record<string, unknown>, idx: number) => (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < runs.length - 1 ? '1px solid var(--fst-outline-soft, #f0f0f0)' : 'none', cursor: 'pointer' }}
-              onClick={() => onNavigate?.('/reports')} role="button" tabIndex={0}>
+              onClick={() => onNavigate?.(`/reports?run_id=${item.id}`)} role="button" tabIndex={0}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColors[item.status as string] || '#999', flexShrink: 0 }} />
                 <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(item.test_object_name as string) || `Run #${item.id}`}</span>
@@ -154,9 +154,9 @@ const WidgetContent: React.FC<{
       const failed = runs.filter((r) => r.status === 'failed').slice(0, 10)
       if (failed.length === 0) return <div onClick={() => onNavigate?.('/reports')} style={{ padding: 20, textAlign: 'center', color: 'var(--fst-on-surface-muted)', cursor: 'pointer' }}>{t('dashboard.noRecords')}</div>
       return (
-        <div onClick={() => onNavigate?.('/reports')} style={{ display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {failed.map((item: Record<string, unknown>, idx: number) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: 13 }}>
+            <div key={idx} onClick={() => onNavigate?.(`/reports?run_id=${item.id}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: 13, cursor: 'pointer' }}>
               <span style={{ width: 18, textAlign: 'center', color: '#ff4d4f', fontWeight: 600, fontSize: 12 }}>{idx + 1}</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{(item.test_object_name as string) || `Run #${item.id}`}</span>
             </div>

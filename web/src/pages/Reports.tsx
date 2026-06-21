@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import logger from '@/utils/logger'
 import {
@@ -71,6 +72,7 @@ interface TestRun {
 const Reports = () => {
   const { t } = useTranslation();
   const { currentProjectId } = useProjectStore();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const typeConfig: Record<string, { color: string; text: string }> = {
     api: { color: 'blue', text: t('reports.apiTest') },
@@ -151,6 +153,22 @@ const Reports = () => {
       setTestRuns(runsList)
       setPagination((prev) => ({ ...prev, total: runsTotal }))
       setTestReports(reportsList)
+
+      // 支持 ?run_id=xxx 自动打开报告弹窗
+      const targetRunId = searchParams.get('run_id')
+      if (targetRunId) {
+        const targetReport = reportsList.find((r: TestReport) => r.test_run_id === Number(targetRunId))
+        if (targetReport) {
+          const run = runsList.find((r: TestRun) => r.id === Number(targetRunId))
+          const title = run?.test_object_name || `测试执行 #${targetRunId}`
+          setCurrentReportTitle(title)
+          reportService.getTestReportHtml(targetReport.id).then((html) => {
+            setReportHtml(html)
+            setHtmlModalVisible(true)
+          }).catch(() => {})
+          setSearchParams({})
+        }
+      }
 
       const statsData = statsRes?.data
       setStatistics(statsData?.summary || { total_runs: 0, success_runs: 0, failed_runs: 0, success_rate: 0 })
