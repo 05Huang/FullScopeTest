@@ -76,5 +76,5 @@ def receive_webhook(token):
 
     resp = make_response('{"ok": true}')
     resp.headers['Content-Type'] = 'application/json'
-    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '')
     return resp

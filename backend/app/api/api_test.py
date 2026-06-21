@@ -171,7 +171,7 @@ def generate_ai_plan():
         plan = generate_api_test_plan(prompt=prompt, context=context, config=runtime_config)
         return success_response(data=plan, message="AI plan generated")
     except ValueError as exc:
-        return error_response(400, str(exc))
+        return error_response(400, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("AI plan generation failed", error=str(exc), exc_info=True)
         return error_response(500, _safe_error_msg(exc, "AI plan generation failed"))
@@ -287,10 +287,10 @@ def update_collection(collection_id):
         result = collection_service.update_collection(collection_id, user_id, data)
         return success_response(data=result, message="更新成功")
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("update collection failed", error=str(exc))
-        return error_response(500, f"更新集合失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "更新集合失败"))
 
 
 @api_bp.route("/api-test/collections/<int:collection_id>", methods=["DELETE"])
@@ -302,10 +302,10 @@ def delete_collection(collection_id):
         collection_service.delete_collection(collection_id, user_id)
         return success_response(message="删除成功")
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("delete collection failed", error=str(exc))
-        return error_response(500, f"删除集合失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "删除集合失败"))
 
 
 
@@ -331,7 +331,7 @@ def get_cases():
         return success_response(data=data)
     except Exception as exc:
         logger.error("get cases failed", error=str(exc))
-        return error_response(500, f"获取用例失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "获取用例失败"))
 
 
 @api_bp.route("/api-test/cases", methods=["POST"])
@@ -345,10 +345,10 @@ def create_case():
         result = case_service.create_case(user_id, data)
         return success_response(data=result, message="创建成功")
     except ValidationError as exc:
-        return error_response(400, str(exc))
+        return error_response(400, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("create case failed", error=str(exc))
-        return error_response(500, f"创建用例失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "创建用例失败"))
 
 
 @api_bp.route("/api-test/cases/<int:case_id>", methods=["GET"])
@@ -360,10 +360,10 @@ def get_case(case_id):
         result = case_service.get_case(case_id, user_id)
         return success_response(data=result)
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("get case failed", error=str(exc))
-        return error_response(500, f"获取用例失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "获取用例失败"))
 
 
 @api_bp.route("/api-test/cases/<int:case_id>", methods=["PUT"])
@@ -376,10 +376,10 @@ def update_case(case_id):
         result = case_service.update_case(case_id, user_id, data)
         return success_response(data=result, message="更新成功")
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("update case failed", error=str(exc))
-        return error_response(500, f"更新用例失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "更新用例失败"))
 
 
 @api_bp.route("/api-test/cases/<int:case_id>", methods=["DELETE"])
@@ -391,10 +391,10 @@ def delete_case(case_id):
         case_service.delete_case(case_id, user_id)
         return success_response(message="删除成功")
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("delete case failed", error=str(exc))
-        return error_response(500, f"删除用例失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "删除用例失败"))
 
 
 
@@ -442,7 +442,7 @@ def mock_api_endpoint(case_id):
         resp.headers["Content-Type"] = "application/json"
 
     # 允许跨域
-    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "")
 
     return resp
 
@@ -581,7 +581,7 @@ def execute_request():
             )
     except Exception as exc:
         logger.error("execute request failed", error=str(exc))
-        return error_response(500, f"请求执行失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "请求执行失败"))
 
 
 @api_bp.route("/api-test/cases/<int:case_id>/run", methods=["POST"])
@@ -595,10 +595,10 @@ def run_case(case_id):
         result = execution_service.run_case(case_id, user_id, env_id)
         return success_response(data=result)
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("run case failed", error=str(exc))
-        return error_response(500, f"执行用例失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "执行用例失败"))
 
 
 @api_bp.route("/api-test/collections/<int:collection_id>/run", methods=["POST"])
@@ -629,14 +629,14 @@ def run_collection(collection_id):
             result = execution_service.run_collection(collection_id, user_id, env_id)
             return success_response(data=result, message="测试执行完成")
     except NotFoundError as exc:
-        return error_response(404, str(exc))
+        return error_response(404, _safe_error_msg(exc))
     except ValidationError as exc:
-        return error_response(400, str(exc))
+        return error_response(400, _safe_error_msg(exc))
     except PermissionError as exc:
-        return error_response(403, str(exc))
+        return error_response(403, _safe_error_msg(exc))
     except Exception as exc:
         logger.error("run collection failed", error=str(exc), exc_info=True)
-        return error_response(500, f"执行集合失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "执行集合失败"))
 
 
 @api_bp.route("/api-test/runs/<int:run_id>/progress", methods=["GET"])
@@ -649,7 +649,7 @@ def get_run_progress(run_id):
             return success_response(data=progress)
         return success_response(data={'current': 0, 'total': 0, 'passed': 0, 'failed': 0, 'status': 'unknown'})
     except Exception as exc:
-        return error_response(500, f"获取进度失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "获取进度失败"))
 
 
 # ==================== 用例版本历史 ====================
@@ -881,7 +881,7 @@ def execute_scenario():
         from ..core.logging import get_logger
         logger = get_logger(__name__)
         logger.error('场景执行失败', error=str(e))
-        return error_response(500, f'场景执行失败: {str(e)}')
+        return error_response(500, _safe_error_msg(e, "场景执行失败"))
 
 
 @api_bp.route('/api-test/history', methods=['GET'])
@@ -942,7 +942,7 @@ def save_response_history():
         return success_response(data=history.to_dict(), message='历史记录已保存', code=201)
     except Exception as e:
         db.session.rollback()
-        return error_response(500, f'保存失败: {str(e)}')
+        return error_response(500, _safe_error_msg(e, "保存失败"))
 
 
 @api_bp.route('/api-test/history/trend', methods=['GET'])
@@ -1032,7 +1032,7 @@ def smart_test_select():
         return success_response(data=result, message='智能选测完成')
     except Exception as exc:
         logger.error('智能选测失败', error=str(exc))
-        return error_response(500, f'智能选测失败: {str(exc)}')
+        return error_response(500, _safe_error_msg(exc, "智能选测失败"))
 
 
 @api_bp.route('/api-test/heal-case', methods=['POST'])
@@ -1060,7 +1060,7 @@ def heal_test_case():
         return success_response(data=result, message='AI 修复建议生成成功')
     except Exception as exc:
         logger.error('AI 自愈失败', case_id=case_id, error=str(exc))
-        return error_response(500, f'AI 自愈失败: {str(exc)}')
+        return error_response(500, _safe_error_msg(exc, "AI 自愈失败"))
 
 
 @api_bp.route('/api-test/apply-heal', methods=['POST'])
@@ -1206,7 +1206,7 @@ def import_har():
         )
         return success_response(data=result, message=f'导入完成，共 {result["cases_count"]} 个用例')
     except ValidationError as exc:
-        return error_response(400, str(exc))
+        return error_response(400, _safe_error_msg(exc))
     except Exception as exc:
         logger.error('HAR 导入失败', error=str(exc))
         return error_response(500, f'HAR 导入失败: {str(exc)}')
@@ -1229,7 +1229,7 @@ def parse_har_preview():
         result = service.parse_har(har_content)
         return success_response(data=result, message='HAR 解析成功')
     except ValidationError as exc:
-        return error_response(400, str(exc))
+        return error_response(400, _safe_error_msg(exc))
     except Exception as exc:
         logger.error('HAR 解析失败', error=str(exc))
         return error_response(500, f'HAR 解析失败: {str(exc)}')

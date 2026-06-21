@@ -139,7 +139,7 @@ const Dashboard = () => {
         height: 1,
         config: {},
       }))
-      const res = await api.put('/dashboard/widgets', { widgets })
+      const res = await api.put('/dashboard/widgets', { widgets }) as { data?: { code?: number }; code?: number }
       if (res?.code === 200 || res?.data?.code === 200) {
         message.success(t('dashboard.widgetSaveSuccess') || '布局已保存')
         setWidgetModalOpen(false)
@@ -235,10 +235,10 @@ const Dashboard = () => {
         <DashboardWidgetGrid
           widgets={widgets}
           data={{
-            stats,
-            dailyTrend,
+            stats: stats as unknown as { api_tests: { total: number; passed: number; failed: number }; web_tests: { total: number; passed: number; failed: number }; perf_tests: { total: number; running: number }; recent_runs: Record<string, unknown>[] },
+            dailyTrend: dailyTrend as unknown as Array<{ date: string; passed: number; failed: number }>,
             percentiles,
-            qualityTrend,
+            qualityTrend: qualityTrend as unknown as Array<Record<string, unknown>>,
             loading,
           }}
           onReorder={handleWidgetReorder}

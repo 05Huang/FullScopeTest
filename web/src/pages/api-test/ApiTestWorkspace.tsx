@@ -383,7 +383,7 @@ const ApiTestWorkspace = () => {
         const savedEnvId = localStorage.getItem(storageKey)
         if (savedEnvId) {
           const envId = parseInt(savedEnvId)
-          const env = envs.find((e) => e.id === envId)
+          const env = envs.find((e: { id: number }) => e.id === envId)
           if (env) {
             setSelectedEnvId(envId)
             setCurrentEnv(env)
@@ -573,7 +573,7 @@ const ApiTestWorkspace = () => {
       setMockResponseHeaders(formData.mockResponseHeaders)
       setMockDelayMs(formData.mockDelayMs)
       // 加载可视化断言规则
-      setAssertions(Array.isArray(caseData.assertions) ? caseData.assertions : [])
+      setAssertions(Array.isArray(caseData.assertions) ? caseData.assertions as Array<{ type: string; operator: string; expected_value: string | number; enabled: boolean }> : [])
 
       // 保存原始表单数据用于比较
       setOriginalFormData(formData)
@@ -1178,7 +1178,8 @@ const ApiTestWorkspace = () => {
         message.error(res.message || '生成失败')
       }
     } catch (e: unknown) {
-      message.error(e.response?.data?.message || '生成失败')
+      const err = e as { response?: { data?: { message?: string } }; message?: string }
+      message.error(err?.response?.data?.message || err?.message || '生成失败')
     } finally {
       setAiSynthesizing(false)
     }
@@ -1298,9 +1299,9 @@ const ApiTestWorkspace = () => {
     }
 
     const extractAiExecutionErrorParts = (error: unknown): string[] => {
-      const errObj = error as { response?: { data?: { errors?: unknown[]; message?: string; detail?: string } }; message?: string } | undefined
+      const errObj = error as { response?: { status?: number; data?: { errors?: unknown[]; message?: string; detail?: string; error?: string; msg?: string; data?: { message?: string; error?: string } } }; message?: string } | undefined
       const response = errObj?.response
-      const data = response?.data
+      const data = response?.data as Record<string, unknown> | undefined
       const segments: string[] = []
       const pushSegment = (value: unknown) => {
         const text = String(value || '').trim()
@@ -1317,14 +1318,16 @@ const ApiTestWorkspace = () => {
       pushSegment(data?.message)
       pushSegment(data?.error)
       pushSegment(data?.msg)
-      pushSegment(data?.data?.message)
-      pushSegment(data?.data?.error)
+      const innerData = data?.data as Record<string, unknown> | undefined
+      pushSegment(innerData?.message)
+      pushSegment(innerData?.error)
 
       if (data?.errors) {
         if (Array.isArray(data.errors)) {
           const briefErrors = data.errors.slice(0, 5).map((item: unknown) => {
             if (typeof item === 'string') return item
-            return item?.message || item?.msg || JSON.stringify(item)
+            const itemObj = item as Record<string, unknown> | null
+            return itemObj?.message || itemObj?.msg || JSON.stringify(item)
           })
           briefErrors.forEach((item: string) => pushSegment(item))
         } else if (typeof data.errors === 'object') {
