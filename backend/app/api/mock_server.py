@@ -188,7 +188,7 @@ def mock_server_proxy(server_id, subpath):
     # 处理 OPTIONS
     if request.method == 'OPTIONS':
         resp = make_response()
-        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '')
         resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD'
         resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         return resp
@@ -209,7 +209,7 @@ def mock_server_proxy(server_id, subpath):
         resp.status_code = result.get('code', 200)
         for k, v in (result.get('headers') or {}).items():
             resp.headers[k] = v
-        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '')
         if 'Content-Type' not in result.get('headers', {}):
             resp.headers['Content-Type'] = 'application/json'
 

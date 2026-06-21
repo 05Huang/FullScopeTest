@@ -103,8 +103,10 @@ def reset_user_password(user_id):
         return error_response(404, '用户不存在')
     data = request.get_json() or {}
     new_password = data.get('password', '').strip()
-    if not new_password or len(new_password) < 6:
-        return error_response(400, '密码长度至少 6 位')
+    from ..utils.validators import validate_password_strength
+    is_valid, error_msg = validate_password_strength(new_password)
+    if not is_valid:
+        return error_response(400, error_msg)
     from werkzeug.security import generate_password_hash
     user.password_hash = generate_password_hash(new_password)
     db.session.commit()

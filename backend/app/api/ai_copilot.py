@@ -44,4 +44,6 @@ def copilot_chat():
         reply = process_copilot_chat(messages, user_id, runtime_config)
         return success_response(data=reply)
     except Exception as exc:
-        return error_response(500, f'Copilot request failed: {str(exc)}')
+        import os
+        msg = str(exc) if os.environ.get("FLASK_ENV") != "production" else "Copilot 服务异常"
+        return error_response(500, msg)

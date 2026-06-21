@@ -8,6 +8,7 @@ import os
 from flask_jwt_extended import jwt_required
 from . import api_bp
 from ..extensions import db, celery
+from ..utils.sandbox import validate_url_safety
 from ..models.web_test_collection import WebTestCollection
 from ..models.web_test_script import WebTestScript
 from ..utils.response import success_response, error_response
@@ -180,6 +181,9 @@ def _allocate_live_view_session(data: dict, start_url: str, objective: str, max_
         'requested_by': 'fullscopetest-web-explorer',
     }
     try:
+        safe, reason = validate_url_safety(allocator_url)
+        if not safe:
+            return error_response(400, f"URL 安全校验失败: {reason}")
         response = requests.post(
             allocator_url,
             json=payload,

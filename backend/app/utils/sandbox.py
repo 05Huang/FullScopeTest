@@ -11,6 +11,7 @@
 
 import ast
 import hashlib
+import ipaddress
 import os
 import subprocess
 import sys
@@ -18,6 +19,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlparse
 
 from ..core.logging import get_logger
 
@@ -33,6 +35,25 @@ BLOCKED_IMPORTS = {
     "pty",         # 伪终端
     "telnetlib",   # 远程连接
     "subprocess",  # 整体导入拦截，仅允许 from subprocess import run/Popen 等白名单
+    "ctypes",      # 直接内存操作
+    "socket",      # 原始网络套接字
+    "http.server", # HTTP 服务器
+    "http.client", # 底层 HTTP 客户端
+    "xmlrpc",      # XML-RPC 远程调用
+    "code",        # 交互式解释器
+    "compileall",  # 编译所有 .py 文件
+    "zipimport",   # 从 zip 导入
+    "importlib",   # 动态导入（可绕过静态检查）
+    "pkgutil",     # 包工具
+    "pdb",         # 调试器
+    "profile",     # 性能分析
+    "cProfile",    # 性能分析
+    "traceback",   # 堆栈跟踪（信息泄露）
+    "faulthandler",# 崩溃转储
+    "signal",      # 信号处理
+    "multiprocessing",  # 多进程
+    "threading",   # 多线程（可用于 DoS）
+    "asyncio",     # 异步（可用于 DoS）
 }
 
 BLOCKED_FUNCTIONS = {
@@ -40,10 +61,13 @@ BLOCKED_FUNCTIONS = {
     "popen",       # os.popen
     "call",        # subprocess.call（当 shell=True 时）
     "check_output",  # subprocess.check_output（潜在滥用）
+    "check_call",  # subprocess.check_call
+    "spawn",       # multiprocessing.spawn
+    "fork",        # os.fork
 }
 
 # subprocess 模块中允许的属性（白名单模式）
-ALLOWED_SUBPROCESS_ATTRS = {"run", "Popen", "PIPE", "STDOUT", "DEVNULL", "TimeoutExpired", "CompletedProcess"}
+ALLOWED_SUBPROCESS_ATTRS = {"run", "PIPE", "STDOUT", "DEVNULL", "TimeoutExpired", "CompletedProcess"}
 
 
 def _get_sandbox_mode() -> str:
@@ -116,6 +140,18 @@ def check_script_safety(script_content: str) -> tuple:
             # 检查 getattr 动态获取危险属性
             if isinstance(func, ast.Name) and func.id == "getattr":
                 return False, "脚本不允许使用 getattr（防止动态属性访问）"
+
+            # 检查 vars / locals / globals（可访问内部属性）
+            if isinstance(func, ast.Name) and func.id in ("vars", "locals", "globals", "dir", "type", "super"):
+                return False, f"脚本不允许使用 {func.id}（防止内部属性访问）"
+
+        # 检查字符串拼接绕过：__import__('o' + 's')
+        if isinstance(node, ast.Call):
+            func = node.func
+            if isinstance(func, ast.Name) and func.id == "__import__":
+                for arg in node.args:
+                    if not isinstance(arg, ast.Constant):
+                        return False, "脚本不允许通过动态表达式调用 __import__"
 
     return True, ""
 
@@ -340,3 +376,52 @@ def execute_script(
                 shutil.rmtree(work_dir, ignore_errors=True)
             except Exception:
                 pass
+
+
+# ─── SSRF 防护 ─────────────────────────────────────────────────────────────
+
+# 内网 IP 段黑名单
+BLOCKED_IP_RANGES = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),  # 链路本地 / 云元数据
+    ipaddress.ip_network("::1/128"),
+    ipaddress.ip_network("fc00::/7"),
+]
+
+
+def validate_url_safety(url: str) -> tuple:
+    """
+    校验 URL 安全性，防止 SSRF 攻击
+
+    Returns:
+        (is_safe, message): (True, "") 安全；(False, "原因") 不安全
+    """
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False, "无效的 URL"
+
+    # 仅允许 http/https
+    if parsed.scheme not in ("http", "https"):
+        return False, f"不允许的协议: {parsed.scheme}"
+
+    hostname = parsed.hostname
+    if not hostname:
+        return False, "URL 缺少主机名"
+
+    # 检查是否为 IP 地址
+    try:
+        ip = ipaddress.ip_address(hostname)
+        for blocked in BLOCKED_IP_RANGES:
+            if ip in blocked:
+                return False, f"禁止访问内网/元数据地址: {hostname}"
+    except ValueError:
+        # 不是 IP 地址，是域名 — 检查常见内网域名
+        blocked_domains = {"localhost", "metadata.google.internal", "169.254.169.254"}
+        if hostname.lower() in blocked_domains:
+            return False, f"禁止访问内网域名: {hostname}"
+
+    return True, ""

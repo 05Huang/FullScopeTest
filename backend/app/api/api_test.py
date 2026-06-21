@@ -18,6 +18,14 @@ from ..utils.validators import validate_required
 from ..utils import get_current_user_id
 from ..utils.ai_planner import generate_api_test_plan
 from ..utils.ai_data_synthesizer import synthesize_test_cases
+
+
+def _safe_error_msg(exc: Exception, prefix: str = "") -> str:
+    """生产环境返回通用错误信息，不暴露内部异常详情"""
+    import os
+    if os.environ.get("FLASK_ENV") == "production":
+        return prefix or "服务器内部错误"
+    return f"{prefix}: {exc}" if prefix else str(exc)
 from ..utils.ai_reviewer import review_api_collection
 from ..core.logging import get_logger
 import time
@@ -85,7 +93,7 @@ def get_ai_config():
         return success_response(data=config, message="AI configuration fetched")
     except Exception as exc:
         logger.error("get ai config failed", error=str(exc))
-        return error_response(500, f"获取 AI 配置失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "获取 AI 配置失败"))
 
 
 @api_bp.route("/api-test/ai/config", methods=["POST"])
@@ -99,7 +107,7 @@ def save_ai_config():
         return success_response(data=result["data"], message="AI 配置已保存到 .env")
     except Exception as exc:
         logger.error("save ai config failed", error=str(exc))
-        return error_response(500, f"保存 AI 配置失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "保存 AI 配置失败"))
 
 
 @api_bp.route("/api-test/ai/plan", methods=["POST"])
@@ -166,7 +174,7 @@ def generate_ai_plan():
         return error_response(400, str(exc))
     except Exception as exc:
         logger.error("AI plan generation failed", error=str(exc), exc_info=True)
-        return error_response(500, f"AI plan generation failed: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "AI plan generation failed"))
 
 
 @api_bp.route("/api-test/ai/synthesize-cases", methods=["POST"])
@@ -185,7 +193,7 @@ def synthesize_api_cases():
         cases = synthesize_test_cases(base_request, count, runtime_config)
         return success_response(data={"cases": cases}, message="AI 用例扩充成功")
     except Exception as exc:
-        return error_response(500, f"AI 用例扩充失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "AI 用例扩充失败"))
 
 
 @api_bp.route("/api-test/ai/review-collection", methods=["POST"])
@@ -224,7 +232,7 @@ def review_collection_cases():
         result = review_api_collection(collection.name, case_list, runtime_config)
         return success_response(data=result, message="AI 评审完成")
     except Exception as exc:
-        return error_response(500, f"AI 评审失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "AI 评审失败"))
 
 
 
@@ -242,7 +250,7 @@ def get_collections():
         return success_response(data=data)
     except Exception as exc:
         logger.error("get collections failed", error=str(exc))
-        return error_response(500, f"获取集合失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "获取集合失败"))
 
 
 @api_bp.route("/api-test/collections", methods=["POST"])
@@ -266,7 +274,7 @@ def create_collection():
         return success_response(data=result, message="创建成功")
     except Exception as exc:
         logger.error("create collection failed", error=str(exc))
-        return error_response(500, f"创建集合失败: {str(exc)}")
+        return error_response(500, _safe_error_msg(exc, "创建集合失败"))
 
 
 @api_bp.route("/api-test/collections/<int:collection_id>", methods=["PUT"])
@@ -403,7 +411,7 @@ def mock_api_endpoint(case_id):
     # 处理跨域 OPTIONS 请求
     if request.method == "OPTIONS":
         resp = make_response()
-        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "")
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         return resp
