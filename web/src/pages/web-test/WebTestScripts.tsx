@@ -99,7 +99,7 @@ interface ExploreHistoryItem {
   start_url: string
   objective: string
   max_steps: number
-  report: ExploreReport
+  report?: ExploreReport
   console_lines: string[]
 }
 
@@ -1401,7 +1401,7 @@ const WebTestScripts = () => {
                               type="link"
                               size="small"
                               onClick={() => {
-                                setExploreReport(record.report)
+                                setExploreReport(record.report ?? null)
                                 setExploreConsoleLines(record.console_lines || [])
                               }}
                             >

@@ -150,7 +150,8 @@ const PerfTestScenarios = () => {
   }, [])
 
   // 创建场景
-  const handleCreate = async (values: Record<string, unknown>) => {
+  const handleCreate = async (rawValues: Record<string, unknown>) => {
+    const values = rawValues as Record<string, string | number | boolean | undefined>
     try {
       // 解析 headers 和 body JSON
       let headers: Record<string, any> | undefined = undefined
@@ -158,7 +159,7 @@ const PerfTestScenarios = () => {
 
       if (values.headers) {
         try {
-          headers = JSON.parse(values.headers)
+          headers = JSON.parse(values.headers as string)
         } catch (e) {
           message.error(t('perfTest.headersFormatError'))
           return
@@ -175,18 +176,18 @@ const PerfTestScenarios = () => {
       }
 
       const result = await perfTestService.createScenario({
-        name: values.name,
-        description: values.description,
-        target_url: values.targetUrl,
-        method: values.method,
+        name: values.name as string,
+        description: values.description as string,
+        target_url: values.targetUrl as string,
+        method: values.method as string,
         headers: headers,
         body: body,
-        user_count: values.users,
-        duration: values.duration,
-        spawn_rate: values.spawnRate,
+        user_count: values.users as number,
+        duration: values.duration as number,
+        spawn_rate: values.spawnRate as number,
         step_load_enabled: !!values.stepLoadEnabled,
-        step_users: values.stepUsers,
-        step_duration: values.stepDuration,
+        step_users: values.stepUsers as number,
+        step_duration: values.stepDuration as number,
       })
       if (result.code === 200 || result.code === 201) {
         message.success(t('perfTest.createSuccess'))
@@ -225,7 +226,7 @@ const PerfTestScenarios = () => {
           spawn_rate: 1,
           step_load_enabled: false,
           script_content: res.data.script_content,
-        } as Record<string, unknown>)
+        } as Parameters<typeof perfTestService.createScenario>[0])
         
         if (createRes.code === 200 || createRes.code === 201) {
           loadScenarios()
@@ -235,7 +236,8 @@ const PerfTestScenarios = () => {
         message.error(res.message || t('perfTest.aiGenerateFailed'))
       }
     } catch (e: unknown) {
-      message.error(e.response?.data?.message || t('perfTest.aiGenerateFailed'))
+      const err = e as { response?: { data?: { message?: string } }; message?: string }
+      message.error(err?.response?.data?.message || t('perfTest.aiGenerateFailed'))
       failGeneration()
     }
   }

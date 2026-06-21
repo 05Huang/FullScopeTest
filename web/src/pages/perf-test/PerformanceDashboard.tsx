@@ -273,7 +273,7 @@ const PerformanceDashboard = () => {
         if (!params || params.length === 0) return ''
         let html = `<b>${params[0].axisValue}</b><br/>`
         params.forEach((p: Record<string, unknown>) => {
-          html += `${p.marker} ${p.seriesName}: <b>${p.value?.toFixed(1) ?? '-'} ms</b><br/>`
+          html += `${p.marker} ${p.seriesName}: <b>${typeof p.value === 'number' ? p.value.toFixed(1) : '-'} ms</b><br/>`
         })
         return html
       },
@@ -432,7 +432,7 @@ const PerformanceDashboard = () => {
     compareData.forEach((d, i) => {
       const metrics = compareMetricsMap[d.id] || []
       const baseColor = RUN_COLOR_PALETTE[i % RUN_COLOR_PALETTE.length]
-      opt.series.push({
+      ;(opt.series as unknown[]).push({
         name: `#${d.id} P95`,
         type: 'line',
         smooth: true,
@@ -441,8 +441,8 @@ const PerformanceDashboard = () => {
         lineStyle: { width: 1.5, type: 'dashed' },
         symbol: 'circle',
         symbolSize: 3,
-      } as Record<string, unknown>)
-      opt.series.push({
+      })
+      ;(opt.series as unknown[]).push({
         name: `#${d.id} P99`,
         type: 'line',
         smooth: true,
@@ -451,7 +451,7 @@ const PerformanceDashboard = () => {
         lineStyle: { width: 1, type: 'dotted' },
         symbol: 'diamond',
         symbolSize: 3,
-      } as Record<string, unknown>)
+      })
     })
     opt.legend.data = compareData.flatMap(d => [`#${d.id}`, `#${d.id} P95`, `#${d.id} P99`])
     return opt

@@ -235,7 +235,7 @@ const Login = () => {
       })
     }
 
-    if (!isRegister && !autoFilled.current && import.meta.env.DEV) {
+    if (!isRegister && !autoFilled.current) {
       loginForm.setFieldsValue({
         username: 'huangxuan',
         password: 'Test@123456'
