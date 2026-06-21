@@ -43,6 +43,7 @@ import {
   CloudServerOutlined,
   LineChartOutlined,
   HeartOutlined,
+  AuditOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -444,9 +445,9 @@ const MainLayout = () => {
     { icon: <LinkOutlined />, label: t('sidebar.integrations'), path: '/integrations' },
     { icon: <HeartOutlined />, label: t('sidebar.healthMonitor'), path: '/health-monitor' },
     { icon: <ApiOutlined />, label: t('sidebar.webhookDebugger'), path: '/webhook-debugger' },
-    { icon: <FileSearchOutlined />, label: t('sidebar.documents'), path: '/docs' },
+    { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
     ...(isAdmin ? [
-      { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
+      { icon: <AuditOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
       { icon: <CustomerServiceOutlined />, label: t('sidebar.billing'), path: '/billing' },
     ] : []),
     { icon: <SettingOutlined />, label: t('sidebar.settings'), path: '/settings' },
