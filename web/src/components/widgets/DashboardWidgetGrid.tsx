@@ -132,11 +132,11 @@ const WidgetContent: React.FC<{
     case 'recent_runs': {
       const runs = stats?.recent_runs?.slice(0, 5) || []
       const statusColors: Record<string, string> = { success: '#52c41a', passed: '#52c41a', failed: '#ff4d4f', running: '#1890ff', pending: '#faad14' }
-      if (runs.length === 0) return <div style={{ padding: 20, textAlign: 'center', color: 'var(--fst-on-surface-muted)' }}>{t('dashboard.noRecords')}</div>
+      if (runs.length === 0) return <div onClick={() => onNavigate?.('/reports')} style={{ padding: 20, textAlign: 'center', color: 'var(--fst-on-surface-muted)', cursor: 'pointer' }}>{t('dashboard.noRecords')}</div>
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {runs.map((item: Record<string, unknown>, idx: number) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < runs.length - 1 ? '1px solid var(--fst-outline-soft, #f0f0f0)' : 'none' }}
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < runs.length - 1 ? '1px solid var(--fst-outline-soft, #f0f0f0)' : 'none', cursor: 'pointer' }}
               onClick={() => onNavigate?.('/reports')} role="button" tabIndex={0}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColors[item.status as string] || '#999', flexShrink: 0 }} />
