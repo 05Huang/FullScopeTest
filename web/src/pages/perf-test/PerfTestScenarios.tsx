@@ -167,7 +167,7 @@ const PerfTestScenarios = () => {
 
       if (values.body) {
         try {
-          body = JSON.parse(values.body)
+          body = JSON.parse(values.body as string)
         } catch (e) {
           message.error(t('perfTest.bodyFormatError'))
           return
@@ -286,7 +286,7 @@ const PerfTestScenarios = () => {
 
       if (values.headers) {
         try {
-          headers = JSON.parse(values.headers)
+          headers = JSON.parse(values.headers as string)
         } catch (e) {
           message.error(t('perfTest.headersFormatError'))
           return
@@ -295,7 +295,7 @@ const PerfTestScenarios = () => {
 
       if (values.body) {
         try {
-          body = JSON.parse(values.body)
+          body = JSON.parse(values.body as string)
         } catch (e) {
           message.error(t('perfTest.bodyFormatError'))
           return
@@ -303,18 +303,18 @@ const PerfTestScenarios = () => {
       }
 
       const result = await perfTestService.updateScenario(id, {
-        name: values.name,
-        description: values.description,
-        target_url: values.targetUrl,
-        method: values.method,
+        name: values.name as string,
+        description: values.description as string,
+        target_url: values.targetUrl as string,
+        method: values.method as string,
         headers: headers,
         body: body,
-        user_count: values.users,
-        duration: values.duration,
-        spawn_rate: values.spawnRate,
+        user_count: values.users as number,
+        duration: values.duration as number,
+        spawn_rate: values.spawnRate as number,
         step_load_enabled: !!values.stepLoadEnabled,
-        step_users: values.stepUsers,
-        step_duration: values.stepDuration,
+        step_users: values.stepUsers as number,
+        step_duration: values.stepDuration as number,
       })
       if (result.code === 200) {
         message.success(t('perfTest.editSuccess'))
@@ -413,7 +413,8 @@ const PerfTestScenarios = () => {
       }
     } catch (error: unknown) {
       logger.error('删除场景失败:', error)
-      const errorMsg = error?.response?.data?.message || error?.message || '删除场景失败'
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const errorMsg = err?.response?.data?.message || err?.message || '删除场景失败'
       message.error(errorMsg)
     }
   }
@@ -450,7 +451,8 @@ const PerfTestScenarios = () => {
       }
     } catch (error: unknown) {
       logger.error('启动测试失败:', error)
-      const errorMsg = error?.response?.data?.message || error?.message || '启动测试失败'
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const errorMsg = err?.response?.data?.message || err?.message || '启动测试失败'
       if (!silent) {
         message.error(errorMsg)
       }

@@ -73,7 +73,7 @@ describe("useWebExplorer", () => {
         start_url: "https://example.com",
         objective: "Test",
         max_steps: 10,
-        report: null,
+        report: undefined,
         console_lines: []
       })
     })
@@ -121,7 +121,7 @@ describe("useWebExplorer", () => {
           start_url: "https://example.com/" + i,
           objective: "Test " + i,
           max_steps: 10,
-          report: null,
+          report: undefined,
           console_lines: []
         })
       })

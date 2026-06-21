@@ -19,7 +19,7 @@ export interface ExploreHistoryItem {
   start_url: string
   objective: string
   max_steps: number
-  report: ExploreReport
+  report?: ExploreReport
   console_lines: string[]
 }
 

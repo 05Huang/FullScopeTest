@@ -79,7 +79,7 @@ const AiExploreModal = ({
                   columns={[
                     { title: 'Time', dataIndex: 'started_at', width: 160, render: (v: string) => new Date(v).toLocaleString() },
                     { title: 'URL', dataIndex: 'start_url', ellipsis: true },
-                    { title: 'Status', width: 100, render: (_: Record<string, unknown>, r: ExploreHistoryItem) => <Tag color={r.report?.status === 'failed' ? 'red' : 'green'}>{r.report?.status || 'unknown'}</Tag> },
+                    { title: 'Status', width: 100, render: (_: Record<string, unknown>, r: ExploreHistoryItem) => <Tag color={r.report?.status === 'failed' ? 'red' : 'green'}>{String(r.report?.status || 'unknown')}</Tag> },
                     { title: 'Actions', width: 150, render: (_: Record<string, unknown>, r: ExploreHistoryItem) => (
                       <Space size={4}>
                         <Button type="link" size="small" onClick={() => onViewResult(r.report, r.console_lines || [])}>View</Button>
@@ -118,8 +118,8 @@ const AiExploreModal = ({
         <div style={{ maxHeight: 600, overflow: 'auto' }}>
           <Alert type={report.status === 'failed' ? 'error' : 'success'} message={`Done (${report.status})`} style={{ marginBottom: 16 }} />
           <Card size="small" title="Errors">
-            {report.errors_found?.length > 0 ? (
-              <Table size="small" dataSource={report.errors_found} pagination={false} rowKey={(_: Record<string, unknown>, i: Record<string, unknown>) => String(i)}
+            {(report.errors_found as unknown[])?.length > 0 ? (
+              <Table size="small" dataSource={report.errors_found as Record<string, unknown>[]} pagination={false} rowKey={(_: unknown, i: number | undefined) => String(i ?? Math.random())}
                 columns={[
                   { title: 'Type', dataIndex: 'type', width: 120, render: (v: string) => <Tag color="red">{v}</Tag> },
                   { title: 'Level', dataIndex: 'severity', width: 100 },
