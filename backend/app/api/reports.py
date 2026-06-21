@@ -589,8 +589,13 @@ def get_test_reports():
     if test_type:
         query = query.filter(TestReport.test_type == test_type)
     
-    # 只查询用户有权限的项目
-    query = query.filter(Project.owner_id == user_id)
+    # 只查询用户有权限的项目（自己创建的 + 所在组织的）
+    from ..models.organization import OrganizationMember
+    org_ids = [om.organization_id for om in OrganizationMember.query.filter_by(user_id=user_id, is_active=True).all()]
+    owned_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    org_proj_ids = [p.id for p in Project.query.filter(Project.organization_id.in_(org_ids)).all()] if org_ids else []
+    accessible_ids = list(set(owned_ids + org_proj_ids))
+    query = query.filter(Project.id.in_(accessible_ids))
     
     # 排序
     query = query.order_by(TestReport.created_at.desc())
