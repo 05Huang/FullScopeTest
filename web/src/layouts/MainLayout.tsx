@@ -770,10 +770,12 @@ const MainLayout = () => {
             </div>
           </div>
 
-          {/* Center notice */}
-          <div style={{ flex: '0 1 auto', display: 'flex', justifyContent: 'center', overflow: 'hidden', maxWidth: '40vw' }}>
-            {isProduction && envNotice && <div className="fst-env-notice">{envNotice}</div>}
-          </div>
+          {/* Center notice — absolute 居中，不影响两侧布局 */}
+          {isProduction && envNotice && (
+            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }}>
+              <div className="fst-env-notice" style={{ pointerEvents: 'auto' }}>{envNotice}</div>
+            </div>
+          )}
 
           {/* Right */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

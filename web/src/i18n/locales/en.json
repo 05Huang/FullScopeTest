@@ -1067,7 +1067,7 @@
     "deleteProjectFailed": "Failed to delete project",
     "pinToggleSuccess": "Project pin status updated",
     "user": "User",
-    "envNotice": "You are in the production environment. Some features may be slower due to personal server limitations.",
+    "envNotice": "Production environment — some features may be slower",
     "switchToLight": "Switch to Light Mode",
     "switchToDark": "Switch to Dark Mode",
     "mainNavigation": "Main Navigation",
