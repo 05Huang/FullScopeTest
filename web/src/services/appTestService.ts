@@ -95,6 +95,26 @@ export const healthCheck = (): Promise<ApiResponse> => {
 }
 
 // 导出服务对象
+// 获取设备列表
+export const getDevices = (params?: { project_id?: number; status?: string }): Promise<ApiResponse> => {
+  return api.get('/app-test/devices', { params }) as Promise<ApiResponse>
+}
+
+// 获取单个设备
+export const getDevice = (deviceId: number): Promise<ApiResponse> => {
+  return api.get(`/app-test/devices/${deviceId}`) as Promise<ApiResponse>
+}
+
+// 更新设备
+export const updateDevice = (deviceId: number, data: Record<string, unknown>): Promise<ApiResponse> => {
+  return api.put(`/app-test/devices/${deviceId}`, data) as Promise<ApiResponse>
+}
+
+// 删除设备
+export const deleteDevice = (deviceId: number): Promise<ApiResponse> => {
+  return api.delete(`/app-test/devices/${deviceId}`) as Promise<ApiResponse>
+}
+
 export const appTestService = {
   getCollections,
   createCollection,
@@ -107,4 +127,8 @@ export const appTestService = {
   deleteScript,
   runScript,
   healthCheck,
+  getDevices,
+  getDevice,
+  updateDevice,
+  deleteDevice,
 }

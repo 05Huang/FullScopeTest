@@ -198,4 +198,15 @@ export const perfTestService = {
   evaluateAlertRule,
   getAlertLogs,
   generateScriptAI,
+
+  // 性能基线
+  getBaselines: (params?: { scenario_id?: number; project_id?: number }): Promise<ApiResponse> => {
+    return api.get('/perf-test/baselines', { params }) as Promise<ApiResponse>
+  },
+  createBaseline: (data: { scenario_id: number; name: string; description?: string; metrics: Record<string, unknown> }): Promise<ApiResponse> => {
+    return api.post('/perf-test/baselines', data) as Promise<ApiResponse>
+  },
+  compareBaselines: (data: { baseline_ids: number[]; run_ids?: number[] }): Promise<ApiResponse> => {
+    return api.post('/perf-test/baselines/compare', data) as Promise<ApiResponse>
+  },
 }

@@ -508,4 +508,53 @@ export const apiTestService = {
   parseBdd,
   importBdd,
   executeScenario,
+
+  // API 测试历史
+  getHistory: (params?: { page?: number; per_page?: number; collection_id?: number; case_id?: number }): Promise<ApiResponse> => {
+    return api.get('/api-test/history', { params }) as Promise<ApiResponse>
+  },
+  createHistory: (data: { case_id: number; method: string; url: string; headers?: Record<string, string>; body?: string; status_code?: number; response_time?: number; response_body?: string }): Promise<ApiResponse> => {
+    return api.post('/api-test/history', data) as Promise<ApiResponse>
+  },
+  getHistoryTrend: (params?: { days?: number; collection_id?: number }): Promise<ApiResponse> => {
+    return api.get('/api-test/history/trend', { params }) as Promise<ApiResponse>
+  },
+
+  // cURL 导入
+  importCurl: (data: { curl_command: string; collection_id?: number }): Promise<ApiResponse> => {
+    return api.post('/api-test/import-curl', data) as Promise<ApiResponse>
+  },
+
+  // Postman 导入
+  importPostman: (data: { file?: File; collection_id?: number; collection_data?: unknown }): Promise<ApiResponse> => {
+    return api.post('/api-test/import/postman', data, { headers: data.file ? { 'Content-Type': 'multipart/form-data' } : {} }) as Promise<ApiResponse>
+  },
+
+  // CSV 导入
+  importCsv: (data: { file?: File; collection_id?: number; csv_data?: string }): Promise<ApiResponse> => {
+    return api.post('/api-test/import/csv', data, { headers: data.file ? { 'Content-Type': 'multipart/form-data' } : {} }) as Promise<ApiResponse>
+  },
+
+  // 用例版本对比
+  getVersionDiff: (params?: { case_id?: number; version_from?: number; version_to?: number }): Promise<ApiResponse> => {
+    return api.get('/api-test/versions/diff', { params }) as Promise<ApiResponse>
+  },
+
+  // 集合预估
+  estimateCollection: (collectionId: number): Promise<ApiResponse> => {
+    return api.get(`/api-test/collections/${collectionId}/estimate`) as Promise<ApiResponse>
+  },
+
+  // AI 语义去重
+  findDuplicates: (data: { project_id?: number; threshold?: number; collection_id?: number }): Promise<ApiResponse> => {
+    return api.post('/ai/find-duplicates', data) as Promise<ApiResponse>
+  },
+
+  // Swagger 生成用例
+  generateFromSwagger: (data: { swagger_url?: string; swagger_data?: unknown; collection_id?: number; project_id?: number }): Promise<ApiResponse> => {
+    return api.post('/ai/generate-cases-from-swagger', data) as Promise<ApiResponse>
+  },
+  saveSwaggerCases: (data: { cases: unknown[]; collection_id?: number; project_id?: number }): Promise<ApiResponse> => {
+    return api.post('/ai/generate-cases-from-swagger/save', data) as Promise<ApiResponse>
+  },
 }

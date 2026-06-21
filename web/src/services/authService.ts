@@ -67,6 +67,14 @@ export const resetPassword = (token: string, newPassword: string): Promise<ApiRe
 }
 
 // 导出服务对象
+export const logout = (): Promise<ApiResponse> => {
+  return api.post('/auth/logout') as Promise<ApiResponse>
+}
+
+export const getSsoConfig = (): Promise<ApiResponse> => {
+  return api.get('/auth/sso/config') as Promise<ApiResponse>
+}
+
 export const authService = {
   login,
   register,
@@ -76,4 +84,6 @@ export const authService = {
   changePassword,
   forgotPassword,
   resetPassword,
+  logout,
+  getSsoConfig,
 }
