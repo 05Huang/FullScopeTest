@@ -355,8 +355,12 @@ def get_dashboard_stats():
     user_id = get_current_user_id()
     project_id = request.args.get('project_id', type=int)
 
-    # 获取用户的所有项目 ID
-    all_project_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    # 获取用户可访问的所有项目 ID（自己创建的 + 所在组织的）
+    from ..models.organization import OrganizationMember
+    org_ids = [om.organization_id for om in OrganizationMember.query.filter_by(user_id=user_id, is_active=True).all()]
+    owned_project_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    org_project_ids = [p.id for p in Project.query.filter(Project.organization_id.in_(org_ids)).all()] if org_ids else []
+    all_project_ids = list(set(owned_project_ids + org_project_ids))
 
     # 如果指定了 project_id，只统计该项目（需验证归属）
     if project_id:
