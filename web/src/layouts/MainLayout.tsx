@@ -37,6 +37,12 @@ import {
   MoonOutlined,
   RobotOutlined,
   BugOutlined,
+  ClockCircleOutlined,
+  CopyOutlined,
+  SyncOutlined,
+  CloudServerOutlined,
+  LineChartOutlined,
+  HeartOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -418,27 +424,27 @@ const MainLayout = () => {
     ]},
     { icon: <BarChartOutlined />, label: t('sidebar.reports'), path: '/reports' },
     ...(isMember ? [
-      { icon: <FileTextOutlined />, label: t('sidebar.reportSchedules'), path: '/report-schedules' },
-      { icon: <FileTextOutlined />, label: t('sidebar.reportTemplates'), path: '/report-templates' },
+      { icon: <ClockCircleOutlined />, label: t('sidebar.reportSchedules'), path: '/report-schedules' },
+      { icon: <CopyOutlined />, label: t('sidebar.reportTemplates'), path: '/report-templates' },
     ] : []),
     { icon: <ExperimentOutlined />, label: t('sidebar.testPlans'), path: '/test-plans' },
     { icon: <SafetyOutlined />, label: t('sidebar.qualityGates'), path: '/quality-gates' },
     { icon: <DotChartOutlined />, label: t('sidebar.aiInsights'), path: '/ai-insights' },
     { icon: <RobotOutlined />, label: t('sidebar.dataFactory'), path: '/data-factory' },
     { icon: <BugOutlined />, label: t('sidebar.flakyTests'), path: '/flaky-tests' },
-    { icon: <ApiOutlined />, label: t('sidebar.cicd'), path: '/ci-cd', children: [
+    { icon: <SyncOutlined />, label: t('sidebar.cicd'), path: '/ci-cd', children: [
       { label: t('sidebar.cicdMain'), path: '/ci-cd' },
       { label: t('sidebar.triggerRules'), path: '/trigger-rules' },
     ]},
-    { icon: <ApiOutlined />, label: t('sidebar.mockServers'), path: '/mock-servers' },
+    { icon: <CloudServerOutlined />, label: t('sidebar.mockServers'), path: '/mock-servers' },
     { icon: <BellOutlined />, label: t('sidebar.notifications'), path: '/notification-settings' },
-    { icon: <BarChartOutlined />, label: t('sidebar.teamMetrics'), path: '/team-metrics' },
+    { icon: <LineChartOutlined />, label: t('sidebar.teamMetrics'), path: '/team-metrics' },
     { icon: <TeamOutlined />, label: t('sidebar.organizations'), path: '/organizations' },
     { icon: <KeyOutlined />, label: t('sidebar.apiTokens'), path: '/api-tokens' },
     { icon: <LinkOutlined />, label: t('sidebar.integrations'), path: '/integrations' },
-    { icon: <SafetyOutlined />, label: t('sidebar.healthMonitor'), path: '/health-monitor' },
+    { icon: <HeartOutlined />, label: t('sidebar.healthMonitor'), path: '/health-monitor' },
     { icon: <ApiOutlined />, label: t('sidebar.webhookDebugger'), path: '/webhook-debugger' },
-    { icon: <FileTextOutlined />, label: t('sidebar.documents'), path: '/docs' },
+    { icon: <FileSearchOutlined />, label: t('sidebar.documents'), path: '/docs' },
     ...(isAdmin ? [
       { icon: <FileSearchOutlined />, label: t('sidebar.auditLogs'), path: '/audit-logs' },
       { icon: <CustomerServiceOutlined />, label: t('sidebar.billing'), path: '/billing' },
