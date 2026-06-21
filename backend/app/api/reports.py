@@ -617,9 +617,14 @@ def get_test_report(report_id):
     """获取测试报告详情"""
     user_id = get_current_user_id()
     
+    from ..models.organization import OrganizationMember
+    org_ids = [om.organization_id for om in OrganizationMember.query.filter_by(user_id=user_id, is_active=True).all()]
+    owned_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    org_proj_ids = [p.id for p in Project.query.filter(Project.organization_id.in_(org_ids)).all()] if org_ids else []
+    accessible_ids = list(set(owned_ids + org_proj_ids))
     report = TestReport.query.join(TestRun).join(Project).filter(
         TestReport.id == report_id,
-        Project.owner_id == user_id
+        Project.id.in_(accessible_ids)
     ).first()
     
     if not report:
@@ -634,9 +639,14 @@ def get_test_report_html(report_id):
     """获取测试报告 HTML"""
     user_id = get_current_user_id()
     
+    from ..models.organization import OrganizationMember
+    org_ids = [om.organization_id for om in OrganizationMember.query.filter_by(user_id=user_id, is_active=True).all()]
+    owned_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    org_proj_ids = [p.id for p in Project.query.filter(Project.organization_id.in_(org_ids)).all()] if org_ids else []
+    accessible_ids = list(set(owned_ids + org_proj_ids))
     report = TestReport.query.join(TestRun).join(Project).filter(
         TestReport.id == report_id,
-        Project.owner_id == user_id
+        Project.id.in_(accessible_ids)
     ).first()
     
     if not report:
