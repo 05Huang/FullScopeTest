@@ -650,7 +650,7 @@ const Reports = () => {
         ]}
         style={{ top: 20 }}
       >
-        <div style={{ height: '70vh', overflow: 'auto', borderRadius: 12, border: '1px solid var(--fst-outline-soft)' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reportHtml) }} />
+        <div style={{ height: '70vh', overflow: 'auto', borderRadius: 12, border: '1px solid var(--fst-outline-soft)' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reportHtml, { ADD_TAGS: ['style'], ADD_ATTR: ['type'] }) }} />
       </Modal>
     </div>
   )
