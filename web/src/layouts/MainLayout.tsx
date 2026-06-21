@@ -679,7 +679,7 @@ const MainLayout = () => {
           borderBottom: '1px solid var(--fst-outline-soft)',
         }}>
           {/* Left */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: '1 1 0', minWidth: 0 }}>
             <button
               onClick={() => setCollapsed(!collapsed)}
               style={{
@@ -771,7 +771,7 @@ const MainLayout = () => {
           </div>
 
           {/* Center notice */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ flex: '0 1 auto', display: 'flex', justifyContent: 'center', overflow: 'hidden', maxWidth: '40vw' }}>
             {isProduction && envNotice && <div className="fst-env-notice">{envNotice}</div>}
           </div>
 
