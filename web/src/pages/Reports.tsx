@@ -109,6 +109,23 @@ const Reports = () => {
     fetchData()
   }, [currentProjectId, pagination.current, pagination.pageSize, filters.keyword, filters.test_type, filters.date_range])
 
+  // 支持 ?run_id=xxx 自动打开报告弹窗
+  useEffect(() => {
+    const targetRunId = searchParams.get('run_id')
+    if (!targetRunId || testReports.length === 0) return
+    const targetReport = testReports.find((r: TestReport) => r.test_run_id === Number(targetRunId))
+    if (targetReport) {
+      const run = testRuns.find((r: TestRun) => r.id === Number(targetRunId))
+      const title = run?.test_object_name || `测试执行 #${targetRunId}`
+      setCurrentReportTitle(title)
+      reportService.getTestReportHtml(targetReport.id).then((html) => {
+        setReportHtml(html)
+        setHtmlModalVisible(true)
+      }).catch(() => {})
+      setSearchParams({})
+    }
+  }, [searchParams, testReports, testRuns])
+
   const fetchData = async () => {
     try {
       setLoading(true)
@@ -153,22 +170,6 @@ const Reports = () => {
       setTestRuns(runsList)
       setPagination((prev) => ({ ...prev, total: runsTotal }))
       setTestReports(reportsList)
-
-      // 支持 ?run_id=xxx 自动打开报告弹窗
-      const targetRunId = searchParams.get('run_id')
-      if (targetRunId) {
-        const targetReport = reportsList.find((r: TestReport) => r.test_run_id === Number(targetRunId))
-        if (targetReport) {
-          const run = runsList.find((r: TestRun) => r.id === Number(targetRunId))
-          const title = run?.test_object_name || `测试执行 #${targetRunId}`
-          setCurrentReportTitle(title)
-          reportService.getTestReportHtml(targetReport.id).then((html) => {
-            setReportHtml(html)
-            setHtmlModalVisible(true)
-          }).catch(() => {})
-          setSearchParams({})
-        }
-      }
 
       const statsData = statsRes?.data
       setStatistics(statsData?.summary || { total_runs: 0, success_runs: 0, failed_runs: 0, success_rate: 0 })
