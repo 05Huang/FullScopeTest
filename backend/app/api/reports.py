@@ -680,91 +680,63 @@ def get_test_report_html(report_id):
             return '<br>'.join(lines)
 
         results_rows = "".join([f'''
-                <tr>
-                    <td>{result.get('name', '')}</td>
-                    <td class="{'passed' if result.get('passed') else 'failed'}">
+                <tr style="border-bottom:1px solid #f0f0f0;">
+                    <td style="padding:10px 12px;font-size:13px;">{result.get('name', '')}</td>
+                    <td style="padding:10px 12px;font-size:13px;color:{'#52c41a' if result.get('passed') else '#ff4d4f'};font-weight:600;">
                         {'✓ 通过' if result.get('passed') else '✗ 失败'}
                     </td>
-                    <td>{result.get('status_code', '-')}</td>
-                    <td>{result.get('response_time', 0)}</td>
-                    <td><pre style="white-space: pre-wrap;">{_render_body(result.get('response_body'))}</pre></td>
-                    <td>{result.get('error') or '-'}</td>
-                    <td>{_render_attachments(result.get('attachments'))}</td>
+                    <td style="padding:10px 12px;font-size:13px;">{result.get('status_code', '-')}</td>
+                    <td style="padding:10px 12px;font-size:13px;">{result.get('response_time', 0)}</td>
+                    <td style="padding:10px 12px;font-size:13px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_render_body(result.get('response_body'))}</td>
+                    <td style="padding:10px 12px;font-size:13px;color:#ff4d4f;">{result.get('error') or '-'}</td>
                 </tr>
                 ''' for result in results])
 
-        # 简单的 HTML 报告模板
-        html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{report.title}</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
-        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }}
-        h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
-        .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }}
-        .summary-card {{ background: #f9f9f9; padding: 20px; border-radius: 5px; border-left: 4px solid #4CAF50; }}
-        .summary-card h3 {{ margin: 0 0 10px 0; color: #666; font-size: 14px; }}
-        .summary-card p {{ margin: 0; font-size: 28px; font-weight: bold; color: #333; }}
-        .passed {{ color: #4CAF50; }}
-        .failed {{ color: #f44336; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
-        th {{ background: #f5f5f5; font-weight: bold; }}
-        tr:hover {{ background: #f9f9f9; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{report.title}</h1>
-        <div class="summary">
-            <div class="summary-card">
-                <h3>总用例数</h3>
-                <p>{report.summary.get('total', 0)}</p>
-            </div>
-            <div class="summary-card">
-                <h3>通过数</h3>
-                <p class="passed">{report.summary.get('passed', 0)}</p>
-            </div>
-            <div class="summary-card">
-                <h3>失败数</h3>
-                <p class="failed">{report.summary.get('failed', 0)}</p>
-            </div>
-            <div class="summary-card">
-                <h3>成功率</h3>
-                <p>{report.summary.get('success_rate', 0)}%</p>
-            </div>
-            <div class="summary-card">
-                <h3>执行耗时</h3>
-                <p>{report.summary.get('duration', 0)}s</p>
-            </div>
-        </div>
-        <h2>测试结果详情</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>用例名称</th>
-                    <th>状态</th>
-                    <th>状态码</th>
-                    <th>耗时(ms)</th>
-                    <th>响应数据</th>
-                    <th>错误/异常</th>
-                    <th>附件</th>
-                </tr>
-            </thead>
-            <tbody>
-                {results_rows}
-            </tbody>
-        </table>
-        <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 5px;">
-            <p style="margin: 0; color: #666;">生成时间: {report.created_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
-        </div>
-    </div>
-</body>
-</html>
-        """
+        # 计算成功率
+        total = report.summary.get('total', 0)
+        passed = report.summary.get('passed', 0)
+        failed = report.summary.get('failed', 0)
+        success_rate = round(passed / total * 100, 1) if total > 0 else 0
+        duration = report.summary.get('duration', 0)
+
+        # 全内联样式 HTML 报告模板（DOMPurify 安全）
+        html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>{report.title}</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:20px;background:#f0f2f5;">
+<div style="max-width:1100px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+<h1 style="font-size:22px;color:#1a1a1a;margin:0 0 24px;padding-bottom:16px;border-bottom:3px solid #52c41a;">{report.title}</h1>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px;">
+<div style="background:#f6ffed;padding:16px;border-radius:8px;border-left:4px solid #52c41a;">
+<div style="font-size:12px;color:#8c8c8c;margin-bottom:6px;">总用例数</div>
+<div style="font-size:28px;font-weight:700;color:#262626;">{total}</div></div>
+<div style="background:#f6ffed;padding:16px;border-radius:8px;border-left:4px solid #52c41a;">
+<div style="font-size:12px;color:#8c8c8c;margin-bottom:6px;">通过数</div>
+<div style="font-size:28px;font-weight:700;color:#52c41a;">{passed}</div></div>
+<div style="background:#fff2f0;padding:16px;border-radius:8px;border-left:4px solid #ff4d4f;">
+<div style="font-size:12px;color:#8c8c8c;margin-bottom:6px;">失败数</div>
+<div style="font-size:28px;font-weight:700;color:#ff4d4f;">{failed}</div></div>
+<div style="background:#fff7e6;padding:16px;border-radius:8px;border-left:4px solid #faad14;">
+<div style="font-size:12px;color:#8c8c8c;margin-bottom:6px;">成功率</div>
+<div style="font-size:28px;font-weight:700;color:{'#52c41a' if success_rate >= 80 else '#faad14' if success_rate >= 60 else '#ff4d4f'};">{success_rate}%</div></div>
+<div style="background:#f0f5ff;padding:16px;border-radius:8px;border-left:4px solid #1890ff;">
+<div style="font-size:12px;color:#8c8c8c;margin-bottom:6px;">执行耗时</div>
+<div style="font-size:28px;font-weight:700;color:#262626;">{duration}s</div></div>
+</div>
+<h2 style="font-size:16px;color:#1a1a1a;margin:0 0 12px;">测试结果详情</h2>
+<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+<thead><tr style="background:#fafafa;">
+<th style="padding:12px;text-align:left;border-bottom:1px solid #f0f0f0;font-size:13px;color:#8c8c8c;">用例名称</th>
+<th style="padding:12px;text-align:left;border-bottom:1px solid #f0f0f0;font-size:13px;color:#8c8c8c;">状态</th>
+<th style="padding:12px;text-align:left;border-bottom:1px solid #f0f0f0;font-size:13px;color:#8c8c8c;">状态码</th>
+<th style="padding:12px;text-align:left;border-bottom:1px solid #f0f0f0;font-size:13px;color:#8c8c8c;">耗时(ms)</th>
+<th style="padding:12px;text-align:left;border-bottom:1px solid #f0f0f0;font-size:13px;color:#8c8c8c;">响应数据</th>
+<th style="padding:12px;text-align:left;border-bottom:1px solid #f0f0f0;font-size:13px;color:#8c8c8c;">错误/异常</th>
+</tr></thead>
+<tbody>{results_rows}</tbody>
+</table>
+<div style="margin-top:24px;padding:16px;background:#fafafa;border-radius:8px;">
+<span style="font-size:12px;color:#8c8c8c;">生成时间: {report.created_at.strftime('%Y-%m-%d %H:%M:%S')}</span>
+</div></div></body></html>"""
         return html, 200, {'Content-Type': 'text/html; charset=utf-8'}
     
     return report.report_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
