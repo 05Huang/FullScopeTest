@@ -504,3 +504,88 @@ docker volume rm fullscopetest_redis_data fullscopetest_backend_uploads
   logs/                          # 日志目录
   backups/                       # 备份目录
 ```
+
+---
+
+## 11. 安全特性
+
+FullScopeTest 内置多层安全防护，部署后自动生效。
+
+### 11.1 脚本沙箱
+
+用户提交的 Python 脚本（Web 测试、性能测试、APP 测试）在执行前经过 AST 静态分析，拦截以下危险操作：
+- **危险模块**：`os`、`subprocess`（白名单模式）、`ctypes`、`socket`、`http.server`、`importlib` 等 35+ 个
+- **危险函数**：`eval`、`exec`、`__import__`、`getattr`、`vars`、`globals`
+- **绕过检测**：字符串拼接动态导入（如 `__import__('o'+'s')`）
+- **执行隔离**：`subprocess.run()` 禁止 `shell=True`，自动清理临时文件，移除敏感环境变量
+
+### 11.2 CORS 策略
+
+Mock Server 和 API 端点的 CORS 策略已从 `Access-Control-Allow-Origin: *` 改为**回显请求 Origin**，防止任意域跨域调用。
+
+### 11.3 SSRF 防护
+
+`validate_url_safety()` 函数拦截以下目标地址：
+- 内网 IP 段：`10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`
+- 本地回环：`127.0.0.0/8`、`::1`
+- 云元数据：`169.254.0.0/16`（AWS/GCP/Azure 元数据服务）
+- 内网域名：`localhost`、`metadata.google.internal`
+
+### 11.4 JWT 安全
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| Access Token 有效期 | **30 分钟** | 泄露后攻击窗口有限 |
+| Refresh Token 有效期 | 30 天 | 用于无感刷新 |
+| Token 黑名单 | Redis 存储 | 登出后立即失效 |
+
+### 11.5 密码策略
+
+用户密码必须满足以下全部条件：
+- 最少 8 位
+- 包含小写字母
+- 包含大写字母
+- 包含数字
+- 包含特殊字符（`!@#$%^&*` 等）
+
+### 11.6 速率限制
+
+| 端点 | 限制 | 说明 |
+|------|------|------|
+| 登录 | 5 次/分钟 | 按 IP 限制 |
+| 密码重置 | 3 次/分钟 | 防止暴力枚举 |
+| 忘记密码 | 5 次/分钟 | 防止枚举邮箱 |
+
+### 11.7 CSP（Content Security Policy）
+
+生产环境启用严格 CSP：
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' ws: wss:; frame-ancestors 'none'
+```
+- 已移除 `unsafe-eval`，防止 `eval()` 攻击
+- `frame-ancestors 'none'` 防止点击劫持
+
+### 11.8 错误信息脱敏
+
+生产环境（`FLASK_ENV=production`）下，所有 API 错误响应返回通用消息（如"服务器内部错误"），不暴露：
+- Python 异常堆栈
+- 数据库结构
+- 文件路径
+- 内部函数名
+
+### 11.9 敏感环境变量隔离
+
+脚本沙箱执行时自动移除以下敏感环境变量：
+- `SECRET_KEY`
+- `JWT_SECRET_KEY`
+- `DATABASE_URL`
+- `REDIS_PASSWORD`
+
+### 11.10 审计日志
+
+所有关键操作（登录、脚本执行、配置变更）自动记录审计日志，包括：
+- 操作用户
+- 操作时间
+- 操作类型
+- 脚本内容哈希（SHA-256）
+- 执行结果
