@@ -316,7 +316,7 @@ const DashboardWidgetGrid: React.FC<GridProps> = ({ widgets, data, onReorder, on
     >
       {widgets.map((widget, index) => {
         const icon = WIDGET_ICONS[widget.widget_type] || <ApiOutlined />
-        const title = widget.title || t(`dashboard.widgetType.${widget.widget_type}`) || widget.widget_type.replace(/_/g, ' ')
+        const title = t(`dashboard.widgetType.${widget.widget_type}`) || widget.widget_type.replace(/_/g, ' ')
         const isOver = overIndex === index && dragIndex !== index
 
         return (
