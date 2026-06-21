@@ -13,6 +13,16 @@ import json
 import os
 import tempfile
 
+
+def _get_accessible_project_ids(user_id):
+    """获取用户可访问的所有项目 ID（自己创建的 + 所在组织的）"""
+    from ..models.organization import OrganizationMember
+    from ..models.project import Project
+    org_ids = [om.organization_id for om in OrganizationMember.query.filter_by(user_id=user_id, is_active=True).all()]
+    owned_ids = [p.id for p in Project.query.filter_by(owner_id=user_id).all()]
+    org_proj_ids = [p.id for p in Project.query.filter(Project.organization_id.in_(org_ids)).all()] if org_ids else []
+    return list(set(owned_ids + org_proj_ids))
+
 from . import api_bp
 from ..extensions import db
 from ..models.test_run import TestRun
@@ -154,9 +164,9 @@ def get_test_run(run_id):
         Project, TestRun.project_id == Project.id
     ).filter(
         TestRun.id == run_id,
-        Project.owner_id == user_id
+        Project.id.in_(_get_accessible_project_ids(user_id))
     ).first()
-    
+
     if not test_run:
         return error_response(404, '测试记录不存在')
     
@@ -173,9 +183,9 @@ def update_test_run(run_id):
         Project, TestRun.project_id == Project.id
     ).filter(
         TestRun.id == run_id,
-        Project.owner_id == user_id
+        Project.id.in_(_get_accessible_project_ids(user_id))
     ).first()
-    
+
     if not test_run:
         return error_response(404, '测试记录不存在')
     
@@ -244,7 +254,7 @@ def get_report_statistics():
     if org_id:
         base_query = base_query.filter(Project.organization_id == org_id)
     else:
-        base_query = base_query.filter(Project.owner_id == user_id)
+        base_query = base_query.filter(Project.id.in_(_get_accessible_project_ids(user_id)))
     
     if project_id:
         base_query = base_query.filter(TestRun.project_id == project_id)
@@ -270,7 +280,7 @@ def get_report_statistics():
     if org_id:
         type_stats = type_stats.filter(Project.organization_id == org_id)
     else:
-        type_stats = type_stats.filter(Project.owner_id == user_id)
+        type_stats = type_stats.filter(Project.id.in_(_get_accessible_project_ids(user_id)))
     
     if project_id:
         type_stats = type_stats.filter(TestRun.project_id == project_id)
@@ -292,7 +302,7 @@ def get_report_statistics():
     if org_id:
         daily_stats = daily_stats.filter(Project.organization_id == org_id)
     else:
-        daily_stats = daily_stats.filter(Project.owner_id == user_id)
+        daily_stats = daily_stats.filter(Project.id.in_(_get_accessible_project_ids(user_id)))
     
     if project_id:
         daily_stats = daily_stats.filter(TestRun.project_id == project_id)
@@ -426,9 +436,9 @@ def export_report(run_id):
         Project, TestRun.project_id == Project.id
     ).filter(
         TestRun.id == run_id,
-        Project.owner_id == user_id
+        Project.id.in_(_get_accessible_project_ids(user_id))
     ).first()
-    
+
     if not test_run:
         return error_response(404, '测试记录不存在')
     
@@ -757,7 +767,7 @@ def delete_test_report(report_id):
         Project, TestReport.project_id == Project.id
     ).filter(
         TestReport.id == report_id,
-        Project.owner_id == user_id
+        Project.id.in_(_get_accessible_project_ids(user_id))
     ).first()
 
     if not report:
@@ -987,7 +997,7 @@ def get_response_percentiles():
     query = db.session.query(TestRun).join(
         Project, TestRun.project_id == Project.id
     ).filter(
-        Project.owner_id == user_id,
+        Project.id.in_(_get_accessible_project_ids(user_id)),
         TestRun.test_type == 'api',
         TestRun.created_at >= start_date,
     )
