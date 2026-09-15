@@ -236,15 +236,15 @@ class ProductionConfig(BaseConfig):
     _cors_raw = os.environ.get('CORS_ORIGINS', '')
     CORS_ORIGINS = [o.strip() for o in _cors_raw.split(',') if o.strip()] if _cors_raw else []
 
-    # 生产环境限流更严格
-    RATELIMIT_DEFAULT = "100/minute"
+    # 生产环境限流阈值提高到 300/分钟（原有100过低，导致用户频繁触发限制）
+    RATELIMIT_DEFAULT = "300/minute"
 
-    # SQLAlchemy 连接池优化
+    # SQLAlchemy 连接池优化（生产环境需要更大的连接池支持并发）
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': _env_int('DB_POOL_SIZE', 10),        # 连接池大小
-        'max_overflow': _env_int('DB_MAX_OVERFLOW', 20),   # 超出池大小后最多额外创建的连接数
+        'pool_size': _env_int('DB_POOL_SIZE', 20),        # 连接池大小（从10增加到20）
+        'max_overflow': _env_int('DB_MAX_OVERFLOW', 30),   # 超出池大小后最多额外创建的连接数（从20增加到30）
         'pool_timeout': _env_int('DB_POOL_TIMEOUT', 30),   # 获取连接超时（秒）
-        'pool_recycle': _env_int('DB_POOL_RECYCLE', 1800), # 连接回收时间（秒），防止 MySQL 断连
+        'pool_recycle': _env_int('DB_POOL_RECYCLE', 1800), # 连接回收时间（秒），防止数据库断连
         'pool_pre_ping': True,                              # 使用前检测连接是否有效
     }
 

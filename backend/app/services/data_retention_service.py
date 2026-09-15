@@ -50,20 +50,38 @@ def cleanup_raw_test_runs(app_context=None):
     stats = {"deleted_runs": 0, "cutoff_date": cutoff.isoformat()}
 
     try:
+        # 先查询所有过期的test_run IDs
         old_runs = TestRun.query.filter(TestRun.created_at < cutoff).all()
-        for run in old_runs:
-            logger.info(
-                "数据归档: 删除过期测试执行记录",
-                run_id=run.id,
-                created_at=str(run.created_at),
-                project_id=run.project_id,
-            )
-            db.session.delete(run)
-            stats["deleted_runs"] += 1
+        old_run_ids = [run.id for run in old_runs]
 
-        if stats["deleted_runs"] > 0:
+        if old_run_ids:
+            # 1. 先删除关联的 quality_gate_evaluations 记录（避免外键约束冲突）
+            from ..models.quality_gate import QualityGateEvaluation
+            deleted_evaluations = QualityGateEvaluation.query.filter(
+                QualityGateEvaluation.test_run_id.in_(old_run_ids)
+            ).delete(synchronize_session=False)
+            logger.info(
+                "数据归档: 删除关联的质量门评估记录",
+                deleted_count=deleted_evaluations,
+                related_run_ids=old_run_ids,
+            )
+
+            # 2. 删除过期的测试执行记录
+            for run in old_runs:
+                logger.info(
+                    "数据归档: 删除过期测试执行记录",
+                    run_id=run.id,
+                    created_at=str(run.created_at),
+                    project_id=run.project_id,
+                )
+                db.session.delete(run)
+                stats["deleted_runs"] += 1
+
             db.session.commit()
             logger.info("数据归档完成", **stats)
+        else:
+            logger.info("数据归档: 没有过期的测试执行记录需要清理")
+
     except Exception as exc:
         db.session.rollback()
         logger.error("数据归档失败", error=str(exc))
