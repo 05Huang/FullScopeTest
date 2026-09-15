@@ -40,6 +40,53 @@
 - **APP 测试**：Appium 脚本管理（支持 Android / iOS 脚本编写与存储，需配合外部 Appium Server 或设备农场执行）
 - **测试报告**：聚合四类测试结果，提供可视化指标与多格式导出
 
+---
+
+## 📗 用户使用指南
+
+> 🚀 **快速入门** → [用户使用指南 (USER_GUIDE.md)](document/USER_GUIDE.md)
+
+欢迎使用 FullScopeTest！为帮助你快速上手平台，我们提供了完整的用户使用文档：
+
+### 快速开始
+
+| 文档 | 说明 |
+|------|------|
+| **[用户使用指南](document/USER_GUIDE.md)** | 📘 **完整使用手册** — 涵盖所有功能的详细操作说明，包含快速入门和详细使用说明（API 测试、Web 自动化、APP 测试、性能测试、AI 助手等 32 个章节） |
+| [快速启动指南](document/STARTUP.md) | 环境准备、一键启动、常见问题解决 |
+
+### 核心功能文档
+
+| 功能模块 | 文档 | 说明 |
+|---------|------|------|
+| API 测试 | [用户指南第 6 章](document/USER_GUIDE.md#6-api-测试) | 请求编辑、断言、Mock、场景编排、BDD/Gherkin |
+| Web 自动化 | [用户指南第 7 章](document/USER_GUIDE.md#7-web-自动化测试) | 录制回放、视觉回归、元素定位 |
+| APP 测试 | [用户指南第 8 章](document/USER_GUIDE.md#8-app-自动化测试) | 设备管理、元素录制、Appium 脚本 |
+| 性能测试 | [用户指南第 9 章](document/USER_GUIDE.md#9-性能测试) | Locust 场景、负载配置、实时监控 |
+| AI 助手 | [用户指南第 17 章](document/USER_GUIDE.md#17-ai-助手) | Copilot 聊天、用例生成、自愈修复 |
+| 测试计划 | [用户指南第 10 章](document/USER_GUIDE.md#10-测试计划) | 用例编排、定时执行、覆盖率追踪 |
+
+### 高级功能文档
+
+| 功能 | 文档 | 说明 |
+|------|------|------|
+| 数据工厂 | [用户指南第 21 章](document/USER_GUIDE.md#21-数据工厂) | AI 生成测试数据、Schema 配置 |
+| Flaky 检测 | [用户指南第 22 章](document/USER_GUIDE.md#22-flaky-测试检测) | 不稳定用例分析 |
+| 视觉回归 | [用户指南第 18 章](document/USER_GUIDE.md#18-视觉回归测试) | 截图对比、差异检测 |
+| 质量门禁 | [用户指南第 13 章](document/USER_GUIDE.md#13-质量门禁) | 通过率阈值、质量评估 |
+| CI/CD 集成 | [用户指南第 16 章](document/USER_GUIDE.md#16-cicd-集成) | GitHub Actions、Jenkins |
+
+### 企业级功能
+
+| 功能 | 文档 | 说明 |
+|------|------|------|
+| 组织管理 | [用户指南第 19 章](document/USER_GUIDE.md#19-团队协作) | 团队协作、角色权限 |
+| 审计日志 | [用户指南第 23 章](document/USER_GUIDE.md#23-api-文档生成) | 操作追踪、合规审计 |
+| SSO 登录 | [用户指南第 30 章](document/USER_GUIDE.md#30-ldapoidc-sso-配置) | LDAP/OIDC 企业认证 |
+| Mock 服务 | [用户指南第 12 章](document/USER_GUIDE.md#12-mock-服务) | 接口模拟、数据隔离 |
+
+---
+
 ### 企业级特性
 
 - **多租户隔离**：组织级数据隔离，项目/用例/脚本/报告按组织过滤
