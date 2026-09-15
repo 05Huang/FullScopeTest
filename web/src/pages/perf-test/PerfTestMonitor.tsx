@@ -47,6 +47,7 @@ const PerfTestMonitor = () => {
   const [runningTests, setRunningTests] = useState<RunningTest[]>([])
   const [selectedTest, setSelectedTest] = useState<RunningTest | null>(null)
   const [realtimeData, setRealtimeData] = useState<any[]>([])
+  const [hasRunningTests, setHasRunningTests] = useState(false)
 
   useEffect(() => {
     fetchRunningTests()
@@ -58,13 +59,18 @@ const PerfTestMonitor = () => {
       fetchRunningTests()
     })
 
-    // 定时刷新（每2秒刷新一次，WebSocket 不可用时作为兜底）
-    const interval = setInterval(fetchRunningTests, 2000)
+    // 优化：只在有运行中测试时才轮询，且间隔改为5秒（原来是2秒）
+    // 避免多个用户同时使用时触发速率限制
+    const interval = setInterval(() => {
+      if (hasRunningTests) {
+        fetchRunningTests()
+      }
+    }, 5000)
     return () => {
       clearInterval(interval)
       unsubPerf()
     }
-  }, [])
+  }, [hasRunningTests])
 
   const fetchRunningTests = async () => {
     setLoading(true)
@@ -78,13 +84,17 @@ const PerfTestMonitor = () => {
           return { ...t, elapsed: elapsedSec }
         })
         setRunningTests(tests)
+        // 只有当有运行中测试时才继续轮询
+        setHasRunningTests(tests.length > 0)
         // 如果有运行中的测试且未选择，默认选择第一个
         if (tests.length > 0 && !selectedTest) {
           setSelectedTest(tests[0])
         }
-        // 获取每个运行中测试的实时数据
-        for (const test of tests) {
-          await fetchRealtimeData(test.id)
+        // 获取每个运行中测试的实时数据（限制并发，避免触发限流）
+        if (tests.length > 0) {
+          // 只获取选中测试的实时数据，而不是所有测试
+          const targetTest = selectedTest || tests[0]
+          await fetchRealtimeData(targetTest.id)
         }
       }
     } catch (error) {
