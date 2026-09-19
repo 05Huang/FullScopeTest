@@ -131,10 +131,11 @@ const VisitorStats = () => {
     return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
   }
 
-  // 格式化日期
+  // 格式化日期（强制使用上海时区显示）
   const formatDate = (isoString: string) => {
     const date = new Date(isoString)
     return date.toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
