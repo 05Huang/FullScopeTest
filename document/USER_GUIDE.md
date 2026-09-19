@@ -38,7 +38,7 @@
 
 ### 1.1 登录系统
 
-访问 **https://test.huangxuan.chat** 进入登录页面。
+访问 **https://test.huangxuan.site** 进入登录页面。
 
 **登录凭证：**
 - 用户名：`admin`
@@ -196,7 +196,7 @@ API_KEY = your-secret-key-{{env}}
 ### 4.1 用户注册
 
 **操作步骤：**
-1. 访问 https://test.huangxuan.chat
+1. 访问 https://test.huangxuan.site
 2. 点击「注册」链接
 3. 填写注册信息：
    - 邮箱：`user@example.com`
@@ -2866,7 +2866,7 @@ Headers: {"Authorization": "Bearer test-token"}
 **前端开发使用：**
 1. 在环境变量中配置：
 ```
-API_BASE_URL: https://test.huangxuan.chat/mock/{mock_server_id}/mock-api
+API_BASE_URL: https://test.huangxuan.site/mock/{mock_server_id}/mock-api
 ```
 2. 前端请求会自动打到 Mock 服务
 
@@ -3010,7 +3010,7 @@ Cron 表达式：0 9 * * * (每天 9 点)
 **Webhook 触发：**
 ```
 触发类型：Webhook
-触发 URL：https://test.huangxuan.chat/api/v1/triggers/{token}
+触发 URL：https://test.huangxuan.site/api/v1/triggers/{token}
 说明：通过 HTTP 请求触发
 ```
 
@@ -3085,7 +3085,7 @@ Cron 表达式：0 9 * * * (每天 9 点)
 1. 在 GitHub 仓库设置中点击「Webhooks」→「Add webhook」
 2. 配置：
 ```
-Payload URL: https://test.huangxuan.chat/api/v1/webhooks/github
+Payload URL: https://test.huangxuan.site/api/v1/webhooks/github
 Content type: application/json
 Secret: (设置 Webhook Secret)
 Events: Push, Pull requests
@@ -3169,7 +3169,7 @@ jobs:
       
       - name: Run API Tests
         run: |
-          curl -X POST https://test.huangxuan.chat/api/v1/triggers/${{ secrets.TRIGGER_TOKEN }}
+          curl -X POST https://test.huangxuan.site/api/v1/triggers/${{ secrets.TRIGGER_TOKEN }}
           echo "Tests triggered"
 ```
 
@@ -3183,7 +3183,7 @@ pipeline {
             steps {
                 script {
                     def response = httpRequest(
-                        url: "https://test.huangxuan.chat/api/v1/triggers/${TRIGGER_TOKEN}",
+                        url: "https://test.huangxuan.site/api/v1/triggers/${TRIGGER_TOKEN}",
                         httpMode: 'POST',
                         contentType: 'APPLICATION_JSON',
                         requestBody: '''{"collection_id": 1}'''
@@ -3202,7 +3202,7 @@ pipeline {
 ```yaml
 api-test:
   script:
-    - curl -X POST "https://test.huangxuan.chat/api/v1/triggers/${TRIGGER_TOKEN}"
+    - curl -X POST "https://test.huangxuan.site/api/v1/triggers/${TRIGGER_TOKEN}"
   only:
     - main
     - develop
@@ -3413,7 +3413,7 @@ api-test:
 **使用 Token：**
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-     https://test.huangxuan.chat/api/v1/projects
+     https://test.huangxuan.site/api/v1/projects
 ```
 
 ### 20.4 品牌定制

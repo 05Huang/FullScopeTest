@@ -23,7 +23,7 @@
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest" alt="Vitest"></a>
 </p>
 <p align="center" style="font-size: 1.4rem; font-weight: 700; color: #ff4500; margin: 16px 0;">
-  <strong>🔥 在线演示环境: <a href="http://test.huangxuan.chat" style="text-decoration: none; color: #ff4500;">test.huangxuan.chat</a> 🔥</strong>
+  <strong>🔥 在线演示环境: <a href="http://test.huangxuan.site" style="text-decoration: none; color: #ff4500;">test.huangxuan.site</a> 🔥</strong>
 </p>
 <hr />
 
@@ -869,7 +869,7 @@ docker compose -f docker-compose.prod.yml logs -f backend
 
 # 4. 构建前端并部署到 Nginx
 cd web && npm install && npm run build
-cp -r dist/* /var/www/test.huangxuan.chat/index/
+cp -r dist/* /var/www/test.huangxuan.site/index/
 ```
 
 生产环境包含的服务：
@@ -1221,7 +1221,7 @@ python create_admin.py
 cd web && npm run build
 
 # 同步到 Nginx 根目录（根据实际配置调整路径）
-cp -r dist/* /opt/1panel/www/sites/test.huangxuan.chat/index/
+cp -r dist/* /opt/1panel/www/sites/test.huangxuan.site/index/
 
 # 重载 Nginx
 docker exec openresty openresty -s reload

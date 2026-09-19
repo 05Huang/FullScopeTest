@@ -30,9 +30,9 @@ if [ "${SKIP_WEB_BUILD:-0}" != "1" ]; then
 fi
 
 # Sync built frontend to 1Panel site directory (if present).
-if [ -d "/opt/1panel/www/sites/test.huangxuan.chat" ] && [ -d "$APP_DIR/web/dist" ]; then
-  mkdir -p /opt/1panel/www/sites/test.huangxuan.chat/index
-  rsync -a --delete "$APP_DIR/web/dist/" /opt/1panel/www/sites/test.huangxuan.chat/index/
+if [ -d "/www/sites/test.huangxuan.site" ] && [ -d "$APP_DIR/web/dist" ]; then
+  mkdir -p /www/sites/test.huangxuan.site/index
+  rsync -a --delete "$APP_DIR/web/dist/" /www/sites/test.huangxuan.site/index/
 fi
 
 # Run pytest using a Python container (no host Python required).

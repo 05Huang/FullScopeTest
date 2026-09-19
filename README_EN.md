@@ -26,7 +26,7 @@
   [![Docker](https://img.shields.io/badge/docker-compose-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
   [![Vitest](https://img.shields.io/badge/vitest-testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev/)
 
-  <h2>Live Demo: <a href="http://test.huangxuan.chat">test.huangxuan.chat</a></h2>
+  <h2>Live Demo: <a href="http://test.huangxuan.site">test.huangxuan.chat</a></h2>
 </div>
 
 ## About

@@ -8,6 +8,8 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
+    "test:prod": "playwright test --config=playwright.prod.config.ts",
+    "test:prod:headed": "playwright test --config=playwright.prod.config.ts --headed",
     "install:browsers": "playwright install chromium"
   },
   "devDependencies": {
