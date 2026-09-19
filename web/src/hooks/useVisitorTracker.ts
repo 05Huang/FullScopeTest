@@ -16,30 +16,71 @@ const generateSessionId = (): string => {
   return id
 }
 
-// 页面停留计时器
-interface PageTimer {
-  startTime: number
+interface PageRecord {
   path: string
+  enterTime: number
+  duration: number
+}
+
+interface SessionData {
+  sessionId: string
+  pageRecords: PageRecord[]
+  totalPageViews: number
+  lastTrackTime: number
+}
+
+const SESSION_KEY = 'fst_visitor_session'
+const HEARTBEAT_INTERVAL = 15000 // 15秒心跳
+const PAGE_MIN_DURATION = 2000   // 最小页面停留时间 2秒
+
+// 保存会话数据到 sessionStorage
+const saveSessionData = (data: SessionData) => {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
+  } catch (e) {
+    // 忽略存储错误
+  }
+}
+
+// 加载会话数据
+const loadSessionData = (sessionId: string): SessionData => {
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY)
+    if (stored) {
+      const data = JSON.parse(stored)
+      if (data.sessionId === sessionId) {
+        return data
+      }
+    }
+  } catch (e) {
+    // 忽略解析错误
+  }
+  return {
+    sessionId,
+    pageRecords: [],
+    totalPageViews: 0,
+    lastTrackTime: Date.now(),
+  }
 }
 
 export const useVisitorTracker = () => {
   const sessionIdRef = useRef<string>('')
-  const pageTimersRef = useRef<Map<string, PageTimer>>(new Map())
-  const pageViewsRef = useRef(0)
-  const totalDurationRef = useRef(0)
-  const currentPageRef = useRef('')
-  const heartbeatRef = useRef<number | null>(null)
+  const sessionDataRef = useRef<SessionData | null>(null)
+  const currentPageRef = useRef<string>('')
+  const currentPageEnterTimeRef = useRef<number>(0)
+  const heartbeatIntervalRef = useRef<number | null>(null)
+  const isInitializedRef = useRef(false)
 
   // 发送追踪数据
-  const sendTrack = useCallback(async (pageDuration: number = 0) => {
-    if (!sessionIdRef.current) return
+  const sendTrack = useCallback(async (currentPage: string, duration: number = 0) => {
+    if (!sessionIdRef.current || !sessionDataRef.current) return
 
     const data: TrackData = {
       session_id: sessionIdRef.current,
-      page_views: pageViewsRef.current,
-      total_duration: totalDurationRef.current,
-      current_page: currentPageRef.current,
-      page_duration: pageDuration,
+      page_views: sessionDataRef.current.totalPageViews,
+      total_duration: duration,
+      current_page: currentPage,
+      page_duration: duration,
       screen_width: window.screen.width,
       screen_height: window.screen.height,
       referrer: document.referrer || '',
@@ -47,107 +88,140 @@ export const useVisitorTracker = () => {
 
     try {
       await trackVisitor(data)
+      sessionDataRef.current.lastTrackTime = Date.now()
+      saveSessionData(sessionDataRef.current)
     } catch (e) {
-      // 静默失败，不影响用户体验
       console.debug('Visitor tracking failed:', e)
     }
   }, [])
 
-  // 记录页面访问
-  const trackPageView = useCallback(() => {
+  // 记录页面离开
+  const trackPageLeave = useCallback(() => {
+    const path = currentPageRef.current
+    const now = Date.now()
+    const duration = Math.max(0, Math.floor((now - currentPageEnterTimeRef.current) / 1000))
+
+    // 只有停留超过最小时间才记录
+    if (path && duration >= Math.floor(PAGE_MIN_DURATION / 1000)) {
+      if (sessionDataRef.current) {
+        // 更新当前页面记录
+        const existingRecord = sessionDataRef.current.pageRecords.find(r => r.path === path)
+        if (existingRecord) {
+          existingRecord.duration += duration
+        } else {
+          sessionDataRef.current.pageRecords.push({
+            path,
+            enterTime: currentPageEnterTimeRef.current,
+            duration,
+          })
+        }
+        sessionDataRef.current.totalPageViews++
+
+        // 发送追踪数据
+        sendTrack(path, duration)
+      }
+    }
+  }, [sendTrack])
+
+  // 记录页面进入
+  const trackPageEnter = useCallback(() => {
     const path = window.location.pathname
     const now = Date.now()
 
-    // 计算上一页停留时间
-    if (currentPageRef.current && pageTimersRef.current.has(currentPageRef.current)) {
-      const timer = pageTimersRef.current.get(currentPageRef.current)!
-      const duration = Math.floor((now - timer.startTime) / 1000)
-      totalDurationRef.current += duration
+    // 先记录上一个页面的离开
+    if (currentPageRef.current && currentPageRef.current !== path) {
+      trackPageLeave()
     }
 
     // 记录新页面
     currentPageRef.current = path
-    pageViewsRef.current++
-    pageTimersRef.current.set(path, { startTime: now, path })
+    currentPageEnterTimeRef.current = now
+  }, [trackPageLeave])
 
-    // 防抖发送
-    if (heartbeatRef.current) {
-      clearTimeout(heartbeatRef.current)
+  // 定期心跳
+  const sendHeartbeat = useCallback(() => {
+    const path = currentPageRef.current
+    const now = Date.now()
+    const duration = Math.max(0, Math.floor((now - currentPageEnterTimeRef.current) / 1000))
+
+    if (path && sessionDataRef.current) {
+      // 更新当前页面的时长
+      const existingRecord = sessionDataRef.current.pageRecords.find(r => r.path === path)
+      if (existingRecord) {
+        existingRecord.duration = duration
+      }
+
+      // 计算总时长
+      const totalDuration = sessionDataRef.current.pageRecords.reduce((sum, r) => sum + r.duration, 0)
+
+      sendTrack(path, totalDuration)
     }
-    heartbeatRef.current = window.setTimeout(() => {
-      sendTrack(0)
-    }, 5000)
   }, [sendTrack])
 
   useEffect(() => {
+    // 防止重复初始化
+    if (isInitializedRef.current) return
+    isInitializedRef.current = true
+
     // 初始化会话
     sessionIdRef.current = generateSessionId()
+    sessionDataRef.current = loadSessionData(sessionIdRef.current)
 
-    // 记录首次访问
-    trackPageView()
+    // 记录首次页面访问
+    currentPageRef.current = window.location.pathname
+    currentPageEnterTimeRef.current = Date.now()
 
-    // 监听页面变化
-    const handlePopstate = () => trackPageView()
+    // 立即发送首次追踪
+    sendTrack(currentPageRef.current, 0)
+
+    // 启动心跳
+    heartbeatIntervalRef.current = window.setInterval(sendHeartbeat, HEARTBEAT_INTERVAL)
+
+    // 监听路由变化
+    const handlePopstate = () => {
+      trackPageEnter()
+    }
     window.addEventListener('popstate', handlePopstate)
 
-    // 监听页面可见性变化（用户切换标签页）
+    // 监听 visibility change
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // 重新进入页面，刷新计时
-        if (currentPageRef.current) {
-          const timer = pageTimersRef.current.get(currentPageRef.current)
-          if (timer) {
-            timer.startTime = Date.now()
-          }
-        }
+        // 页面重新可见时，重置计时起点
+        currentPageEnterTimeRef.current = Date.now()
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // 定期心跳（每 30 秒）
-    const heartbeatInterval = setInterval(() => {
-      if (currentPageRef.current) {
-        const timer = pageTimersRef.current.get(currentPageRef.current)
-        if (timer) {
-          const duration = Math.floor((Date.now() - timer.startTime) / 1000)
-          sendTrack(duration)
-        }
-      }
-    }, 30000)
-
     // 页面离开前发送最终数据
     const handleBeforeUnload = () => {
-      if (currentPageRef.current) {
-        const timer = pageTimersRef.current.get(currentPageRef.current)
-        if (timer) {
-          const duration = Math.floor((Date.now() - timer.startTime) / 1000)
-          totalDurationRef.current += duration
-          // 同步发送，不等待
-          navigator.sendBeacon('/api/v1/visitor/track', JSON.stringify({
-            session_id: sessionIdRef.current,
-            page_views: pageViewsRef.current,
-            total_duration: totalDurationRef.current,
-            current_page: currentPageRef.current,
-            page_duration: duration,
-            screen_width: window.screen.width,
-            screen_height: window.screen.height,
-            referrer: document.referrer || '',
-          }))
-        }
+      trackPageLeave()
+
+      // 使用 sendBeacon 确保数据发送
+      const data = {
+        session_id: sessionIdRef.current,
+        page_views: sessionDataRef.current?.totalPageViews || 0,
+        total_duration: sessionDataRef.current?.pageRecords.reduce((sum, r) => sum + r.duration, 0) || 0,
+        current_page: currentPageRef.current,
+        page_duration: Math.max(0, Math.floor((Date.now() - currentPageEnterTimeRef.current) / 1000)),
+        screen_width: window.screen.width,
+        screen_height: window.screen.height,
+        referrer: document.referrer || '',
       }
+
+      navigator.sendBeacon('/api/v1/visitor/track', JSON.stringify(data))
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
+      trackPageLeave()
       window.removeEventListener('popstate', handlePopstate)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      clearInterval(heartbeatInterval)
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      if (heartbeatRef.current) {
-        clearTimeout(heartbeatRef.current)
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current)
       }
     }
-  }, [trackPageView, sendTrack])
+  }, [sendTrack, trackPageEnter, trackPageLeave, sendHeartbeat])
 
   return {
     sessionId: sessionIdRef.current,

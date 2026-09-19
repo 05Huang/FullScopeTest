@@ -10,7 +10,7 @@ import urllib.request
 from datetime import datetime, timezone, timedelta
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func as sa_func
+from sqlalchemy import func as sa_func, text
 
 from . import api_bp
 from ..extensions import db
@@ -22,6 +22,9 @@ logger = get_logger(__name__)
 
 # ip-api.com 免费 API（每分钟 45 次限制）
 IP_API_URL = 'http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,isp,org,query'
+
+# 上海时区
+SHANGHAI_TZ = timezone(timedelta(hours=8))
 
 
 def _get_client_ip():
@@ -164,7 +167,7 @@ def track_visitor():
 
     if visitor:
         # 更新现有记录
-        visitor.last_active = datetime.now(timezone.utc)
+        visitor.last_active = datetime.now(SHANGHAI_TZ)
         visitor.total_duration = (visitor.total_duration or 0) + data.get('page_duration', 0)
         visitor.page_views = (visitor.page_views or 0) + 1
 
@@ -230,21 +233,28 @@ def get_visitor_stats():
         days: 统计天数（默认 7）
     """
     days = request.args.get('days', 7, type=int)
-    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
-    # 总访客数
+    # 使用上海时区计算日期
+    now_shanghai = datetime.now(SHANGHAI_TZ)
+    today_start_shanghai = now_shanghai.replace(hour=0, minute=0, second=0, microsecond=0)
+    since_shanghai = today_start_shanghai - timedelta(days=days - 1)
+
+    # 转换为 UTC 时间戳用于数据库查询
+    since_utc = since_shanghai.astimezone(timezone.utc).replace(tzinfo=None)
+    today_start_utc = today_start_shanghai.astimezone(timezone.utc).replace(tzinfo=None)
+
+    # 总访客数（最近 N 天）
     total_visitors = VisitorStat.query.filter(
-        VisitorStat.first_visit >= since
+        VisitorStat.first_visit >= since_utc
     ).count()
 
-    # 今日访客数
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    # 今日访客数（上海时区当天）
     today_visitors = VisitorStat.query.filter(
-        VisitorStat.first_visit >= today_start
+        VisitorStat.first_visit >= today_start_utc
     ).count()
 
     # 当前在线人数（最近 5 分钟内有活动）
-    online_threshold = datetime.now(timezone.utc) - timedelta(minutes=5)
+    online_threshold = datetime.now(SHANGHAI_TZ) - timedelta(minutes=5)
     online_visitors = VisitorStat.query.filter(
         VisitorStat.last_active >= online_threshold
     ).count()
@@ -252,53 +262,59 @@ def get_visitor_stats():
     # 平均停留时长
     avg_duration = db.session.query(
         sa_func.avg(VisitorStat.total_duration)
-    ).filter(VisitorStat.first_visit >= since).scalar() or 0
+    ).filter(VisitorStat.first_visit >= since_utc).scalar() or 0
 
     # 总页面浏览数
     total_page_views = db.session.query(
         sa_func.sum(VisitorStat.page_views)
-    ).filter(VisitorStat.first_visit >= since).scalar() or 0
+    ).filter(VisitorStat.first_visit >= since_utc).scalar() or 0
 
     # 按设备类型统计
     device_stats = db.session.query(
         VisitorStat.device_type,
         sa_func.count(VisitorStat.id).label('count'),
-    ).filter(VisitorStat.first_visit >= since).group_by(VisitorStat.device_type).all()
+    ).filter(VisitorStat.first_visit >= since_utc).group_by(VisitorStat.device_type).all()
 
     # 按浏览器统计
     browser_stats = db.session.query(
         VisitorStat.browser,
         sa_func.count(VisitorStat.id).label('count'),
-    ).filter(VisitorStat.first_visit >= since).group_by(VisitorStat.browser).all()
+    ).filter(VisitorStat.first_visit >= since_utc).group_by(VisitorStat.browser).all()
 
     # 按国家统计
     country_stats = db.session.query(
         VisitorStat.ip_country,
         sa_func.count(VisitorStat.id).label('count'),
-    ).filter(VisitorStat.first_visit >= since, VisitorStat.ip_country != '').group_by(VisitorStat.ip_country).all()
+    ).filter(VisitorStat.first_visit >= since_utc, VisitorStat.ip_country != '').group_by(VisitorStat.ip_country).all()
 
-    # 最近 7 天趋势
+    # 最近 N 天趋势（使用上海时区日期）
     daily_stats = []
     for i in range(days):
-        day_start = (datetime.now(timezone.utc) - timedelta(days=i+1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        # 计算上海时区的日期边界
+        day_date = (today_start_shanghai - timedelta(days=days - 1 - i)).date()
+        day_start = datetime.combine(day_date, datetime.min.time()).replace(tzinfo=SHANGHAI_TZ)
         day_end = day_start + timedelta(days=1)
+
+        # 转换为 UTC 用于查询
+        day_start_utc = day_start.astimezone(timezone.utc).replace(tzinfo=None)
+        day_end_utc = day_end.astimezone(timezone.utc).replace(tzinfo=None)
+
         day_visitors = VisitorStat.query.filter(
-            VisitorStat.first_visit >= day_start,
-            VisitorStat.first_visit < day_end,
+            VisitorStat.first_visit >= day_start_utc,
+            VisitorStat.first_visit < day_end_utc,
         ).count()
         day_page_views = db.session.query(
             sa_func.sum(VisitorStat.page_views)
         ).filter(
-            VisitorStat.first_visit >= day_start,
-            VisitorStat.first_visit < day_end,
+            VisitorStat.first_visit >= day_start_utc,
+            VisitorStat.first_visit < day_end_utc,
         ).scalar() or 0
+
         daily_stats.append({
-            'date': day_start.strftime('%Y-%m-%d'),
+            'date': day_date.strftime('%Y-%m-%d'),
             'visitors': day_visitors,
             'page_views': day_page_views,
         })
-
-    daily_stats.reverse()
 
     return success_response(data={
         'period_days': days,
@@ -385,10 +401,15 @@ def get_top_pages():
 
     days = request.args.get('days', 7, type=int)
     limit = request.args.get('limit', 10, type=int)
-    since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+
+    # 使用上海时区计算
+    now_shanghai = datetime.now(SHANGHAI_TZ)
+    today_start_shanghai = now_shanghai.replace(hour=0, minute=0, second=0, microsecond=0)
+    since_shanghai = today_start_shanghai - timedelta(days=days - 1)
+    since_utc = since_shanghai.astimezone(timezone.utc).replace(tzinfo=None)
 
     # 从 visited_pages 聚合页面访问统计
-    visitors = VisitorStat.query.filter(VisitorStat.first_visit >= since).all()
+    visitors = VisitorStat.query.filter(VisitorStat.first_visit >= since_utc).all()
 
     page_stats = {}
     for visitor in visitors:
@@ -420,9 +441,14 @@ def cleanup_old_visitors():
         return error_response(403, '需要管理员权限')
 
     days = request.args.get('days', 90, type=int)
-    threshold = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
-    deleted = VisitorStat.query.filter(VisitorStat.first_visit < threshold).delete()
+    # 使用上海时区计算
+    now_shanghai = datetime.now(SHANGHAI_TZ)
+    today_start_shanghai = now_shanghai.replace(hour=0, minute=0, second=0, microsecond=0)
+    threshold_shanghai = today_start_shanghai - timedelta(days=days)
+    threshold_utc = threshold_shanghai.astimezone(timezone.utc).replace(tzinfo=None)
+
+    deleted = VisitorStat.query.filter(VisitorStat.first_visit < threshold_utc).delete()
     db.session.commit()
 
     return success_response(data={'deleted': deleted})

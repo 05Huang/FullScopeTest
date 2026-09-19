@@ -5,7 +5,7 @@
  * 访问路径: /hidden/visitor-stats
  * 需要管理员权限。
  */
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -14,15 +14,11 @@ import {
   Statistic,
   Typography,
   Select,
-  DatePicker,
   Space,
   Tag,
-  Spin,
   message,
   Modal,
   Button,
-  Tooltip,
-  Progress,
 } from 'antd'
 import {
   UserOutlined,
@@ -33,7 +29,6 @@ import {
   MobileOutlined,
   TabletOutlined,
   ReloadOutlined,
-  DeleteOutlined,
   FireOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
@@ -172,7 +167,7 @@ const VisitorStats = () => {
       key: 'device',
       width: 120,
       render: (_, record) => (
-        <Space>
+        <Space size="small">
           <Tag icon={DeviceIcon[record.device_type || 'desktop']} color={DeviceColors[record.device_type || 'desktop']}>
             {record.device_type || 'desktop'}
           </Tag>
@@ -313,74 +308,97 @@ const VisitorStats = () => {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <Space style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>
-          <GlobalOutlined /> {t('visitorStats.title')}
-        </Title>
+    <div className="fst-page" role="main" aria-label={t('visitorStats.title')}>
+      {/* 页面头部 */}
+      <div className="fst-page-header fst-animate-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <GlobalOutlined style={{ fontSize: 20, color: 'var(--fst-primary)' }} />
+          <h1 className="fst-page-title">{t('visitorStats.title')}</h1>
+        </div>
         <Text type="secondary">{t('visitorStats.subtitle')}</Text>
-      </Space>
+      </div>
 
-      {/* 概览统计 */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title={t('visitorStats.totalVisitors')}
-              value={overview?.total_visitors || 0}
-              prefix={<UserOutlined />}
-              suffix={`/ ${statsDays}d`}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title={t('visitorStats.todayVisitors')}
-              value={overview?.today_visitors || 0}
-              prefix={<FireOutlined />}
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title={t('visitorStats.onlineVisitors')}
-              value={overview?.online_visitors || 0}
-              prefix={<EyeOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title={t('visitorStats.avgDuration')}
-              value={formatDuration(overview?.avg_duration || 0)}
-              prefix={<ClockCircleOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* 概览统计卡片 */}
+      <div className="fst-stat-row fst-animate-in fst-animate-in-1" style={{ marginTop: 16 }}>
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">{t('visitorStats.totalVisitors')}</div>
+              <div className="fst-stat-value">
+                {loading ? '—' : (overview?.total_visitors || 0)}
+              </div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--primary">
+              <UserOutlined style={{ fontSize: 20 }} />
+            </div>
+          </div>
+          <div style={{ marginTop: 'auto', paddingTop: 4 }}>
+            <span className="fst-stat-trend" style={{ color: 'var(--fst-on-surface-muted)', background: 'var(--fst-surface-dim)' }}>
+              / {statsDays}d
+            </span>
+          </div>
+        </div>
+
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">{t('visitorStats.todayVisitors')}</div>
+              <div className="fst-stat-value" style={{ color: '#f5222d' }}>
+                {loading ? '—' : (overview?.today_visitors || 0)}
+              </div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--danger">
+              <FireOutlined style={{ fontSize: 20 }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">{t('visitorStats.onlineVisitors')}</div>
+              <div className="fst-stat-value" style={{ color: '#52c41a' }}>
+                {loading ? '—' : (overview?.online_visitors || 0)}
+              </div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--success">
+              <EyeOutlined style={{ fontSize: 20 }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="fst-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="fst-stat-label">{t('visitorStats.avgDuration')}</div>
+              <div className="fst-stat-value">
+                {loading ? '—' : formatDuration(overview?.avg_duration || 0)}
+              </div>
+            </div>
+            <div className="fst-stat-icon fst-stat-icon--info">
+              <ClockCircleOutlined style={{ fontSize: 20 }} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 趋势图和分布图 */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
+      <Row gutter={16} style={{ marginTop: 16 }} className="fst-animate-in fst-animate-in-2">
         <Col span={12}>
-          <Card>
-            <ReactECharts option={trendOption} style={{ height: 300 }} />
+          <Card className="fst-card">
+            <ReactECharts option={trendOption} style={{ height: 280 }} />
           </Card>
         </Col>
         <Col span={12}>
           <Row gutter={16}>
             <Col span={12}>
-              <Card size="small">
-                <ReactECharts option={deviceOption} style={{ height: 140 }} />
+              <Card className="fst-card fst-card--small">
+                <ReactECharts option={deviceOption} style={{ height: 130 }} />
               </Card>
             </Col>
             <Col span={12}>
-              <Card size="small">
-                <ReactECharts option={browserOption} style={{ height: 140 }} />
+              <Card className="fst-card fst-card--small">
+                <ReactECharts option={browserOption} style={{ height: 130 }} />
               </Card>
             </Col>
           </Row>
@@ -388,34 +406,43 @@ const VisitorStats = () => {
       </Row>
 
       {/* 页面排行和地区分布 */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
+      <Row gutter={16} style={{ marginTop: 16 }} className="fst-animate-in fst-animate-in-3">
         <Col span={12}>
-          <Card title={t('visitorStats.topPages')}>
-            {topPages.map((p, i) => (
-              <div key={p.path} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                <Text strong style={{ width: 24 }}>{i + 1}</Text>
-                <Text code style={{ flex: 1 }} ellipsis>{p.path}</Text>
-                <Text type="secondary">{p.views} {t('visitorStats.views')}</Text>
+          <Card className="fst-card" title={t('visitorStats.topPages')}>
+            {topPages.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--fst-on-surface-muted)' }}>
+                {t('visitorStats.noData')}
               </div>
-            ))}
+            ) : (
+              topPages.map((p, i) => (
+                <div key={p.path} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                  <Text strong style={{ width: 24 }}>{i + 1}</Text>
+                  <Text code style={{ flex: 1 }} ellipsis>{p.path}</Text>
+                  <Text type="secondary">{p.views} {t('visitorStats.views')}</Text>
+                </div>
+              ))
+            )}
           </Card>
         </Col>
         <Col span={12}>
-          <Card>
-            <ReactECharts option={countryOption} style={{ height: 200 }} />
+          <Card className="fst-card">
+            <ReactECharts option={countryOption} style={{ height: 180 }} />
           </Card>
         </Col>
       </Row>
 
       {/* 访客列表 */}
       <Card
+        className="fst-card"
+        style={{ marginTop: 16 }}
         title={t('visitorStats.visitorList')}
         extra={
-          <Space>
+          <Space size="small">
             <Select
               placeholder={t('visitorStats.filterDevice')}
-              style={{ width: 120 }}
+              style={{ width: 110 }}
               allowClear
+              size="small"
               onChange={(v) => setFilters({ ...filters, device_type: v })}
             >
               <Select.Option value="desktop">{t('visitorStats.deviceDesktop')}</Select.Option>
@@ -424,15 +451,16 @@ const VisitorStats = () => {
             </Select>
             <Select
               placeholder={t('visitorStats.filterCountry')}
-              style={{ width: 120 }}
+              style={{ width: 110 }}
               allowClear
+              size="small"
               onChange={(v) => setFilters({ ...filters, country: v })}
               options={Object.entries(overview?.by_country || {}).map(([k, v]) => ({
                 label: `${k} (${v})`,
                 value: k,
               }))}
             />
-            <Button icon={<ReloadOutlined />} onClick={() => { fetchOverview(); fetchVisitors(); fetchTopPages(); }}>
+            <Button icon={<ReloadOutlined />} size="small" onClick={() => { fetchOverview(); fetchVisitors(); fetchTopPages(); }}>
               {t('common.refresh')}
             </Button>
           </Space>
@@ -443,6 +471,7 @@ const VisitorStats = () => {
           dataSource={visitors}
           rowKey="id"
           loading={loading}
+          size="small"
           pagination={{
             current: page,
             pageSize,
@@ -463,7 +492,7 @@ const VisitorStats = () => {
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={null}
-        width={700}
+        width={650}
       >
         {selectedVisitor && (
           <Row gutter={[16, 16]}>
@@ -477,7 +506,12 @@ const VisitorStats = () => {
             </Col>
             <Col span={12}>
               <Text type="secondary">{t('visitorStats.columns.device')}</Text>
-              <div>{selectedVisitor.device_type} / {selectedVisitor.browser} {selectedVisitor.browser_version}</div>
+              <div>
+                <Tag color={DeviceColors[selectedVisitor.device_type || 'desktop']}>
+                  {selectedVisitor.device_type}
+                </Tag>
+                {selectedVisitor.browser} {selectedVisitor.browser_version}
+              </div>
             </Col>
             <Col span={12}>
               <Text type="secondary">{t('visitorStats.columns.os')}</Text>
@@ -493,7 +527,7 @@ const VisitorStats = () => {
             </Col>
             <Col span={24}>
               <Text type="secondary">{t('visitorStats.visitedPages')}</Text>
-              <div>
+              <div style={{ marginTop: 8 }}>
                 {selectedVisitor.visited_pages?.map((p, i) => (
                   <Tag key={i} style={{ marginBottom: 4 }}>
                     {p.path} ({formatDuration(p.duration)}, {p.visits} {t('visitorStats.visits')})

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useBranding } from '@/hooks/useBranding'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
@@ -193,6 +193,8 @@ const MainLayout = () => {
   const { isAdmin, isMember } = useRole()
   const { currentProjectId, projects, setCurrentProject, fetchProjects } = useProjectStore()
   const { resolvedTheme, toggle: toggleTheme } = useThemeStore()
+  const [logoClickCount, setLogoClickCount] = useState(0)
+  const logoClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDesc, setNewProjectDesc] = useState('')
@@ -504,7 +506,7 @@ const MainLayout = () => {
         transition: 'width 250ms cubic-bezier(0.25,0.1,0.25,1)',
         overflow: 'hidden',
       }}>
-        {/* Logo */}
+        {/* Logo - 点击5次进入访客统计 */}
         <div className="fst-app-logo" style={{
           display: 'flex',
           alignItems: 'center',
@@ -513,6 +515,16 @@ const MainLayout = () => {
           borderBottom: '1px solid var(--fst-outline-soft)',
           marginBottom: 12,
           minWidth: 0,
+          cursor: 'pointer',
+        }} onClick={() => {
+          if (logoClickTimerRef.current) clearTimeout(logoClickTimerRef.current)
+          const newCount = logoClickCount + 1
+          setLogoClickCount(newCount)
+          if (newCount >= 5) {
+            setLogoClickCount(0)
+            navigate('/hidden/visitor-stats')
+          }
+          logoClickTimerRef.current = setTimeout(() => setLogoClickCount(0), 2000)
         }}>
           {collapsed ? (
             <img src={branding.logo_url || '/logo-icon.webp'} alt={branding.platform_name} style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
