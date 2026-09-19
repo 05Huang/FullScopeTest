@@ -24,8 +24,9 @@ class VisitorStat(db.Model):
     # 会话标识
     session_id = db.Column(db.String(64), unique=True, nullable=False, comment='唯一会话标识')
 
-    # IP 信息（使用 hash 保护隐私）
+    # IP 信息
     ip_hash = db.Column(db.String(64), comment='IP 哈希值（隐私保护）')
+    ip_address = db.Column(db.String(45), comment='IP 地址（仅管理员可见）')
     ip_country = db.Column(db.String(50), comment='IP 国家')
     ip_city = db.Column(db.String(100), comment='IP 城市')
     ip_isp = db.Column(db.String(100), comment='ISP 运营商')
@@ -59,9 +60,9 @@ class VisitorStat(db.Model):
     # 时间戳
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
 
-    def to_dict(self):
+    def to_dict(self, include_ip=False):
         """转换为字典"""
-        return {
+        result = {
             'id': self.id,
             'session_id': self.session_id,
             'ip_country': self.ip_country,
@@ -83,6 +84,10 @@ class VisitorStat(db.Model):
             'visited_pages': self.visited_pages or [],
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+        # 仅当明确请求时返回 IP 地址
+        if include_ip:
+            result['ip_address'] = self.ip_address
+        return result
 
     def __repr__(self):
         return f'<VisitorStat {self.session_id[:8]}...>'

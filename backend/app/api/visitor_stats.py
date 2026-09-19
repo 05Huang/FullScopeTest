@@ -198,6 +198,7 @@ def track_visitor():
         visitor = VisitorStat(
             session_id=session_id,
             ip_hash=_hash_ip(client_ip),
+            ip_address=client_ip,  # 保存原始 IP（仅管理员可见）
             ip_country=geo.get('country', ''),
             ip_city=geo.get('city', ''),
             ip_isp=geo.get('isp', ''),
@@ -364,7 +365,7 @@ def get_visitor_list():
     visitors = query.order_by(VisitorStat.last_active.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     return success_response(data={
-        'items': [v.to_dict() for v in visitors],
+        'items': [v.to_dict(include_ip=True) for v in visitors],
         'total': total,
         'page': page,
         'per_page': per_page,
@@ -386,7 +387,7 @@ def get_visitor_detail(visitor_id):
     if not visitor:
         return error_response(404, '访客不存在')
 
-    return success_response(data=visitor.to_dict())
+    return success_response(data=visitor.to_dict(include_ip=True))
 
 
 @api_bp.route('/visitor/top-pages', methods=['GET'])

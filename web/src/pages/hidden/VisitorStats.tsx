@@ -154,10 +154,10 @@ const VisitorStats = () => {
     {
       title: t('visitorStats.columns.location'),
       key: 'location',
-      width: 150,
+      width: 180,
       render: (_, record) => (
         <Space direction="vertical" size={0}>
-          <Text>{record.ip_country || 'Unknown'}</Text>
+          <Text>{record.ip_address || record.ip_country || 'Unknown'}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{record.ip_city}</Text>
         </Space>
       ),
@@ -502,7 +502,7 @@ const VisitorStats = () => {
             </Col>
             <Col span={12}>
               <Text type="secondary">{t('visitorStats.columns.location')}</Text>
-              <div>{selectedVisitor.ip_country} {selectedVisitor.ip_city}</div>
+              <div>{selectedVisitor.ip_address} ({selectedVisitor.ip_country} {selectedVisitor.ip_city})</div>
             </Col>
             <Col span={12}>
               <Text type="secondary">{t('visitorStats.columns.device')}</Text>

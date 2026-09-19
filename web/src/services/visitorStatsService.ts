@@ -16,6 +16,7 @@ export interface VisitedPage {
 export interface VisitorStat {
   id: number
   session_id: string
+  ip_address: string
   ip_country: string
   ip_city: string
   ip_isp: string
