@@ -167,7 +167,7 @@ def track_visitor():
 
     if visitor:
         # 更新现有记录
-        visitor.last_active = datetime.now(SHANGHAI_TZ)
+        visitor.last_active = datetime.now(timezone.utc)  # 使用 UTC 存储
         visitor.total_duration = (visitor.total_duration or 0) + data.get('page_duration', 0)
         visitor.page_views = (visitor.page_views or 0) + 1
 

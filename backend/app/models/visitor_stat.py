@@ -62,14 +62,23 @@ class VisitorStat(db.Model):
 
     def to_dict(self, include_ip=False):
         """转换为字典"""
+        # 将 UTC 时间转换为带时区信息的 ISO 格式，前端可正确显示
+        def format_datetime(dt):
+            if dt is None:
+                return None
+            # 确保返回带 UTC 时区标记的 ISO 格式
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.isoformat()
+
         result = {
             'id': self.id,
             'session_id': self.session_id,
             'ip_country': self.ip_country,
             'ip_city': self.ip_city,
             'ip_isp': self.ip_isp,
-            'first_visit': self.first_visit.isoformat() if self.first_visit else None,
-            'last_active': self.last_active.isoformat() if self.last_active else None,
+            'first_visit': format_datetime(self.first_visit),
+            'last_active': format_datetime(self.last_active),
             'total_duration': self.total_duration,
             'page_views': self.page_views,
             'device_type': self.device_type,
