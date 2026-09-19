@@ -591,7 +591,7 @@ const MainLayout = () => {
                   <div style={{ textAlign: 'center', marginTop: 4 }}>
                     <div style={{ display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12 }}>
                       <img
-                        src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png"
+                        src="https://res.huangxuan.site/thrivex/album/69c008b2e4b01ee6a7b76b39.png"
                         alt="WeChat QRCode"
                         style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
                       />
@@ -812,7 +812,7 @@ const MainLayout = () => {
                     <div style={{ textAlign: 'center', marginTop: 4 }}>
                       <div style={{ display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12 }}>
                         <img
-                          src="https://res.huangxuan.chat/thrivex/album/69c008b2e4b01ee6a7b76b39.png"
+                          src="https://res.huangxuan.site/thrivex/album/69c008b2e4b01ee6a7b76b39.png"
                           alt="WeChat QRCode"
                           style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
                         />

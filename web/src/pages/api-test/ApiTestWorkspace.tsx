@@ -573,7 +573,7 @@ const ApiTestWorkspace = () => {
       setMockResponseHeaders(formData.mockResponseHeaders)
       setMockDelayMs(formData.mockDelayMs)
       // 加载可视化断言规则
-      setAssertions(Array.isArray(caseData.assertions) ? caseData.assertions as Array<{ type: string; operator: string; expected_value: string | number; enabled: boolean }> : [])
+      setAssertions(Array.isArray(caseData.assertions) ? caseData.assertions as Array<{ type: "body" | "header" | "response_time" | "status_code"; operator: string; expected_value: string | number; enabled: boolean }> : [])
 
       // 保存原始表单数据用于比较
       setOriginalFormData(formData)
@@ -1246,7 +1246,8 @@ const ApiTestWorkspace = () => {
         message.error(res.message || '评审失败')
       }
     } catch (e: unknown) {
-      message.error(e.response?.data?.message || '评审失败')
+      const errorObj = e as { response?: { data?: { message?: string } } }
+      message.error(errorObj.response?.data?.message || '评审失败')
     } finally {
       setAiReviewing(false)
     }
@@ -1329,7 +1330,7 @@ const ApiTestWorkspace = () => {
             const itemObj = item as Record<string, unknown> | null
             return itemObj?.message || itemObj?.msg || JSON.stringify(item)
           })
-          briefErrors.forEach((item: string) => pushSegment(item))
+          briefErrors.forEach((item) => pushSegment(item))
         } else if (typeof data.errors === 'object') {
           pushSegment(JSON.stringify(data.errors))
         } else if (typeof data.errors === 'string') {
@@ -1338,10 +1339,11 @@ const ApiTestWorkspace = () => {
       }
 
       if (data?.data && typeof data.data === 'object') {
-        pushSegment(data.data.detail)
-        pushSegment(data.data.traceback)
-        pushSegment(data.data.response_body)
-        pushSegment(data.data.body)
+        const dataObj = data.data as Record<string, unknown>
+        pushSegment(dataObj.detail)
+        pushSegment(dataObj.traceback)
+        pushSegment(dataObj.response_body)
+        pushSegment(dataObj.body)
       }
 
       if (segments.length === 0) {
@@ -1464,6 +1466,7 @@ const ApiTestWorkspace = () => {
 
       const buildRunCaseFailureReasons = (runData: unknown): string[] => {
         if (!runData || typeof runData !== 'object') return ['unknown reason']
+        const runObj = runData as Record<string, unknown>
         const parts: string[] = []
         const pushPart = (value: unknown) => {
           const text = String(value || '').trim()
@@ -1473,31 +1476,33 @@ const ApiTestWorkspace = () => {
           }
         }
 
-        if (runData.status_code !== undefined && runData.status_code !== null) {
-          pushPart(`status=${runData.status_code}`)
+        if (runObj.status_code !== undefined && runObj.status_code !== null) {
+          pushPart(`status=${runObj.status_code}`)
         }
-        pushPart(runData.error)
+        pushPart(runObj.error)
 
-        if (runData.script_execution?.pre_script?.error) {
-          pushPart(`pre_script: ${runData.script_execution.pre_script.error}`)
+        const scriptExec = runObj.script_execution as Record<string, Record<string, unknown>> | undefined
+        if (scriptExec?.pre_script?.error) {
+          pushPart(`pre_script: ${scriptExec.pre_script.error}`)
         }
-        if (runData.script_execution?.post_script?.error) {
-          pushPart(`post_script: ${runData.script_execution.post_script.error}`)
+        if (scriptExec?.post_script?.error) {
+          pushPart(`post_script: ${scriptExec.post_script.error}`)
         }
 
-        const bodyData = runData.body
+        const bodyData = runObj.body
         if (typeof bodyData === 'string' && bodyData.trim()) {
           pushPart(bodyData)
           try {
-            const parsed = JSON.parse(bodyData)
+            const parsed = JSON.parse(bodyData) as Record<string, unknown>
             pushPart(parsed?.message)
             pushPart(parsed?.error)
             pushPart(parsed?.msg)
           } catch { /* ignore */ }
         } else if (bodyData && typeof bodyData === 'object') {
-          pushPart(bodyData.message)
-          pushPart(bodyData.msg)
-          pushPart(bodyData.error)
+          const bodyObj = bodyData as Record<string, unknown>
+          pushPart(bodyObj.message)
+          pushPart(bodyObj.msg)
+          pushPart(bodyObj.error)
         }
 
         if (parts.length === 0) return ['unknown reason']
@@ -1516,12 +1521,12 @@ const ApiTestWorkspace = () => {
               description: op.description || '',
               variables: normalizeAiObject(op.variables),
               headers: normalizeAiObject(op.headers),
-              project_id: op.project_id || currentProjectId,
+              project_id: op.project_id as number || currentProjectId,
             })
             if (envRes.code !== 200 && envRes.code !== 201) throw new Error(envRes.message || 'create environment failed')
-            const envData = envRes.data
-            localEnvironments.push(envData)
-            if (envData?.name) createdEnvironmentMap.set(envData.name, envData.id)
+            const envData = envRes.data as { id?: number; name?: string } | undefined
+            if (envData) localEnvironments.push(envData as Environment)
+            if (envData?.name && envData?.id) createdEnvironmentMap.set(envData.name, envData.id)
             appendAiLog('success', `${opTitle} created environment #${envData?.id}`)
             continue
           }
@@ -1544,12 +1549,12 @@ const ApiTestWorkspace = () => {
             const colRes = await apiTestService.createCollection({
               name: op.name || `AI Collection ${Date.now()}`,
               description: op.description || '',
-              project_id: op.project_id || currentProjectId,
+              project_id: op.project_id as number || currentProjectId,
             })
             if (colRes.code !== 200 && colRes.code !== 201) throw new Error(colRes.message || 'create collection failed')
-            const colData = colRes.data
-            localCollections.push(colData)
-            if (colData?.name) createdCollectionMap.set(colData.name, colData.id)
+            const colData = colRes.data as { id?: number; name?: string } | undefined
+            if (colData) localCollections.push(colData as ApiTestCollection)
+            if (colData?.name && colData?.id) createdCollectionMap.set(colData.name, colData.id)
             appendAiLog('success', `${opTitle} created collection #${colData?.id}`)
             continue
           }
@@ -1557,25 +1562,29 @@ const ApiTestWorkspace = () => {
           if (op.type === 'create_case') {
             const methodValue = inferAiCaseMethod(op)
             const bodyValue = op.body === undefined ? undefined : op.body
+            const normalizedHeaders = normalizeAiObject(op.headers) as Record<string, string>
+            const normalizedParams = normalizeAiObject(op.params) as Record<string, string>
+            const caseCollectionId = resolveCollectionId(op)
+            const caseEnvId = resolveEnvironmentId(op)
             const caseRes = await apiTestService.createCase({
               name: op.name || `AI Case ${Date.now()}`,
               description: op.description || '',
               method: methodValue,
               url: op.url || '{{base_url}}/api-test/health',
-              headers: normalizeAiObject(op.headers),
-              params: normalizeAiObject(op.params),
-              body: bodyValue,
+              headers: normalizedHeaders,
+              params: normalizedParams,
+              body: bodyValue as Record<string, unknown> | string | null | undefined,
               body_type: op.body_type || (typeof bodyValue === 'object' ? 'json' : 'raw'),
-              pre_script: op.pre_script || '',
-              post_script: op.post_script || '',
-              collection_id: resolveCollectionId(op),
-              project_id: op.project_id || currentProjectId,
-              environment_id: resolveEnvironmentId(op),
+              pre_script: (op.pre_script as string) || '',
+              post_script: (op.post_script as string) || '',
+              collection_id: caseCollectionId,
+              project_id: op.project_id as number || currentProjectId,
+              environment_id: caseEnvId,
             })
             if (caseRes.code !== 200 && caseRes.code !== 201) throw new Error(caseRes.message || 'create case failed')
-            const caseData = caseRes.data
-            localCases.push(caseData)
-            if (caseData?.name) createdCaseMap.set(caseData.name, caseData.id)
+            const caseData = caseRes.data as { id?: number; name?: string } | undefined
+            if (caseData) localCases.push(caseData as ApiTestCase)
+            if (caseData?.name && caseData?.id) createdCaseMap.set(caseData.name, caseData.id)
             appendAiLog('success', `${opTitle} created case #${caseData?.id}`)
             continue
           }
@@ -1675,7 +1684,7 @@ const ApiTestWorkspace = () => {
         <Input
           placeholder={t('apiTest.paramName')}
           size="small"
-          value={record.key}
+          value={String(record.key ?? '')}
           onChange={(e) => {
             const newParams = [...params]
             newParams[index].key = e.target.value
@@ -1692,7 +1701,7 @@ const ApiTestWorkspace = () => {
         <Input
           placeholder={t('apiTest.paramValue')}
           size="small"
-          value={record.value}
+          value={String(record.value ?? '')}
           onChange={(e) => {
             const newParams = [...params]
             newParams[index].value = e.target.value
@@ -1739,7 +1748,7 @@ const ApiTestWorkspace = () => {
         <Input
           placeholder={t('apiTest.headerName')}
           size="small"
-          value={record.key}
+          value={String(record.key ?? '')}
           onChange={(e) => {
             const newHeaders = [...headers]
             newHeaders[index].key = e.target.value
@@ -1756,7 +1765,7 @@ const ApiTestWorkspace = () => {
         <Input
           placeholder={t('apiTest.headerValue')}
           size="small"
-          value={record.value}
+          value={String(record.value ?? '')}
           onChange={(e) => {
             const newHeaders = [...headers]
             newHeaders[index].value = e.target.value
@@ -1830,14 +1839,14 @@ const ApiTestWorkspace = () => {
         url: finalUrl,
         headers: reqHeaders,
         params: finalParams,
-        body,
+        body: body as Record<string, unknown> | string | null | undefined,
         body_type: bodyType,
         timeout: 30,
         env_id: selectedEnvId,
         pre_script: preScript,
         post_script: postScript,
         assertions: assertions.filter(a => a.enabled),
-        case_id: currentCaseId || undefined,
+        case_id: currentCaseId ?? undefined,
         mock_enabled: mockEnabled,
         mock_response_code: mockResponseCode,
         mock_response_body: mockResponseBody,
@@ -1855,14 +1864,13 @@ const ApiTestWorkspace = () => {
         const respData = result.data
         if (respData.success) {
           setResponse({
-            status: respData.status_code,
-            statusText: respData.status_code < 400 ? 'OK' : 'Error',
-            time: respData.response_time || elapsed,
-            size: respData.response_size || '-',
+            success: true,
+            status_code: respData.status_code,
             headers: respData.headers || {},
-            data: respData.body,
+            body: respData.body,
+            response_time: respData.response_time || elapsed,
+            size: typeof respData.response_size === 'number' ? respData.response_size : 0,
             script_execution: respData.script_execution,
-            is_mock: respData.is_mock,
           })
           // 提取可视化断言结果
           setAssertionResults(respData.script_execution?.visual_assertions || undefined)
@@ -1870,38 +1878,39 @@ const ApiTestWorkspace = () => {
           saveToHistory({ method, url, status: respData.status_code, duration: respData.response_time || elapsed })
           message.success('请求发送成功')
         } else {
+          const errTime = typeof respData.response_time === 'number' ? respData.response_time : elapsed
           setResponse({
-            status: 0,
-            statusText: 'Error',
-            time: respData.response_time || elapsed,
-            size: '-',
+            success: false,
+            status_code: 0,
             headers: {},
-            data: { error: respData.error || '请求失败' },
+            body: { error: respData.error || '请求失败' },
+            response_time: errTime,
+            size: 0,
           })
           message.error(respData.error || '请求失败')
         }
       } else {
         setResponse({
-          status: 0,
-          statusText: 'Error',
-          time: elapsed,
-          size: '-',
+          success: false,
+          status_code: 0,
           headers: {},
-          data: { error: result.message || '请求失败' },
+          body: { error: result.message || '请求失败' },
+          response_time: elapsed,
+          size: 0,
         })
         message.error(result.message || '请求失败')
       }
     } catch (error: unknown) {
       const elapsed = Date.now() - startTime
       setResponse({
-        status: 0,
-        statusText: 'Error',
-        time: elapsed,
-        size: '-',
+        success: false,
+        status_code: 0,
         headers: {},
-        data: { error: error.message || '请求失败' },
+        body: { error: (error as Error).message || '请求失败' },
+        response_time: elapsed,
+        size: 0,
       })
-      message.error('请求失败: ' + (error.message || '未知错误'))
+      message.error('请求失败: ' + ((error as Error).message || '未知错误'))
     } finally {
       setSending(false)
     }
@@ -2060,7 +2069,7 @@ const ApiTestWorkspace = () => {
         />
 
         {/* 响应区域 — 使用提取的 ResponseViewer 组件 */}
-        <TestRunner sending={sending} onResend={handleSend} response={response} progress={collectionProgress} />
+        <TestRunner sending={sending} onResend={handleSend} response={response ? { status: response.status_code, time: response.response_time } : null} progress={collectionProgress} />
         <ResponseViewer response={response} />
       </Content>
 

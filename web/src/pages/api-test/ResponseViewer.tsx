@@ -15,12 +15,12 @@ import { useThemeStore } from '@/stores/themeStore'
 const { Text } = Typography
 
 interface ResponseData {
-  status: number
-  statusText: string
-  time: number
-  size: string
-  data: any
+  success: boolean
+  status_code: number
   headers: Record<string, string>
+  body: Record<string, unknown> | string
+  response_time: number
+  size: number
   script_execution?: any
 }
 
@@ -42,10 +42,10 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
       title={
         response ? (
           <Space>
-            <Tag color={response.status < 400 ? 'success' : 'error'}>
-              {response.status} {response.statusText}
+            <Tag color={response.status_code < 400 ? 'success' : 'error'}>
+              {response.status_code} {response.success ? 'OK' : 'Error'}
             </Tag>
-            <Text type="secondary">Time: {response.time}ms</Text>
+            <Text type="secondary">Time: {response.response_time}ms</Text>
             <Text type="secondary">Size: {response.size}</Text>
           </Space>
         ) : (
@@ -72,7 +72,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
                         icon={<FormatPainterOutlined />}
                         onClick={() => {
                           try {
-                            const formatted = JSON.stringify(response.data, null, 2)
+                            const formatted = JSON.stringify(response.body, null, 2)
                             navigator.clipboard.writeText(formatted)
                             message.success(t('responseViewer.formatted'))
                           } catch {
@@ -87,7 +87,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
                         type="text"
                         icon={<CopyOutlined />}
                         onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(response.data, null, 2))
+                          navigator.clipboard.writeText(JSON.stringify(response.body, null, 2))
                           message.success(t('responseViewer.copied'))
                         }}
                       />
@@ -98,7 +98,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response }) => {
                     height={250}
                     language="json"
                     theme={monacoTheme}
-                    value={JSON.stringify(response.data, null, 2)}
+                    value={JSON.stringify(response.body, null, 2)}
                     options={{
                       readOnly: true,
                       minimap: { enabled: false },

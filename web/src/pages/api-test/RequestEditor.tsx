@@ -12,6 +12,7 @@ import {
   Card, Input, Button, Tabs, Select, Space, Table, Tag, Dropdown,
   Typography, Tooltip, Switch, InputNumber, Badge, message, AutoComplete, type MenuProps,
 } from 'antd'
+import type { BaseSelectRef } from 'rc-select'
 import {
   PlusOutlined, SendOutlined, SaveOutlined, DeleteOutlined,
   FileAddOutlined, InfoCircleOutlined, RobotOutlined,
@@ -139,7 +140,7 @@ const RequestEditor: React.FC<RequestEditorProps> = (p) => {
             value: m, label: <span style={{ color: methodColors[m], fontWeight: 600 }}>{m}</span>,
           }))} />
         <AutoComplete
-          ref={urlInputRef as React.RefObject<unknown>}
+          ref={urlInputRef as unknown as React.RefObject<BaseSelectRef> | undefined}
           value={p.url}
           options={varOptions}
           open={varDropdownOpen}
