@@ -56,6 +56,7 @@ const ReportSchedules = lazy(() => import('./pages/ReportSchedules'))
 const ReportTemplateEditor = lazy(() => import('./pages/ReportTemplateEditor'))
 const ApiDocumentation = lazy(() => import('./pages/ApiDocumentation'))
 const DeviceManager = lazy(() => import('./pages/app-test/DeviceManager'))
+const VisitorStats = lazy(() => import('./pages/hidden/VisitorStats'))
 
 // 加载中组件
 const PageLoading = () => (
@@ -534,6 +535,18 @@ function App() {
             <Suspense fallback={<PageLoading />}>
               <RequireRole roles={['admin']}>
                 <DeviceManager />
+              </RequireRole>
+            </Suspense>
+          }
+        />
+
+        {/* 隐藏页面：访客统计（admin） */}
+        <Route
+          path="hidden/visitor-stats"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <RequireRole roles={['admin']}>
+                <VisitorStats />
               </RequireRole>
             </Suspense>
           }

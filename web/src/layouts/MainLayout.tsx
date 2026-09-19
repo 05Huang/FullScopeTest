@@ -58,6 +58,7 @@ import NotificationPopover from '../components/NotificationPopover'
 import GlobalSearch from '../components/GlobalSearch'
 import ShortcutHelpModal from '../components/ShortcutHelpModal'
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut'
+import { useVisitorTracker } from '../hooks/useVisitorTracker'
 
 const { Content, Footer } = Layout
 const { Text } = Typography
@@ -210,6 +211,9 @@ const MainLayout = () => {
   const envNotice = noticeDisabled
     ? ''
     : noticeOverride || t('layout.envNotice')
+
+  // 访客追踪（仅在生产环境启用）
+  useVisitorTracker()
 
   // 用户下拉菜单
   const userMenuItems = [

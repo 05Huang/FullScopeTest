@@ -37,6 +37,7 @@ from .test_case_version import TestCaseVersion
 from .comment import Comment
 from .embedding_cache import EmbeddingCache
 from .mock_server import MockServer, MockRule, MockRequestLog
+from .visitor_stat import VisitorStat
 
 __all__ = [
     'User',
@@ -83,4 +84,5 @@ __all__ = [
     'MockServer',
     'MockRule',
     'MockRequestLog',
+    'VisitorStat',
 ]
